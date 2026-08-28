@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""ops/db/report.py — generates ops/reports/CURRENT_STATUS.md from the
-live operational database. Read-only. Zero third-party dependencies.
+"""ops/db/report.py — generates CURRENT_STATUS.md from the operational
+database. Read-only. Zero third-party dependencies.
 
 Company Health, agent status, and task progress are computed here using
 exactly the formulas documented in DATA_MODEL.md, "Deterministic derived
@@ -9,16 +9,30 @@ must be deterministic."
 
 Usage:
     python3 ops/db/report.py
+
+Respects OPSDB_PATH (see ops/db/README.md) — when testing this script
+against a scratch database, the report is written next to that scratch
+database instead of overwriting the real ops/reports/CURRENT_STATUS.md,
+unless OPSDB_REPORT_PATH is set explicitly.
 """
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 DB_DIR = Path(__file__).resolve().parent
-DB_PATH = DB_DIR / "operations.sqlite3"
-REPORT_PATH = DB_DIR.parent / "reports" / "CURRENT_STATUS.md"
+_default_db = DB_DIR / "operations.sqlite3"
+_using_scratch_db = bool(os.environ.get("OPSDB_PATH"))
+DB_PATH = Path(os.environ["OPSDB_PATH"]) if _using_scratch_db else _default_db
+
+if os.environ.get("OPSDB_REPORT_PATH"):
+    REPORT_PATH = Path(os.environ["OPSDB_REPORT_PATH"])
+elif _using_scratch_db:
+    REPORT_PATH = DB_PATH.with_name(DB_PATH.stem + ".CURRENT_STATUS.md")
+else:
+    REPORT_PATH = DB_DIR.parent / "reports" / "CURRENT_STATUS.md"
 
 
 def connect() -> sqlite3.Connection:

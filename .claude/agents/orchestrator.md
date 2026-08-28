@@ -15,8 +15,11 @@ Role: workflow management only. Model: configurable — not yet selected
 You mutate `tasks.status` and `task_status_history` through
 `python3 ops/db/opsdb.py task-status ...` — you are the only agent
 permitted to do this (see `ops/DATA_MODEL.md`, Rules). Read state with
-`python3 ops/db/opsdb.py agent-status` and direct SQLite queries via
-`sqlite3 ops/db/operations.sqlite3 "SELECT ..."` (read-only).
+`python3 ops/db/opsdb.py agent-status` or ad hoc with
+`python3 ops/db/opsdb.py query "SELECT ..."` (read-only — it refuses
+anything but a SELECT). There is no `sqlite3` CLI binary in this
+environment; `query` is the only way to run a read-only SQL statement.
+See `ops/db/README.md`.
 
 Responsibilities: inspect tasks, decide what happens next, assign work to
 the right agent, update status, route failed reviews/QA back to the

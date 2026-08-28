@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ops/db/opsdb.py — the only supported way to read or write the Phase 1
-operational database (ops/db/operations.sqlite3).
+operational database (ops/db/operations.sqlite3 by default).
 
 Zero third-party dependencies (Python 3 standard library only). Every
 write goes through a parameterized query — never string-built SQL — and
@@ -10,20 +10,35 @@ review (ops/reviews/red-team-schema.md).
 Usage:
     python3 ops/db/opsdb.py init
     python3 ops/db/opsdb.py <command> [--flag value ...]
+    python3 ops/db/opsdb.py query "SELECT ..."   # read-only, SELECT only
 
 Run `python3 ops/db/opsdb.py --help` for the full command list, or
 `python3 ops/db/opsdb.py <command> --help` for one command's flags.
+
+TESTING THIS TOOL vs. USING IT: real product QA work (testing a real
+task's real feature) belongs in the live database — that's what
+qa-result is for. Testing opsdb.py ITSELF — invalid input, edge cases,
+"does this command behave" checks — must NEVER run against the live
+database. Set OPSDB_PATH to a scratch file first:
+
+    OPSDB_PATH=/tmp/opsdb-test-$$.sqlite3 python3 ops/db/opsdb.py init
+    OPSDB_PATH=/tmp/opsdb-test-$$.sqlite3 python3 ops/db/opsdb.py <whatever you're testing>
+
+See ops/db/README.md. This is not optional — a scratch task created
+against the live database (TASK-003, removed 2026-08-28) is exactly the
+mistake this convention exists to prevent.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 from pathlib import Path
 
 DB_DIR = Path(__file__).resolve().parent
-DB_PATH = DB_DIR / "operations.sqlite3"
+DB_PATH = Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH") else DB_DIR / "operations.sqlite3"
 SCHEMA_PATH = DB_DIR / "schema.sql"
 
 
@@ -32,6 +47,21 @@ def connect() -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def cmd_query(args: argparse.Namespace) -> None:
+    stmt = args.sql.strip()
+    if not stmt.lstrip().upper().startswith("SELECT"):
+        raise SystemExit("error: query only runs SELECT statements — use a proper command for writes")
+    conn = connect()
+    rows = conn.execute(stmt).fetchall()
+    if not rows:
+        print("(no rows)")
+        return
+    cols = rows[0].keys()
+    print(" | ".join(cols))
+    for row in rows:
+        print(" | ".join(str(row[c]) for c in cols))
 
 
 def cmd_project_create(args: argparse.Namespace) -> None:
@@ -415,11 +445,65 @@ def cmd_deployment_record(args: argparse.Namespace) -> None:
     print(f"deployment recorded: id={cur.lastrowid} version={args.version}")
 
 
+PURGE_CHECK_TABLES = [
+    "qa_results", "review_results", "deployments", "handoffs",
+    "messages", "agent_activity", "task_steps",
+]
+
+
+def cmd_task_purge_scratch(args: argparse.Namespace) -> None:
+    """Remove a task from the live database — ONLY ever usable on
+    self-labeled scratch/test data with zero real work attached. This is
+    not a general delete: it exists to undo test contamination like
+    TASK-003 (see ops/db/README.md), never to erase real history."""
+    conn = connect()
+    row = conn.execute("SELECT id, title FROM tasks WHERE id = ?", (args.task_id,)).fetchone()
+    if row is None:
+        raise SystemExit(f"error: no such task TASK-{args.task_id:03d}")
+    if not row["title"].lower().startswith("qa scratch:"):
+        raise SystemExit(
+            f"error: refusing to purge TASK-{args.task_id:03d} — its title does not "
+            "start with 'QA scratch:'. This command only removes tasks explicitly "
+            "self-labeled that way, never real work, however small, and never on a "
+            "loose substring match (a real task titled 'not scratch work' must not "
+            "be purgeable by accident)."
+        )
+    blockers = []
+    for table in PURGE_CHECK_TABLES:
+        n = conn.execute(f"SELECT COUNT(*) FROM {table} WHERE task_id = ?", (args.task_id,)).fetchone()[0]
+        if n:
+            blockers.append(f"{n} row(s) in {table}")
+    n_risks = conn.execute(
+        "SELECT COUNT(*) FROM risks WHERE scope_type='task' AND scope_id = ?", (args.task_id,)
+    ).fetchone()[0]
+    if n_risks:
+        blockers.append(f"{n_risks} row(s) in risks")
+    if blockers:
+        raise SystemExit(
+            f"error: refusing to purge TASK-{args.task_id:03d} — it has real work "
+            f"attached: {'; '.join(blockers)}. Purge only removes tasks with zero "
+            "downstream artifacts."
+        )
+    if not args.confirm:
+        raise SystemExit("error: pass --confirm to actually remove it")
+
+    with conn:
+        n_hist = conn.execute("DELETE FROM task_status_history WHERE task_id = ?", (args.task_id,)).rowcount
+        n_appr = conn.execute("DELETE FROM approvals WHERE task_id = ?", (args.task_id,)).rowcount
+        conn.execute("DELETE FROM tasks WHERE id = ?", (args.task_id,))
+    print(f"purged TASK-{args.task_id:03d} ({row['title']!r}): "
+          f"removed {n_hist} task_status_history row(s), {n_appr} approval(s), and the task itself")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("init", help="create the database from schema.sql (idempotent)").set_defaults(func=cmd_init)
+
+    q = sub.add_parser("query", help="run a read-only SELECT against the database")
+    q.add_argument("sql", help="a SELECT statement, quoted")
+    q.set_defaults(func=cmd_query)
 
     pc = sub.add_parser("project-create", help="create a project")
     pc.add_argument("--name", required=True)
@@ -584,6 +668,11 @@ def main() -> None:
     dr.add_argument("--founder-approval", action="store_true", dest="founder_approval")
     dr.add_argument("--approval-id", type=int, dest="approval_id")
     dr.set_defaults(func=cmd_decision_record)
+
+    tps = sub.add_parser("task-purge-scratch", help="remove a self-labeled scratch task with zero real work attached")
+    tps.add_argument("--task-id", type=int, required=True, dest="task_id")
+    tps.add_argument("--confirm", action="store_true")
+    tps.set_defaults(func=cmd_task_purge_scratch)
 
     dep = sub.add_parser("deployment-record", help="record a deployment (Founder authorization required)")
     dep.add_argument("--task-id", type=int, required=True, dest="task_id")

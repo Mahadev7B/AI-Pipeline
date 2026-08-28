@@ -1,0 +1,6 @@
+# Scratch/test databases and reports — real test runs should use
+# OPSDB_PATH pointed outside the repo (e.g. /tmp), but this is defense
+# in depth in case one ever lands here by mistake. See ops/db/README.md.
+ops/db/test*.sqlite3
+ops/db/*.test.sqlite3
+ops/db/*.CURRENT_STATUS.md
