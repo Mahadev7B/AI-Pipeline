@@ -1,13 +1,19 @@
 {
   "artboards": [
-    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 960, "title": "A — Pipeline First" },
-    { "file": "AgentFirst.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 960, "title": "B — Agent First" },
-    { "file": "CommandCenter.dc.html", "x": 3120, "y": 0, "w": 1440, "h": 1400, "title": "C — Command Center" }
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "title": "A — Overview (dark)" },
+    { "file": "OverviewLight.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 900, "title": "B — Overview (light)" },
+    { "file": "Pipeline.dc.html", "x": 0, "y": 1020, "w": 1440, "h": 780, "title": "Pipeline" },
+    { "file": "Agents.dc.html", "x": 1560, "y": 1020, "w": 1440, "h": 900, "title": "Agents" },
+    { "file": "AgentConversation.dc.html", "x": 3120, "y": 1020, "w": 900, "h": 900, "title": "Agent Conversation" },
+    { "file": "ExecutiveMeeting.dc.html", "x": 3120, "y": 0, "w": 900, "h": 1000, "title": "Executive Meeting" }
   ],
   "annotations": [
-    { "id": "note-a", "x": 0, "y": -80, "w": 420, "text": "Pipeline is the centerpiece; agent info is compact and secondary." },
-    { "id": "note-b", "x": 1560, "y": -80, "w": 420, "text": "The team is the centerpiece — full agent roster + one expanded capability view." },
-    { "id": "note-c", "x": 3120, "y": -80, "w": 420, "text": "Balanced console: pipeline, agents, inbox, activity, risks, release + Executive Discussion." }
+    { "id": "note-a", "x": 0, "y": -70, "w": 500, "text": "Style A — refined dark. Answers all 5 Overview questions with no scrolling." },
+    { "id": "note-b", "x": 1560, "y": -70, "w": 500, "text": "Style B — lighter premium treatment of the same Overview structure." },
+    { "id": "note-p", "x": 0, "y": 950, "w": 500, "text": "Major-stage pipeline with substate lanes inside each stage." },
+    { "id": "note-ag", "x": 1560, "y": 950, "w": 500, "text": "Roster grouped by function, sorted by state, plus full capability view." },
+    { "id": "note-conv", "x": 3120, "y": 950, "w": 420, "text": "Ask Agent expanded into a real, persistent conversation." },
+    { "id": "note-mtg", "x": 3120, "y": -70, "w": 420, "text": "Follow-ups, requested perspectives, agreement/disagreement, Founder decision." }
   ],
   "launch": { "view": "canvas" }
 }

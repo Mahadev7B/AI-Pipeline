@@ -33,3 +33,13 @@ Reason: The Founder's stated priority is minimizing interruptions to founder-onl
 Tradeoffs: Command Center is the busiest single screen of the three; agent capability detail is a drill-in rather than visible on the landing view.
 Agent recommending it: Design Agent (critique), Orchestrator (log entry).
 Founder approval: **Required — this is a Phase 0 recommendation awaiting explicit Founder approval before Phase 2 (Control Center) can begin.**
+
+### DEC-002 — Control Center visual style: dark vs. light (recommended, pending Founder approval)
+Date: 2026-08-28
+Problem: Which visual treatment should the approved Command Center structure use — the existing dark "operating console" direction, or a new lighter/premium alternative?
+Options considered: Style A — refined dark (`Main.dc.html`); Style B — lighter premium (`OverviewLight.dc.html`) — see `MOCKUP_CRITIQUE.md`, "Visual style" for full critique.
+Decision: Recommend Style A (refined dark) as the primary direction; keep Style B on file as a considered alternative rather than discarding it.
+Reason: The product's core value is watching AI agents work in real time — a console aesthetic communicates that more directly than a document-like light theme, which reads calmer but less "live."
+Tradeoffs: A risks tipping into "ops-tool" territory if not kept disciplined; B is easier on the eyes for long sessions but undersells that a live system is running underneath.
+Agent recommending it: Design Agent.
+Founder approval: **Required — pending, part of this Phase 0 refinement round.**

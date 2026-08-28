@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+      --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+      --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+      --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+      --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+      --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+      --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --disp: "Space Grotesk", system-ui, sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+    .mono{ font-family:var(--mono); letter-spacing:0.01em; }
+    .label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+    .pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+    .row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; }
+    .row:hover, .sel{ background:var(--panel2); }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; background:var(--bg); display:flex; flex-direction:column; overflow:hidden;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border); flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:26px;">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+        <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+      </div>
+      <div style="display:flex; gap:2px;">
+        <div style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</div>
+        <div style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</div>
+        <div style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Agents</div>
+        <div style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</div>
+      </div>
+    </div>
+    <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <!-- filter chips -->
+  <div style="display:flex; align-items:center; gap:8px; padding:14px 26px 4px; flex-shrink:0;">
+    <div class="pill" style="background:var(--accent-soft); color:var(--accent); padding:5px 12px; font-size:11px;">● Working · 4</div>
+    <div class="pill" style="background:var(--red-soft); color:var(--red); padding:5px 12px; font-size:11px;">● Blocked · 1</div>
+    <div class="pill" style="background:var(--blue-soft); color:var(--blue); padding:5px 12px; font-size:11px;">● Waiting · 2</div>
+    <div class="pill" style="background:var(--gray-soft); color:var(--text2); padding:5px 12px; font-size:11px;">● Available · 7</div>
+    <div style="flex:1;"></div>
+    <div style="font-size:11px; color:var(--text3);">Grouped by function</div>
+  </div>
+
+  <div style="flex:1; display:flex; overflow:hidden; padding-top:8px;">
+
+    <!-- LEFT: grouped roster -->
+    <div style="flex:1; overflow-y:auto; padding:8px 20px 20px 26px; display:flex; flex-direction:column; gap:16px;">
+
+      <div>
+        <div class="label" style="margin-bottom:6px;">Executive</div>
+        <div class="row" style="border:1px dashed var(--violet); background:var(--violet-soft);">
+          <div style="width:24px; height:24px; border-radius:6px; background:oklch(70% 0.12 300 / 0.25); display:flex; align-items:center; justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--violet)" stroke-width="1.6"/></svg></div>
+          <div style="flex:1;"><div style="font-size:12.5px; font-weight:600;">CEO Agent <span style="font-size:9px; color:var(--violet); font-weight:700;">· AI ADVISOR</span></div><div style="font-size:11px; color:var(--text2);">Weighing Book Bot vs. User Accounts priority</div></div>
+          <div class="pill" style="background:var(--accent-soft); color:var(--accent);">Working</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:6px;">Product</div>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1; font-size:12.5px;">Product</div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--blue); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Design</div><div style="font-size:10.5px; color:var(--text3);">Waiting on Product brief</div></div><div style="font-size:11px; color:var(--blue);">Waiting</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:6px;">Engineering</div>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div class="row sel" style="border:1px solid var(--accent);"><div style="width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px; font-weight:600;">CTO / Architect</div><div style="font-size:10.5px; color:var(--text3);">Voice Interruption — data model</div></div><div style="font-size:11px; color:var(--accent);">Working</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Developer</div><div style="font-size:10.5px; color:var(--text3);">TTS Wrapper — 72%</div></div><div style="font-size:11px; color:var(--accent);">Working</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1; font-size:12.5px;">Code Review</div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--blue); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">QA</div><div style="font-size:10.5px; color:var(--text3);">Waiting to re-test the fix</div></div><div style="font-size:11px; color:var(--blue);">Waiting</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1; font-size:12.5px;">Security</div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:6px;">Operations</div>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div class="row" style="border:1px solid oklch(66% 0.17 25 / 0.4);"><div style="width:7px; height:7px; border-radius:50%; background:var(--red); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Release / DevOps</div><div style="font-size:10.5px; color:var(--red);">Blocked — needs Founder approval</div></div><div style="font-size:11px; color:var(--red);">Blocked</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1; font-size:12.5px;">Marketing</div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Project Manager</div><div style="font-size:10.5px; color:var(--text3);">Compiling status report</div></div><div style="font-size:11px; color:var(--accent);">Working</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:6px;">Oversight</div>
+        <div style="display:flex; flex-direction:column; gap:3px;">
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Orchestrator</div><div style="font-size:10.5px; color:var(--text3);">Routing the QA fail to Developer</div></div><div style="font-size:11px; color:var(--accent);">Working</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1; font-size:12.5px;">Red Team</div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+          <div class="row"><div style="width:7px; height:7px; border-radius:50%; background:var(--gray); flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12.5px;">Financial Agent</div><div style="font-size:10.5px; color:var(--text3);">Engages only when cost is at stake</div></div><div style="font-size:11px; color:var(--text2);">Available</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: capability panel for selected agent (CTO shown) -->
+    <div style="width:330px; border-left:1px solid var(--border); padding:20px; overflow-y:auto;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <div style="width:32px; height:32px; border-radius:9px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div style="font-family:var(--disp); font-size:15px; font-weight:600;">CTO / Architect</div>
+          <div class="pill" style="background:var(--accent-soft); color:var(--accent); margin-top:2px;">Working</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:11.5px;">
+        <div><div class="label" style="margin-bottom:2px;">Current task</div><div class="mono">TASK-003 · Voice Interruption</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Model</div><div style="color:var(--text2);">configurable — none selected yet</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Skills</div><div style="color:var(--text2);">init, claude-api</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Expert frameworks</div><div style="color:var(--text2);">Simplicity-first, dependency justification, risk scan</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Tools</div><div style="color:var(--text2);">Repository filesystem (read), architecture docs</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Permissions</div><div style="color:var(--text2);">Read requirements/mockup · write architecture notes</div><div style="color:var(--red); margin-top:2px;">Not permitted: implement own design, deploy</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Current activity</div><div style="color:var(--text2);">Drafting the data model, weighing local vs. streamed buffering</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Evaluation history</div><div style="color:var(--text2);">1 Red Team REJECT (v1, resolved), 0 pending</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Known weaknesses</div><div style="color:var(--text2);">Tends to over-scope streaming features</div></div>
+        <div><div class="label" style="margin-bottom:2px;">Confidence</div><div style="color:var(--text);">Medium — evaluating two approaches</div></div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:9px; background:var(--panel2); border:1px solid var(--accent);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.5 8.5 0 0 1-11.9 7.8L3 21l1.7-6.1A8.5 8.5 0 1 1 21 11.5Z" stroke="var(--accent)" stroke-width="1.6"/></svg>
+        <span style="font-size:12px; color:var(--accent); font-weight:600;">Open conversation with CTO →</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

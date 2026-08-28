@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+      --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+      --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+      --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --disp: "Space Grotesk", system-ui, sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+    .mono{ font-family:var(--mono); letter-spacing:0.01em; }
+    .label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+    .bubble{ max-width:62%; padding:11px 14px; border-radius:14px; font-size:12.5px; line-height:1.5; }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; background:var(--bg); display:flex; flex-direction:column; overflow:hidden;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border); flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:13px; color:var(--text3);">← Agents</div>
+      <div style="width:1px; height:18px; background:var(--border2);"></div>
+      <div style="width:30px; height:30px; border-radius:8px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="m9 18 6-6-6-6" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div style="font-size:13.5px; font-weight:600;">Developer</div>
+        <div style="font-size:10px; color:var(--accent); font-weight:600;">● Working — TASK-002</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; padding:5px 11px; border-radius:100px; background:var(--panel2); border:1px solid var(--border2);">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="10" rx="2" stroke="var(--text3)" stroke-width="1.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="var(--text3)" stroke-width="1.6"/></svg>
+      <span style="font-size:10.5px; color:var(--text3);">Saved to TASK-002 · auditable</span>
+    </div>
+  </div>
+
+  <div style="flex:1; overflow-y:auto; padding:22px 26px; display:flex; flex-direction:column; gap:14px;">
+
+    <div style="align-self:flex-end; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+      <div class="bubble" style="background:var(--violet); color:#1a1220;">What are you working on right now?</div>
+      <div style="font-size:10px; color:var(--text3);">Alex · Founder · 11:12</div>
+    </div>
+
+    <div style="align-self:flex-start; display:flex; flex-direction:column; gap:3px;">
+      <div class="bubble" style="background:var(--panel2); border:1px solid var(--border2);">Fixing TASK-002, the TTS Wrapper. QA found that playback resumes at the start of the paragraph instead of the interrupted sentence. I traced it to <span class="mono" style="font-size:11.5px;">NarrationManager</span> only persisting paragraph-level offsets, not sentence-level ones.</div>
+      <div style="font-size:10px; color:var(--text3);">Developer · 11:12</div>
+    </div>
+
+    <div style="align-self:flex-end; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+      <div class="bubble" style="background:var(--violet); color:#1a1220;">Do you agree with QA's failure report?</div>
+      <div style="font-size:10px; color:var(--text3);">Alex · Founder · 11:13</div>
+    </div>
+
+    <div style="align-self:flex-start; display:flex; flex-direction:column; gap:3px;">
+      <div class="bubble" style="background:var(--panel2); border:1px solid var(--border2);">Yes — reproduced it on the first try locally. It's a real bug, not a flaky test.</div>
+      <div style="font-size:10px; color:var(--text3);">Developer · 11:13</div>
+    </div>
+
+    <div style="align-self:flex-end; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+      <div class="bubble" style="background:var(--violet); color:#1a1220;">How long until it's fixed?</div>
+      <div style="font-size:10px; color:var(--text3);">Alex · Founder · 11:14</div>
+    </div>
+
+    <div style="align-self:flex-start; display:flex; flex-direction:column; gap:3px;">
+      <div class="bubble" style="background:var(--panel2); border:1px solid var(--border2);">About 30 more minutes. Adding a sentence-offset field to the resume checkpoint, plus a test for interrupting mid-sentence so this can't regress silently.</div>
+      <div style="font-size:10px; color:var(--text3);">Developer · 11:14</div>
+    </div>
+
+    <div style="align-self:flex-end; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+      <div class="bubble" style="background:var(--violet); color:#1a1220;">Once it's fixed, does it go straight back to QA?</div>
+      <div style="font-size:10px; color:var(--text3);">Alex · Founder · 11:15</div>
+    </div>
+
+    <div style="align-self:flex-start; display:flex; flex-direction:column; gap:3px;">
+      <div class="bubble" style="background:var(--panel2); border:1px solid var(--border2);">No — Code Review first, since it's a logic change, then QA re-tests. That's the rule for any significant fix, so nothing skips a gate.</div>
+      <div style="font-size:10px; color:var(--text3);">Developer · 11:15</div>
+    </div>
+  </div>
+
+  <div style="flex-shrink:0; padding:16px 26px 22px; border-top:1px solid var(--border);">
+    <div style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
+      <span style="flex:1; font-size:12.5px; color:var(--text3);">Ask Developer a follow-up…</span>
+      <div style="padding:6px 14px; border-radius:8px; background:var(--accent); font-size:11.5px; font-weight:600; color:#1a1206;">Send</div>
+    </div>
+    <div style="font-size:10px; color:var(--text3); margin-top:8px;">This conversation stays attached to TASK-002 — every message is part of the auditable record, not a side channel.</div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
