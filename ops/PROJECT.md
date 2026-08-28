@@ -1,6 +1,6 @@
 # PROJECT.md — AI Software Company Operating System
 
-Status: **PHASE 1 — FOUNDATION complete, awaiting Founder review before Phase 2** (Phase 0 approved 2026-08-28 — see `DECISIONS.md` DEC-003)
+Status: **PHASE 2 — CONTROL CENTER** (Phase 0 approved 2026-08-28 — DEC-003; Phase 1 approved and closed 2026-08-28 — DEC-004)
 
 ## What this is
 
@@ -40,18 +40,41 @@ visually and structurally distinct.
   DECISIONS.md             decision log (append-only, never silently reversed)
   CODING_STANDARDS.md      the 24 shared engineering rules
   SECURITY.md              security/privacy posture and rules
-  DATA_MODEL.md            future SQLite schema (design doc only, Phase 0)
-  EXECUTIVE_MEETINGS.md    multi-agent discussion capability design
+  DATA_MODEL.md            the operational database schema (implemented — ops/db/schema.sql)
+  EXECUTIVE_MEETINGS.md    multi-agent discussion capability design (Phase 2, not built yet)
   MOCKUP_CRITIQUE.md       critique + recommendation for the 3 Control Center mockups
   AGENT_STATUS.md          workflow statuses and legal transitions
-  /ops/agents/             one file per agent (14 total)
+  /ops/agents/             one file per agent (14 total) — role docs; see also .claude/agents/
   /ops/skills/             Skill Registry (real, installed skills only)
   /ops/models/             Model Registry (design only — no model selected)
   /ops/templates/          task / decision / founder-approval / handoff templates
-  /ops/tasks/              individual task files (created from Phase 1 onward)
-  /ops/approvals/          PENDING.md / RESOLVED.md (created from Phase 1 onward)
-  /ops/reports/            CURRENT_STATUS.md (created from Phase 1 onward)
+  /ops/db/                 operations.sqlite3 (the live database), schema.sql,
+                           opsdb.py (the only writer), report.py, derived_state.py,
+                           README.md (test-vs-live database convention)
+  /ops/control-center/     generate_overview.py + overview.html (Phase 2 Milestone 1)
+  /ops/reviews/            Red Team / Code Review / Security / CTO conformance reports
+  /ops/reports/            CURRENT_STATUS.md — regenerate with `python3 ops/db/report.py`
+  /ops/mockups/            the Phase 0 Control Center mockups (visual source of truth)
+.claude/agents/            the 14 agents wired as real, invocable Claude Code subagents
 ```
+
+Individual per-task markdown files (`/ops/tasks/TASK-NNN.md`) and
+`/ops/approvals/PENDING.md`/`RESOLVED.md`, mentioned in earlier drafts of
+this document, were superseded before Phase 1 shipped: tasks and
+approvals live in `operations.sqlite3` as structured rows, not hand-
+maintained markdown files — see `ops/DATA_MODEL.md`.
+
+## Seeing current status
+
+- `python3 ops/db/report.py` → regenerates `ops/reports/CURRENT_STATUS.md`
+  (git-tracked markdown snapshot).
+- `python3 ops/control-center/generate_overview.py` → regenerates
+  `ops/control-center/overview.html`, open it in a browser for the
+  Founder-facing dark Overview page (Phase 2 Milestone 1 — read-only,
+  real data, no write actions yet).
+
+Both read `ops/db/operations.sqlite3` directly and compute everything
+via `ops/db/derived_state.py` — neither is hand-edited.
 
 ## Founder approval rules
 

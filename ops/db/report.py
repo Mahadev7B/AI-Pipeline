@@ -19,8 +19,17 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from derived_state import (  # noqa: E402 — see sys.path.insert above
+    agent_status_rows,
+    company_health,
+    scope_label,
+    task_progress_pct,
+)
 
 DB_DIR = Path(__file__).resolve().parent
 _default_db = DB_DIR / "operations.sqlite3"
@@ -39,46 +48,6 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
-
-
-def company_health(conn: sqlite3.Connection) -> tuple[str, str]:
-    high_risks = conn.execute(
-        "SELECT COUNT(*) FROM risks WHERE status = 'open' AND severity = 'high'"
-    ).fetchone()[0]
-    blocked_tasks = conn.execute(
-        "SELECT COUNT(*) FROM tasks WHERE status = 'BLOCKED'"
-    ).fetchone()[0]
-    if high_risks == 0 and blocked_tasks <= 1:
-        label = "Good"
-    elif high_risks <= 1 or (2 <= blocked_tasks <= 3):
-        label = "Fair"
-    else:
-        label = "Poor"
-    detail = f"{blocked_tasks} task(s) blocked, {high_risks} high-severity open risk(s)"
-    return label, detail
-
-
-def agent_status_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    return conn.execute(
-        """
-        SELECT a.name, r.status, r.scope_type, r.scope_id, r.current_activity
-        FROM agents a
-        LEFT JOIN agent_runs r ON r.agent_id = a.id AND r.ended_at IS NULL
-        ORDER BY a.name
-        """
-    ).fetchall()
-
-
-def task_progress_pct(conn: sqlite3.Connection, task_id: int) -> str:
-    row = conn.execute(
-        "SELECT SUM(weight) AS total, "
-        "SUM(CASE WHEN status='done' THEN weight ELSE 0 END) AS done "
-        "FROM task_steps WHERE task_id = ?",
-        (task_id,),
-    ).fetchone()
-    if not row or row["total"] in (None, 0):
-        return "not broken into steps"
-    return f"{round(100 * row['done'] / row['total'])}%"
 
 
 def build_report() -> str:
@@ -161,7 +130,7 @@ def build_report() -> str:
     ).fetchall()
     if risks:
         for r in risks:
-            lines.append(f"- [{r['severity']}] {r['title']} ({r['scope_type']}:{r['scope_id']}, "
+            lines.append(f"- [{r['severity']}] {r['title']} ({scope_label(r['scope_type'], r['scope_id'])}, "
                           f"owner: {r['owner_agent'] or '—'})")
     else:
         lines.append("- none open")
@@ -185,7 +154,7 @@ def build_report() -> str:
             lines.append(f"- {row['name']}: available")
         else:
             lines.append(f"- {row['name']}: {row['status']} "
-                          f"({row['scope_type']}:{row['scope_id']}) — {row['current_activity'] or ''}")
+                          f"({scope_label(row['scope_type'], row['scope_id'])}) — {row['current_activity'] or ''}")
     lines.append("")
 
     return "\n".join(lines) + "\n"

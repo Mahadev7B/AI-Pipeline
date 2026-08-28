@@ -117,6 +117,20 @@ options_considered (json), decision, reason, tradeoffs,
 recommending_agent, founder_approval_required (bool), founder_approval_id
 (nullable fk → approvals), created_at`
 
+**Two independent numbering schemes — do not conflate them.** This
+table's `id` is a plain auto-incrementing sequence with no relationship
+to the `DEC-NNN` labels used in `DECISIONS.md` — those are assigned by
+hand in the markdown file as the durable narrative record, while `id`
+here just orders database rows. A row's `title` is the only reliable way
+to match a database decision to its `DECISIONS.md` entry (if it has
+one — not every database decision is significant enough to also get a
+hand-written `DEC-NNN` entry, and not every `DEC-NNN` entry originates
+from a database row — DEC-001 through DEC-004 predate most of this
+table's contents). Found via a stray `task_status_history` note
+("Mockup approved as DEC-004") that referred to `decisions.id = 1` using
+a label that `DECISIONS.md` later assigned to something else entirely —
+see `ops/reviews/cto-phase2-milestone1-conformance.md`.
+
 ### qa_results
 `id, task_id, tested_by_agent, scenario, result (pass/fail), defect_summary
 (nullable), reproduction_steps (nullable), returned_to_agent (nullable),

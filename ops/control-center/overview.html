@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Overview — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); padding:26px; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.stack{ display:flex; flex-direction:column; gap:10px; }
+</style>
+</head>
+<body>
+<h1>Overview <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only, Phase 2 Milestone 1</span></h1>
+<div class="sub">Generated 2026-08-28 22:17 UTC from the live operational database. Not hand-edited; re-run generate_overview.py to refresh.</div>
+
+<div class="panel" style="margin-bottom:14px;">
+  <div class="label" style="margin-bottom:6px;">Company Health</div>
+  <div style="font-size:20px; font-weight:600; color:var(--green);">Good</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-top:2px;">0 task(s) blocked, 0 high-severity open risk(s)</div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Active Now</div>
+    <div class="stack"><div style="font-size:12px; color:var(--text2);">No agent currently has an open run.</div></div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Founder Inbox</div>
+    <div class="stack"><div style="font-size:12px; color:var(--text2);">Nothing pending.</div></div>
+  </div>
+  <div class="panel" style="grid-column:1 / -1;">
+    <div class="label" style="margin-bottom:10px;">Pipeline Snapshot</div>
+    <div class="stack"><div style="font-size:12px; color:var(--text2);">No open tasks.</div></div>
+  </div>
+  <div class="panel" style="grid-column:1 / -1;">
+    <div class="label" style="margin-bottom:10px;">Just Happened</div>
+    <div class="stack">
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">orchestrator</b> — Removing TASK-003 (&#x27;QA scratch: no-steps task&#x27;) from live operational state per Founder instruction — it was created during Phase 1 QA before the OPSDB_PATH test/live database separation existed, has zero real work attached (verified: no qa_results, review_results, deployments, handoffs, messages, agent_activity, task_steps, or risks reference it), and its one approval (#2) was itself explicitly fake QA-demonstration data.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">qa</b> — Live subagent smoke test (post session-restart): invoked the qa subagent via the Agent tool for real. It confirmed its available tools are exactly Read/Bash/Grep/Glob/Skill, that Write and Edit are absent, and correctly cited its own Must-Not list. Resolves the &#x27;not live-tested&#x27; flag from the prior functional-vs-mocked report - subagent wiring and tool-scoping are confirmed working, not just validated syntax.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">qa</b> — Subagent wiring: claude plugin validate .claude/agents passed (syntactically correct, valid frontmatter) but live invocation via the Agent tool failed in this session - confirmed via claude-code-guide this requires a session restart for first-time .claude/agents/ directory discovery. Not live-tested end-to-end; flagged for the Founder.</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">marketing</b> — Confirmed no external marketing needed - this is an internal pipeline validation task, not a real feature</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Added a 250ms debounce on the visual transition; verified locally</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Implementation complete, all 3 steps done, ready for review</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">red-team</b> — PASS: no unnecessary dependencies, no persistence overreach, scope matches requirements</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">cto</b> — Architecture drafted: local component state only, no persistence needed for the demo</div>
+        </div></div>
+  </div>
+</div>
+</body>
+</html>

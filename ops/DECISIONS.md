@@ -62,4 +62,4 @@ Decision: Declare Phase 1 **complete**, with two gaps explicitly disclosed rathe
 Reason: Holding Phase 1 open until these are closed would mean waiting on infrastructure (real user auth, finer-grained tool scoping) that doesn't exist yet and wasn't asked for in Phase 1 — better to ship a disclosed, honest state than delay for an unscoped fix.
 Tradeoffs: The Founder is trusting procedural/documented enforcement (agent role docs, CLI speed bumps) over technical enforcement for these two specific actions until Phase 2 or later.
 Agent recommending it: Security (see `ops/reviews/security-phase1.md`), Orchestrator.
-Founder approval: **Pending — this is what Phase 1's completion report is asking the Founder to review.**
+Founder approval: **APPROVED 2026-08-28. Phase 1 — Foundation is formally closed.** Recorded as decision id=2 in the operational database (`decisions` table), linked to approval id=3 — see `ops/db/opsdb.py query "SELECT * FROM decisions WHERE id=2"`. The two disclosed gaps are not resolved by this approval — they carry forward as tracked risks (company-scoped, `risks` table) into Phase 2, not silently dropped.

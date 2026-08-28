@@ -16,7 +16,7 @@ instantiating the SQLite database, writing any Control Center code, wiring
 real Claude Code subagent configs, selecting/downloading any model, running
 the sample task, or touching the actual product.
 
-## PHASE 1 — Foundation *(complete, awaiting Founder review before Phase 2)*
+## PHASE 1 — Foundation *(APPROVED 2026-08-28 — CLOSED, see DECISIONS.md DEC-004)*
 
 - Incorporate the data-model clarifications (agent execution runs,
   structured risks, objective task-step progress, a minimal projects
@@ -36,13 +36,60 @@ the sample task, or touching the actual product.
   **Stop** after Security review and show the Founder what's truly
   functional vs. still mocked before Phase 2 begins.
 
-## PHASE 2 — Control Center *(after Phase 1 is complete)*
+## PHASE 2 — Control Center *(current phase, separately gated from Phase 1)*
 
 Build the Founder-approved mockup direction into the real web application:
 project overview, pipeline visualization, agent panel + detail/capability
 view, Ask-Agent conversation interface, Executive Meeting UI, Founder Inbox,
 activity feed, QA/review failures, decision history, project health, release
 information.
+
+**Gates, before any significant implementation:**
+- CTO reviews and confirms the proposed Phase 2 architecture aligns with
+  the Phase 1 foundation (schema, `opsdb.py`, subagent wiring) before
+  Development starts on it.
+- Red Team challenges the plan before Development begins — same
+  discipline as Phase 1's schema review.
+- The approved refined-dark Command Center direction (Style A —
+  `ops/mockups/control-center-phase-0/Main.dc.html`) remains the visual
+  source of truth.
+- The Control Center reads real state from the Phase 1 operational
+  database. Status, progress, and health are never recreated as mocked
+  or hand-written values — they are computed the same way
+  `ops/db/report.py` already computes them (shared logic, not a
+  re-implementation that could drift).
+- The Phase 1 schema and operating rules are not casually changed. Any
+  meaningful architecture change goes back through CTO → Red Team and is
+  documented, same as a schema change would be.
+- CTO's role during Phase 2 extends past pre-development approval to
+  **post-implementation architectural conformance** — watching for
+  architecture drift, stale assumptions, platform gaps, data-model
+  inconsistencies, unnecessary complexity, dependency risk, and
+  technical debt as each milestone ships. CTO does not fix
+  implementation directly; findings route to the responsible agent and
+  still pass Code Review, QA, and Security.
+- The two Phase 1 limitations (approval-decide not identity-
+  authenticated; Bash not scoped below the tool-category level) are
+  tracked as open risks (`risks` table, company-scoped) through Phase 2.
+  Neither is hidden or silently marked resolved without a real technical
+  fix — see `DECISIONS.md` DEC-004.
+
+Phase 2 ships as a sequence of small, separately reviewed milestones
+(Architecture → Red Team → Development → Code Review → QA → Security
+each time), not one large build — see `ops/reports/CURRENT_STATUS.md`
+and the task history for what's shipped so far.
+
+**Milestone 1 — DONE (TASK-004):** a static, read-only Overview page
+(`ops/control-center/generate_overview.py` → `overview.html`) reading
+real Company Health, agent status, pipeline, activity, and Founder Inbox
+state from the live database. No write actions yet. See
+`ops/reviews/cto-phase2-architecture.md`,
+`ops/reviews/red-team-phase2-architecture.md`, and
+`ops/reviews/cto-phase2-milestone1-conformance.md`.
+
+**Milestone 2 (not started):** the remaining screens (Pipeline, Agents,
+Conversation, Meetings) and, only once a real interactive/write feature
+needs it, a live process — not before.
 
 ## PHASE 3 — Automated Orchestration *(after Phase 2 is complete)*
 
