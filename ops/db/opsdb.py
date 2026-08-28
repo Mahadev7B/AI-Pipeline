@@ -448,14 +448,19 @@ def cmd_deployment_record(args: argparse.Namespace) -> None:
 PURGE_CHECK_TABLES = [
     "qa_results", "review_results", "deployments", "handoffs",
     "messages", "agent_activity", "task_steps",
+    "approvals",  # an approval is auditable Founder-decision history —
+                  # never silently deleted, even for a scratch task.
 ]
 
 
 def cmd_task_purge_scratch(args: argparse.Namespace) -> None:
     """Remove a task from the live database — ONLY ever usable on
-    self-labeled scratch/test data with zero real work attached. This is
-    not a general delete: it exists to undo test contamination like
-    TASK-003 (see ops/db/README.md), never to erase real history."""
+    self-labeled scratch/test data with zero real work AND zero auditable
+    history (approvals, decisions) attached. This is not a general
+    delete: it exists to undo test contamination like TASK-003 (see
+    ops/db/README.md), never to erase real history. Only the task itself
+    and its task_status_history are ever removed — every other table is
+    a blocker, never a deletion target."""
     conn = connect()
     row = conn.execute("SELECT id, title FROM tasks WHERE id = ?", (args.task_id,)).fetchone()
     if row is None:
@@ -478,21 +483,33 @@ def cmd_task_purge_scratch(args: argparse.Namespace) -> None:
     ).fetchone()[0]
     if n_risks:
         blockers.append(f"{n_risks} row(s) in risks")
+    # Belt-and-suspenders: even though blocking on any approvals row above
+    # already makes this unreachable (a decision can only reference an
+    # approval that exists), check explicitly that no decision references
+    # one of this task's approvals — auditable decision history must
+    # never depend on the approvals check alone to stay protected.
+    n_decisions = conn.execute(
+        "SELECT COUNT(*) FROM decisions WHERE founder_approval_id IN "
+        "(SELECT id FROM approvals WHERE task_id = ?)", (args.task_id,)
+    ).fetchone()[0]
+    if n_decisions:
+        blockers.append(f"{n_decisions} row(s) in decisions (via an approval)")
     if blockers:
         raise SystemExit(
             f"error: refusing to purge TASK-{args.task_id:03d} — it has real work "
-            f"attached: {'; '.join(blockers)}. Purge only removes tasks with zero "
-            "downstream artifacts."
+            f"or auditable history attached: {'; '.join(blockers)}. Purge only "
+            "removes tasks with zero downstream artifacts; approvals and decisions "
+            "are never deleted by this command, only checked as blockers."
         )
     if not args.confirm:
         raise SystemExit("error: pass --confirm to actually remove it")
 
     with conn:
         n_hist = conn.execute("DELETE FROM task_status_history WHERE task_id = ?", (args.task_id,)).rowcount
-        n_appr = conn.execute("DELETE FROM approvals WHERE task_id = ?", (args.task_id,)).rowcount
         conn.execute("DELETE FROM tasks WHERE id = ?", (args.task_id,))
     print(f"purged TASK-{args.task_id:03d} ({row['title']!r}): "
-          f"removed {n_hist} task_status_history row(s), {n_appr} approval(s), and the task itself")
+          f"removed {n_hist} task_status_history row(s) and the task itself "
+          "(no approvals existed to protect)")
 
 
 def main() -> None:
