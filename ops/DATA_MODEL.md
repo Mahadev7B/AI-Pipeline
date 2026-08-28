@@ -1,37 +1,92 @@
-# DATA_MODEL.md — Live Operational State (Design Only)
+# DATA_MODEL.md — Live Operational State
 
-**Phase 0 status: design document only. No database file is created in this
-phase.** SQLite is instantiated in Phase 1, from this schema, after the
-Founder approves this proposal and a mockup direction.
+**Phase 1 status: implemented.** This is the schema `ops/db/schema.sql`
+implements verbatim; `ops/db/opsdb.py` is the only supported way to write
+to it. See `ARCHITECTURE.md` for why SQLite is the writable source of
+truth and `DECISIONS.md` for the durable, generated mirror.
 
 ## Why SQLite
 
 Free, local, zero-config, no server, no paid service — matches "no paid
-PM software." It becomes the single writable source of truth for live
-state; `DECISIONS.md` becomes a generated, git-readable mirror of the
-`decisions` table (see `ARCHITECTURE.md`).
+PM software." It is the single writable source of truth for live state.
+The `.sqlite3` file itself is committed to Git for this phase (no server
+to host it on) — see "Known limitation" at the end of this document.
 
 ## Tables
+
+### projects *(new — Phase 1 clarification)*
+`id, name, description, status (active/paused/done), created_at`
+
+Minimal on purpose — this is not multi-project management, it exists so
+`tasks.project_id` and `messages.project_id` reference something real
+instead of a bare, undefined ID. Do not add fields to this table without
+a real, current need for them.
 
 ### agents
 `id, name, role, model, model_status (experimental/approved/rejected),
 skills (json), frameworks (json), tools (json), permissions_allow (json),
 permissions_deny (json), created_at, updated_at`
 
+No status/activity column here on purpose — see "Deterministic derived
+state" below. Whether an agent is Working/Waiting/Blocked/Available is
+never stored; it's computed from `agent_runs`.
+
 ### tasks
-All fields from `/ops/templates/task.md`: `id, title, business_goal,
-user_story, priority, status, current_owner, dependencies, requirements,
+All fields from `/ops/templates/task.md`, plus a project link: `id,
+project_id (nullable fk → projects), title, business_goal, user_story,
+priority, status, current_owner, dependencies, requirements,
 acceptance_criteria, mockup_design, architecture_notes,
 implementation_notes, tests_required, security_considerations,
-known_risks, developer_result, code_review_result, qa_result,
-security_result, marketing_notes, deployment_result, blockers,
-founder_approval_required, next_action, created_at, updated_at`
+developer_result, code_review_result, qa_result, security_result,
+marketing_notes, deployment_result, blockers, founder_approval_required,
+next_action, created_at, updated_at`
+
+No `progress` column and no `known_risks` free-text column — both are now
+structured, queryable state: progress comes from `task_steps`, risks come
+from the `risks` table.
 
 ### task_status_history
 `id, task_id, from_status, to_status, changed_by_agent, changed_at, note`
 
+### task_steps *(new — Phase 1 clarification)*
+`id, task_id, title, status (pending/in_progress/done), weight (default
+1), owner_agent, created_at, completed_at (nullable)`
+
+The objective mechanism progress percentages come from. See "Deterministic
+derived state" below for the formula. An agent cannot report a progress
+number directly — there is no column for one to write to.
+
+### agent_runs *(new — Phase 1 clarification)*
+`id, agent_id, scope_type (task/project/meeting/company), scope_id
+(nullable — null only when scope_type=company), status (active/waiting/
+blocked/ended), current_activity, blocked_reason (nullable), started_at,
+last_heartbeat_at, ended_at (nullable)`
+
+An agent is **Working** if it has a row here with `status=active` and no
+`ended_at`. **Blocked** / **Waiting** come from a row with that status
+instead. **Available** means no open run at all. `scope_type=company`
+covers coordination work with no single task/project/meeting behind it
+(e.g. Orchestrator triage, CEO general strategy review, PM compiling a
+status report) — company-scoped work is still a real run, not an
+exception to the rule. See `ARCHITECTURE.md`, "Derived UI state must be
+deterministic."
+
+### risks *(new — Phase 1 clarification)*
+`id, scope_type (task/project/company), scope_id (nullable — null only
+when scope_type=company), raised_by_agent, title, description, severity
+(low/medium/high), status (open/mitigated/resolved), mitigation
+(nullable), owner_agent (nullable), created_at, resolved_at (nullable)`
+
+Company Health is computed from this table (open risks by severity) plus
+blocked-task and failed-review counts — never from an agent's prose
+summary of "how things feel." See `ARCHITECTURE.md`.
+
 ### agent_activity
 `id, agent_id, task_id (nullable), summary, detail, created_at`
+
+A free-text activity log entry — narrative, for the Activity feed. Not
+what Working/Waiting/Blocked/Available is computed from; that's
+`agent_runs`.
 
 ### messages
 `id, thread_id, scope (task/project/agent/meeting), task_id (nullable),
@@ -75,20 +130,56 @@ created_at`
 `id, task_id, version, environment, release_notes, rollback_plan,
 deployed_by_agent, founder_authorized (bool), deployed_at`
 
-### meetings *(new — supports Executive Meetings, see EXECUTIVE_MEETINGS.md)*
+### meetings
 `id, topic, initiated_by (founder/agent), participating_agents (json),
 positions (json — agent → statement/evidence/assumptions), agreements,
 disagreements, unresolved_questions, recommendation, founder_decision
 (nullable), linked_decision_id (nullable fk → decisions), created_at`
+
+## Deterministic derived state
+
+These are the exact formulas `ops/db/report.py` and, from Phase 2, the
+Control Center must use — never an LLM's free-text estimate:
+
+- **Agent status** — `SELECT status FROM agent_runs WHERE agent_id=? AND
+  ended_at IS NULL ORDER BY started_at DESC LIMIT 1`; no open run =
+  Available.
+- **Task progress %** — `100 * SUM(weight WHERE status='done') /
+  SUM(weight)` over that task's `task_steps`. A task with no steps yet
+  has no progress percentage to show — not 0%, not a guess; the UI shows
+  "not yet broken into steps."
+- **Company Health** — a simple, disclosed threshold, not a hidden
+  formula: `Good` if zero `high`-severity open risks and ≤1 blocked task;
+  `Fair` if one high-severity open risk or 2–3 blocked tasks; `Poor`
+  otherwise. Change the thresholds by proposing a `DECISIONS.md` entry,
+  not by editing the report script silently.
+- **Elapsed activity time** — `now - agent_runs.started_at` (or
+  `last_heartbeat_at` where present), computed at read time.
 
 ## Rules
 
 - The Orchestrator is the only writer of `tasks.status` and
   `task_status_history`. Nothing else mutates status directly (see
   `ARCHITECTURE.md`).
+- Each agent writes its own `agent_runs`, `agent_activity`, `qa_results`,
+  and `review_results` rows — that's real per-table ownership, not a
+  free-for-all; `opsdb.py`'s subcommands are grouped by which agent role
+  they belong to (documented in the CLI's own `--help`).
 - `approvals.decision` starts `pending` and is only ever set by the
   Founder, never by an agent.
 - `qa_results.result = fail` and `review_results.result = reject` must
   always set `returned_to_agent` — a failure that doesn't route anywhere
   is a bug in the tooling, not a valid end state (rule 21,
   `CODING_STANDARDS.md`).
+- No table stores a value that section "Deterministic derived state"
+  above computes — if a future change adds one, that's a schema bug.
+
+## Known limitation
+
+The `.sqlite3` file is committed to Git because this system has no server
+to host a database on, per "no paid infrastructure." Git handles binary
+diffs for a small SQLite file adequately for one founder operating
+sequentially through agents, but it is not a real concurrency story —
+two people (or two automated processes) writing at once would conflict
+at the Git level, not the database level. Acceptable for Phase 1; revisit
+if Phase 3 automation ever means multiple writers at once.

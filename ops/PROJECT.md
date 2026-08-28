@@ -1,6 +1,6 @@
 # PROJECT.md — AI Software Company Operating System
 
-Status: **PHASE 0 — DESIGN & ARCHITECTURE PROPOSAL** (awaiting Founder approval)
+Status: **PHASE 1 — FOUNDATION complete, awaiting Founder review before Phase 2** (Phase 0 approved 2026-08-28 — see `DECISIONS.md` DEC-003)
 
 ## What this is
 
