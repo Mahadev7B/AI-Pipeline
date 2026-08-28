@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#262b32; --border2:#333a43;
+      --text:#e9e7e2; --text2:#9aa0a8; --text3:#6b7078;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.14);
+      --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+      --red: oklch(65% 0.18 25); --red-soft: oklch(65% 0.18 25 / 0.16);
+      --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.16);
+      --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.16);
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --disp: "Space Grotesk", system-ui, sans-serif;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+    a{ color:var(--accent); text-decoration:none; } a:hover{ color:#f0c088; }
+    .mono{ font-family:var(--mono); letter-spacing:0.01em; }
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:100px; font-size:11px; font-weight:600; letter-spacing:0.03em; text-transform:uppercase; }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; background:var(--bg); display:flex; flex-direction:column; overflow:hidden;">
+
+  <!-- TOP BAR -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 28px; border-bottom:1px solid var(--border); flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:28px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+        <div style="font-family:var(--disp); font-weight:600; font-size:16px; letter-spacing:0.01em;">Command</div>
+      </div>
+      <div style="display:flex; gap:4px;">
+        <div style="padding:7px 14px; border-radius:8px; background:var(--panel2); font-size:13px; font-weight:600;">Pipeline</div>
+        <div style="padding:7px 14px; border-radius:8px; color:var(--text2); font-size:13px;">Agents</div>
+        <div style="padding:7px 14px; border-radius:8px; color:var(--text2); font-size:13px;">Meetings</div>
+        <div style="padding:7px 14px; border-radius:8px; color:var(--text2); font-size:13px;">Decisions</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:18px;">
+      <div style="display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:8px; background:var(--red-soft); border:1px solid oklch(65% 0.18 25 / 0.35);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-size:12px; font-weight:600; color:var(--red);">2 need you</span>
+      </div>
+      <!-- FOUNDER — human -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:30px; height:30px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.2;">
+          <div style="font-size:12px; font-weight:600;">Alex</div>
+          <div style="font-size:10px; color:var(--violet); font-weight:600; letter-spacing:0.04em;">FOUNDER · HUMAN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div style="flex:1; display:flex; overflow:hidden;">
+
+    <!-- LEFT: PIPELINE (centerpiece) -->
+    <div style="flex:1; padding:24px 24px 16px; overflow:hidden; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px;">
+        <div>
+          <div style="font-family:var(--disp); font-size:20px; font-weight:600;">Pipeline</div>
+          <div style="font-size:12px; color:var(--text2); margin-top:2px;">5 features in motion</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div class="mono" style="font-size:11px; color:var(--text3);">BACKLOG</div>
+          <div style="width:22px; height:22px; border-radius:6px; background:var(--panel2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text2);">1</div>
+        </div>
+      </div>
+
+      <!-- Stage header row -->
+      <div style="display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:2px; margin-bottom:10px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Product</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Design</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">CTO</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Red Team</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Dev</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Review</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">QA</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Security</div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; padding:0 6px;">Release</div>
+      </div>
+
+      <!-- Stage lanes -->
+      <div style="flex:1; display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:2px; background:var(--border); border-radius:12px; overflow:hidden; border:1px solid var(--border);">
+        <div style="background:var(--panel); padding:10px 6px;">
+          <div style="border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px 10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); margin-bottom:6px;">TASK-004</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px; line-height:1.3;">Book Bot</div>
+            <div class="pill" style="background:var(--blue-soft); color:var(--blue);">Planning</div>
+          </div>
+        </div>
+        <div style="background:var(--panel); padding:10px 6px;"></div>
+        <div style="background:var(--panel); padding:10px 6px;">
+          <div style="border-radius:10px; border:1px solid var(--accent); background:var(--accent-soft); padding:12px 10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); margin-bottom:6px;">TASK-003</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px; line-height:1.3;">Voice Interruption</div>
+            <div class="pill" style="background:oklch(78% 0.14 75 / 0.2); color:var(--accent);">Architecture</div>
+            <div style="font-size:11px; color:var(--text2); margin-top:8px;">CTO Agent · drafting data model</div>
+          </div>
+        </div>
+        <div style="background:var(--panel); padding:10px 6px;"></div>
+        <div style="background:var(--panel); padding:10px 6px;">
+          <div style="border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px 10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); margin-bottom:6px;">TASK-002</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px; line-height:1.3;">TTS Wrapper</div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <div style="flex:1; height:5px; border-radius:3px; background:var(--border2); overflow:hidden;"><div style="width:72%; height:100%; background:var(--green);"></div></div>
+              <span class="mono" style="font-size:10px; color:var(--text2);">72%</span>
+            </div>
+            <div style="font-size:11px; color:var(--text2);">Developer · narration cursor recovery</div>
+          </div>
+        </div>
+        <div style="background:var(--panel); padding:10px 6px;"></div>
+        <div style="background:var(--panel); padding:10px 6px;"></div>
+        <div style="background:var(--panel); padding:10px 6px;"></div>
+        <div style="background:var(--panel); padding:10px 6px;">
+          <div style="border-radius:10px; border:1px solid oklch(72% 0.15 150 / 0.4); background:var(--green-soft); padding:12px 10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); margin-bottom:6px;">TASK-001</div>
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px; line-height:1.3;">EPUB Reader</div>
+            <div class="pill" style="background:oklch(72% 0.15 150 / 0.22); color:var(--green);">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Done
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Failure callout -->
+      <div style="margin-top:16px; display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:10px; background:var(--red-soft); border:1px solid oklch(65% 0.18 25 / 0.35);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:1px;"><path d="M12 9v4M12 17h.01M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div style="flex:1;">
+          <div style="font-size:12px; font-weight:700; color:var(--red); letter-spacing:0.03em; margin-bottom:2px;">QA FAILED — TASK-002 · TTS Wrapper</div>
+          <div style="font-size:12px; color:var(--text2); line-height:1.5;">Resume begins at the start of the paragraph rather than the interrupted sentence. Returned to <b style="color:var(--text);">Developer</b>.</div>
+        </div>
+        <div style="font-size:11px; color:var(--text3); white-space:nowrap;">14 min ago</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: compact secondary panel -->
+    <div style="width:300px; border-left:1px solid var(--border); padding:24px 20px; overflow-y:auto; display:flex; flex-direction:column; gap:20px;">
+
+      <div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; margin-bottom:10px;">Agents active now</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:var(--panel);">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div>
+            <div style="flex:1; font-size:12px;">Developer</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">TTS Wrapper</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:var(--panel);">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0;"></div>
+            <div style="flex:1; font-size:12px;">CTO / Architect</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">Voice Interr.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:var(--panel);">
+            <div style="width:8px; height:8px; border-radius:50%; background:var(--text3); flex-shrink:0;"></div>
+            <div style="flex:1; font-size:12px; color:var(--text2);">10 more waiting</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; margin-bottom:10px;">Founder Inbox</div>
+        <div style="border-radius:10px; border:1px solid var(--border2); background:var(--panel); padding:12px;">
+          <div style="font-size:12px; font-weight:600; margin-bottom:4px;">Google Workspace mailbox</div>
+          <div style="font-size:11px; color:var(--text2); margin-bottom:10px;">Requested by DevOps · $12/mo</div>
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1; text-align:center; padding:6px 0; border-radius:6px; background:var(--green-soft); color:var(--green); font-size:11px; font-weight:600;">Approve</div>
+            <div style="flex:1; text-align:center; padding:6px 0; border-radius:6px; background:var(--panel2); color:var(--text2); font-size:11px; font-weight:600;">Reject</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.05em; color:var(--text3); text-transform:uppercase; margin-bottom:10px;">Activity</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); width:38px; flex-shrink:0;">11:00</div>
+            <div style="font-size:12px; color:var(--text2);">QA started on <b style="color:var(--text);">TTS Wrapper</b></div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); width:38px; flex-shrink:0;">10:57</div>
+            <div style="font-size:12px; color:var(--text2);">Code Review <span style="color:var(--green);">passed</span></div>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <div class="mono" style="font-size:10px; color:var(--text3); width:38px; flex-shrink:0;">10:41</div>
+            <div style="font-size:12px; color:var(--text2);">Code Review <span style="color:var(--red);">rejected</span> — 2 findings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

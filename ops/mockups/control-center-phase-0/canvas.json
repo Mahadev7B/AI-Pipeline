@@ -1,0 +1,13 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 960, "title": "A — Pipeline First" },
+    { "file": "AgentFirst.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 960, "title": "B — Agent First" },
+    { "file": "CommandCenter.dc.html", "x": 3120, "y": 0, "w": 1440, "h": 1400, "title": "C — Command Center" }
+  ],
+  "annotations": [
+    { "id": "note-a", "x": 0, "y": -80, "w": 420, "text": "Pipeline is the centerpiece; agent info is compact and secondary." },
+    { "id": "note-b", "x": 1560, "y": -80, "w": 420, "text": "The team is the centerpiece — full agent roster + one expanded capability view." },
+    { "id": "note-c", "x": 3120, "y": -80, "w": 420, "text": "Balanced console: pipeline, agents, inbox, activity, risks, release + Executive Discussion." }
+  ],
+  "launch": { "view": "canvas" }
+}
