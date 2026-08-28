@@ -34,8 +34,16 @@ founder_approval_required, next_action, created_at, updated_at`
 `id, agent_id, task_id (nullable), summary, detail, created_at`
 
 ### messages
-`id, thread_id, task_id (nullable), meeting_id (nullable), from_agent,
-to_agent (nullable — null = broadcast/founder), body, created_at`
+`id, thread_id, scope (task/project/agent/meeting), task_id (nullable),
+project_id (nullable), meeting_id (nullable), from_agent, to_agent
+(nullable — null = broadcast/founder), body, created_at`
+
+A conversation is not required to belong to a task. `scope` says which of
+the four kinds a thread is, and exactly one of `task_id` / `project_id` /
+`meeting_id` is set to match it — `agent`-scoped threads (a general
+question to an agent, not tied to a specific piece of work) leave all
+three null. Every scope is persisted and auditable the same way; `agent`
+scope is not a lesser, unsaved case.
 
 ### approvals
 Mirrors `/ops/templates/founder-approval.md`: `id, task_id (nullable),

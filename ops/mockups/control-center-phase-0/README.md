@@ -1,10 +1,11 @@
 # Control Center Mockups — Phase 0
 
-**v2 — refined per Founder feedback on v1.** The Founder approved v1's
-information architecture (Command Center as Overview, Pipeline First as
-the Pipeline tab, Agent First as the Agents tab) and asked for one more
-design iteration before approving Phase 0. This directory holds that
-refined round.
+**v2.1 — correction pass on the approved v2 direction.** The Founder
+approved v1's information architecture and, separately, v2's design
+direction conceptually. This pass makes no design changes — it only
+fixes seven consistency/correctness issues the Founder flagged before
+giving final Phase 0 approval. See "v2.1 correction pass" below for the
+exact list.
 
 Published as one multi-artboard canvas — an Artifact, not application
 code, same URL as v1 (this is an update, not a new artifact):
@@ -35,12 +36,50 @@ someone else to open the link.)
   conversation" affordance.
 - `AgentConversation.dc.html` — **new**. Expands "Ask Agent" into a real
   multi-turn conversation example (Founder asking Developer about
-  TASK-002), explicitly marked as saved/auditable against the task.
+  TASK-002), shown as task-scoped here but explicitly noting a
+  conversation can be project-, agent-, or meeting-scoped instead — all
+  scopes are persisted and auditable, none require a task.
 - `ExecutiveMeeting.dc.html` — **Executive Meeting, expanded**. The v1
   discussion card expanded to a full page: position statements, a
   requested extra perspective (Security), a follow-up exchange, agreement/
-  disagreement, and a Founder decision panel that writes to `DECISIONS.md`.
+  disagreement, and a Founder decision panel that logs the decision to the
+  operational record (SQLite, from Phase 1) with an auto-assigned ID —
+  `DECISIONS.md` is generated from that record, not written to directly.
 - `canvas.json` — lays all six artboards out on one canvas.
+
+## v2.1 correction pass
+
+The Founder approved v2's direction conceptually and asked for one
+consistency/correction pass before final Phase 0 approval — no redesign.
+Seven fixes, all content/copy-level:
+
+1. **Agent-status counts now agree everywhere.** Overview's "Active Now"
+   and the Agents view's state chips are drawn from the same 14-agent
+   sample state (5 Working, 1 Blocked, 2 Waiting, 6 Available) — CEO Agent
+   was missing from Overview's list while counted as Working in Agents;
+   both now show it.
+2. **Removed the hardcoded `DEC-002` reference** from the Executive
+   Meeting's decision panel — a real system assigns decision IDs, a
+   mockup shouldn't guess one.
+3. **Corrected decision source-of-truth language** — the Executive
+   Meeting no longer implies it writes to `DECISIONS.md` directly; it
+   logs to the operational record, which generates the `DECISIONS.md`
+   entry.
+4. **Marketing/Launch Prep restored** as a parallel, non-blocking lane
+   inside Pipeline's Release stage (still six major stages, nothing
+   added as a seventh).
+5. **Agent Conversation generalized** beyond task-only — badge now reads
+   "Scope: Task · TASK-002" with a note that project-, agent-, and
+   meeting-scoped conversations exist too; `DATA_MODEL.md`'s `messages`
+   table updated to match (a `scope` column, `project_id` added,
+   `task_id`/`meeting_id` both optional).
+6. **Documented, in `ARCHITECTURE.md`**, that Company Health, agent
+   Working/Waiting/Blocked/Available status, progress percentages, and
+   elapsed time must all be computed from persisted state — never
+   generated as free text by an LLM.
+7. **Restored Approve/Reject/Discuss** on the Founder Inbox item in both
+   Overview treatments — v2's compression to fit one viewport had
+   dropped Reject.
 
 Still static mockups (not a clickable prototype), still sample/placeholder
 data only. No real task data, no real founder decision.

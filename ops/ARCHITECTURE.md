@@ -47,6 +47,35 @@ replaced later without rewriting the rest of the system:
   replacement for the agent's own role, must-not list, or evaluation
   criteria.
 
+## Derived UI state must be deterministic, never invented
+
+Some values shown in the Control Center are computed *from* persisted
+state rather than stored directly — that computation must be
+deterministic application code, never an LLM narrating what it thinks
+the state probably is. This applies at minimum to:
+
+- **Company health** — computed from the real counts of blocked tasks,
+  open risks, and review failures in Task State, not a model's summary
+  judgment of "how things feel."
+- **Agent status (Working / Waiting / Blocked / Available)** — derived
+  from whether an agent currently has an assigned, in-progress task in
+  `tasks`/`task_status_history`, and whether it's waiting on a specific
+  named blocker — not asserted independently per screen. The Overview's
+  "Active Now" count and the Agents view's state filter chips read the
+  same underlying agent-state query; if they'd disagree, that's a bug in
+  the query layer, not a rendering choice either screen is free to make.
+- **Progress percentages** — computed from real completed subtasks or an
+  equivalent objective measure (rule 22, `CODING_STANDARDS.md`), never a
+  round-sounding number an agent offers because it seems about right.
+- **Elapsed activity time** — computed from `agent_activity.created_at`
+  timestamps against the current time, not estimated.
+
+An agent may *describe* its own activity in prose (that's the point of
+Agent Conversations) — but the structured badges, counts, and bars the
+Control Center renders come from one queryable state layer that both the
+Overview and every dedicated tab read identically. See also rule 23,
+`CODING_STANDARDS.md`.
+
 ## Explicitly not built yet
 
 No code implementing any of the above exists yet. This document describes

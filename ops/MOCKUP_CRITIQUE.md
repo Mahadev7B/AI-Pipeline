@@ -3,6 +3,11 @@
 Artifact: https://claude.ai/code/artifact/57fcb90b-fc73-4182-8a3a-12b70cadf39d
 Source: `ops/mockups/control-center-phase-0/`
 
+**Status: v2's direction is approved conceptually.** A v2.1 correction
+pass (consistency fixes only, no redesign) followed — see
+`ops/mockups/control-center-phase-0/README.md`, "v2.1 correction pass"
+for the exact list. Final Phase 0 approval is pending that pass.
+
 ## Variant A — Pipeline First
 
 **Strengths**
