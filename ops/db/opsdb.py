@@ -43,7 +43,13 @@ SCHEMA_PATH = DB_DIR / "schema.sql"
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    # timeout=5.0: how long a writer waits on SQLITE_BUSY before raising,
+    # instead of the 5s-default-but-implicit sqlite3 behavior — explicit
+    # per Red Team's Milestone 2B1 review (a long-lived server.py
+    # connection and a concurrently-run opsdb.py CLI write can now
+    # genuinely contend for the same file, which never happened when
+    # opsdb.py was the only writer and every connection was short-lived).
+    conn = sqlite3.connect(DB_PATH, timeout=5.0)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
@@ -392,25 +398,76 @@ def cmd_approval_create(args: argparse.Namespace) -> None:
     print(f"approval requested: id={cur.lastrowid} (status: pending)")
 
 
+DECIDABLE_DECISIONS = ("approve", "reject", "discuss")
+
+# decision -> the states an approval must currently be in for that
+# decision to be accepted. approve/reject are terminal (no key here means
+# no transition out is ever allowed); discuss is a checkpoint, not a 4th
+# terminal outcome, so approve/reject may still follow it. discuss ->
+# discuss is intentionally absent: already-flagged is a no-op, not a new
+# state. See ops/DATA_MODEL.md, "approvals" / decision transitions.
+_APPROVAL_FROM_STATES = {
+    "approve": ("pending", "discuss"),
+    "reject": ("pending", "discuss"),
+    "discuss": ("pending",),
+}
+
+
+def decide_approval(conn: sqlite3.Connection, approval_id: int, decision: str) -> dict:
+    """The one function permitted to write approvals.decision — called by
+    both the CLI (cmd_approval_decide) and the Control Center's write
+    boundary (ops/control-center/server.py). Atomic and conditional: the
+    UPDATE only matches a row still in a state that decision is allowed
+    to come from, so a second call (double-submit, or deciding an
+    already-resolved approval) always affects zero rows instead of
+    silently overwriting a prior decision. Raises LookupError if the
+    approval doesn't exist, ValueError if it exists but isn't in a
+    decidable state for this decision. Commits its own transaction —
+    callers (including a long-lived connection held by server.py across
+    many requests) must not assume an outer transaction is doing that.
+    """
+    if decision not in DECIDABLE_DECISIONS:
+        raise ValueError(f"decision must be one of {DECIDABLE_DECISIONS}, got {decision!r}")
+    from_states = _APPROVAL_FROM_STATES[decision]
+    placeholders = ",".join("?" for _ in from_states)
+    with conn:
+        cur = conn.execute(
+            f"UPDATE approvals SET decision = ?, "
+            f"decided_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            f"WHERE id = ? AND decision IN ({placeholders})",
+            (decision, approval_id, *from_states),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT decision FROM approvals WHERE id = ?", (approval_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"approval {approval_id} does not exist")
+            raise ValueError(
+                f"approval {approval_id} is already '{row['decision']}' — "
+                f"cannot record '{decision}' from that state"
+            )
+    return {"id": approval_id, "decision": decision}
+
+
 def cmd_approval_decide(args: argparse.Namespace) -> None:
-    if args.decision not in ("approve", "reject", "discuss"):
-        raise SystemExit("error: decision must be approve, reject, or discuss")
+    if args.decision not in DECIDABLE_DECISIONS:
+        raise SystemExit(f"error: decision must be one of {DECIDABLE_DECISIONS}")
     if not args.confirm_founder_decision:
         raise SystemExit(
             "error: refusing to record a Founder decision without "
             "--confirm-founder-decision. This CLI has no real identity check "
             "(any caller can pass this flag) — it exists so an agent's normal "
             "workflow can never casually decide its own approval request; a "
-            "human deciding through the Control Center is the real control, "
-            "not this flag. See ops/DATA_MODEL.md, Rules."
+            "human deciding through the Control Center (ops/control-center/"
+            "server.py, Milestone 2B1) is the primary control for interactive "
+            "use, not this flag. See ops/DATA_MODEL.md, Rules."
         )
     conn = connect()
-    with conn:
-        conn.execute(
-            "UPDATE approvals SET decision = ?, "
-            "decided_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
-            (args.decision, args.approval_id),
-        )
+    try:
+        decide_approval(conn, args.approval_id, args.decision)
+    except LookupError as e:
+        raise SystemExit(f"error: {e}")
+    except ValueError as e:
+        raise SystemExit(f"error: {e}")
     print(f"approval {args.approval_id}: {args.decision}")
 
 

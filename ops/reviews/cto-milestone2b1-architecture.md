@@ -180,10 +180,11 @@ it's already a single append-once-effectively field (the atomic `UPDATE`
 makes it truly write-once per terminal state) with a timestamp. No new
 audit table. I looked at whether a Founder decision should also appear in
 `agent_activity` (the "Just Happened" feed on Overview) — that table is
-keyed to `agent_id` and represents *agent* activity; a Founder action
-forced into it would be a data-model inconsistency (a human action
-wearing an agent's column), the exact kind of thing this project's Red
-Team has rejected before. A real "Founder + agent unified activity
+keyed to `agent_id` (`NOT NULL REFERENCES agents(id)`) and represents
+*agent* activity; a Founder action forced into it would be a data-model
+inconsistency (a human action wearing an agent's column) and is not even
+structurally possible without a schema change. A real "Founder + agent
+unified activity
 timeline" is a reasonable future ask but is out of scope for 2B1 — noting
 it here rather than silently doing nothing or silently hacking it in.
 

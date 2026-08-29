@@ -35,13 +35,14 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 .sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
 """
 
-# (href, label) for every top-level screen — same five links everywhere.
+# (href, label) for every top-level screen — same six links everywhere.
 NAV_LINKS = [
     ("overview.html", "Overview"),
     ("pipeline.html", "Pipeline"),
     ("agents.html", "Agents"),
     ("decisions.html", "Decisions"),
     ("meetings.html", "Meetings"),
+    ("inbox.html", "Inbox"),
 ]
 
 

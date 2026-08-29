@@ -96,22 +96,29 @@ def render_activity(conn: sqlite3.Connection) -> str:
 
 
 def render_inbox(conn: sqlite3.Connection) -> str:
+    # Milestone 2B1: the real Approve/Reject/Discuss actions live on their
+    # own screen (inbox.html) — see ops/reviews/cto-milestone2b1-architecture.md,
+    # "Where the Inbox lives." This panel is a summary-plus-link, the same
+    # pattern Active Now uses for Agent Detail — no write forms duplicated
+    # here, so there is exactly one place a decision can be made.
     rows = conn.execute(
         "SELECT id, request, requested_by_agent, decision FROM approvals "
-        "WHERE decision = 'pending' ORDER BY id"
+        "WHERE decision IN ('pending','discuss') ORDER BY id"
     ).fetchall()
     if not rows:
         return '<div style="font-size:12px; color:var(--text2);">Nothing pending.</div>'
-    # No Approve/Reject controls here on purpose — a control that doesn't
-    # call opsdb.py must not be rendered as one (Milestone 1 rule, unchanged).
     items = []
-    for r in rows:
+    for r in rows[:4]:
+        note = "flagged for discussion" if r["decision"] == "discuss" else "not yet decided"
         items.append(f'''
-        <div class="card">
+        <a href="inbox.html" class="card" style="display:block;">
           <div style="font-size:12px; font-weight:600; margin-bottom:3px;">{e(r["request"])}</div>
-          <div style="font-size:11px; color:var(--text2);">Requested by {e(r["requested_by_agent"])} · not yet decided</div>
-        </div>''')
-    return "".join(items)
+          <div style="font-size:11px; color:var(--text2);">Requested by {e(r["requested_by_agent"])} · {e(note)}</div>
+        </a>''')
+    more = ""
+    if len(rows) > 4:
+        more = f'<a href="inbox.html" style="font-size:11px; color:var(--accent);">+{len(rows) - 4} more in Inbox</a>'
+    return "".join(items) + more
 
 
 def build_html() -> str:

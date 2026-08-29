@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Inbox — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Inbox</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-29 01:42 UTC from the live operational database. Re-run this script (or load via server.py) to refresh.</div>
+
+<h1>Founder Inbox</h1>
+<div class="sub" style="margin-top:-14px;">Real pending approvals from the <span class="mono">approvals</span> table. Approve/Reject are final; Discuss leaves the item visibly open for follow-up.</div>
+<div class="panel" style="margin-bottom:14px; border-color:var(--accent);"><div style="font-size:11.5px; color:var(--text2);">This is a static, point-in-time snapshot. Approve/Reject/Discuss only work when <span class="mono">python3 ops/control-center/server.py</span> is running locally — this file has no active session token, so any submission from it fails closed.</div></div>
+
+        <div style="margin-bottom:20px;">
+          <div class="label" style="margin-bottom:10px;">Awaiting decision <span class="mono" style="color:var(--text3);">· 0</span></div>
+          <div style="font-size:12px; color:var(--text2);">Nothing pending.</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div class="label" style="margin-bottom:10px;">Needs follow-up <span class="mono" style="color:var(--text3);">· 0</span></div>
+          <div style="font-size:12px; color:var(--text2);">Nothing flagged for discussion.</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div class="label" style="margin-bottom:10px;">Resolved <span class="mono" style="color:var(--text3);">· 2</span></div>
+          
+    <div class="card" style="margin-bottom:12px; border-color:var(--border2);">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;">
+        <div style="font-size:13px; font-weight:600;">Approve Phase 1 Foundation completion and formally close Phase 1</div>
+        <span class="pill" style="background:var(--green)22; color:var(--green);">APPROVE · 2026-08-28T20:25:23.275Z</span>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-bottom:10px;">
+        Requested by orchestrator · 2026-08-28T20:25:23.232Z
+      </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Why</div>
+      <div style="font-size:12px; color:var(--text);">Phase 1 delivered a real operational database, 14 wired subagents, a proven TASK-001 walkthrough, live status reporting, and a corrected purge safeguard - all reviewed through Architecture, Red Team, Code Review, QA, and Security.</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Recommendation</div>
+      <div style="font-size:12px; color:var(--text);">Approve. Two gaps are disclosed, not hidden: approval-decide is a speed bump not real authentication, and subagent Bash access isn&#x27;t scoped below the tool category. Both are tracked as risks, not silently resolved.</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Alternatives considered</div>
+      <div style="font-size:12px; color:var(--text);">Hold Phase 1 open until an identity/permission layer exists (rejected - that infrastructure is Phase 2/3 scope, not asked for in Phase 1)</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Expected cost</div>
+      <div style="font-size:12px; color:var(--text);">$0</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Risks</div>
+      <div style="font-size:12px; color:var(--text);">The two disclosed gaps carry forward into Phase 2 as tracked risks, not resolved by this approval</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Consequence if not approved</div>
+      <div style="font-size:12px; color:var(--text);">Phase 2 - Control Center cannot begin per ROADMAP.md&#x27;s phase-gate rule without this approval</div>
+    </div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:12px; border-color:var(--border2);">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;">
+        <div style="font-size:13px; font-weight:600;">Authorize deployment of the pause/resume pipeline-validation demo</div>
+        <span class="pill" style="background:var(--green)22; color:var(--green);">APPROVE · 2026-08-28T19:48:39.294Z</span>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-bottom:10px;">
+        Requested by devops · TASK-001 · 2026-08-28T19:44:21.455Z
+      </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Why</div>
+      <div style="font-size:12px; color:var(--text);">All review gates passed; this is a Founder-authorization checkpoint demo, not a real production change</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Recommendation</div>
+      <div style="font-size:12px; color:var(--text);">Approve - fake/demo deployment, zero user impact</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Alternatives considered</div>
+      <div style="font-size:12px; color:var(--text);">Skip deployment entirely (task would stay at READY_TO_RELEASE)</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Expected cost</div>
+      <div style="font-size:12px; color:var(--text);">$0 - no real infrastructure involved</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Risks</div>
+      <div style="font-size:12px; color:var(--text);">None - no-op demo component</div>
+    </div>
+      
+    <div style="margin-bottom:8px;">
+      <div class="label" style="margin-bottom:2px;">Consequence if not approved</div>
+      <div style="font-size:12px; color:var(--text);">Pipeline validation would be incomplete without proving the deployment-authorization step</div>
+    </div>
+      
+      
+    </div>
+        </div>
+</div>
+</body>
+</html>

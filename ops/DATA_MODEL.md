@@ -106,6 +106,16 @@ request, requested_by_agent, why, recommendation, alternatives_considered,
 expected_cost, risks, consequence_if_not_approved, decision
 (approve/reject/discuss/pending), decided_at, created_at`
 
+`decision` transitions *(Milestone 2B1)*: `pending → approve|reject|discuss`,
+`discuss → approve|reject`. `approve`/`reject` are terminal — no code path
+transitions out of them. `discuss → discuss` is rejected (already flagged,
+re-clicking is a no-op, not a new state). Enforced atomically by
+`opsdb.decide_approval()`, the only function permitted to write this
+column — see `ops/control-center/server.py` for the Founder-facing write
+path. Nothing currently ties a pending/discuss approval to its parent
+task's status changing underneath it (e.g., the task being independently
+marked `DONE` elsewhere) — noted as a known gap, not a blocker.
+
 ### handoffs
 Mirrors `/ops/templates/handoff.md`: `id, task_id, from_agent, to_agent,
 work_completed, files_changed (json), tests_added, expected_behavior,
