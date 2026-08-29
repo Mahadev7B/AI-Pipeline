@@ -71,3 +71,35 @@ def task_progress_pct(conn: sqlite3.Connection, task_id: int) -> str:
         return "not broken into steps"
     done, total = fraction
     return f"{round(100 * done / total)}%"
+
+
+# Six major stages, in pipeline order, per AGENT_STATUS.md. BLOCKED and
+# FOUNDER_APPROVAL are deliberately absent — they are interrupt states,
+# never a pipeline column (see AGENT_STATUS.md, "Interrupt states").
+PIPELINE_STAGES = ["Product", "Design", "Architecture", "Development", "Review", "Release"]
+
+# tasks.status -> (major stage, substate). Mirrors AGENT_STATUS.md exactly;
+# change AGENT_STATUS.md first if this ever needs to change, not the other
+# way around.
+STAGE_MAP: dict[str, tuple[str, str]] = {
+    "PLANNING": ("Product", "Requirements"),
+    "MOCKUP": ("Design", "Mockup"),
+    "MOCKUP_REVIEW": ("Design", "Mockup Review"),
+    "ARCHITECTURE": ("Architecture", "Architecture"),
+    "RED_TEAM_REVIEW": ("Architecture", "Red Team Review"),
+    "READY_FOR_DEVELOPMENT": ("Development", "Ready"),
+    "IN_DEVELOPMENT": ("Development", "In Development"),
+    "CODE_REVIEW": ("Review", "Code Review"),
+    "QA": ("Review", "QA"),
+    "SECURITY_REVIEW": ("Review", "Security"),
+    "READY_TO_RELEASE": ("Release", "Ready"),
+    "DEPLOYED": ("Release", "Deployment"),
+    "DONE": ("Release", "Deployment"),  # shown as done-within-deployment, not a 7th stage
+}
+
+
+def stage_and_substate(status: str) -> tuple[str, str] | None:
+    """None for BACKLOG/BLOCKED/FOUNDER_APPROVAL — none of these are a
+    pipeline column; callers render them separately (a Backlog tray, a
+    Needs Attention callout)."""
+    return STAGE_MAP.get(status)
