@@ -42,7 +42,17 @@ DB_PATH = Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH") else DB
 SCHEMA_PATH = DB_DIR / "schema.sql"
 
 
-def connect() -> sqlite3.Connection:
+def connect(require_exists: bool = True) -> sqlite3.Connection:
+    # Fail fast on a missing DB file — sqlite3.connect() otherwise silently
+    # creates an empty 0-byte file, which then fails confusingly on the
+    # first real query instead of here with a clear message. main() already
+    # guarded this for CLI dispatch; moved into connect() itself (CTO's
+    # Milestone 2B1 post-implementation review) so every caller gets it,
+    # including server.py, which calls this directly and bypasses main().
+    # require_exists=False is for cmd_init only — that command's whole job
+    # is to create the file that doesn't exist yet.
+    if require_exists and not DB_PATH.exists():
+        raise SystemExit(f"error: {DB_PATH} does not exist — run `opsdb.py init` first")
     # timeout=5.0: how long a writer waits on SQLITE_BUSY before raising,
     # instead of the 5s-default-but-implicit sqlite3 behavior — explicit
     # per Red Team's Milestone 2B1 review (a long-lived server.py
@@ -81,7 +91,7 @@ def cmd_project_create(args: argparse.Namespace) -> None:
 
 
 def cmd_init(args: argparse.Namespace) -> None:
-    conn = connect()
+    conn = connect(require_exists=False)
     with conn:
         conn.executescript(SCHEMA_PATH.read_text())
     DB_PATH.chmod(0o600)  # defense in depth — nothing sensitive is stored, but no reason for group/other read
