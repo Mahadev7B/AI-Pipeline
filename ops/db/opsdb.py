@@ -279,7 +279,9 @@ def cmd_run_start(args: argparse.Namespace) -> None:
     conn = connect()
     try:
         run_id = start_run(conn, args.agent, args.scope_type, args.activity, args.scope_id)
-    except (LookupError, ValueError) as exc:
+    except LookupError as exc:
+        raise SystemExit(f"error: {exc} — run agent-upsert first")
+    except ValueError as exc:
         raise SystemExit(f"error: {exc}")
     print(f"run started: id={run_id} agent={args.agent} scope={args.scope_type}:{args.scope_id}")
 

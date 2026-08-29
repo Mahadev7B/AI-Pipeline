@@ -46,7 +46,14 @@ DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"
 MAX_RESPONSE_CHARS = 16_000  # cap on what gets persisted, independent of any model-side output limit
-_MAX_CAPTURED_BYTES = 512_000  # hard ceiling on subprocess stdout we will ever read into memory
+_MAX_CAPTURED_BYTES = 512_000  # cap on what we parse/use from stdout, not a true read-time ceiling —
+                                # proc.communicate() reads all of stdout before this slice is applied.
+                                # Accepted (Code Review, TASK-007): --output-format json bounds a real
+                                # claude invocation's output to the model's own max-output-tokens
+                                # (tens of KB in practice), so this is a defensive cap against a
+                                # malformed/oversized response, not primary protection against an
+                                # untrusted runtime — if the `claude` binary itself were compromised,
+                                # this cap would not be the relevant safeguard.
 
 CLAUDE_BIN = "claude"
 
@@ -120,13 +127,16 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
     if truncated:
         response_text = response_text[:MAX_RESPONSE_CHARS] + "\n\n[response truncated at 16,000 characters]"
 
+    # The substantive completion is whichever entry produced the most output
+    # tokens; a cheap classifier pass (if any) shows up with a much smaller
+    # share and must not win over the real answer.
     model_used = None
-    model_usage = data.get("modelUsage") or {}
-    for _, usage in model_usage.items():
-        # the substantive completion is whichever entry actually produced output tokens;
-        # a cheap classifier pass (if any) shows up with a much smaller share
-        if usage.get("outputTokens"):
-            model_used = usage.get("canonicalModel") or model_used
+    best_output_tokens = 0
+    for usage in (data.get("modelUsage") or {}).values():
+        output_tokens = usage.get("outputTokens") or 0
+        if output_tokens > best_output_tokens:
+            best_output_tokens = output_tokens
+            model_used = usage.get("canonicalModel")
 
     return RuntimeResult(
         ok=True,

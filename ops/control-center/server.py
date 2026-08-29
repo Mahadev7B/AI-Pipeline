@@ -274,9 +274,17 @@ class Handler(BaseHTTPRequestHandler):
             # this server is single-threaded by construction — see
             # ops/SECURITY.md for why that's a disclosed, accepted
             # limitation, not something this guard is meant to solve.)
+            # Scoped to Ask-Agent-created runs only (current_activity
+            # prefix), matching generate_agents.py's render_ask_agent_section()
+            # and _reconcile_orphaned_ask_agent_runs() below — NOT scoped
+            # this way originally (Code Review finding, TASK-007): this
+            # project's own review-gate workflow uses run-start against
+            # these exact agent names (cto/qa) for unrelated task-scoped
+            # work, so an unscoped check here would 409 a real Founder
+            # request behind an unrelated, legitimate open run.
             open_run = conn.execute(
                 "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
-                "WHERE a.name = ? AND r.ended_at IS NULL",
+                "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE 'Ask-Agent:%'",
                 (agent_name,),
             ).fetchone()
             if open_run is not None:
