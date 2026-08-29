@@ -62,8 +62,10 @@ ThreadingHTTPServer swap alone made anything safe, because it didn't:
   subprocess running briefly on its own (bounded by the existing
   timeout/--max-budget-usd caps) — a deliberately accepted limitation,
   not a bug: the resulting agent_runs row reconciles to 'failed' on the
-  next server start via the existing _reconcile_orphaned_ask_agent_runs()
-  path. A process-tracking registry was considered and rejected as
+  next server start via the existing _reconcile_orphaned_runs()
+  path (which also covers meeting-participant runs — Milestone 2B3B
+  conformance correction). A process-tracking registry was considered
+  and rejected as
   unnecessary complexity for what it would buy (Red Team's Milestone
   2B3A review).
 
@@ -481,33 +483,44 @@ class Handler(BaseHTTPRequestHandler):
         self._redirect(f"/meetings/{meeting_id}.html")
 
 
-def _reconcile_orphaned_ask_agent_runs() -> None:
+def _reconcile_orphaned_runs() -> None:
     """Startup reconciliation (Red Team's Milestone 2B2 review, condition
-    6): if a prior server process died mid-request, the agent_runs row it
-    created is left open (ended_at IS NULL) forever, and the "one open
-    run per agent" guard in _handle_ask would then permanently block all
-    future Ask-Agent requests to that agent. Scoped specifically to
-    Ask-Agent-created runs via opsdb.reconcile_orphaned_runs() — never
-    touches an open run created some other way (e.g. this project's own
-    review-gate tracking via run-start), which would be a much broader,
-    wrong fix. Goes through opsdb.py like every other write in this
-    codebase (CTO's Milestone 2B2 post-implementation review — server.py
-    must never hold a raw UPDATE of its own, startup-only or not)."""
+    6; extended in Milestone 2B3B's Founder conformance correction — see
+    ops/reviews/cto-milestone2b3b-correction-architecture.md): if a prior
+    server process died mid-request, the agent_runs row it created is
+    left open (ended_at IS NULL) forever. For Ask-Agent, that also
+    permanently blocks the "one open run per agent" guard in
+    _handle_ask; for a meeting participant there's no such guard, but the
+    row still corrupts that agent's derived status ("Working" on a
+    meeting that no longer exists) forever with no other code path that
+    ever corrects it. Originally scoped to Ask-Agent runs only — the
+    Founder's own 2B3B conformance review found this had not been
+    extended to meeting-participant runs when 2B3B introduced them,
+    despite the identical failure mode. Both patterns are reconciled
+    here, via the same generic opsdb.reconcile_orphaned_runs() function —
+    never a blanket "close every open run" (that would also incorrectly
+    touch this project's own review-gate run-start tracking). Goes
+    through opsdb.py like every other write in this codebase (CTO's
+    Milestone 2B2 post-implementation review — server.py must never hold
+    a raw UPDATE of its own, startup-only or not)."""
     try:
         conn = opsdb.connect()
     except SystemExit:
         return  # DB doesn't exist yet — nothing to reconcile, opsdb.connect() will raise the same on first real use
     try:
-        count = opsdb.reconcile_orphaned_runs(conn, agent_runtime.ASK_AGENT_ACTIVITY_LIKE, status="failed")
-        if count:
-            print(f"reconciled {count} orphaned Ask-Agent run(s) from a prior server process.")
+        ask_count = opsdb.reconcile_orphaned_runs(conn, agent_runtime.ASK_AGENT_ACTIVITY_LIKE, status="failed")
+        if ask_count:
+            print(f"reconciled {ask_count} orphaned Ask-Agent run(s) from a prior server process.")
+        meeting_count = opsdb.reconcile_orphaned_runs(conn, agent_runtime.MEETING_ACTIVITY_LIKE, status="failed")
+        if meeting_count:
+            print(f"reconciled {meeting_count} orphaned meeting-participant run(s) from a prior server process.")
     finally:
         conn.close()
 
 
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_PORT
-    _reconcile_orphaned_ask_agent_runs()
+    _reconcile_orphaned_runs()
     httpd = ThreadingHTTPServer((HOST, port), Handler)
     httpd.daemon_threads = True  # explicit — a lingering in-flight request thread must
                                  # never block process exit (default is True in this

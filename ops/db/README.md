@@ -46,7 +46,30 @@ These are different things and must never share a database:
 This isn't a style preference — a scratch task created directly against
 the live database (`TASK-003`, created during Phase 1 QA and removed
 2026-08-28 once this convention was established) is exactly the mistake
-this file exists to prevent happening again.
+this file exists to prevent happening again. It has now happened twice
+(a second time during Milestone 2B3B's unit testing, found and removed
+during that milestone's Founder conformance review) — this convention
+alone is documentation, not a structural guard, and relying on it a
+second time was not enough.
+
+### Structural guard for ad hoc test scripts
+
+Any ad hoc script that imports `opsdb.py`'s functions directly (not
+just the CLI) should add one line before importing `opsdb`:
+
+```python
+import sys
+sys.path.insert(0, "ops/db")
+import testing_guard  # noqa: F401 — raises SystemExit if OPSDB_PATH isn't a scratch path
+import opsdb
+```
+
+`ops/db/testing_guard.py` raises immediately if the resolved database
+path is the live one — the script fails loudly before any write can
+happen, instead of silently succeeding against `operations.sqlite3`.
+This is opt-in per script (it cannot protect a script that doesn't
+import it) and is never imported by `opsdb.py`, `server.py`, or any
+other production code path — real CLI/HTTP usage is unaffected.
 
 ## Known, disclosed authorization limitations (see `DECISIONS.md` DEC-004)
 
