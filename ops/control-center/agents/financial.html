@@ -49,7 +49,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-29 02:10 UTC from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.</div>
+<div class="sub">Generated 2026-08-29 03:38 UTC from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.</div>
 
 <h1>financial </h1>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
@@ -116,6 +116,22 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     </div>
   </div>
 </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <div class="label">Ask Agent</div>
+        <div style="font-size:11px;"><span style="color:var(--text3);">No requests yet</span></div>
+      </div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:14px;">No conversation yet.</div>
+      
+        <form method="POST" action="/api/agents/financial/ask" style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
+          <input type="hidden" name="token" value="">
+          <input type="text" name="message" placeholder="Ask financial a question&hellip;" maxlength="8000" required
+                 style="flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:12.5px;">
+          <button type="submit" style="padding:6px 14px; border-radius:8px; background:var(--accent); border:none; font-size:11.5px; font-weight:600; color:#1a1206; cursor:pointer;">Send</button>
+        </form>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:8px;">Requires python3 ops/control-center/server.py running locally — this static file has no active session token.</div>
+    </div>
 </div>
 </body>
 </html>

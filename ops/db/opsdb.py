@@ -252,20 +252,36 @@ def cmd_task_progress(args: argparse.Namespace) -> None:
 
 # ------------------------------------------------------------- agent_runs --
 
-def cmd_run_start(args: argparse.Namespace) -> None:
-    conn = connect()
-    agent_id = _agent_id(conn, args.agent)
-    if args.scope_type == "company" and args.scope_id is not None:
-        raise SystemExit("error: company-scoped runs must not set --scope-id")
-    if args.scope_type != "company" and args.scope_id is None:
-        raise SystemExit("error: non-company scope requires --scope-id")
+def start_run(conn: sqlite3.Connection, agent_name: str, scope_type: str,
+               activity: str | None, scope_id: int | None = None) -> int:
+    """Plain, directly-callable form of run-start — the counterpart to
+    decide_approval() (Milestone 2B1) and end_run() below. server.py's
+    Ask-Agent write route (Milestone 2B2) calls this directly; the CLI
+    command is a thin wrapper. Raises LookupError for an unknown agent,
+    ValueError for a scope/scope_id mismatch."""
+    row = conn.execute("SELECT id FROM agents WHERE name = ?", (agent_name,)).fetchone()
+    if row is None:
+        raise LookupError(f"no such agent '{agent_name}'")
+    if scope_type == "company" and scope_id is not None:
+        raise ValueError("company-scoped runs must not set scope_id")
+    if scope_type != "company" and scope_id is None:
+        raise ValueError("non-company scope requires scope_id")
     with conn:
         cur = conn.execute(
             "INSERT INTO agent_runs (agent_id, scope_type, scope_id, status, current_activity) "
             "VALUES (?, ?, ?, 'active', ?)",
-            (agent_id, args.scope_type, args.scope_id, args.activity),
+            (row["id"], scope_type, scope_id, activity),
         )
-    print(f"run started: id={cur.lastrowid} agent={args.agent} scope={args.scope_type}:{args.scope_id}")
+    return cur.lastrowid
+
+
+def cmd_run_start(args: argparse.Namespace) -> None:
+    conn = connect()
+    try:
+        run_id = start_run(conn, args.agent, args.scope_type, args.activity, args.scope_id)
+    except (LookupError, ValueError) as exc:
+        raise SystemExit(f"error: {exc}")
+    print(f"run started: id={run_id} agent={args.agent} scope={args.scope_type}:{args.scope_id}")
 
 
 def cmd_run_heartbeat(args: argparse.Namespace) -> None:
@@ -281,15 +297,36 @@ def cmd_run_heartbeat(args: argparse.Namespace) -> None:
     print(f"run {args.run_id}: heartbeat")
 
 
+def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> None:
+    """Plain, directly-callable form of run-end. Atomic and conditional
+    (WHERE ended_at IS NULL) — same guard pattern as decide_approval():
+    a run can only be ended once; a second call (duplicate/racing
+    request) affects zero rows instead of silently overwriting ended_at
+    or flipping a 'failed' run back to 'ended' (Red Team's Milestone 2B2
+    review). Raises LookupError / ValueError, same convention as
+    decide_approval() and start_run()."""
+    if status not in ("ended", "failed"):
+        raise ValueError(f"status must be 'ended' or 'failed', got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE agent_runs SET status = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND ended_at IS NULL",
+            (status, run_id),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT status FROM agent_runs WHERE id = ?", (run_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"agent_run {run_id} does not exist")
+            raise ValueError(f"agent_run {run_id} is already ended (status={row['status']})")
+
+
 def cmd_run_end(args: argparse.Namespace) -> None:
     conn = connect()
-    with conn:
-        conn.execute(
-            "UPDATE agent_runs SET status = 'ended', "
-            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
-            (args.run_id,),
-        )
-    print(f"run {args.run_id}: ended")
+    try:
+        end_run(conn, args.run_id, args.status)
+    except (LookupError, ValueError) as exc:
+        raise SystemExit(f"error: {exc}")
+    print(f"run {args.run_id}: {args.status}")
 
 
 def cmd_agent_status(args: argparse.Namespace) -> None:
@@ -351,6 +388,42 @@ def cmd_activity_log(args: argparse.Namespace) -> None:
             (agent_id, args.task_id, args.summary, args.detail),
         )
     print("activity logged")
+
+
+_MESSAGE_SCOPE_FIELD = {"task": "task_id", "project": "project_id", "meeting": "meeting_id"}
+
+
+def send_message(conn: sqlite3.Connection, thread_id: str, scope: str, from_agent: str, body: str,
+                  to_agent: str | None = None, task_id: int | None = None,
+                  project_id: int | None = None, meeting_id: int | None = None) -> int:
+    """Plain, directly-callable form of message-send — the only function
+    (besides its thin CLI wrapper) that writes the messages table.
+    Mirrors the schema's own scope-consistency CHECK constraint so a bad
+    combination raises ValueError with a clear message, not a raw
+    IntegrityError."""
+    scope_ids = {"task": task_id, "project": project_id, "meeting": meeting_id}
+    for s, value in scope_ids.items():
+        if s == scope and value is None:
+            raise ValueError(f"scope '{scope}' requires {_MESSAGE_SCOPE_FIELD[s]}")
+        if s != scope and value is not None:
+            raise ValueError(f"{_MESSAGE_SCOPE_FIELD[s]} is only valid with scope '{s}'")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO messages (thread_id, scope, task_id, project_id, meeting_id, "
+            "from_agent, to_agent, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (thread_id, scope, task_id, project_id, meeting_id, from_agent, to_agent, body),
+        )
+    return cur.lastrowid
+
+
+def cmd_message_send(args: argparse.Namespace) -> None:
+    conn = connect()
+    try:
+        msg_id = send_message(conn, args.thread_id, args.scope, args.from_agent, args.body,
+                               args.to_agent, args.task_id, args.project_id, args.meeting_id)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
+    print(f"message recorded: id={msg_id} thread={args.thread_id}")
 
 
 def cmd_qa_result(args: argparse.Namespace) -> None:
@@ -664,6 +737,7 @@ def main() -> None:
 
     re_ = sub.add_parser("run-end", help="end an agent_runs row")
     re_.add_argument("--run-id", type=int, required=True, dest="run_id")
+    re_.add_argument("--status", choices=["ended", "failed"], default="ended")
     re_.set_defaults(func=cmd_run_end)
 
     sub.add_parser("agent-status", help="print every agent's computed status").set_defaults(func=cmd_agent_status)
@@ -683,6 +757,17 @@ def main() -> None:
     rr.add_argument("--status", required=True, choices=["open", "mitigated", "resolved"])
     rr.add_argument("--mitigation")
     rr.set_defaults(func=cmd_risk_resolve)
+
+    ms = sub.add_parser("message-send", help="record a message (Founder<->agent or agent<->agent) — the only writer of the messages table")
+    ms.add_argument("--thread-id", required=True, dest="thread_id")
+    ms.add_argument("--scope", required=True, choices=["task", "project", "agent", "meeting"])
+    ms.add_argument("--task-id", type=int, dest="task_id")
+    ms.add_argument("--project-id", type=int, dest="project_id")
+    ms.add_argument("--meeting-id", type=int, dest="meeting_id")
+    ms.add_argument("--from-agent", required=True, dest="from_agent")
+    ms.add_argument("--to-agent", dest="to_agent")
+    ms.add_argument("--body", required=True)
+    ms.set_defaults(func=cmd_message_send)
 
     al = sub.add_parser("activity-log", help="log a free-text activity entry")
     al.add_argument("--agent", required=True)

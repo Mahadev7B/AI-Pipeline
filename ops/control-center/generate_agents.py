@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
 from derived_state import agent_status_rows, scope_label  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
+from agent_runtime import ASK_AGENT_ALLOWLIST  # noqa: E402 — Milestone 2B2
 
 OUT_PATH = out_path("agents.html", "OPSDB_AGENTS_PATH")
 AGENTS_SUBDIR = OUT_PATH.parent / "agents"
@@ -118,7 +119,85 @@ def render_list_field(label: str, items: list) -> str:
     return render_field(label, ", ".join(e(i) for i in items))
 
 
-def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row) -> str:
+def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | None) -> str:
+    """Ask Agent — Milestone 2B2. Reads only; the write itself always
+    goes through server.py's POST /api/agents/<name>/ask, which is the
+    only place ASK_AGENT_ALLOWLIST is authoritative — this function's
+    check is just what decides whether to render a working form at all,
+    never what grants the invocation. See
+    ops/reviews/cto-milestone2b2-architecture.md."""
+    if name not in ASK_AGENT_ALLOWLIST:
+        return f'''
+        <div class="panel" style="margin-top:20px;">
+          <div class="label" style="margin-bottom:8px;">Ask Agent</div>
+          <div style="font-size:12px; color:var(--text2);">
+            Ask-Agent conversation is not enabled for this role in this milestone —
+            see ops/reviews/cto-milestone2b2-architecture.md for the current allowlist.
+          </div>
+        </div>'''
+
+    thread_id = f"agent-{name}-company"
+    messages = conn.execute(
+        "SELECT from_agent, body, created_at FROM messages WHERE thread_id = ? ORDER BY id",
+        (thread_id,),
+    ).fetchall()
+    open_run = conn.execute(
+        "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
+        "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE 'Ask-Agent:%'",
+        (name,),
+    ).fetchone()
+    last_run = conn.execute(
+        "SELECT r.status, r.ended_at FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
+        "WHERE a.name = ? AND r.current_activity LIKE 'Ask-Agent:%' "
+        "ORDER BY r.id DESC LIMIT 1",
+        (name,),
+    ).fetchone()
+
+    bubbles = []
+    for m in messages:
+        is_founder = m["from_agent"] == "founder"
+        align = "flex-end" if is_founder else "flex-start"
+        bubble_style = "background:var(--violet); color:#1a1220;" if is_founder else "background:var(--panel2); border:1px solid var(--border2);"
+        label = "Founder" if is_founder else e(name)
+        bubbles.append(f'''
+        <div style="align-self:{align}; display:flex; flex-direction:column; align-items:{align}; gap:3px; max-width:80%;">
+          <div class="bubble" style="max-width:100%; padding:11px 14px; border-radius:14px; font-size:12.5px; line-height:1.5; {bubble_style}">{e(m["body"])}</div>
+          <div style="font-size:10px; color:var(--text3);">{label} &middot; {e(m["created_at"])}</div>
+        </div>''')
+    thread_html = ('<div style="display:flex; flex-direction:column; gap:12px; margin-bottom:14px; max-height:420px; overflow-y:auto;">' + "".join(bubbles) + '</div>'
+                   if bubbles else '<div style="font-size:12px; color:var(--text2); margin-bottom:14px;">No conversation yet.</div>')
+
+    if open_run is not None:
+        status_html = '<span style="color:var(--accent);">&#9679; In progress&hellip;</span>'
+        form_html = '<div style="font-size:11.5px; color:var(--text3);">A request is already in progress — please wait for it to finish.</div>'
+    else:
+        if last_run is not None and last_run["status"] == "failed":
+            status_html = f'<span style="color:var(--red);">&#9679; Last request failed</span> <span style="color:var(--text3);">&middot; {e(last_run["ended_at"] or "")}</span>'
+        elif last_run is not None:
+            status_html = f'<span style="color:var(--text3);">Last answered {e(last_run["ended_at"] or "")}</span>'
+        else:
+            status_html = '<span style="color:var(--text3);">No requests yet</span>'
+        form_html = f'''
+        <form method="POST" action="/api/agents/{e(name)}/ask" style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
+          <input type="hidden" name="token" value="{e(token or "")}">
+          <input type="text" name="message" placeholder="Ask {e(name)} a question&hellip;" maxlength="8000" required
+                 style="flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:12.5px;">
+          <button type="submit" style="padding:6px 14px; border-radius:8px; background:var(--accent); border:none; font-size:11.5px; font-weight:600; color:#1a1206; cursor:pointer;">Send</button>
+        </form>'''
+
+    return f'''
+    <div class="panel" style="margin-top:20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <div class="label">Ask Agent</div>
+        <div style="font-size:11px;">{status_html}</div>
+      </div>
+      {thread_html}
+      {form_html}
+      {"" if token is not None else '<div style="font-size:10.5px; color:var(--text3); margin-top:8px;">Requires python3 ops/control-center/server.py running locally — this static file has no active session token.</div>'}
+    </div>'''
+
+
+def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: str | None = None) -> str:
     name = agent_row["name"]
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -212,7 +291,8 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row) -> str:
       <div style="display:flex; flex-direction:column; gap:6px;">{eval_html}</div>
     </div>
   </div>
-</div>'''
+</div>
+{render_ask_agent_section(conn, name, token)}'''
     return page(f"{name} — Agent Detail", "agents.html", body, depth=1,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.")
 

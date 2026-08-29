@@ -98,7 +98,11 @@ CREATE TABLE IF NOT EXISTS agent_runs (
   scope_type        TEXT NOT NULL CHECK (scope_type IN ('task','project','meeting','company')),
   scope_id          INTEGER,
   status            TEXT NOT NULL DEFAULT 'active'
-                    CHECK (status IN ('active','waiting','blocked','ended')),
+                    -- 'failed' added Milestone 2B2: a real agent invocation
+                    -- needs a persisted, queryable failure outcome distinct
+                    -- from 'ended' (which only ever meant "over", not
+                    -- "succeeded") — see ops/reviews/cto-milestone2b2-architecture.md.
+                    CHECK (status IN ('active','waiting','blocked','ended','failed')),
   current_activity  TEXT,
   blocked_reason    TEXT,
   started_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),

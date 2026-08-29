@@ -56,10 +56,10 @@ The objective mechanism progress percentages come from. See "Deterministic
 derived state" below for the formula. An agent cannot report a progress
 number directly — there is no column for one to write to.
 
-### agent_runs *(new — Phase 1 clarification)*
+### agent_runs *(new — Phase 1 clarification; `status` widened Milestone 2B2)*
 `id, agent_id, scope_type (task/project/meeting/company), scope_id
 (nullable — null only when scope_type=company), status (active/waiting/
-blocked/ended), current_activity, blocked_reason (nullable), started_at,
+blocked/ended/failed), current_activity, blocked_reason (nullable), started_at,
 last_heartbeat_at, ended_at (nullable)`
 
 An agent is **Working** if it has a row here with `status=active` and no
@@ -70,6 +70,17 @@ covers coordination work with no single task/project/meeting behind it
 status report) — company-scoped work is still a real run, not an
 exception to the rule. See `ARCHITECTURE.md`, "Derived UI state must be
 deterministic."
+
+`status='failed'` *(Milestone 2B2)*: added because `'ended'` only ever
+meant "this run is over," with no way to persist *how* it ended.
+Ask-Agent (`ops/control-center/agent_runtime.py`,
+`ops/control-center/server.py`) needs a real, queryable distinction
+between a successful and a failed model invocation — `'failed'` is
+terminal exactly like `'ended'` (`ended_at` is set either way), it only
+differs in outcome. Added via SQLite's rebuild-and-copy technique (no
+`ALTER` of a `CHECK` constraint); all 13 pre-existing rows were
+`'ended'` and are unaffected. See
+`ops/reviews/cto-milestone2b2-architecture.md`.
 
 ### risks *(new — Phase 1 clarification)*
 `id, scope_type (task/project/company), scope_id (nullable — null only
@@ -99,6 +110,16 @@ the four kinds a thread is, and exactly one of `task_id` / `project_id` /
 question to an agent, not tied to a specific piece of work) leave all
 three null. Every scope is persisted and auditable the same way; `agent`
 scope is not a lesser, unsaved case.
+
+**`scope='agent'` is this table's "company/general" concept** — same
+thing `agent_runs.scope_type='company'` means, just an existing,
+different word for it (confirmed during Milestone 2B2's architecture
+review; not renamed, since `messages` had zero rows either way and a
+purely cosmetic cross-table rename didn't clear the "don't casually
+mutate Phase 1 schema" bar — see
+`ops/reviews/cto-milestone2b2-architecture.md`). Milestone 2B2's
+Ask-Agent conversations use `thread_id = "agent-<name>-company"` with
+`scope='agent'`.
 
 ### approvals
 Mirrors `/ops/templates/founder-approval.md`: `id, task_id (nullable),
