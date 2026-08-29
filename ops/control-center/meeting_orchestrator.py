@@ -318,16 +318,35 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
             f"your own role and responsibilities — your real assessment, not a generic opinion. "
             f"Be concise (2-4 sentences)."
         )
-        result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
-        if not result.ok:
-            sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
-                              f"provide a position ({result.error_kind}): {result.error}\n")
-            opsdb.end_run(conn, run_id, "failed")
-            return (False, result.error)
+        # Everything from here on operates on an ALREADY-CREATED run row
+        # (run_id) — same discipline as _handle_ask() in server.py
+        # (Code Review, TASK-009) and _gather_position() above: an
+        # unhandled exception anywhere in this block (a send_message()
+        # failure, lock contention, anything unexpected) must still end
+        # the run as 'failed' before propagating, or it stays open
+        # (ended_at IS NULL) until the next server restart's
+        # reconciliation pass — silently and permanently blocking every
+        # future request-perspective/retry against this exact
+        # agent+meeting in the meantime (Code Review, Milestone 2B3B
+        # round 2 finding).
+        try:
+            result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
+            if not result.ok:
+                sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
+                                  f"provide a position ({result.error_kind}): {result.error}\n")
+                opsdb.end_run(conn, run_id, "failed")
+                return (False, result.error)
 
-        opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
-                            to_agent=None, meeting_id=meeting_id)
-        opsdb.end_run(conn, run_id, "ended")
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                                to_agent=None, meeting_id=meeting_id)
+            opsdb.end_run(conn, run_id, "ended")
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
+            raise
+
         opsdb.add_meeting_participant(conn, meeting_id, agent_name, agent_runtime.MAX_MEETING_PARTICIPANTS,
                                        requested_by=requested_by)
         return (True, None)
@@ -421,16 +440,34 @@ def retry_position(meeting_id: int, agent_name: str, topic: str) -> tuple[bool, 
         run_id = opsdb.start_meeting_retry_run(conn, meeting_id, agent_name,
                                                 agent_runtime.MEETING_ACTIVITY_LABEL,
                                                 agent_runtime.MAX_RETRIES_PER_PARTICIPANT)
-        result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
-        if result.ok:
-            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
-                                to_agent=None, meeting_id=meeting_id)
-            opsdb.end_run(conn, run_id, "ended")
-            return (True, None)
-        else:
-            sys.stderr.write(f"[control-center] meeting {meeting_id}: retry for {agent_name} failed "
-                              f"({result.error_kind}): {result.error}\n")
-            opsdb.end_run(conn, run_id, "failed")
-            return (False, result.error)
+        # Everything from here on operates on an ALREADY-CREATED run row
+        # (run_id) — same discipline as _handle_ask() in server.py
+        # (Code Review, TASK-009) and _gather_position() above: an
+        # unhandled exception anywhere in this block (e.g. send_message()
+        # raising sqlite3.OperationalError from lock contention — a real
+        # possibility now that server.py is multi-threaded) must still
+        # end the run as 'failed' before propagating, or it stays open
+        # (ended_at IS NULL) and start_meeting_retry_run()'s own open-run
+        # exclusivity check then falsely, permanently rejects every
+        # future retry for this exact agent+meeting with a 409 (Code
+        # Review, Milestone 2B3B round 2 finding).
+        try:
+            result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
+            if result.ok:
+                opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                                    to_agent=None, meeting_id=meeting_id)
+                opsdb.end_run(conn, run_id, "ended")
+                return (True, None)
+            else:
+                sys.stderr.write(f"[control-center] meeting {meeting_id}: retry for {agent_name} failed "
+                                  f"({result.error_kind}): {result.error}\n")
+                opsdb.end_run(conn, run_id, "failed")
+                return (False, result.error)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
+            raise
     finally:
         conn.close()
