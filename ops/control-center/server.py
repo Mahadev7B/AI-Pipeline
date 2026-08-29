@@ -71,7 +71,7 @@ DEFAULT_PORT = 8420
 
 MAX_BODY_BYTES = 64 * 1024  # a decision form is a handful of short fields; anything bigger is not legitimate
 AGENT_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
-APPROVAL_PATH_RE = re.compile(r"^/api/approvals/(\d+)/decide$")
+APPROVAL_PATH_RE = re.compile(r"^/api/approvals/(\d{1,15})/decide$")  # 15 digits comfortably covers any real id, well under SQLite's 64-bit INTEGER range — rejects absurdly long digit strings up front instead of hitting an OverflowError at the DB layer
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
