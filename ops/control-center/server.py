@@ -284,8 +284,8 @@ class Handler(BaseHTTPRequestHandler):
             # request behind an unrelated, legitimate open run.
             open_run = conn.execute(
                 "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
-                "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE 'Ask-Agent:%'",
-                (agent_name,),
+                "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE ?",
+                (agent_name, agent_runtime.ASK_AGENT_ACTIVITY_LIKE),
             ).fetchone()
             if open_run is not None:
                 self._send_html(409, _error_page(409, "Already in progress",
@@ -294,7 +294,7 @@ class Handler(BaseHTTPRequestHandler):
 
             try:
                 run_id = opsdb.start_run(conn, agent_name, "company",
-                                          "Ask-Agent: answering a Founder question")
+                                          agent_runtime.ASK_AGENT_ACTIVITY_LABEL)
             except LookupError as exc:
                 self._send_html(404, _error_page(404, "Not found", str(exc)))
                 return
@@ -340,22 +340,20 @@ def _reconcile_orphaned_ask_agent_runs() -> None:
     created is left open (ended_at IS NULL) forever, and the "one open
     run per agent" guard in _handle_ask would then permanently block all
     future Ask-Agent requests to that agent. Scoped specifically to
-    Ask-Agent-created runs via the current_activity prefix _handle_ask
-    always sets — never touches an open run created some other way (e.g.
-    this project's own review-gate tracking via run-start), which would
-    be a much broader, wrong fix."""
+    Ask-Agent-created runs via opsdb.reconcile_orphaned_runs() — never
+    touches an open run created some other way (e.g. this project's own
+    review-gate tracking via run-start), which would be a much broader,
+    wrong fix. Goes through opsdb.py like every other write in this
+    codebase (CTO's Milestone 2B2 post-implementation review — server.py
+    must never hold a raw UPDATE of its own, startup-only or not)."""
     try:
         conn = opsdb.connect()
     except SystemExit:
         return  # DB doesn't exist yet — nothing to reconcile, opsdb.connect() will raise the same on first real use
     try:
-        cur = conn.execute(
-            "UPDATE agent_runs SET status = 'failed', ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
-            "WHERE ended_at IS NULL AND current_activity LIKE 'Ask-Agent:%'"
-        )
-        conn.commit()
-        if cur.rowcount:
-            print(f"reconciled {cur.rowcount} orphaned Ask-Agent run(s) from a prior server process.")
+        count = opsdb.reconcile_orphaned_runs(conn, agent_runtime.ASK_AGENT_ACTIVITY_LIKE, status="failed")
+        if count:
+            print(f"reconciled {count} orphaned Ask-Agent run(s) from a prior server process.")
     finally:
         conn.close()
 

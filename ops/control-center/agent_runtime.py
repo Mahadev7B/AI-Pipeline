@@ -42,6 +42,17 @@ from dataclasses import dataclass
 # native configuration. See ops/SECURITY.md.
 ASK_AGENT_ALLOWLIST = ("cto", "qa", "ceo", "financial", "project-manager")
 
+# The single source of truth for "this agent_runs row is Ask-Agent's."
+# server.py's start_run() call uses the label; every place that needs to
+# find/scope Ask-Agent runs (the UI status query, the 409 guard, startup
+# reconciliation) uses the LIKE pattern — one constant, not four
+# hand-typed copies. CTO's Milestone 2B2 post-implementation review
+# flagged that exact category of drift (a scoping predicate copied
+# inline in multiple places) as the root cause of Code Review's earlier
+# blocking finding; centralizing it here closes that risk structurally.
+ASK_AGENT_ACTIVITY_LABEL = "Ask-Agent: answering a Founder question"
+ASK_AGENT_ACTIVITY_LIKE = "Ask-Agent:%"
+
 DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red Team condition 5 —
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"

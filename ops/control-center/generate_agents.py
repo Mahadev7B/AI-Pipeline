@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
 from derived_state import agent_status_rows, scope_label  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
-from agent_runtime import ASK_AGENT_ALLOWLIST  # noqa: E402 — Milestone 2B2
+from agent_runtime import ASK_AGENT_ALLOWLIST, ASK_AGENT_ACTIVITY_LIKE  # noqa: E402 — Milestone 2B2
 
 OUT_PATH = out_path("agents.html", "OPSDB_AGENTS_PATH")
 AGENTS_SUBDIR = OUT_PATH.parent / "agents"
@@ -143,14 +143,14 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
     ).fetchall()
     open_run = conn.execute(
         "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
-        "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE 'Ask-Agent:%'",
-        (name,),
+        "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE ?",
+        (name, ASK_AGENT_ACTIVITY_LIKE),
     ).fetchone()
     last_run = conn.execute(
         "SELECT r.status, r.ended_at FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
-        "WHERE a.name = ? AND r.current_activity LIKE 'Ask-Agent:%' "
+        "WHERE a.name = ? AND r.current_activity LIKE ? "
         "ORDER BY r.id DESC LIMIT 1",
-        (name,),
+        (name, ASK_AGENT_ACTIVITY_LIKE),
     ).fetchone()
 
     bubbles = []

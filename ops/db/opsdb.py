@@ -299,6 +299,9 @@ def cmd_run_heartbeat(args: argparse.Namespace) -> None:
     print(f"run {args.run_id}: heartbeat")
 
 
+RUN_END_STATUSES = ("ended", "failed")
+
+
 def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> None:
     """Plain, directly-callable form of run-end. Atomic and conditional
     (WHERE ended_at IS NULL) — same guard pattern as decide_approval():
@@ -307,8 +310,8 @@ def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> Non
     or flipping a 'failed' run back to 'ended' (Red Team's Milestone 2B2
     review). Raises LookupError / ValueError, same convention as
     decide_approval() and start_run()."""
-    if status not in ("ended", "failed"):
-        raise ValueError(f"status must be 'ended' or 'failed', got {status!r}")
+    if status not in RUN_END_STATUSES:
+        raise ValueError(f"status must be one of {RUN_END_STATUSES}, got {status!r}")
     with conn:
         cur = conn.execute(
             "UPDATE agent_runs SET status = ?, "
@@ -320,6 +323,35 @@ def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> Non
             if row is None:
                 raise LookupError(f"agent_run {run_id} does not exist")
             raise ValueError(f"agent_run {run_id} is already ended (status={row['status']})")
+
+
+def reconcile_orphaned_runs(conn: sqlite3.Connection, activity_like_pattern: str, status: str = "failed") -> int:
+    """Bulk counterpart to end_run() for startup recovery — e.g. a run
+    left open (ended_at IS NULL) because the process that created it
+    (server.py) crashed or was killed mid-request. Scoped by a
+    current_activity LIKE pattern so it only ever touches runs a caller
+    can identify as its own (never a blanket 'close every open run'),
+    same reasoning as server.py's Ask-Agent-specific reconciliation.
+    Added (CTO's Milestone 2B2 post-implementation review) so this stays
+    a normal opsdb.py write like every other one — server.py must not
+    hold a raw UPDATE of its own, even for a startup-only bulk case.
+    Returns the number of rows updated."""
+    if status not in RUN_END_STATUSES:
+        raise ValueError(f"status must be one of {RUN_END_STATUSES}, got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE agent_runs SET status = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE ended_at IS NULL AND current_activity LIKE ?",
+            (status, activity_like_pattern),
+        )
+    return cur.rowcount
+
+
+def cmd_run_reconcile(args: argparse.Namespace) -> None:
+    conn = connect()
+    count = reconcile_orphaned_runs(conn, args.activity_like, args.status)
+    print(f"reconciled {count} run(s) matching {args.activity_like!r} -> {args.status}")
 
 
 def cmd_run_end(args: argparse.Namespace) -> None:
@@ -739,8 +771,13 @@ def main() -> None:
 
     re_ = sub.add_parser("run-end", help="end an agent_runs row")
     re_.add_argument("--run-id", type=int, required=True, dest="run_id")
-    re_.add_argument("--status", choices=["ended", "failed"], default="ended")
+    re_.add_argument("--status", choices=list(RUN_END_STATUSES), default="ended")
     re_.set_defaults(func=cmd_run_end)
+
+    rc = sub.add_parser("run-reconcile", help="bulk-end orphaned open runs matching a current_activity LIKE pattern (startup recovery)")
+    rc.add_argument("--activity-like", required=True, dest="activity_like")
+    rc.add_argument("--status", choices=list(RUN_END_STATUSES), default="failed")
+    rc.set_defaults(func=cmd_run_reconcile)
 
     sub.add_parser("agent-status", help="print every agent's computed status").set_defaults(func=cmd_agent_status)
 
