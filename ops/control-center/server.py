@@ -113,6 +113,7 @@ import opsdb  # noqa: E402 — the only writer; server.py runs its own read-only
                # (sqlite3.OperationalError) a write can raise on lock contention.
 import dbutil  # noqa: E402
 import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2)
+import meeting_orchestrator  # noqa: E402 — Executive Meeting orchestration (Milestone 2B3B)
 import generate_overview  # noqa: E402
 import generate_pipeline  # noqa: E402
 import generate_agents  # noqa: E402
@@ -126,9 +127,12 @@ DEFAULT_PORT = 8420
 
 MAX_BODY_BYTES = 64 * 1024  # a decision form is a handful of short fields; anything bigger is not legitimate
 MAX_ASK_MESSAGE_CHARS = 8_000  # generous for a real question; small enough to reject a runtime-overflow attempt
+MAX_DECISION_CHARS = 4_000  # a Founder decision on an approval/meeting — generous, still bounded
 AGENT_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 APPROVAL_PATH_RE = re.compile(r"^/api/approvals/(\d{1,15})/decide$")  # 15 digits comfortably covers any real id, well under SQLite's 64-bit INTEGER range — rejects absurdly long digit strings up front instead of hitting an OverflowError at the DB layer
 ASK_AGENT_PATH_RE = re.compile(r"^/api/agents/([a-z0-9][a-z0-9-]*)/ask$")
+MEETING_CREATE_PATH = "/api/meetings"
+MEETING_DECIDE_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/decide$")
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -202,7 +206,22 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_html(200, generate_decisions.build_html().encode("utf-8"))
                 return
             if path == "/meetings.html":
-                self._send_html(200, generate_meetings.build_html().encode("utf-8"))
+                self._send_html(200, generate_meetings.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path.startswith("/meetings/") and path.endswith(".html"):
+                id_part = path[len("/meetings/"):-len(".html")]
+                if not id_part.isdigit():
+                    self._send_html(404, _error_page(404, "Not found", "No such meeting."))
+                    return
+                conn = dbutil.connect()
+                try:
+                    meeting_row = conn.execute("SELECT * FROM meetings WHERE id = ?", (int(id_part),)).fetchone()
+                    if meeting_row is None:
+                        self._send_html(404, _error_page(404, "Not found", f"No meeting #{id_part}."))
+                        return
+                    self._send_html(200, generate_meetings.build_meeting_detail(conn, meeting_row, token=SESSION_TOKEN).encode("utf-8"))
+                finally:
+                    conn.close()
                 return
             if path == "/inbox.html":
                 conn = dbutil.connect()
@@ -219,13 +238,15 @@ class Handler(BaseHTTPRequestHandler):
             sys.stderr.write(f"[control-center] unhandled GET error on {self.path}: {type(exc).__name__}: {exc}\n")
             self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong rendering this page. See the server's terminal output for detail."))
 
-    # ---- POST: the only two write routes in the whole application ----
+    # ---- POST: the only four write routes in the whole application ----
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
         m_decide = APPROVAL_PATH_RE.match(path)
         m_ask = None if m_decide else ASK_AGENT_PATH_RE.match(path)
-        if not m_decide and not m_ask:
+        m_meeting_decide = None if (m_decide or m_ask) else MEETING_DECIDE_PATH_RE.match(path)
+        is_meeting_create = not (m_decide or m_ask or m_meeting_decide) and path == MEETING_CREATE_PATH
+        if not (m_decide or m_ask or m_meeting_decide or is_meeting_create):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
@@ -246,8 +267,12 @@ class Handler(BaseHTTPRequestHandler):
 
         if m_decide:
             self._handle_decide(int(m_decide.group(1)), fields)
-        else:
+        elif m_ask:
             self._handle_ask(m_ask.group(1), fields)
+        elif m_meeting_decide:
+            self._handle_meeting_decide(int(m_meeting_decide.group(1)), fields)
+        else:
+            self._handle_meeting_create(fields)
 
     def _handle_decide(self, approval_id: int, fields: dict) -> None:
         decision = fields.get("decision", [""])[0]
@@ -391,6 +416,69 @@ class Handler(BaseHTTPRequestHandler):
             speaker = "Founder" if r["from_agent"] == "founder" else agent_name
             lines.append(f"{speaker}: {r['body']}")
         return "\n".join(lines)
+
+    def _handle_meeting_create(self, fields: dict) -> None:
+        """Milestone 2B3B. The entire synchronous flow (select → gather
+        positions, bounded-concurrent → synthesize) lives in
+        meeting_orchestrator.run_meeting() — this handler only validates
+        the HTTP-facing input and maps outcomes to responses, the same
+        separation _handle_ask keeps from agent_runtime.invoke_agent()."""
+        topic = fields.get("topic", [""])[0].strip()
+        if not topic:
+            self._send_html(400, _error_page(400, "Bad request", "Topic must not be empty."))
+            return
+        if len(topic) > meeting_orchestrator.MAX_TOPIC_CHARS:
+            self._send_html(400, _error_page(
+                400, "Bad request", f"Topic exceeds the {meeting_orchestrator.MAX_TOPIC_CHARS:,}-character limit."))
+            return
+
+        try:
+            meeting_id = meeting_orchestrator.run_meeting(topic)
+        except ValueError as exc:
+            self._send_html(400, _error_page(400, "Bad request", str(exc)))
+            return
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled meeting-creation error: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong running this meeting. See the server's terminal output for detail."))
+            return
+
+        self._redirect(f"/meetings/{meeting_id}.html")
+
+    def _handle_meeting_decide(self, meeting_id: int, fields: dict) -> None:
+        decision = fields.get("decision", [""])[0].strip()
+        if not decision:
+            self._send_html(400, _error_page(400, "Bad request", "Decision must not be empty."))
+            return
+        if len(decision) > MAX_DECISION_CHARS:
+            self._send_html(400, _error_page(400, "Bad request", f"Decision exceeds the {MAX_DECISION_CHARS:,}-character limit."))
+            return
+
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] could not open database for write: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
+        try:
+            opsdb.decide_meeting(conn, meeting_id, decision)
+        except LookupError as exc:
+            self._send_html(404, _error_page(404, "Not found", str(exc)))
+            return
+        except ValueError as exc:
+            self._send_html(409, _error_page(409, "Already decided", str(exc)))
+            return
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention deciding meeting {meeting_id}: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] unhandled error deciding meeting {meeting_id}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong recording this decision. See the server's terminal output for detail."))
+            return
+        finally:
+            conn.close()
+
+        self._redirect(f"/meetings/{meeting_id}.html")
 
 
 def _reconcile_orphaned_ask_agent_runs() -> None:

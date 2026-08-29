@@ -465,6 +465,98 @@ def cmd_risk_resolve(args: argparse.Namespace) -> None:
     print(f"risk {args.risk_id}: {args.status}")
 
 
+# --------------------------------------------------------------- meetings --
+
+def create_meeting(conn: sqlite3.Connection, topic: str, initiated_by: str,
+                    participating_agents: list[str]) -> int:
+    """Milestone 2B3B: creates the meetings row early — before any
+    participant is invoked — so a real record exists even if the
+    invocation phase never completes (crash, or every participant
+    failing), the same "record what was attempted, even on failure"
+    principle Ask-Agent already established for its own founder-message-
+    before-invoking sequence. `positions` is deliberately never written
+    here or anywhere else — a meeting's positions are the messages table
+    (scope='meeting', meeting_id=this row), the same "one conversation
+    store" rule already applied to Ask-Agent. See
+    ops/reviews/cto-milestone2b3b-architecture.md."""
+    if initiated_by not in ("founder", "agent"):
+        raise ValueError(f"initiated_by must be 'founder' or 'agent', got {initiated_by!r}")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO meetings (topic, initiated_by, participating_agents) VALUES (?, ?, ?)",
+            (topic, initiated_by, json.dumps(participating_agents)),
+        )
+    return cur.lastrowid
+
+
+def finalize_meeting_synthesis(conn: sqlite3.Connection, meeting_id: int,
+                                agreements: str | None, disagreements: str | None,
+                                unresolved_questions: str | None, recommendation: str | None) -> None:
+    """Records CEO's synthesis (Milestone 2B3B) once all participant
+    positions are gathered. Any of the four fields may be None — if
+    CEO's own synthesis call itself fails, the meeting still keeps every
+    real position already persisted in `messages`; these columns simply
+    stay NULL, rendered honestly as "not available," never fabricated."""
+    with conn:
+        conn.execute(
+            "UPDATE meetings SET agreements = ?, disagreements = ?, "
+            "unresolved_questions = ?, recommendation = ? WHERE id = ?",
+            (agreements, disagreements, unresolved_questions, recommendation, meeting_id),
+        )
+
+
+def decide_meeting(conn: sqlite3.Connection, meeting_id: int, decision_text: str, by: str = "founder") -> int:
+    """Atomically records the Founder's decision on a meeting: a real
+    decisions-table row (via _insert_decision() — the same INSERT every
+    other decision in this system goes through, not a parallel one) plus
+    meetings.founder_decision/linked_decision_id, guarded by
+    WHERE founder_decision IS NULL so a decision, once recorded, cannot
+    be silently overwritten by a second submission — same one-time-only
+    pattern as decide_approval(). Uses BEGIN IMMEDIATE (not `with conn:`)
+    so the decisions INSERT and the meetings UPDATE commit together as
+    one real transaction — calling the self-committing record_decision()
+    here would let its own commit land between the two writes, breaking
+    exactly the atomicity this function exists to provide (a real bug
+    caught and fixed during this milestone's own development, before
+    Code Review — same category of mistake 2B3A's BEGIN IMMEDIATE
+    exception-handling bug was). Raises LookupError if the meeting
+    doesn't exist, ValueError if it's already decided. Raises
+    sqlite3.OperationalError on genuine lock contention (BEGIN IMMEDIATE
+    itself failing) — deliberately NOT inside the try/except below, same
+    fix Red Team's Milestone 2B3A review required for
+    start_ask_agent_run(): if BEGIN IMMEDIATE never succeeds, there is
+    no transaction to roll back, and attempting one would raise a
+    second, masking error instead of this real one. Callers must handle
+    sqlite3.OperationalError as a distinct "busy, try again" case, same
+    as start_ask_agent_run(). Returns the new decisions.id."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute("SELECT topic, founder_decision FROM meetings WHERE id = ?", (meeting_id,)).fetchone()
+        if row is None:
+            raise LookupError(f"meeting {meeting_id} does not exist")
+        if row["founder_decision"] is not None:
+            raise ValueError(f"meeting {meeting_id} already has a recorded decision")
+        dec_id = _insert_decision(
+            conn, title=f"Executive Meeting #{meeting_id}: {row['topic']}", decision=decision_text, by=by,
+        )
+        cur = conn.execute(
+            "UPDATE meetings SET founder_decision = ?, linked_decision_id = ? "
+            "WHERE id = ? AND founder_decision IS NULL",
+            (decision_text, dec_id, meeting_id),
+        )
+        if cur.rowcount == 0:
+            # Can only happen if founder_decision was NULL in the SELECT above
+            # but is no longer NULL here — impossible within a single BEGIN
+            # IMMEDIATE transaction (no other writer can interleave), kept as
+            # a defensive check, not a reachable path.
+            raise ValueError(f"meeting {meeting_id} already has a recorded decision")
+        conn.execute("COMMIT")
+        return dec_id
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
 # ------------------------------------------------------- other write ops --
 
 def cmd_activity_log(args: argparse.Namespace) -> None:
@@ -642,18 +734,47 @@ def cmd_approval_decide(args: argparse.Namespace) -> None:
     print(f"approval {args.approval_id}: {args.decision}")
 
 
+def _insert_decision(conn: sqlite3.Connection, title: str, decision: str, by: str,
+                      problem: str | None = None, options: list | None = None,
+                      reason: str | None = None, tradeoffs: str | None = None,
+                      founder_approval: bool = False, approval_id: int | None = None) -> int:
+    """The raw INSERT, with no transaction management of its own —
+    exists so decide_meeting() can compose it into ONE atomic
+    transaction with the meetings UPDATE (see that function). Not
+    called directly outside this module; record_decision() below is the
+    public, self-committing entry point for standalone use."""
+    cur = conn.execute(
+        "INSERT INTO decisions (title, date, problem, options_considered, decision, "
+        "reason, tradeoffs, recommending_agent, founder_approval_required, "
+        "founder_approval_id) VALUES (?, date('now'), ?, ?, ?, ?, ?, ?, ?, ?)",
+        (title, problem, json.dumps(options or []), decision,
+         reason, tradeoffs, by, 1 if founder_approval else 0, approval_id),
+    )
+    return cur.lastrowid
+
+
+def record_decision(conn: sqlite3.Connection, title: str, decision: str, by: str,
+                     problem: str | None = None, options: list | None = None,
+                     reason: str | None = None, tradeoffs: str | None = None,
+                     founder_approval: bool = False, approval_id: int | None = None) -> int:
+    """Plain, directly-callable, self-committing form of decision-record
+    — same pattern as every other opsdb.py write function since
+    Milestone 2B1. Standalone use only — decide_meeting() below composes
+    _insert_decision() directly instead, so its decisions-row write and
+    its meetings-row update share one real transaction rather than this
+    function's own commit landing in between them (which would silently
+    break the atomicity decide_meeting() depends on)."""
+    with conn:
+        return _insert_decision(conn, title, decision, by, problem, options,
+                                 reason, tradeoffs, founder_approval, approval_id)
+
+
 def cmd_decision_record(args: argparse.Namespace) -> None:
     conn = connect()
-    with conn:
-        cur = conn.execute(
-            "INSERT INTO decisions (title, date, problem, options_considered, decision, "
-            "reason, tradeoffs, recommending_agent, founder_approval_required, "
-            "founder_approval_id) VALUES (?, date('now'), ?, ?, ?, ?, ?, ?, ?, ?)",
-            (args.title, args.problem, json.dumps(args.options or []), args.decision,
-             args.reason, args.tradeoffs, args.by, 1 if args.founder_approval else 0,
-             args.approval_id),
-        )
-    print(f"decision recorded: id={cur.lastrowid} — {args.title}")
+    dec_id = record_decision(conn, args.title, args.decision, args.by, args.problem,
+                              args.options, args.reason, args.tradeoffs,
+                              args.founder_approval, args.approval_id)
+    print(f"decision recorded: id={dec_id} — {args.title}")
 
 
 def cmd_deployment_record(args: argparse.Namespace) -> None:

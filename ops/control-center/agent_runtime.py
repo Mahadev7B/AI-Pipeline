@@ -65,6 +65,21 @@ ASK_AGENT_ALLOWLIST = ("cto", "qa", "ceo", "financial", "project-manager")
 ASK_AGENT_ACTIVITY_LABEL = "Ask-Agent: answering a Founder question"
 ASK_AGENT_ACTIVITY_LIKE = "Ask-Agent:%"
 
+# Milestone 2B3B: Executive Meetings. Every one of these eight roles is
+# exactly what ops/EXECUTIVE_MEETINGS.md names as a typical participant.
+# The four not already in ASK_AGENT_ALLOWLIST (product, marketing,
+# security, red-team) each have Bash in their NORMAL configuration
+# (.claude/agents/*.md) — same risk profile the other five had before
+# zero-tool invocation neutralized it. The same restriction applies
+# here, for the same reason — not a new safety model, the existing one
+# extended to more role names. CEO is always a participant (added by
+# meeting_orchestrator.py, not by this allowlist alone) — it also
+# performs the meeting's synthesis, a role none of the others play.
+MEETING_PARTICIPANT_ALLOWLIST = ("ceo", "product", "cto", "financial", "marketing", "qa", "security", "red-team")
+MEETING_ACTIVITY_LABEL = "Meeting: contributing a position"
+MEETING_ACTIVITY_LIKE = "Meeting:%"
+MAX_MEETING_PARTICIPANTS = 6  # CEO + up to 5 others — see cto-milestone2b3b-architecture.md
+
 DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red Team condition 5 —
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"
@@ -110,16 +125,31 @@ class RuntimeResult:
     error_kind: str | None = None
 
 
-def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TIMEOUT_S) -> RuntimeResult:
-    if agent_name not in ASK_AGENT_ALLOWLIST:
-        return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for Ask-Agent conversation.",
+def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TIMEOUT_S,
+                  wait_for_slot: bool = False) -> RuntimeResult:
+    """wait_for_slot (Milestone 2B3B, default False): the Ask-Agent HTTP
+    route never sets this — an ad-hoc single request still fails fast
+    and honestly on capacity_exceeded, exactly the 2B3A behavior,
+    unchanged. Only ops/control-center/meeting_orchestrator.py passes
+    True, because a meeting needs a real position from every selected
+    participant, not "whichever 3 happened to win the race." True means
+    the semaphore acquire blocks (bounded by timeout_s, same as any
+    other wait in this function) instead of failing immediately — the
+    semaphore's total capacity (MAX_CONCURRENT_INVOCATIONS) is not
+    touched either way; this only changes what happens when it's full."""
+    if agent_name not in ASK_AGENT_ALLOWLIST and agent_name not in MEETING_PARTICIPANT_ALLOWLIST:
+        return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for agent invocation.",
                               error_kind="invalid_agent")
 
-    # Non-blocking acquire, never a wait queue — an honest, immediate
-    # "at capacity" signal is simpler and more predictable than a second
-    # timeout-within-a-timeout (Red Team's Milestone 2B3A review,
-    # question 4). Released in the finally below on every exit path.
-    if not _INVOCATION_SEMAPHORE.acquire(blocking=False):
+    if wait_for_slot:
+        acquired = _INVOCATION_SEMAPHORE.acquire(blocking=True, timeout=timeout_s)
+    else:
+        # Non-blocking acquire, never a wait queue — an honest, immediate
+        # "at capacity" signal is simpler and more predictable than a second
+        # timeout-within-a-timeout (Red Team's Milestone 2B3A review,
+        # question 4).
+        acquired = _INVOCATION_SEMAPHORE.acquire(blocking=False)
+    if not acquired:
         return RuntimeResult(
             ok=False,
             error=f"at capacity — {MAX_CONCURRENT_INVOCATIONS} agent invocation(s) already running. Try again shortly.",
