@@ -275,6 +275,60 @@ def start_run(conn: sqlite3.Connection, agent_name: str, scope_type: str,
     return cur.lastrowid
 
 
+def start_ask_agent_run(conn: sqlite3.Connection, agent_name: str, activity_label: str, activity_like: str) -> int:
+    """Milestone 2B3A: the atomic counterpart to start_run() for the
+    Ask-Agent write path specifically. server.py's original
+    SELECT-then-start_run() sequence was only race-free by accident —
+    correct under the strictly single-threaded server 2B1/2B2 shipped
+    with, because nothing could ever interleave between the SELECT and
+    the INSERT. Once server.py became multi-threaded (this milestone),
+    two threads asking the SAME agent at nearly the same moment could
+    both see "no open run" before either had inserted its own row.
+
+    BEGIN IMMEDIATE acquires SQLite's write lock up front, before any
+    read, so a second thread's BEGIN IMMEDIATE genuinely blocks (up to
+    the connection's busy timeout) until the first transaction commits —
+    verified empirically with 5 real concurrent threads, zero lost
+    writes, wall time matching full serialization.
+
+    IMPORTANT (Red Team's Milestone 2B3A review, blocking finding): the
+    BEGIN IMMEDIATE call itself is NOT inside the try/except below. If
+    it fails (busy timeout expired waiting for the lock), no transaction
+    is ever opened — attempting ROLLBACK in that case raises a SECOND,
+    masking OperationalError ('cannot rollback - no transaction is
+    active') instead of letting the real 'database is locked' one
+    propagate. Only the block AFTER a successful BEGIN IMMEDIATE needs
+    the rollback-on-exception guard. Callers must catch
+    sqlite3.OperationalError from this function as a distinct, honest
+    "busy, try again" case — the write lock was genuinely contended, not
+    the same thing as an unknown agent or the run already being open.
+
+    Raises LookupError (unknown agent), ValueError (a matching open run
+    already exists), or sqlite3.OperationalError (lock contention,
+    caller's responsibility to handle)."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute("SELECT id FROM agents WHERE name = ?", (agent_name,)).fetchone()
+        if row is None:
+            raise LookupError(f"no such agent '{agent_name}'")
+        open_run = conn.execute(
+            "SELECT id FROM agent_runs WHERE agent_id = ? AND ended_at IS NULL AND current_activity LIKE ?",
+            (row["id"], activity_like),
+        ).fetchone()
+        if open_run is not None:
+            raise ValueError(f"a request to '{agent_name}' is already in progress")
+        cur = conn.execute(
+            "INSERT INTO agent_runs (agent_id, scope_type, scope_id, status, current_activity) "
+            "VALUES (?, 'company', NULL, 'active', ?)",
+            (row["id"], activity_label),
+        )
+        conn.execute("COMMIT")
+        return cur.lastrowid
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
 def cmd_run_start(args: argparse.Namespace) -> None:
     conn = connect()
     try:

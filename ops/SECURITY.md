@@ -147,11 +147,59 @@ consequence than a full write escalation (the invocation itself has no
 tools), but a real, not hypothetical, way to spend the Founder's API
 budget without their action.
 
-**Also disclosed**: this server is single-threaded by construction —
-while one Ask-Agent call is in progress (a real model invocation, ~3-13s
-observed in testing, capped at `agent_runtime.DEFAULT_TIMEOUT_S`), every
-other request to the Control Center — a different agent's Ask-Agent
-call, or just loading a read-only screen — waits behind it. Accepted for
-this milestone's scope; a future milestone that needs concurrent
-requests would need to revisit the single-threaded assumption, not just
-this authorization model.
+**Superseded by Milestone 2B3A** — see the new section immediately
+below. The server is no longer single-threaded; the blocking behavior
+described here was accurate through Milestone 2B2 only.
+
+## Concurrent Agent Runtime (Milestone 2B3A)
+
+`server.py` moved from `http.server.HTTPServer` (strictly one request at
+a time) to `ThreadingHTTPServer`. Full design in
+`ops/reviews/cto-milestone2b3a-architecture.md` and Red Team's review at
+`ops/reviews/red-team-milestone2b3a-architecture.md`.
+
+**What changed:**
+- GET/read traffic is no longer blocked by an in-flight Ask-Agent call —
+  verified live: a real, multi-second Ask-Agent invocation in progress,
+  a concurrent `GET /overview.html` returned in 11ms.
+- Real `claude` subprocess invocations are bounded to
+  `agent_runtime.MAX_CONCURRENT_INVOCATIONS` (3) via a non-blocking
+  `threading.BoundedSemaphore` — a 4th concurrent request gets an
+  immediate, honest `capacity_exceeded` failure (recorded as a real
+  `agent_runs.status='failed'` row), never a silent wait and never
+  unbounded fan-out. Verified live: 4 simultaneous requests to 4
+  different agents produced exactly 3 real invocations and 1 clean
+  capacity rejection within milliseconds.
+- The "one open Ask-Agent run per agent" guard, previously a plain
+  SELECT-then-INSERT that was only race-free by accident (nothing could
+  interleave under the old sequential server), is now one atomic `BEGIN
+  IMMEDIATE` transaction (`opsdb.start_ask_agent_run()`) — verified live:
+  two simultaneous real requests to the *same* agent produced exactly
+  one success and one clean 409, with zero duplicate/overlapping runs.
+- No new browser-facing capability was introduced — threading changes
+  only how existing routes are dispatched internally.
+
+**Still relies on local/single-user trust — unchanged from 2B2's
+disclosure above**: the same session token gates every write route,
+including this one; it still doesn't distinguish a human Founder from
+any local process that can read a served page. Concurrency does not
+change this — it only changes how many such requests could be in flight
+at once (bounded to 3, same as any legitimate use).
+
+**Disclosed limitation, not a bug**: Ctrl+C during an in-flight Ask-Agent
+call may leave that one subprocess running briefly on its own (still
+bounded by its timeout and `--max-budget-usd` cap) until it exits
+naturally; the `agent_runs` row it created reconciles to `'failed'` on
+the next server start via the existing orphan-reconciliation path. A
+process-tracking/kill-on-shutdown mechanism was considered and rejected
+as unnecessary complexity for what it would close (Red Team's 2B3A
+review) — this is a deliberate simplicity choice, not an oversight.
+
+**SQLite concurrency**: no PRAGMA/journal-mode change was made. Every
+write in this codebase is a brief, individually-committed statement
+inside its own transaction — no lock is ever held across the multi-
+second span of a model invocation. WAL mode was explicitly evaluated and
+deferred (not adopted) since the actual reader-blocked-by-writer window
+this design produces is milliseconds, not seconds — see the CTO
+architecture doc for the full reasoning, including why the git-committed
+database file makes WAL a real ongoing cost, not a one-time flip.

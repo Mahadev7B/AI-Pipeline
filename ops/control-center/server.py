@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-"""ops/control-center/server.py — Phase 2, Milestones 2B1 + 2B2.
+"""ops/control-center/server.py — Phase 2, Milestones 2B1 + 2B2 + 2B3A.
 
 The one controlled application boundary between the browser and
 operations.sqlite3 (writes) and the Agent Runtime (real model
-invocation). See ops/reviews/cto-milestone2b1-architecture.md and
-ops/reviews/cto-milestone2b2-architecture.md for the full design
-reasoning; this file implements both, nothing more.
+invocation). See ops/reviews/cto-milestone2b1-architecture.md,
+ops/reviews/cto-milestone2b2-architecture.md, and
+ops/reviews/cto-milestone2b3a-architecture.md for the full design
+reasoning; this file implements all three, nothing more.
 
 - Loopback-only (127.0.0.1) — never binds 0.0.0.0. There is no network
   exposure to reason about; the only way to reach this server is from a
   process already running on this machine.
-- Single-threaded (http.server.HTTPServer, not Threading...) — requests
-  are handled one at a time, by construction, not as an accident. This
-  means an in-progress Ask-Agent call (a real model invocation, ~3-13s
-  observed, capped at agent_runtime.DEFAULT_TIMEOUT_S) blocks EVERY other
-  request — a different agent's Ask-Agent call, or just someone loading
-  /overview.html — until it finishes. Disclosed, accepted limitation for
-  this milestone, not a bug — see ops/SECURITY.md.
+- Multi-threaded (http.server.ThreadingHTTPServer, Milestone 2B3A — was
+  strictly single-threaded through 2B2). GET/read traffic is never
+  bounded (SQLite handles concurrent readers cheaply; a single trusted
+  local Founder can't generate enough of it to matter). Only the
+  expensive resource — real, costed `claude` subprocess invocations — is
+  bounded, by agent_runtime.MAX_CONCURRENT_INVOCATIONS (a non-blocking
+  semaphore; a caller that can't get a slot gets an immediate, honest
+  "at capacity" result, never a silent wait). Threading alone does not
+  make this safe — see "Concurrency correctness" below for what else
+  changed and why.
 - Exactly two write routes, both POST, both token-gated the same way:
   /api/approvals/<id>/decide (Milestone 2B1) and
   /api/agents/<name>/ask (Milestone 2B2). Every other route is GET-only
@@ -29,9 +33,39 @@ reasoning; this file implements both, nothing more.
   this server shows live.
 - /api/approvals/<id>/decide always goes through opsdb.decide_approval().
   /api/agents/<name>/ask always goes through agent_runtime.invoke_agent()
-  for the model call and opsdb.start_run()/send_message()/end_run() for
-  persistence. These are the only functions in the codebase permitted to
-  write approvals.decision, agent_runs, or messages respectively.
+  for the model call and opsdb.start_ask_agent_run()/send_message()/
+  end_run() for persistence. These are the only functions in the
+  codebase permitted to write approvals.decision, agent_runs, or
+  messages respectively.
+
+CONCURRENCY CORRECTNESS (Milestone 2B3A) — read this before assuming a
+ThreadingHTTPServer swap alone made anything safe, because it didn't:
+- Every sqlite3.Connection is opened fresh per request and closed before
+  the request ends (dbutil.connect()/opsdb.connect(), unchanged since
+  2B1) — this was already true for an unrelated reason (closing
+  promptly) and turns out to be a REQUIRED property for threading, since
+  a Python sqlite3.Connection is not safe to share across threads.
+- The "one open Ask-Agent run per agent" guard used to be a plain
+  SELECT-then-INSERT in this file — correct only by accident, since
+  nothing could interleave under the old strictly-sequential server.
+  Under real threads it's a genuine check-then-act race. Fixed by moving
+  the whole check+insert into one BEGIN IMMEDIATE transaction,
+  opsdb.start_ask_agent_run() — verified empirically (5 real concurrent
+  threads, zero lost writes) and by finding and fixing a real bug in the
+  transaction's own exception handling (see that function's docstring
+  and ops/reviews/red-team-milestone2b3a-architecture.md).
+- No lock is ever held across invoke_agent()'s multi-second subprocess
+  call — every opsdb.py write is a single, brief, individually-committed
+  statement. This is what actually makes "another page stays responsive
+  during a model call" true, not the threading swap by itself.
+- Ctrl+C during an in-flight Ask-Agent call may leave that one `claude`
+  subprocess running briefly on its own (bounded by the existing
+  timeout/--max-budget-usd caps) — a deliberately accepted limitation,
+  not a bug: the resulting agent_runs row reconciles to 'failed' on the
+  next server start via the existing _reconcile_orphaned_ask_agent_runs()
+  path. A process-tracking registry was considered and rejected as
+  unnecessary complexity for what it would buy (Red Team's Milestone
+  2B3A review).
 
 FOUNDER AUTHORIZATION — read this before assuming more than it claims:
 On every server start a fresh secrets.token_urlsafe(32) is generated,
@@ -65,14 +99,18 @@ from __future__ import annotations
 
 import re
 import secrets
+import sqlite3
 import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
-import opsdb  # noqa: E402 — the only writer; server.py never touches sqlite3 directly
+import opsdb  # noqa: E402 — the only writer; server.py runs its own read-only SELECTs
+               # (via dbutil's mode=ro connection) but every write goes through an
+               # opsdb.py function. `sqlite3` is imported only for the exception type
+               # (sqlite3.OperationalError) a write can raise on lock contention.
 import dbutil  # noqa: E402
 import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2)
 import generate_overview  # noqa: E402
@@ -107,8 +145,9 @@ def _error_page(status: int, title: str, message: str) -> bytes:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ControlCenter/2B1"
-    timeout = 10  # socket read/write timeout — a stalled client must not hang this single-threaded server indefinitely
+    server_version = "ControlCenter/2B3A"
+    timeout = 10  # socket read/write timeout — a stalled client must not hang its request thread
+                  # (and, before Milestone 2B3A's ThreadingHTTPServer, the whole server) indefinitely
 
     def log_message(self, fmt: str, *args) -> None:  # keep default stderr logging, just quieter
         sys.stderr.write(f"[control-center] {self.address_string()} {fmt % args}\n")
@@ -266,37 +305,39 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         try:
-            # One open run per agent, checked and created before any
-            # write commits — a genuine duplicate/racing request against
-            # the SAME agent gets a clean 409 instead of two overlapping
-            # invocations. (A request to a DIFFERENT agent, or any GET,
-            # simply queues behind this one at the socket layer, since
-            # this server is single-threaded by construction — see
-            # ops/SECURITY.md for why that's a disclosed, accepted
-            # limitation, not something this guard is meant to solve.)
-            # Scoped to Ask-Agent-created runs only (current_activity
-            # prefix), matching generate_agents.py's render_ask_agent_section()
-            # and _reconcile_orphaned_ask_agent_runs() below — NOT scoped
-            # this way originally (Code Review finding, TASK-007): this
-            # project's own review-gate workflow uses run-start against
-            # these exact agent names (cto/qa) for unrelated task-scoped
-            # work, so an unscoped check here would 409 a real Founder
-            # request behind an unrelated, legitimate open run.
-            open_run = conn.execute(
-                "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
-                "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE ?",
-                (agent_name, agent_runtime.ASK_AGENT_ACTIVITY_LIKE),
-            ).fetchone()
-            if open_run is not None:
-                self._send_html(409, _error_page(409, "Already in progress",
-                                                  f"A request to {agent_name} is already being processed. Wait for it to finish."))
-                return
-
+            # Milestone 2B3A: server.py is now multi-threaded
+            # (ThreadingHTTPServer), so this can no longer be a plain
+            # SELECT-then-INSERT — that was only race-free by accident
+            # under the old strictly single-threaded server. One atomic
+            # BEGIN IMMEDIATE transaction now does the "no open run
+            # exists" check and the row creation together; see
+            # opsdb.start_ask_agent_run()'s docstring and
+            # ops/reviews/red-team-milestone2b3a-architecture.md for the
+            # real race this closes and the exception-handling bug found
+            # and fixed while building it. Scoped to Ask-Agent-created
+            # runs only (current_activity prefix) — this project's own
+            # review-gate workflow uses run-start against these exact
+            # agent names (cto/qa) for unrelated task-scoped work, so an
+            # unscoped check would 409 a real Founder request behind an
+            # unrelated, legitimate open run (Code Review finding,
+            # TASK-007).
             try:
-                run_id = opsdb.start_run(conn, agent_name, "company",
-                                          agent_runtime.ASK_AGENT_ACTIVITY_LABEL)
+                run_id = opsdb.start_ask_agent_run(
+                    conn, agent_name, agent_runtime.ASK_AGENT_ACTIVITY_LABEL, agent_runtime.ASK_AGENT_ACTIVITY_LIKE)
             except LookupError as exc:
                 self._send_html(404, _error_page(404, "Not found", str(exc)))
+                return
+            except ValueError as exc:
+                self._send_html(409, _error_page(409, "Already in progress", str(exc)))
+                return
+            except sqlite3.OperationalError as exc:
+                # Genuine write-lock contention (the busy timeout expired
+                # waiting for BEGIN IMMEDIATE) — a different, honest
+                # "busy" case from capacity_exceeded (that's the
+                # subprocess semaphore; this is SQLite itself), same
+                # clean non-crashing treatment.
+                sys.stderr.write(f"[control-center] lock contention starting an Ask-Agent run for {agent_name}: {exc}\n")
+                self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
                 return
 
             opsdb.send_message(conn, thread_id, "agent", "founder", message, to_agent=agent_name)
@@ -361,8 +402,13 @@ def _reconcile_orphaned_ask_agent_runs() -> None:
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_PORT
     _reconcile_orphaned_ask_agent_runs()
-    httpd = HTTPServer((HOST, port), Handler)
-    print(f"Control Center running at http://{HOST}:{port}/ (loopback only). Press Ctrl+C to stop.")
+    httpd = ThreadingHTTPServer((HOST, port), Handler)
+    httpd.daemon_threads = True  # explicit — a lingering in-flight request thread must
+                                 # never block process exit (default is True in this
+                                 # Python version, but stated here rather than relied on)
+    print(f"Control Center running at http://{HOST}:{port}/ (loopback only, up to "
+          f"{agent_runtime.MAX_CONCURRENT_INVOCATIONS} concurrent agent invocation(s)). "
+          f"Press Ctrl+C to stop.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

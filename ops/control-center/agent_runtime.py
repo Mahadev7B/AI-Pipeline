@@ -24,6 +24,17 @@ agent receive its own real configuration).
 The browser never influences any of these flags — it only ever sends an
 agent *name* and a message; server.py validates the name against
 ASK_AGENT_ALLOWLIST before this module is ever called.
+
+CONCURRENCY (Milestone 2B3A): server.py is now multi-threaded
+(http.server.ThreadingHTTPServer), so invoke_agent() can genuinely be
+called from several threads at once. The number of real `claude`
+subprocesses that may run simultaneously is bounded by
+MAX_CONCURRENT_INVOCATIONS via a non-blocking threading.BoundedSemaphore
+— HTTP/read traffic is not bounded at all, only this expensive resource
+is. A caller that can't get a slot gets error_kind="capacity_exceeded"
+immediately, never a silent wait. This module still knows nothing about
+threads beyond the semaphore itself — no shared mutable state exists
+here besides it, and BoundedSemaphore is thread-safe by construction.
 """
 from __future__ import annotations
 
@@ -31,6 +42,7 @@ import json
 import os
 import signal
 import subprocess
+import threading
 from dataclasses import dataclass
 
 # The only agents Ask-Agent may invoke in Milestone 2B2 — deliberately
@@ -68,6 +80,23 @@ _MAX_CAPTURED_BYTES = 512_000  # cap on what we parse/use from stdout, not a tru
 
 CLAUDE_BIN = "claude"
 
+# Milestone 2B3A: bounds the number of `claude` subprocesses that may run
+# at once, regardless of how many HTTP threads exist — GET/read traffic
+# is not bounded at all (SQLite handles concurrent readers cheaply; a
+# single trusted local Founder can't realistically generate enough of it
+# to matter). Only the expensive resource (a real, costed model
+# invocation) is bounded. 3 gives headroom for this milestone's own
+# 2-concurrent-agent acceptance test without inviting real resource/cost
+# exposure on a single local machine, and anticipates a future Executive
+# Meeting's likely participant count without pre-committing to that
+# milestone's still-unreviewed design. Not configurable from the browser
+# — a module constant, never derived from any request. See
+# ops/reviews/cto-milestone2b3a-architecture.md and
+# ops/reviews/red-team-milestone2b3a-architecture.md (both affirm this
+# value).
+MAX_CONCURRENT_INVOCATIONS = 3
+_INVOCATION_SEMAPHORE = threading.BoundedSemaphore(MAX_CONCURRENT_INVOCATIONS)
+
 
 @dataclass
 class RuntimeResult:
@@ -77,7 +106,7 @@ class RuntimeResult:
     cost_usd: float | None = None
     duration_ms: int | None = None
     error: str | None = None
-    # invalid_agent | runtime_unavailable | timeout | runtime_error
+    # invalid_agent | capacity_exceeded | runtime_unavailable | timeout | runtime_error
     error_kind: str | None = None
 
 
@@ -86,6 +115,23 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
         return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for Ask-Agent conversation.",
                               error_kind="invalid_agent")
 
+    # Non-blocking acquire, never a wait queue — an honest, immediate
+    # "at capacity" signal is simpler and more predictable than a second
+    # timeout-within-a-timeout (Red Team's Milestone 2B3A review,
+    # question 4). Released in the finally below on every exit path.
+    if not _INVOCATION_SEMAPHORE.acquire(blocking=False):
+        return RuntimeResult(
+            ok=False,
+            error=f"at capacity — {MAX_CONCURRENT_INVOCATIONS} agent invocation(s) already running. Try again shortly.",
+            error_kind="capacity_exceeded",
+        )
+    try:
+        return _run_claude(agent_name, transcript, timeout_s)
+    finally:
+        _INVOCATION_SEMAPHORE.release()
+
+
+def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeResult:
     cmd = [
         CLAUDE_BIN,
         "--agent", agent_name,
