@@ -31,6 +31,9 @@ Responsibilities:
 - Verify all required tests pass.
 - Prepare deployment; write release notes; define a rollback strategy.
 - Record the deployed version.
+- Regenerate `ops/reports/CURRENT_STATUS.md` (`python3 ops/db/report.py`)
+  and confirm it with `python3 ops/db/report.py --check` before a task
+  moves to `DONE` — see "Release checklist" in `AGENT_STATUS.md`.
 
 Must NOT:
 - Auto-deploy to production without Founder authorization.

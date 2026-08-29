@@ -8,7 +8,13 @@ state" — never invented text. See ops/ARCHITECTURE.md, "Derived UI state
 must be deterministic."
 
 Usage:
-    python3 ops/db/report.py
+    python3 ops/db/report.py             # regenerate CURRENT_STATUS.md
+    python3 ops/db/report.py --check     # exit 1 if the committed file is
+                                          # stale vs. the live database —
+                                          # no write. See "Release checklist"
+                                          # in ops/AGENT_STATUS.md: a task
+                                          # does not move to DONE until this
+                                          # passes.
 
 Respects OPSDB_PATH (see ops/db/README.md) — when testing this script
 against a scratch database, the report is written next to that scratch
@@ -160,7 +166,33 @@ def build_report() -> str:
     return "\n".join(lines) + "\n"
 
 
+def _content_ignoring_generated_line(text: str) -> str:
+    """Strip the one line that legitimately changes on every run (the
+    'Generated <timestamp>...' line) so a --check comparison only flags
+    real drift in the DB-derived content, not the mere passage of time."""
+    return "\n".join(line for line in text.splitlines() if not line.startswith("Generated "))
+
+
+def check() -> bool:
+    """Returns True if REPORT_PATH already matches what build_report()
+    would produce right now (content-wise, ignoring the timestamp line).
+    Never writes."""
+    fresh = build_report()
+    if not REPORT_PATH.exists():
+        print(f"STALE: {REPORT_PATH} does not exist yet — run `python3 ops/db/report.py` to create it.")
+        return False
+    committed = REPORT_PATH.read_text()
+    if _content_ignoring_generated_line(committed) != _content_ignoring_generated_line(fresh):
+        print(f"STALE: {REPORT_PATH} does not match the live database — "
+              f"run `python3 ops/db/report.py` and commit the result.")
+        return False
+    print(f"OK: {REPORT_PATH} matches the live database.")
+    return True
+
+
 def main() -> None:
+    if "--check" in sys.argv[1:]:
+        sys.exit(0 if check() else 1)
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(build_report())
     print(f"wrote {REPORT_PATH}")
