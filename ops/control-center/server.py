@@ -89,6 +89,7 @@ def _error_page(status: int, title: str, message: str) -> bytes:
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "ControlCenter/2B1"
+    timeout = 10  # socket read/write timeout — a stalled client must not hang this single-threaded server indefinitely
 
     def log_message(self, fmt: str, *args) -> None:  # keep default stderr logging, just quieter
         sys.stderr.write(f"[control-center] {self.address_string()} {fmt % args}\n")
@@ -119,7 +120,10 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/agents.html":
                 conn = dbutil.connect()
-                self._send_html(200, generate_agents.build_roster_html(conn).encode("utf-8"))
+                try:
+                    self._send_html(200, generate_agents.build_roster_html(conn).encode("utf-8"))
+                finally:
+                    conn.close()
                 return
             if path.startswith("/agents/") and path.endswith(".html"):
                 name = path[len("/agents/"):-len(".html")]
@@ -127,11 +131,14 @@ class Handler(BaseHTTPRequestHandler):
                     self._send_html(404, _error_page(404, "Not found", "No such agent."))
                     return
                 conn = dbutil.connect()
-                agent_row = conn.execute("SELECT * FROM agents WHERE name = ?", (name,)).fetchone()
-                if agent_row is None:
-                    self._send_html(404, _error_page(404, "Not found", f"No agent named '{name}'."))
-                    return
-                self._send_html(200, generate_agents.build_agent_detail(conn, agent_row).encode("utf-8"))
+                try:
+                    agent_row = conn.execute("SELECT * FROM agents WHERE name = ?", (name,)).fetchone()
+                    if agent_row is None:
+                        self._send_html(404, _error_page(404, "Not found", f"No agent named '{name}'."))
+                        return
+                    self._send_html(200, generate_agents.build_agent_detail(conn, agent_row).encode("utf-8"))
+                finally:
+                    conn.close()
                 return
             if path == "/decisions.html":
                 self._send_html(200, generate_decisions.build_html().encode("utf-8"))
@@ -141,12 +148,18 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/inbox.html":
                 conn = dbutil.connect()
-                self._send_html(200, generate_inbox.build_html(conn, token=SESSION_TOKEN).encode("utf-8"))
+                try:
+                    self._send_html(200, generate_inbox.build_html(conn, token=SESSION_TOKEN).encode("utf-8"))
+                finally:
+                    conn.close()
                 return
             self._send_html(404, _error_page(404, "Not found", "No such page."))
         except SystemExit as exc:
             # dbutil.connect() raises SystemExit if the DB file is missing — surface it as a page, not a crash.
             self._send_html(500, _error_page(500, "Database unavailable", str(exc)))
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled GET error on {self.path}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong rendering this page. See the server's terminal output for detail."))
 
     # ---- POST: the one write route ----
 
@@ -177,7 +190,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send_html(400, _error_page(400, "Bad request", "decision must be approve, reject, or discuss."))
             return
 
-        conn = opsdb.connect()
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001 — e.g. DB file missing/unreadable
+            sys.stderr.write(f"[control-center] could not open database for write: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
         try:
             opsdb.decide_approval(conn, approval_id, decision)
         except LookupError as exc:
@@ -185,6 +203,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         except ValueError as exc:
             self._send_html(409, _error_page(409, "Already decided", str(exc)))
+            return
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled write error on approval {approval_id}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong recording this decision. See the server's terminal output for detail."))
             return
         finally:
             conn.close()
