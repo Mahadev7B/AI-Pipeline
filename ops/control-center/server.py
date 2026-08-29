@@ -340,19 +340,37 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
                 return
 
-            opsdb.send_message(conn, thread_id, "agent", "founder", message, to_agent=agent_name)
+            # Everything from here on operates on an ALREADY-CREATED run
+            # row (run_id) — Code Review, TASK-009: an unhandled exception
+            # anywhere in this block (a send_message() failure, a bug in
+            # _build_transcript, anything unexpected) must still end that
+            # run as 'failed' before returning an error, or it stays open
+            # (ended_at IS NULL) until the next server restart's
+            # reconciliation pass — silently blocking every future
+            # Ask-Agent request to this same agent in the meantime. That
+            # would violate this milestone's own acceptance bar
+            # ("failures... in one invocation do not corrupt or block
+            # another") just as surely as the race this milestone fixed.
+            try:
+                opsdb.send_message(conn, thread_id, "agent", "founder", message, to_agent=agent_name)
 
-            transcript = self._build_transcript(conn, thread_id, agent_name)
-            result = agent_runtime.invoke_agent(agent_name, transcript)
+                transcript = self._build_transcript(conn, thread_id, agent_name)
+                result = agent_runtime.invoke_agent(agent_name, transcript)
 
-            if result.ok:
-                opsdb.send_message(conn, thread_id, "agent", agent_name, result.response_text, to_agent="founder")
-                opsdb.end_run(conn, run_id, "ended")
-            else:
-                # No response message on failure — never fabricate an
-                # agent answer. The failed run itself is the honest record.
-                sys.stderr.write(f"[control-center] Ask-Agent invocation failed ({result.error_kind}): {result.error}\n")
-                opsdb.end_run(conn, run_id, "failed")
+                if result.ok:
+                    opsdb.send_message(conn, thread_id, "agent", agent_name, result.response_text, to_agent="founder")
+                    opsdb.end_run(conn, run_id, "ended")
+                else:
+                    # No response message on failure — never fabricate an
+                    # agent answer. The failed run itself is the honest record.
+                    sys.stderr.write(f"[control-center] Ask-Agent invocation failed ({result.error_kind}): {result.error}\n")
+                    opsdb.end_run(conn, run_id, "failed")
+            except Exception:
+                try:
+                    opsdb.end_run(conn, run_id, "failed")
+                except (LookupError, ValueError):
+                    pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
+                raise
         except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
             sys.stderr.write(f"[control-center] unhandled Ask-Agent error for {agent_name}: {type(exc).__name__}: {exc}\n")
             self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong processing this request. See the server's terminal output for detail."))
