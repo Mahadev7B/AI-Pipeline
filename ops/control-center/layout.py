@@ -80,8 +80,8 @@ def nav_html(active: str, depth: int = 0) -> str:
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
         </div>
         <div style="line-height:1.15;">
-          <div style="font-size:11.5px; font-weight:600;">Alex</div>
-          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">FOUNDER · HUMAN</div>
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
         </div>
       </div>
     </div>'''

@@ -60,7 +60,7 @@ def agent_avatar(name: str) -> str:
 def render_roster(rows: list[sqlite3.Row]) -> str:
     by_state: dict = {s: [] for s in STATE_ORDER}
     for r in rows:
-        by_state[r["status"]].append(r)
+        by_state.get(r["status"], by_state[None]).append(r)
 
     counts = " ".join(
         f'<span class="pill" style="background:{STATE_COLOR[s]}22; color:{STATE_COLOR[s]};">'
@@ -152,14 +152,20 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row) -> str:
         "SELECT id, title, severity FROM risks WHERE owner_agent = ? AND status = 'open' ORDER BY id",
         (name,),
     ).fetchall()
+    risks_raised = conn.execute(
+        "SELECT id, title, severity FROM risks WHERE raised_by_agent = ? ORDER BY id DESC LIMIT 5",
+        (name,),
+    ).fetchall()
 
     eval_items = []
     for r in qa_perf:
-        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">QA · TASK-{r["task_id"]:03d} — {e(r["scenario"])}: <b style="color:var(--text);">{e(r["result"])}</b></div>')
+        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">QA performed by this agent · TASK-{r["task_id"]:03d} — {e(r["scenario"])}: <b style="color:var(--text);">{e(r["result"])}</b></div>')
     for r in reviews_perf:
-        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">{e(r["review_type"])} review · TASK-{r["task_id"]:03d}: <b style="color:var(--text);">{e(r["result"])}</b></div>')
+        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">{e(r["review_type"])} review performed by this agent · TASK-{r["task_id"]:03d}: <b style="color:var(--text);">{e(r["result"])}</b></div>')
     for r in decisions_made:
-        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">Decision #{r["id"]} — {e(r["title"])}: {e(r["decision"])}</div>')
+        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">Decision recommended by this agent — #{r["id"]} {e(r["title"])}: {e(r["decision"])}</div>')
+    for r in risks_raised:
+        eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">Risk raised by this agent — [{e(r["severity"])}] {e(r["title"])}</div>')
     eval_html = "".join(eval_items) if eval_items else '<div style="font-size:12px; color:var(--text2);">No evaluation or decision history recorded for this agent yet.</div>'
 
     activity_html = "".join(
