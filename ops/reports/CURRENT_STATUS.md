@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-29 04:28 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-29 04:54 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -12,6 +12,7 @@ Generated 2026-08-29 04:28 UTC by `ops/db/report.py` from the live database — 
 - TASK-005 — Phase 2 Milestone 2A: Pipeline, Agents, Decisions, Meetings screens
 - TASK-006 — Phase 2 Milestone 2B1: Founder Inbox Approve/Reject/Discuss write path
 - TASK-007 — Phase 2 Milestone 2B2: real Ask-Agent + persistent conversations
+- TASK-009 — Phase 2 Milestone 2B3A: controlled concurrent Agent Runtime foundation
 
 ## In progress
 - none
