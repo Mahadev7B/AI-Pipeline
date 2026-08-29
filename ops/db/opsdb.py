@@ -467,6 +467,51 @@ def cmd_risk_resolve(args: argparse.Namespace) -> None:
 
 # --------------------------------------------------------------- meetings --
 
+def _normalize_participant(entry) -> dict:
+    """Milestone 2B3B round 2 (TASK-011): `meetings.participating_agents`
+    rows created before this shipped are a flat JSON array of bare agent-
+    name strings (create_meeting()'s original shape, Milestone 2B3B).
+    From this round on, create_meeting() writes richer objects —
+    `{"name": ..., "source": "selected"|"requested", "requested_by":
+    None|"founder"}` — so a manually-requested addition (item 2,
+    add_meeting_participant() below) can carry real provenance. Every
+    reader, old row or new, goes through this helper (or
+    normalized_participants() below, which applies it to a whole column)
+    so no migration/backfill is needed — Red Team's Milestone 2B3B round 2
+    review, finding 5a, considered a one-time backfill and left the choice
+    to Development; a normalization helper used indefinitely is the
+    smaller, lower-risk change for an early-stage feature with few rows,
+    and is what this project already does for its other backward-
+    compatible reads (e.g. `agent_runs.status` widening, Milestone 2B2).
+    A bare string normalizes as `source="selected", requested_by=None` —
+    the only thing every pre-existing row could have meant."""
+    if isinstance(entry, str):
+        return {"name": entry, "source": "selected", "requested_by": None}
+    return {
+        "name": entry["name"],
+        "source": entry.get("source", "selected"),
+        "requested_by": entry.get("requested_by"),
+    }
+
+
+def normalized_participants(participating_agents_json: str) -> list[dict]:
+    """Parse and normalize a meetings.participating_agents column value in
+    one step — the single place every reader (generate_meetings.py,
+    server.py's new route handlers, add_meeting_participant(),
+    start_meeting_retry_run()) gets a consistent list of
+    `{"name","source","requested_by"}` dicts, whether the row predates
+    this round's shape upgrade or not. Malformed/missing JSON degrades to
+    an empty list, same defensive handling generate_meetings.py's own
+    json_list() used before this centralized it."""
+    try:
+        raw = json.loads(participating_agents_json or "[]")
+    except (json.JSONDecodeError, TypeError):
+        raw = []
+    if not isinstance(raw, list):
+        raw = []
+    return [_normalize_participant(entry) for entry in raw]
+
+
 def create_meeting(conn: sqlite3.Connection, topic: str, initiated_by: str,
                     participating_agents: list[str]) -> int:
     """Milestone 2B3B: creates the meetings row early — before any
@@ -478,15 +523,174 @@ def create_meeting(conn: sqlite3.Connection, topic: str, initiated_by: str,
     here or anywhere else — a meeting's positions are the messages table
     (scope='meeting', meeting_id=this row), the same "one conversation
     store" rule already applied to Ask-Agent. See
-    ops/reviews/cto-milestone2b3b-architecture.md."""
+    ops/reviews/cto-milestone2b3b-architecture.md.
+
+    Milestone 2B3B round 2: `participating_agents` is still accepted here
+    as a plain list of names (the initial CEO+Orchestrator-validated
+    batch — meeting_orchestrator.py's caller has no per-name provenance
+    to report at creation time, every one of them is "selected") but is
+    now WRITTEN as the upgraded object shape — see _normalize_participant()
+    above. A later manual addition goes through add_meeting_participant()
+    instead, never through this function again."""
     if initiated_by not in ("founder", "agent"):
         raise ValueError(f"initiated_by must be 'founder' or 'agent', got {initiated_by!r}")
+    objects = [{"name": name, "source": "selected", "requested_by": None} for name in participating_agents]
     with conn:
         cur = conn.execute(
             "INSERT INTO meetings (topic, initiated_by, participating_agents) VALUES (?, ?, ?)",
-            (topic, initiated_by, json.dumps(participating_agents)),
+            (topic, initiated_by, json.dumps(objects)),
         )
     return cur.lastrowid
+
+
+def add_meeting_participant(conn: sqlite3.Connection, meeting_id: int, agent_name: str,
+                             max_participants: int, requested_by: str = "founder") -> None:
+    """Milestone 2B3B round 2 (item 2, POST /api/meetings/<id>/request-
+    perspective). Atomically appends a manually-requested participant to
+    `meetings.participating_agents` — a real JSON read-modify-write, so
+    two concurrent requests against the same meeting must not race on the
+    read. Modeled on decide_meeting()'s BEGIN IMMEDIATE shape, not
+    start_ask_agent_run()'s — the invariant being protected here is a
+    JSON blob read-modify-write, not an open-run-exists check, but it's
+    the same "read this row, decide, write it back, atomically" fix this
+    codebase already applies to that class of problem.
+
+    Red Team's Milestone 2B3B round 2 review (finding 1 / condition 1) is
+    the reason this takes `max_participants` as a caller-supplied cap
+    rather than defining its own constant: CTO's original proposal for a
+    new, separate MAX_REQUESTED_PARTICIPANTS was NOT affirmed. A manually-
+    requested participant counts against the SAME total cap as every
+    other participant — the caller (meeting_orchestrator.py) passes in
+    agent_runtime.MAX_MEETING_PARTICIPANTS, the one already-approved
+    constant, not a second one.
+
+    Called only after a real, successful invocation for `agent_name`
+    already happened — never fabricates a member with no real position
+    (same discipline as _gather_position()). Raises LookupError if the
+    meeting doesn't exist, ValueError if `agent_name` is already a
+    participant (by name) or the meeting is already at
+    `max_participants`. Raises sqlite3.OperationalError on genuine lock
+    contention (BEGIN IMMEDIATE itself, deliberately outside the
+    try/except below — same non-masking discipline as
+    start_ask_agent_run()/decide_meeting(); see either docstring)."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute("SELECT participating_agents FROM meetings WHERE id = ?", (meeting_id,)).fetchone()
+        if row is None:
+            raise LookupError(f"meeting {meeting_id} does not exist")
+        participants = normalized_participants(row["participating_agents"])
+        if any(p["name"] == agent_name for p in participants):
+            raise ValueError(f"'{agent_name}' is already a participant in meeting {meeting_id}")
+        if len(participants) >= max_participants:
+            raise ValueError(
+                f"meeting {meeting_id} already has {max_participants} participants — the cap "
+                "(selected + requested combined) — no further perspectives can be requested"
+            )
+        participants.append({"name": agent_name, "source": "requested", "requested_by": requested_by})
+        conn.execute(
+            "UPDATE meetings SET participating_agents = ? WHERE id = ?",
+            (json.dumps(participants), meeting_id),
+        )
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
+def start_meeting_retry_run(conn: sqlite3.Connection, meeting_id: int, agent_name: str,
+                             activity_label: str, max_retries: int) -> int:
+    """Milestone 2B3B round 2 (item 5, POST /api/meetings/<id>/retry). The
+    atomic counterpart to start_run() for retrying a participant whose
+    original _gather_position() invocation failed. Same BEGIN IMMEDIATE /
+    non-masking exception-handling discipline as start_ask_agent_run()
+    (that function's docstring explains why the transaction start itself
+    must stay outside the try/except).
+
+    IMPORTANT (Red Team's Milestone 2B3B round 2 review, finding 4 /
+    condition 4 — binding, not optional): the open-run check below
+    matches on scope ALONE — `(agent_id, scope_type='meeting',
+    scope_id=meeting_id, ended_at IS NULL)` — with NO `current_activity
+    LIKE` filtering of any kind. This is deliberately different from
+    start_ask_agent_run(), which DOES filter by an `activity_like`
+    pattern for an unrelated reason (ignoring this project's own task-
+    scoped runs against the same agent name — see that function's
+    docstring). Copying that filter here "for consistency" would let a
+    Retry-labeled check ignore the still-open original _gather_position()
+    run for this exact participant+meeting, silently reopening the
+    double-click race this function exists to close. Do not add an
+    activity_like parameter to this function.
+
+    Raises LookupError (unknown agent or meeting), ValueError (agent_name
+    is not a current participant; a real position already exists for
+    this agent in the meeting's shared positions thread — nothing to
+    retry; a run for this (agent, meeting) is already in progress; or the
+    retry cap is already reached — each a 409 at the HTTP layer), or
+    sqlite3.OperationalError (lock contention, caller's responsibility to
+    handle, same as start_ask_agent_run())."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        agent_row = conn.execute("SELECT id FROM agents WHERE name = ?", (agent_name,)).fetchone()
+        if agent_row is None:
+            raise LookupError(f"no such agent '{agent_name}'")
+        agent_id = agent_row["id"]
+
+        meeting_row = conn.execute(
+            "SELECT participating_agents FROM meetings WHERE id = ?", (meeting_id,)
+        ).fetchone()
+        if meeting_row is None:
+            raise LookupError(f"meeting {meeting_id} does not exist")
+        participants = normalized_participants(meeting_row["participating_agents"])
+        if not any(p["name"] == agent_name for p in participants):
+            raise ValueError(f"'{agent_name}' is not a participant in meeting {meeting_id}")
+
+        has_position = conn.execute(
+            "SELECT 1 FROM messages WHERE thread_id = ? AND from_agent = ? LIMIT 1",
+            (f"meeting-{meeting_id}", agent_name),
+        ).fetchone()
+        if has_position is not None:
+            raise ValueError(
+                f"'{agent_name}' already has a recorded position in meeting {meeting_id} — nothing to retry"
+            )
+
+        open_run = conn.execute(
+            "SELECT id FROM agent_runs WHERE agent_id = ? AND scope_type = 'meeting' "
+            "AND scope_id = ? AND ended_at IS NULL",
+            (agent_id, meeting_id),
+        ).fetchone()
+        if open_run is not None:
+            raise ValueError(f"a run for '{agent_name}' in meeting {meeting_id} is already in progress")
+
+        # Every prior attempt for this (agent, meeting) pair — the original
+        # _gather_position() invocation plus any retry already made — is a
+        # 'failed' agent_runs row here (a 'succeeded' one would have been
+        # caught by the has_position check above, since that's exactly what
+        # "succeeded" means). MAX_RETRIES_PER_PARTICIPANT retries are
+        # allowed on top of the original attempt (the "(1 +
+        # MAX_RETRIES_PER_PARTICIPANT) invocations per participant" figure
+        # both CTO's and Red Team's Milestone 2B3B round 2 documents use) —
+        # so the cap on prior failures before rejecting a NEW attempt is
+        # max_retries + 1, not max_retries.
+        failed_count = conn.execute(
+            "SELECT COUNT(*) FROM agent_runs WHERE agent_id = ? AND scope_type = 'meeting' "
+            "AND scope_id = ? AND status = 'failed'",
+            (agent_id, meeting_id),
+        ).fetchone()[0]
+        if failed_count >= max_retries + 1:
+            raise ValueError(
+                f"retry limit reached for '{agent_name}' in meeting {meeting_id} "
+                f"({max_retries} retries already attempted)"
+            )
+
+        cur = conn.execute(
+            "INSERT INTO agent_runs (agent_id, scope_type, scope_id, status, current_activity) "
+            "VALUES (?, 'meeting', ?, 'active', ?)",
+            (agent_id, meeting_id, activity_label),
+        )
+        conn.execute("COMMIT")
+        return cur.lastrowid
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
 
 
 def finalize_meeting_synthesis(conn: sqlite3.Connection, meeting_id: int,

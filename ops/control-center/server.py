@@ -135,6 +135,10 @@ APPROVAL_PATH_RE = re.compile(r"^/api/approvals/(\d{1,15})/decide$")  # 15 digit
 ASK_AGENT_PATH_RE = re.compile(r"^/api/agents/([a-z0-9][a-z0-9-]*)/ask$")
 MEETING_CREATE_PATH = "/api/meetings"
 MEETING_DECIDE_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/decide$")
+# Milestone 2B3B round 2 (TASK-011): items 2, 3, 5.
+MEETING_REQUEST_PERSPECTIVE_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/request-perspective$")
+MEETING_FOLLOWUP_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/followup$")
+MEETING_RETRY_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/retry$")
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -240,15 +244,20 @@ class Handler(BaseHTTPRequestHandler):
             sys.stderr.write(f"[control-center] unhandled GET error on {self.path}: {type(exc).__name__}: {exc}\n")
             self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong rendering this page. See the server's terminal output for detail."))
 
-    # ---- POST: the only four write routes in the whole application ----
+    # ---- POST: the only seven write routes in the whole application ----
+    # (Milestone 2B3B round 2, TASK-011, added three more — request-perspective,
+    # followup, retry — to the four that existed before it.)
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
         m_decide = APPROVAL_PATH_RE.match(path)
         m_ask = None if m_decide else ASK_AGENT_PATH_RE.match(path)
         m_meeting_decide = None if (m_decide or m_ask) else MEETING_DECIDE_PATH_RE.match(path)
-        is_meeting_create = not (m_decide or m_ask or m_meeting_decide) and path == MEETING_CREATE_PATH
-        if not (m_decide or m_ask or m_meeting_decide or is_meeting_create):
+        m_meeting_request = None if (m_decide or m_ask or m_meeting_decide) else MEETING_REQUEST_PERSPECTIVE_PATH_RE.match(path)
+        m_meeting_followup = None if (m_decide or m_ask or m_meeting_decide or m_meeting_request) else MEETING_FOLLOWUP_PATH_RE.match(path)
+        m_meeting_retry = None if (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup) else MEETING_RETRY_PATH_RE.match(path)
+        is_meeting_create = not (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == MEETING_CREATE_PATH
+        if not (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_meeting_create):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
@@ -273,6 +282,12 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_ask(m_ask.group(1), fields)
         elif m_meeting_decide:
             self._handle_meeting_decide(int(m_meeting_decide.group(1)), fields)
+        elif m_meeting_request:
+            self._handle_meeting_request_perspective(int(m_meeting_request.group(1)), fields)
+        elif m_meeting_followup:
+            self._handle_meeting_followup(int(m_meeting_followup.group(1)), fields)
+        elif m_meeting_retry:
+            self._handle_meeting_retry(int(m_meeting_retry.group(1)), fields)
         else:
             self._handle_meeting_create(fields)
 
@@ -481,6 +496,208 @@ class Handler(BaseHTTPRequestHandler):
             conn.close()
 
         self._redirect(f"/meetings/{meeting_id}.html")
+
+    # ---- Milestone 2B3B round 2 (TASK-011): items 2, 3, 5 ----
+
+    def _load_meeting(self, conn, meeting_id: int) -> sqlite3.Row | None:
+        """Shared by the three handlers below: fetch a meeting row (every
+        column any of them needs — topic, participating_agents) or send a
+        404 and return None, so each handler's "does this meeting exist"
+        check is one line, not a repeated four. Never used by
+        _handle_meeting_decide above — that predates this round and isn't
+        part of this diff."""
+        row = conn.execute("SELECT topic, participating_agents FROM meetings WHERE id = ?", (meeting_id,)).fetchone()
+        if row is None:
+            self._send_html(404, _error_page(404, "Not found", f"No meeting #{meeting_id}."))
+        return row
+
+    def _handle_meeting_request_perspective(self, meeting_id: int, fields: dict) -> None:
+        """Item 2. Eligibility (allowlisted role, not already a
+        participant, meeting not already at the cap) is checked here
+        first, as a cheap read-only pre-check against an already-open
+        connection — meeting_orchestrator.gather_requested_position()'s
+        own opsdb.add_meeting_participant() call is the atomic,
+        authoritative re-check of the same conditions (a real, if rare,
+        TOCTOU window exists between this pre-check and that one; it is
+        closed correctly there, not here — this pre-check only avoids
+        spending a real invocation on an obviously-ineligible request)."""
+        agent_name = fields.get("agent_name", [""])[0].strip()
+        redirect_to = f"/meetings/{meeting_id}.html"
+
+        if agent_name not in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST:
+            self._send_html(404, _error_page(
+                404, "Not enabled", f"'{agent_name}' is not enabled for Executive Meeting participation."))
+            return
+
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] could not open database for read: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
+        try:
+            meeting_row = self._load_meeting(conn, meeting_id)
+            if meeting_row is None:
+                return
+            participants = opsdb.normalized_participants(meeting_row["participating_agents"])
+            if any(p["name"] == agent_name for p in participants):
+                self._send_html(409, _error_page(409, "Already a participant", f"'{agent_name}' is already a participant in this meeting."))
+                return
+            if len(participants) >= agent_runtime.MAX_MEETING_PARTICIPANTS:
+                self._send_html(409, _error_page(
+                    409, "Meeting full",
+                    f"This meeting already has {agent_runtime.MAX_MEETING_PARTICIPANTS} participants — the cap "
+                    "(selected + requested combined). No further perspectives can be requested."))
+                return
+            topic = meeting_row["topic"]
+        finally:
+            conn.close()
+
+        try:
+            ok, error = meeting_orchestrator.gather_requested_position(meeting_id, agent_name, topic)
+        except LookupError as exc:
+            self._send_html(404, _error_page(404, "Not found", str(exc)))
+            return
+        except ValueError as exc:
+            self._send_html(409, _error_page(409, "Cannot add participant", str(exc)))
+            return
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention adding a participant to meeting {meeting_id}: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled error requesting a perspective for meeting {meeting_id}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong requesting this perspective. See the server's terminal output for detail."))
+            return
+
+        if not ok:
+            self._send_html(502, _error_page(
+                502, "Perspective request failed",
+                f"'{agent_name}' did not provide a real position: {error}. Nothing was added — you may try again."))
+            return
+
+        self._redirect(redirect_to)
+
+    def _handle_meeting_followup(self, meeting_id: int, fields: dict) -> None:
+        """Item 3. Eligibility is stricter than plain participant
+        membership — Red Team's Milestone 2B3B round 2 review, finding 7 /
+        condition 6: the agent must have a REAL recorded position in the
+        shared `meeting-{id}` positions thread already, not merely be
+        listed in `participating_agents` (which stays "present" even for
+        a participant whose real invocation failed — that's exactly what
+        Retry's own eligibility depends on from the opposite direction)."""
+        agent_name = fields.get("agent_name", [""])[0].strip()
+        message = fields.get("message", [""])[0].strip()
+        redirect_to = f"/meetings/{meeting_id}.html"
+
+        if agent_name not in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST:
+            self._send_html(404, _error_page(
+                404, "Not enabled", f"'{agent_name}' is not enabled for Executive Meeting participation."))
+            return
+        if not message:
+            self._send_html(400, _error_page(400, "Bad request", "Message must not be empty."))
+            return
+        if len(message) > MAX_ASK_MESSAGE_CHARS:
+            self._send_html(400, _error_page(400, "Bad request", f"Message exceeds the {MAX_ASK_MESSAGE_CHARS:,}-character limit."))
+            return
+
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] could not open database for read: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
+        try:
+            meeting_row = self._load_meeting(conn, meeting_id)
+            if meeting_row is None:
+                return
+            participants = opsdb.normalized_participants(meeting_row["participating_agents"])
+            if not any(p["name"] == agent_name for p in participants):
+                self._send_html(409, _error_page(409, "Not a participant", f"'{agent_name}' is not a participant in this meeting."))
+                return
+            has_position = conn.execute(
+                "SELECT 1 FROM messages WHERE thread_id = ? AND from_agent = ? LIMIT 1",
+                (f"meeting-{meeting_id}", agent_name),
+            ).fetchone()
+            if has_position is None:
+                self._send_html(409, _error_page(
+                    409, "No position recorded",
+                    f"'{agent_name}' was selected or requested but never produced a real position in this "
+                    "meeting (the invocation did not succeed) — there is nothing to follow up on. Try Retry instead."))
+                return
+            topic = meeting_row["topic"]
+        finally:
+            conn.close()
+
+        try:
+            ok, error = meeting_orchestrator.gather_followup_reply(meeting_id, agent_name, topic, message)
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention on a follow-up in meeting {meeting_id}: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] unhandled follow-up error for meeting {meeting_id}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong sending this follow-up. See the server's terminal output for detail."))
+            return
+
+        if not ok:
+            self._send_html(502, _error_page(502, "Follow-up failed", f"'{agent_name}' did not respond: {error}. Your message was still recorded — you may try again."))
+            return
+
+        self._redirect(redirect_to)
+
+    def _handle_meeting_retry(self, meeting_id: int, fields: dict) -> None:
+        """Item 5. All eligibility (agent is a current participant, has no
+        recorded position yet, no retry already in progress, retry cap
+        not reached) is enforced atomically inside
+        opsdb.start_meeting_retry_run() — not duplicated here, unlike the
+        other two handlers above, since this route's whole reason for
+        being is that exact atomic check (closing a double-click race a
+        plain read-then-act pre-check cannot close)."""
+        agent_name = fields.get("agent_name", [""])[0].strip()
+        redirect_to = f"/meetings/{meeting_id}.html"
+
+        if agent_name not in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST:
+            self._send_html(404, _error_page(
+                404, "Not enabled", f"'{agent_name}' is not enabled for Executive Meeting participation."))
+            return
+
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] could not open database for read: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
+        try:
+            meeting_row = self._load_meeting(conn, meeting_id)
+            if meeting_row is None:
+                return
+            topic = meeting_row["topic"]
+        finally:
+            conn.close()
+
+        try:
+            ok, error = meeting_orchestrator.retry_position(meeting_id, agent_name, topic)
+        except LookupError as exc:
+            self._send_html(404, _error_page(404, "Not found", str(exc)))
+            return
+        except ValueError as exc:
+            self._send_html(409, _error_page(409, "Cannot retry", str(exc)))
+            return
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention starting a retry for meeting {meeting_id}: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] unhandled retry error for meeting {meeting_id}: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong retrying this participant. See the server's terminal output for detail."))
+            return
+
+        if not ok:
+            self._send_html(502, _error_page(502, "Retry failed", f"'{agent_name}' still did not respond: {error}. You may retry again, up to the retry limit."))
+            return
+
+        self._redirect(redirect_to)
 
 
 def _reconcile_orphaned_runs() -> None:

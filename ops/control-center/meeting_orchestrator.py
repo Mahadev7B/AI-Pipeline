@@ -64,13 +64,17 @@ def _parse_selection(response_text: str) -> list[str]:
 
 
 def _select_participants(topic: str) -> list[str]:
-    """Step 2: Orchestrator (this function's own validation) + CEO Agent
-    (the real judgment call) select participants. CEO is always
-    included by the caller (run_meeting), never decided here. Returns
-    validated, deterministically-truncated candidate names only — never
-    unvalidated text. On any invocation failure, returns an empty list
-    (a meeting with just CEO is still a valid, honest meeting — never
-    fabricate a selection when the real call failed)."""
+    """Step 2, CEO's half: CEO Agent's real judgment call about who has
+    relevant expertise. Milestone 2B3B round 2 (TASK-011, item 1) split
+    this function from Orchestrator's half — _validate_selection() below
+    — per cto-milestone2b3b-round2-architecture.md: this now returns the
+    RAW parsed candidate names (allowlist-filtered by _parse_selection()'s
+    regex, so it can only ever match a real candidate role, but NOT
+    truncated to the cap — that's Orchestrator's job, not CEO's). CEO is
+    always included by the caller (run_meeting), never decided here. On
+    any invocation failure, returns an empty list (a meeting with just
+    CEO is still a valid, honest meeting — never fabricate a selection
+    when the real call failed)."""
     prompt = (
         f"Founder: A cross-cutting question has been raised for an Executive Meeting: "
         f"\"{topic}\" From this list of candidate roles, which should participate because "
@@ -82,10 +86,67 @@ def _select_participants(topic: str) -> list[str]:
     result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
     if not result.ok:
         return []
-    selected = _parse_selection(result.response_text)
-    # Deterministic truncation at the cap (Red Team condition 2) — CEO is
-    # added separately by the caller, so the cap here is MAX-1 others.
-    return selected[: agent_runtime.MAX_MEETING_PARTICIPANTS - 1]
+    return _parse_selection(result.response_text)
+
+
+def _validate_selection(candidates: list[str]) -> tuple[list[str], str]:
+    """Step 2, Orchestrator's half (Milestone 2B3B round 2, item 1). Pure
+    Python — no invoke_agent() call, never touches ASK_AGENT_ALLOWLIST or
+    MEETING_PARTICIPANT_ALLOWLIST, because it never becomes a `claude
+    --agent` subprocess. Per cto-milestone2b3b-round2-architecture.md:
+    Orchestrator's real, distinct contribution is enforcement — deduping
+    CEO's raw nomination, dropping a redundant self-nomination of "ceo"
+    (CEO is always added separately by the caller, never counted here),
+    and deterministically truncating to the cap — not a second creative
+    judgment about which roles are relevant, which stays CEO's call.
+    Returns (validated_names, a short human-readable explanation of what
+    was admitted/dropped and why) — the explanation is what a meeting's
+    detail page actually shows (see run_meeting() below), the real,
+    attributed record Design Conformance round 2 asked for."""
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for name in candidates:
+        if name == "ceo" or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+
+    cap = agent_runtime.MAX_MEETING_PARTICIPANTS - 1  # CEO takes the +1 slot, added by the caller
+    validated = deduped[:cap]
+
+    if not deduped:
+        explanation = "Validated CEO's nomination: none. CEO is the meeting's only participant."
+    elif len(validated) == len(deduped):
+        explanation = (
+            f"Validated CEO's nomination: {', '.join(deduped)}. "
+            f"Admitted {len(validated)} of {len(deduped)} — within the {cap}-other cap."
+        )
+    else:
+        dropped = deduped[cap:]
+        explanation = (
+            f"Validated CEO's nomination: {', '.join(deduped)}. "
+            f"Admitted {len(validated)} of {len(deduped)} — capped at {cap} others; "
+            f"dropped: {', '.join(dropped)}."
+        )
+    return validated, explanation
+
+
+def _position_prompt(topic: str) -> str:
+    """The one prompt template for "state your position on this meeting's
+    topic" — shared by _gather_position() (the original gather) and
+    retry_position() (item 5) below, since a retry is explicitly the same
+    ask made again, not a different one. Milestone 2B3B round 2's own
+    architecture document is explicit that retry reuses "_gather_position()'s
+    existing prompt template unchanged" — factored out here so that's
+    true by construction, not by two copies staying in sync by hand.
+    gather_requested_position() (item 2) intentionally does NOT use this —
+    its prompt is worded differently on purpose (the meeting is already
+    under way and the Founder specifically asked for this participant)."""
+    return (
+        f"Founder: An Executive Meeting has been raised on this topic: \"{topic}\" "
+        f"State your position from your own role and responsibilities — your real "
+        f"assessment, not a generic opinion. Be concise (2-4 sentences)."
+    )
 
 
 def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str, bool, str | None]:
@@ -96,12 +157,7 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
     conn = opsdb.connect()
     try:
         run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
-        prompt = (
-            f"Founder: An Executive Meeting has been raised on this topic: \"{topic}\" "
-            f"State your position from your own role and responsibilities — your real "
-            f"assessment, not a generic opinion. Be concise (2-4 sentences)."
-        )
-        result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
+        result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
         if result.ok:
             opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
                                 to_agent=None, meeting_id=meeting_id)
@@ -170,23 +226,42 @@ def _parse_synthesis(text: str) -> tuple[str | None, str | None, str | None, str
 
 def run_meeting(topic: str) -> int:
     """The whole synchronous flow (Founder raises → CEO selects →
-    positions gathered concurrently, bounded → CEO synthesizes). Returns
-    the new meeting's id. Raises ValueError for a bad topic. Never
-    raises for a participant/synthesis failure — those are recorded
-    honestly and the meeting still completes with whatever real work
-    succeeded."""
+    Orchestrator validates → positions gathered concurrently, bounded →
+    CEO synthesizes). Returns the new meeting's id. Raises ValueError for
+    a bad topic. Never raises for a participant/synthesis failure — those
+    are recorded honestly and the meeting still completes with whatever
+    real work succeeded.
+
+    Milestone 2B3B round 2 (item 1): Orchestrator's validation step now
+    runs between CEO's raw nomination and meeting creation. Its
+    `agent_runs` row is honestly `scope_type="company"` — the meeting
+    doesn't exist yet at that point, so there is no `scope_id` to give a
+    meeting-scoped run (opsdb.start_run() would reject one) — per
+    cto-milestone2b3b-round2-architecture.md and Red Team's Milestone
+    2B3B round 2 review (affirmed without reservation, open question 4).
+    The actual visible content — what a meeting's detail page shows —
+    lands in a real meeting-scoped message the moment `meeting_id`
+    exists, on its own thread (`meeting-{id}-orchestrator`), never mixed
+    into the shared positions thread every participant's own position
+    uses."""
     topic = topic.strip()
     if not topic:
         raise ValueError("topic must not be empty")
     if len(topic) > MAX_TOPIC_CHARS:
         raise ValueError(f"topic exceeds the {MAX_TOPIC_CHARS:,}-character limit")
 
-    others = _select_participants(topic)
-    participants = ["ceo"] + others  # CEO is always a participant — never optional
+    raw = _select_participants(topic)  # CEO's call, unchanged
 
     conn = opsdb.connect()
     try:
+        run_id = opsdb.start_run(conn, "orchestrator", "company", agent_runtime.ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL)
+        validated, explanation = _validate_selection(raw)  # deterministic, no invocation
+        opsdb.end_run(conn, run_id, "ended")
+
+        participants = ["ceo"] + validated  # CEO is always a participant — never optional
         meeting_id = opsdb.create_meeting(conn, topic, "founder", participants)
+        opsdb.send_message(conn, f"meeting-{meeting_id}-orchestrator", "meeting", "orchestrator", explanation,
+                            to_agent=None, meeting_id=meeting_id)
     finally:
         conn.close()
 
@@ -206,3 +281,156 @@ def run_meeting(topic: str) -> int:
         conn.close()
 
     return meeting_id
+
+
+# ------------------------------------------- items 2, 3, 5 (Milestone 2B3B round 2) --
+
+def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
+                               requested_by: str = "founder") -> tuple[bool, str | None]:
+    """Item 2 (POST /api/meetings/<id>/request-perspective): a manually-
+    requested participant's position, gathered synchronously against an
+    already-created meeting. Mirrors _gather_position()'s discipline
+    (never fabricate a position on failure, always persist the real
+    agent_runs outcome) but additionally performs the atomic participant-
+    list append — and, per cto-milestone2b3b-round2-architecture.md, only
+    AFTER a real, successful invocation: on failure nothing is appended,
+    so a failed attempt never counts against the cap and the Founder may
+    click again. Writes into the SAME shared `meeting-{id}` thread every
+    other participant's position uses (this is a real position on the
+    topic, just gathered later — not a new kind of record, and not
+    item 1's Orchestrator note or item 3's follow-up thread).
+
+    Returns (ok, error_message_or_None). Callers must not treat a
+    returned `ok=False` as an HTTP error on its own — see server.py: the
+    caller has already separately validated eligibility (allowlist,
+    not-already-a-participant, cap) before calling this; this function's
+    own opsdb.add_meeting_participant() call is the atomic, authoritative
+    re-check of exactly that same eligibility, and can still raise
+    LookupError/ValueError/sqlite3.OperationalError if the state changed
+    between the caller's check and now (a real, if rare, race) —
+    propagated uncaught, same as retry_position() below."""
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
+        prompt = (
+            f"Founder: An Executive Meeting is already under way on this topic: \"{topic}\" "
+            f"The Founder has specifically asked for your perspective. State your position from "
+            f"your own role and responsibilities — your real assessment, not a generic opinion. "
+            f"Be concise (2-4 sentences)."
+        )
+        result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
+        if not result.ok:
+            sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
+                              f"provide a position ({result.error_kind}): {result.error}\n")
+            opsdb.end_run(conn, run_id, "failed")
+            return (False, result.error)
+
+        opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                            to_agent=None, meeting_id=meeting_id)
+        opsdb.end_run(conn, run_id, "ended")
+        opsdb.add_meeting_participant(conn, meeting_id, agent_name, agent_runtime.MAX_MEETING_PARTICIPANTS,
+                                       requested_by=requested_by)
+        return (True, None)
+    finally:
+        conn.close()
+
+
+def _build_followup_transcript(conn, meeting_id: int, agent_name: str, topic: str, thread_id: str) -> str:
+    """Item 3's full-context reconstruction, built fresh from `messages`
+    on every call — the same rebuild-from-scratch discipline server.py's
+    own _build_transcript() already uses for Ask-Agent, not a new caching
+    mechanism. Per cto-milestone2b3b-round2-architecture.md and Red
+    Team's independent verification (Milestone 2B3B round 2 review,
+    finding 6): a follow-up reply can honestly need to reference another
+    participant's original position, not just the addressee's own — so
+    this includes every `from_agent` row from the shared `meeting-{id}`
+    positions thread (all participants, not filtered to just
+    `agent_name`), plus this specific follow-up thread's own prior
+    turns."""
+    positions = conn.execute(
+        "SELECT from_agent, body FROM messages WHERE thread_id = ? ORDER BY id",
+        (f"meeting-{meeting_id}",),
+    ).fetchall()
+    followup_rows = conn.execute(
+        "SELECT from_agent, body FROM messages WHERE thread_id = ? ORDER BY id",
+        (thread_id,),
+    ).fetchall()
+
+    lines = [f'Founder: An Executive Meeting was held on this topic: "{topic}"', "", "Original positions from that meeting:"]
+    for r in positions:
+        lines.append(f"{r['from_agent']}: {r['body']}")
+    lines.append("")
+    lines.append(f"The Founder now has a follow-up question for you ({agent_name}) specifically. "
+                  f"Answer as yourself, drawing on the full discussion above where relevant.")
+    for r in followup_rows:
+        speaker = "Founder" if r["from_agent"] == "founder" else agent_name
+        lines.append(f"{speaker}: {r['body']}")
+    return "\n".join(lines)
+
+
+def gather_followup_reply(meeting_id: int, agent_name: str, topic: str, founder_message: str) -> tuple[bool, str | None]:
+    """Item 3 (POST /api/meetings/<id>/followup). One Founder-initiated
+    exchange in a thread separate from the shared positions thread — see
+    _build_followup_transcript() above. Eligibility (agent_name is a
+    current participant AND has a real recorded position — Red Team's
+    Milestone 2B3B round 2 review, finding 7 / condition 6) is checked by
+    the caller (server.py) before this is invoked, not here — this
+    function's own job is only the write + the invocation.
+
+    Returns (ok, error_message_or_None). No agent_runs row is created for
+    this call — matching _select_participants()'s and _synthesize()'s own
+    existing precedent (neither of those creates one either); CTO's
+    Milestone 2B3B round 2 architecture document does not call for one
+    here, unlike items 2 and 5 which explicitly do."""
+    conn = opsdb.connect()
+    try:
+        thread_id = f"meeting-{meeting_id}-{agent_name}"
+        opsdb.send_message(conn, thread_id, "meeting", "founder", founder_message,
+                            to_agent=agent_name, meeting_id=meeting_id)
+        transcript = _build_followup_transcript(conn, meeting_id, agent_name, topic, thread_id)
+        result = agent_runtime.invoke_agent(agent_name, transcript, wait_for_slot=True)
+        if not result.ok:
+            sys.stderr.write(f"[control-center] meeting {meeting_id}: follow-up with {agent_name} failed "
+                              f"({result.error_kind}): {result.error}\n")
+            return (False, result.error)
+        opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
+                            to_agent="founder", meeting_id=meeting_id)
+        return (True, None)
+    finally:
+        conn.close()
+
+
+def retry_position(meeting_id: int, agent_name: str, topic: str) -> tuple[bool, str | None]:
+    """Item 5 (POST /api/meetings/<id>/retry). Uses
+    opsdb.start_meeting_retry_run() for the atomic eligibility +
+    exclusivity check — see that function's docstring for exactly what it
+    guards against (a double-clicked Retry button racing itself, or
+    racing the original still-in-flight _gather_position() call). Unlike
+    gather_requested_position() above, the run is started FIRST and the
+    invocation happens only after that succeeds — retry's whole purpose
+    is closing a race that starting the run first is what closes it.
+
+    Raises whatever start_meeting_retry_run() raises
+    (LookupError/ValueError/sqlite3.OperationalError) — propagated
+    uncaught; server.py maps those to 404/409/503, the same convention
+    every other write route in this codebase uses. Returns
+    (ok, error_message_or_None) only for the invocation's own
+    success/failure, once the run has already started."""
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_meeting_retry_run(conn, meeting_id, agent_name,
+                                                agent_runtime.MEETING_ACTIVITY_LABEL,
+                                                agent_runtime.MAX_RETRIES_PER_PARTICIPANT)
+        result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
+        if result.ok:
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                                to_agent=None, meeting_id=meeting_id)
+            opsdb.end_run(conn, run_id, "ended")
+            return (True, None)
+        else:
+            sys.stderr.write(f"[control-center] meeting {meeting_id}: retry for {agent_name} failed "
+                              f"({result.error_kind}): {result.error}\n")
+            opsdb.end_run(conn, run_id, "failed")
+            return (False, result.error)
+    finally:
+        conn.close()

@@ -181,6 +181,73 @@ positions (json — agent → statement/evidence/assumptions), agreements,
 disagreements, unresolved_questions, recommendation, founder_decision
 (nullable), linked_decision_id (nullable fk → decisions), created_at`
 
+**`participating_agents` shape (Milestone 2B3B round 2, TASK-011).** From
+this round on, `opsdb.create_meeting()` writes this column as a JSON array
+of objects, not bare strings:
+
+```json
+[{"name": "cto", "source": "selected", "requested_by": null},
+ {"name": "security", "source": "requested", "requested_by": "founder"}]
+```
+
+`source` is `"selected"` for CEO (always) and every participant CEO
+nominated/Orchestrator validated at meeting-creation time, or
+`"requested"` for a participant added later via `POST
+/api/meetings/<id>/request-perspective` (item 2). `requested_by` is
+`null` for a `"selected"` entry, or the literal string `"founder"` for a
+`"requested"` one — this system has no per-person Founder identity (see
+`ops/SECURITY.md`), so `"founder"` is the only value it can honestly
+record, the same string every other Founder-attributed write in this
+schema already uses (`initiated_by`, `decide_meeting(by="founder")`).
+
+**Backward compatibility.** Every `meetings` row created before this
+round shipped holds the *original* flat shape — a bare JSON array of
+name strings, e.g. `["ceo", "cto", "product"]` — written by the pre-round-2
+`create_meeting()`. No migration/backfill was performed (Red Team's
+Milestone 2B3B round 2 review, finding 5a, considered one and left the
+choice to Development — a normalization helper was judged the smaller,
+lower-risk change for this early-stage feature's small row count).
+**Every reader of this column, without exception, must go through
+`opsdb.normalized_participants()` (or its single-entry counterpart,
+`opsdb._normalize_participant()`)** — never index or iterate the raw JSON
+directly. A bare string normalizes to `{"name": <string>, "source":
+"selected", "requested_by": null}` — the only thing a pre-existing row
+could have meant. This is not optional: a bare-string row read as if it
+were the new object shape (or vice versa) raises `TypeError` at the first
+membership/attribute access, which is exactly the regression Red Team's
+review caught (finding 5b) against `generate_meetings.py`'s two
+pre-round-2 readers before this round's fix.
+
+**Participant-cap semantics (unrevised).** `MAX_MEETING_PARTICIPANTS = 6`
+(`ops/control-center/agent_runtime.py`) is the single, binding total cap
+on `participating_agents` — CEO plus every `"selected"` and every
+`"requested"` entry combined, never two separate pools. CTO's Milestone
+2B3B round 2 architecture proposal considered letting a manually-
+requested addition (item 2) exceed this cap via a new
+`MAX_REQUESTED_PARTICIPANTS` constant; Red Team's review of that round
+did not affirm the revision (the cited mockup evidence didn't support the
+specific number proposed, and it materially enlarged an already-reviewed
+cost bound) — see `ops/reviews/red-team-milestone2b3b-round2.md`, finding
+1. `opsdb.add_meeting_participant()` therefore enforces
+`MAX_MEETING_PARTICIPANTS` as the total cap, atomically, with no second
+constant anywhere in the codebase.
+
+**Thread-id conventions for `messages.meeting_id`-scoped rows (Milestone
+2B3B round 2).** A single meeting now spans up to three distinct kinds of
+thread, all sharing `scope='meeting'` and the same `meeting_id` — do not
+filter by `meeting_id` alone when a *specific* thread's content is
+wanted, since two different kinds of thread can carry messages from the
+same `from_agent`:
+- `meeting-{id}` — the shared positions thread every participant's
+  *original* position is written to (unchanged since Milestone 2B3B;
+  item 2's manually-requested participants write here too, once —
+  it's a real position on the topic, just gathered later).
+- `meeting-{id}-orchestrator` — Orchestrator's one-time validation note
+  (item 1), never a participant's position.
+- `meeting-{id}-{agent_name}` — one distinct thread per (meeting,
+  participant) follow-up conversation (item 3), separate from that
+  participant's original position in `meeting-{id}` above.
+
 ## Deterministic derived state
 
 These are the exact formulas `ops/db/report.py` and, from Phase 2, the

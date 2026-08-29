@@ -80,6 +80,60 @@ MEETING_ACTIVITY_LABEL = "Meeting: contributing a position"
 MEETING_ACTIVITY_LIKE = "Meeting:%"
 MAX_MEETING_PARTICIPANTS = 6  # CEO + up to 5 others — see cto-milestone2b3b-architecture.md
 
+# Milestone 2B3B round 2 (TASK-011): request-perspective, follow-up, and
+# retry. ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL is Orchestrator's real,
+# attributed agent_runs row for validating CEO's participant nomination
+# (item 1) — a deterministic Python step, never a `claude --agent
+# orchestrator` invocation, so it needs no allowlist entry.
+ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL = "Orchestrator: validating meeting participant selection"
+
+# Item 5 (manual retry of a failed participant). Affirmed as reasonable by
+# Red Team's Milestone 2B3B round 2 review (a retry re-attempts a slot
+# already counted in MAX_MEETING_PARTICIPANTS, it doesn't add headcount —
+# a materially different case from item 2's rejected cap revision, see
+# below). Enforced atomically by opsdb.start_meeting_retry_run().
+MAX_RETRIES_PER_PARTICIPANT = 2
+
+# Deliberately NOT defined here: MAX_REQUESTED_PARTICIPANTS. CTO's
+# Milestone 2B3B round 2 proposal introduced one to let a manually-
+# requested participant (item 2, request-perspective) exceed
+# MAX_MEETING_PARTICIPANTS. Red Team's review of that round (finding 1)
+# did not affirm it — the mockup evidence cited for the revision didn't
+# support the specific number proposed, and the revision compounded with
+# retries into a materially larger cost bound than what was previously
+# reviewed. Per Red Team's disposition, a manually-requested participant
+# counts against the SAME MAX_MEETING_PARTICIPANTS total cap as everyone
+# else (enforced in opsdb.add_meeting_participant()) — there is no second,
+# larger allowance. If the Founder later authorizes a carve-out on a
+# corrected framing, that is a separate, future change, not this one.
+
+# Aggregate worst-case cost — disclosed once, here, per Red Team's
+# Milestone 2B3B round 2 review (condition 2): the first pass disclosed a
+# single closed-form number for its own scope (~8 invocations, ~$4) and
+# this round must too, rather than leaving each new mechanism's bound
+# individually true but never summed.
+#
+#   1                                              CEO's selection call
+# + MAX_MEETING_PARTICIPANTS * (1 + MAX_RETRIES_PER_PARTICIPANT)  [6*3=18]
+#                   every one of the up to 6 total participant slots —
+#                   CEO-selected or manually-requested, in any mix, since
+#                   both draw from the one shared cap — gathered once,
+#                   then retried up to MAX_RETRIES_PER_PARTICIPANT times
+# + 1                                              CEO's synthesis call
+# = 20 real, MAX_BUDGET_USD-capped `claude` invocations per meeting,
+#   worst case — roughly $10.00 at $0.50/invocation.
+#
+# Orchestrator's own validation step (above) adds zero invocations to
+# this figure — it's pure Python, never a subprocess. This total does
+# NOT include POST /api/meetings/<id>/followup: that route has no per-
+# thread round cap (deliberate parity with Ask-Agent's own unbounded-
+# rounds design — see meeting_orchestrator.py), but unlike Ask-Agent's
+# fixed 5 possible threads, a follow-up thread exists per (meeting,
+# participant) and that number grows without bound as meetings
+# accumulate — so no single closed-form ceiling covers it; each
+# individual follow-up call is still bounded at $0.50. See
+# ops/SECURITY.md, "Executive Meetings round 2," for the disclosure.
+
 DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red Team condition 5 —
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"

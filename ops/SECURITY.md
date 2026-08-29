@@ -203,3 +203,42 @@ deferred (not adopted) since the actual reader-blocked-by-writer window
 this design produces is milliseconds, not seconds — see the CTO
 architecture doc for the full reasoning, including why the git-committed
 database file makes WAL a real ongoing cost, not a one-time flip.
+
+## Executive Meetings round 2 (Milestone 2B3B round 2, TASK-011)
+
+Three more write routes, same `SESSION_TOKEN` gate as every route above —
+`POST /api/meetings/<id>/request-perspective`, `POST
+/api/meetings/<id>/followup`, `POST /api/meetings/<id>/retry`. This is
+"more of the same disclosed risk," not a new authorization mechanism or a
+new *kind* of risk: the token still only proves a request came from a
+page this server rendered, not that a human sent it, per every disclosure
+above. Full design in `ops/reviews/cto-milestone2b3b-round2-architecture.md`
+and `ops/reviews/red-team-milestone2b3b-round2.md`.
+
+**One route's magnitude, specifically, is worth its own line: `POST
+/api/meetings/<id>/followup` has no rate limit or round cap of any kind.**
+Every other write route that triggers a real model invocation is bounded
+by a fixed, closed-form worst case (see `agent_runtime.py`'s own
+aggregate-cost comment, next to `MAX_RETRIES_PER_PARTICIPANT`, for the
+~20-invocation / ~$10 figure covering selection + the initial participant
+batch with retries + manually-requested participants with retries +
+synthesis). A follow-up thread has no such ceiling — a Founder (or, per
+the already-disclosed risk above, anything on this machine that can read
+a served page and forge a POST, including an agent with Bash tool access)
+can send an unlimited number of follow-up messages into any one
+`meeting-{id}-{agent_name}` thread, each one a real, separate
+`MAX_BUDGET_USD`-bounded (`$0.50`) invocation with no upper bound on how
+many can be sent. This is a deliberate design choice, not an oversight —
+it gives a follow-up conversation the same unbounded-rounds behavior an
+Ask-Agent conversation already has, and Ask-Agent's own unbounded-rounds
+risk was already accepted in Milestone 2B2. What's different in
+magnitude, not in kind: Ask-Agent's unbounded-rounds risk is structurally
+capped at exactly 5 possible threads (one per `ASK_AGENT_ALLOWLIST`
+entry, ever); a meeting follow-up thread exists per `(meeting,
+participant)`, and that number of threads — each individually capable of
+carrying unlimited real-money rounds — grows without bound as meetings
+accumulate. A single successful forgery against this one route therefore
+has a larger real-dollar blast radius than any other route in this
+system permits today. Retry and request-perspective, by contrast, are
+each bounded (`MAX_RETRIES_PER_PARTICIPANT` and `MAX_MEETING_PARTICIPANTS`
+respectively) and don't carry this same disclosure.
