@@ -452,6 +452,33 @@ Founder action, and by the time someone can restart this process they
 already have a level of local access (§11) that makes a reset lockout
 counter the least of what it grants them.
 
+**Disclosed residual limitation (Red Team's Milestone 2B4 review, finding
+F1)**: the lockout counter is shared and not identity-scoped — correctly
+so, since there is exactly one Founder/credential — but this means an
+attacker already inside this design's own assumed threat class ("another
+local process/page reaches the Control Center," Founder threat item 1,
+which can already read `/login`'s unauthenticated page and its embedded
+CSRF token, satisfying C2 trivially) can sustain a flood of failed
+`/api/login` POSTs indefinitely. Because C1 requires `/api/login` requests
+to be fully serialized through `_LOGIN_LOCK`, and each 30s lockout cycle
+allows exactly 5 real `scrypt` verifications before re-locking, a flood
+that reliably wins the race to consume those 5 slots each cycle can keep
+the Founder's own genuine login attempts landing in the "currently locked,
+429" branch far more often than not for as long as it runs — a real, if
+not absolute, denial of the Founder's own access, caused by the
+brute-force defense mechanism itself. Independently verified this is
+bounded, not catastrophic: `hashlib.scrypt` releases the GIL during
+computation (measured directly), so this only serializes `/api/login`
+against itself — it does not freeze any other route on the server. No
+cheap in-scope fix exists that doesn't weaken something else
+(per-source-IP limiting is theater on loopback; anything better requires
+distinguishing "the real Founder" from "a co-resident process," which is
+`risks.id=3`'s territory). The Founder's actual remedy, same as every
+other same-OS-user-class gap in this design (§11): identify and stop the
+flooding process, which they can always do as the owning OS user. This
+disclosure must also appear in `ops/SECURITY.md`'s Milestone 2B4 section
+(§12's files-touched list) alongside every other known limitation.
+
 ## 9. Auditability
 
 Same convention as every existing log line in this file —
@@ -491,19 +518,32 @@ the passphrase, the derived hash, the salt, a session id, or the CSRF
 
 `SESSIONS` (a dict) and the lockout counter/timestamp (§8) are shared
 mutable state reachable from multiple `ThreadingHTTPServer` worker
-threads. Both are guarded by ordinary `threading.Lock`s around each brief
-read-modify-write — the same category of primitive `agent_runtime.py`
-already uses for its process-group registry (2B3A's shutdown-cleanup
-mechanism), not a new pattern. This is explicitly **not** a third
-competing concurrency system: it never touches SQLite (no interaction
-with the existing `BEGIN IMMEDIATE` / atomic-`UPDATE` patterns) and never
-touches `agent_runtime`'s `BoundedSemaphore` (no interaction with
-`MAX_CONCURRENT_INVOCATIONS`). Login/logout/session-touch operations are
-infrequent (once per session, not once per request) and each lock is
-held only for a dict get/set — there is no scenario in this design where
-a request thread blocks waiting on a model invocation while holding
-either of these locks, so it cannot introduce the kind of contention
-2B3A's `BEGIN IMMEDIATE` design was built to avoid.
+threads. Both are guarded by ordinary `threading.Lock`s — `SESSIONS`'
+lock around each brief read-modify-write (a session lookup/touch/create/
+delete), and, per §8's C1 fix, `_LOGIN_LOCK` held across the *entire*
+check→verify→increment critical section of `/api/login` specifically
+(deliberately not just a dict get/set there — see §8's Red Team
+disclosure for why full serialization was required and its accepted
+cost). Both are the same category of primitive this codebase already
+uses to guard shared mutable state under `ThreadingHTTPServer` —
+`agent_runtime.py`'s `_INVOCATION_SEMAPHORE`, a `threading.BoundedSemaphore`
+guarding `MAX_CONCURRENT_INVOCATIONS` (line 174) — not a new pattern.
+(Correction, Red Team's Milestone 2B4 review, finding F2: an earlier
+draft of this section cited a "process-group registry" as the existing
+precedent; no such registry exists in shipped `agent_runtime.py` — it was
+proposed in the 2B3A architecture draft and explicitly rejected by Red
+Team's own 2B3A review, `ops/reviews/red-team-milestone2b3a-architecture.md`,
+finding 5. `_INVOCATION_SEMAPHORE` is the actual, shipped precedent; the
+underlying claim below is unaffected by the correction.) This is
+explicitly **not** a third competing concurrency system: it never touches
+SQLite (no interaction with the existing `BEGIN IMMEDIATE` / atomic-`UPDATE`
+patterns) and never touches `agent_runtime`'s `BoundedSemaphore` itself (no
+interaction with `MAX_CONCURRENT_INVOCATIONS`). Login/logout/session-touch
+operations are infrequent (once per session, not once per request) —
+there is no scenario in this design where a request thread blocks waiting
+on a model invocation while holding any of these locks, so it cannot
+introduce the kind of contention 2B3A's `BEGIN IMMEDIATE` design was built
+to avoid.
 
 ## 11. What this security guarantee IS and is NOT — stated without softening
 
