@@ -87,9 +87,68 @@ state from the live database. No write actions yet. See
 `ops/reviews/red-team-phase2-architecture.md`, and
 `ops/reviews/cto-phase2-milestone1-conformance.md`.
 
-**Milestone 2 (not started):** the remaining screens (Pipeline, Agents,
-Conversation, Meetings) and, only once a real interactive/write feature
-needs it, a live process — not before.
+**Milestone 2A — DONE (TASK-005):** the remaining read-only screens —
+Pipeline, Agents, Decisions, Meetings — plus shared nav. See
+`ops/reviews/cto-milestone2a-architecture.md`,
+`ops/reviews/red-team-milestone2a-architecture.md`,
+`ops/reviews/design-conformance-milestone2a.md`.
+
+**Milestone 2B1 — DONE (TASK-006):** the first live process
+(`ops/control-center/server.py`) and the first write path — Founder Inbox
+Approve/Reject/Discuss. See `ops/reviews/cto-milestone2b1-architecture.md`,
+`ops/reviews/red-team-milestone2b1-architecture.md`.
+
+**Milestone 2B2 — DONE (TASK-007):** real Ask-Agent conversations
+(zero-tool, sandboxed model invocations) with persistent per-agent
+threads. See `ops/reviews/cto-milestone2b2-architecture.md`,
+`ops/reviews/red-team-milestone2b2-architecture.md`,
+`ops/reviews/design-conformance-milestone2b2.md`.
+
+**Milestone 2B3A — DONE (TASK-009):** controlled concurrent Agent Runtime
+foundation — `ThreadingHTTPServer`, a bounded semaphore over real model
+invocations, and the transaction-level fixes concurrency required. See
+`ops/reviews/cto-milestone2b3a-architecture.md`,
+`ops/reviews/red-team-milestone2b3a-architecture.md`.
+
+**Milestone 2B3B — DONE (TASK-010, corrected and re-reviewed; TASK-011
+round 2):** real multi-agent Executive Meetings — CEO-led participant
+selection, bounded-concurrent position-gathering, synthesis, Founder
+decision recording, and (round 2) request-perspective, follow-up, and
+retry. See `ops/reviews/cto-milestone2b3b-architecture.md`,
+`ops/reviews/red-team-milestone2b3b-architecture.md`,
+`ops/reviews/cto-milestone2b3b-round2-architecture.md`,
+`ops/reviews/founder-conformance-review-milestone2b3b.md`.
+
+**Chief of Staff rename — DONE (TASK-012):** Founder-directed
+human-facing role rename (Orchestrator → Chief of Staff, display/label
+only — see `DECISIONS.md` DEC-005). Not a numbered milestone; a
+documentation/UI correction run through the same full gate sequence.
+See `ops/reviews/cto-chief-of-staff-rename.md`,
+`ops/reviews/cto-chief-of-staff-rename-conformance.md`.
+
+**Milestone 2B4 — DONE (TASK-013):** Founder Identity Verification for
+Consequential Write Actions — a locally authenticated Founder session
+(passphrase + `scrypt` + session cookie) now gates all 9 write/auth
+routes and every GET read; `risks.id=2` moved `open` → `mitigated` (see
+`DECISIONS.md` DEC-006). See `ops/reviews/cto-milestone2b4-architecture.md`,
+`ops/reviews/security-milestone2b4-threat-model.md`,
+`ops/reviews/red-team-milestone2b4-architecture.md`,
+`ops/reviews/cto-milestone2b4-conformance.md`.
+
+**Milestone 2B5 (current, authorized, not yet started):** Review/QA
+Failure History & Release Readiness Visibility — a Founder-facing view
+surfacing the real `review_results`/`qa_results` history and
+`deployments`/release-readiness records, closing the last two
+Phase-2-scoped capabilities ("QA/review failures," "release
+information") named above that aren't yet built. Same full gate sequence
+as every prior milestone. `risks.id=3` (Bash tool scoping) stays out of
+scope.
+
+Phase 2 is not yet complete — Milestone 2B5 remains open work within it.
+Phase 3 is not authorized and does not begin until Phase 2's own scope,
+including 2B5, is finished and the Founder separately approves the
+Phase 3 transition (see PHASE 3, below, and the Rule at the bottom of
+this file).
 
 ## PHASE 3 — Automated Orchestration *(after Phase 2 is complete)*
 
