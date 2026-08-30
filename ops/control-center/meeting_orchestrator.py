@@ -255,8 +255,26 @@ def run_meeting(topic: str) -> int:
     conn = opsdb.connect()
     try:
         run_id = opsdb.start_run(conn, "orchestrator", "company", agent_runtime.ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL)
-        validated, explanation = _validate_selection(raw)  # deterministic, no invocation
-        opsdb.end_run(conn, run_id, "ended")
+        # TASK-011 QA round 2, defect 1: unlike every other run-creating
+        # call site this round added (gather_requested_position(),
+        # retry_position()), this one had no try/except — a mid-step
+        # exception (e.g. _validate_selection() raising, however
+        # unlikely, or an sqlite3.OperationalError from end_run() itself)
+        # left this row open (ended_at IS NULL) forever, with no
+        # reconciliation pass covering it either (see agent_runtime.py's
+        # ORCHESTRATOR_VALIDATION_ACTIVITY_LIKE / server.py's
+        # _reconcile_orphaned_runs(), fixed alongside this). Same
+        # end-as-failed-then-reraise discipline as _gather_position(),
+        # gather_requested_position(), and retry_position() already use.
+        try:
+            validated, explanation = _validate_selection(raw)  # deterministic, no invocation
+            opsdb.end_run(conn, run_id, "ended")
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
 
         participants = ["ceo"] + validated  # CEO is always a participant — never optional
         meeting_id = opsdb.create_meeting(conn, topic, "founder", participants)
@@ -291,14 +309,33 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
     requested participant's position, gathered synchronously against an
     already-created meeting. Mirrors _gather_position()'s discipline
     (never fabricate a position on failure, always persist the real
-    agent_runs outcome) but additionally performs the atomic participant-
-    list append — and, per cto-milestone2b3b-round2-architecture.md, only
-    AFTER a real, successful invocation: on failure nothing is appended,
-    so a failed attempt never counts against the cap and the Founder may
-    click again. Writes into the SAME shared `meeting-{id}` thread every
-    other participant's position uses (this is a real position on the
-    topic, just gathered later — not a new kind of record, and not
-    item 1's Orchestrator note or item 3's follow-up thread).
+    agent_runs outcome).
+
+    TASK-011 QA round 2, defect 2 (fixed here): opsdb.add_meeting_participant()
+    now runs BEFORE the real invocation, not after — the same "claim
+    exclusivity first" discipline retry_position() below already uses via
+    opsdb.start_meeting_retry_run(). Previously this atomic append
+    happened only on a successful invocation, at the very end; that meant
+    N truly concurrent requests for the same not-yet-participant agent
+    could all pass the caller's (server.py) read-only pre-check and all
+    make a REAL, costed invocation before only one of them won the
+    append — QA reproduced exactly this (3 concurrent calls, 3 real
+    invocations, 3 messages persisted in the shared thread, only 1
+    credited). Reserving the slot first means a second concurrent caller
+    now fails opsdb.add_meeting_participant()'s own atomic dup check
+    immediately (ValueError, "already a participant") and never reaches
+    invoke_agent() at all — no wasted invocation, not just tidier
+    bookkeeping after the fact.
+
+    A reservation that isn't backed by a real, successful position must
+    not linger as a fabricated participant (opsdb.add_meeting_participant()'s
+    own contract, unchanged) — so on invocation failure, or any unhandled
+    exception after reserving, opsdb.remove_meeting_participant() rolls
+    the reservation back before returning/re-raising. Writes into the
+    SAME shared `meeting-{id}` thread every other participant's position
+    uses (this is a real position on the topic, just gathered later — not
+    a new kind of record, and not item 1's Orchestrator note or item 3's
+    follow-up thread).
 
     Returns (ok, error_message_or_None). Callers must not treat a
     returned `ok=False` as an HTTP error on its own — see server.py: the
@@ -311,6 +348,14 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
     propagated uncaught, same as retry_position() below."""
     conn = opsdb.connect()
     try:
+        # Reserve the slot BEFORE any real invocation — see docstring
+        # above. Raises LookupError (meeting missing) / ValueError
+        # (already a participant, or cap reached) / sqlite3.OperationalError
+        # (lock contention) — propagated uncaught to server.py, same
+        # convention every other write route in this codebase uses.
+        opsdb.add_meeting_participant(conn, meeting_id, agent_name, agent_runtime.MAX_MEETING_PARTICIPANTS,
+                                       requested_by=requested_by)
+
         run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
         prompt = (
             f"Founder: An Executive Meeting is already under way on this topic: \"{topic}\" "
@@ -319,39 +364,52 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
             f"Be concise (2-4 sentences)."
         )
         # Everything from here on operates on an ALREADY-CREATED run row
-        # (run_id) — same discipline as _handle_ask() in server.py
-        # (Code Review, TASK-009) and _gather_position() above: an
-        # unhandled exception anywhere in this block (a send_message()
-        # failure, lock contention, anything unexpected) must still end
-        # the run as 'failed' before propagating, or it stays open
-        # (ended_at IS NULL) until the next server restart's
-        # reconciliation pass — silently and permanently blocking every
-        # future request-perspective/retry against this exact
-        # agent+meeting in the meantime (Code Review, Milestone 2B3B
-        # round 2 finding).
+        # (run_id) AND an already-reserved participant slot — same
+        # discipline as _handle_ask() in server.py (Code Review,
+        # TASK-009) and _gather_position() above: an unhandled exception
+        # anywhere in this block (a send_message() failure, lock
+        # contention, anything unexpected) must still end the run as
+        # 'failed' AND release the reservation before propagating, or the
+        # run stays open (ended_at IS NULL) until the next server
+        # restart's reconciliation pass, and/or the reservation lingers
+        # as a fabricated participant with no real position.
         try:
             result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
             if not result.ok:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
                                   f"provide a position ({result.error_kind}): {result.error}\n")
                 opsdb.end_run(conn, run_id, "failed")
+                _release_reservation(conn, meeting_id, agent_name)
                 return (False, result.error)
 
             opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
                                 to_agent=None, meeting_id=meeting_id)
             opsdb.end_run(conn, run_id, "ended")
+            return (True, None)
         except Exception:
             try:
                 opsdb.end_run(conn, run_id, "failed")
             except (LookupError, ValueError):
                 pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
+            _release_reservation(conn, meeting_id, agent_name)
             raise
-
-        opsdb.add_meeting_participant(conn, meeting_id, agent_name, agent_runtime.MAX_MEETING_PARTICIPANTS,
-                                       requested_by=requested_by)
-        return (True, None)
     finally:
         conn.close()
+
+
+def _release_reservation(conn, meeting_id: int, agent_name: str) -> None:
+    """Best-effort rollback of the reservation gather_requested_position()
+    made via opsdb.add_meeting_participant() before invoking, for the
+    case where the invocation did not, in fact, succeed. Never lets a
+    cleanup-time error mask the real one already being handled/returned —
+    same pragmatic "swallow cleanup failures" discipline the surrounding
+    except blocks already use for opsdb.end_run()."""
+    try:
+        opsdb.remove_meeting_participant(conn, meeting_id, agent_name)
+    except Exception as exc:  # noqa: BLE001 — cleanup-only, must never mask the real error
+        sys.stderr.write(f"[control-center] meeting {meeting_id}: could not release reservation for "
+                          f"{agent_name} after a failed request-perspective invocation: "
+                          f"{type(exc).__name__}: {exc}\n")
 
 
 def _build_followup_transcript(conn, meeting_id: int, agent_name: str, topic: str, thread_id: str) -> str:

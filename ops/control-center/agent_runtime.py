@@ -86,6 +86,13 @@ MAX_MEETING_PARTICIPANTS = 6  # CEO + up to 5 others — see cto-milestone2b3b-a
 # (item 1) — a deterministic Python step, never a `claude --agent
 # orchestrator` invocation, so it needs no allowlist entry.
 ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL = "Orchestrator: validating meeting participant selection"
+# TASK-011 QA round 2, defect 1: server.py's startup reconciliation only
+# ever scanned ASK_AGENT_ACTIVITY_LIKE and MEETING_ACTIVITY_LIKE, so an
+# orphaned Orchestrator-validation run (current_activity starting with
+# "Orchestrator:") matched neither pattern and was never cleaned up on
+# restart — same LABEL/LIKE-pair convention as the two constants above,
+# so _reconcile_orphaned_runs() can cover this run type too.
+ORCHESTRATOR_VALIDATION_ACTIVITY_LIKE = "Orchestrator:%"
 
 # Item 5 (manual retry of a failed participant). Affirmed as reasonable by
 # Red Team's Milestone 2B3B round 2 review (a retry re-attempts a slot

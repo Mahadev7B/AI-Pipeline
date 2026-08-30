@@ -34,7 +34,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
-from agent_runtime import MEETING_PARTICIPANT_ALLOWLIST, MAX_MEETING_PARTICIPANTS  # noqa: E402 — Milestone 2B3B(+round 2)
+from agent_runtime import (  # noqa: E402 — Milestone 2B3B(+round 2)
+    MEETING_PARTICIPANT_ALLOWLIST, MAX_MEETING_PARTICIPANTS, MAX_RETRIES_PER_PARTICIPANT,
+)
 import opsdb  # noqa: E402 — Milestone 2B3B round 2: normalized_participants() is the only correct way to read
               # meetings.participating_agents now that it may hold either the old flat-string shape or the new
               # {"name","source","requested_by"} object shape (see opsdb._normalize_participant()'s docstring).
@@ -148,6 +150,24 @@ def render_position_card(agent_name: str, body_text: str, requested_by: str | No
       <div style="font-size:10.5px; font-weight:700; color:{label_color}; margin-bottom:5px; text-transform:uppercase;">{e(agent_name)}{label_suffix}</div>
       <div style="font-size:12px; color:var(--text2); line-height:1.5;">{e(body_text)}</div>
     </div>'''
+
+
+def _retry_exhausted(conn: sqlite3.Connection, meeting_id: int, agent_name: str) -> bool:
+    """TASK-011 QA round 2, defect 3: mirrors opsdb.start_meeting_retry_run()'s
+    own `failed_count >= max_retries + 1` threshold exactly (see that
+    function's docstring for why it's `+ 1`, not `max_retries` alone),
+    so the Retry button is never offered for a slot that would just get
+    a guaranteed 409. Read-only — the real enforcement stays entirely in
+    start_meeting_retry_run()'s atomic check; a stale read here (a retry
+    landing between this render and a click) is not a correctness gap,
+    only a rarer still-safe 409 the atomic function still catches."""
+    row = conn.execute(
+        "SELECT COUNT(*) FROM agent_runs WHERE agent_id = (SELECT id FROM agents WHERE name = ?) "
+        "AND scope_type = 'meeting' AND scope_id = ? AND status = 'failed'",
+        (agent_name, meeting_id),
+    ).fetchone()
+    failed_count = row[0] if row else 0
+    return failed_count >= MAX_RETRIES_PER_PARTICIPANT + 1
 
 
 def render_orchestrator_note(conn: sqlite3.Connection, meeting_id: int) -> str:
@@ -285,9 +305,25 @@ def build_meeting_detail(conn: sqlite3.Connection, meeting: sqlite3.Row, token: 
             # no-affordance text when a live session token is present —
             # same "static page has no active session" gate every other
             # write form on this page already uses.
+            #
+            # TASK-011 QA round 2, defect 3: the button used to render
+            # unconditionally whenever a token was present, with no
+            # awareness of opsdb.start_meeting_retry_run()'s own
+            # MAX_RETRIES_PER_PARTICIPANT cap — a Founder could click
+            # Retry on an already-exhausted slot and get a guaranteed 409
+            # with no warning. _retry_exhausted() mirrors that function's
+            # exact failed_count >= max_retries + 1 threshold (read-only;
+            # the real enforcement still lives in the atomic function —
+            # this only avoids OFFERING a button guaranteed to fail).
             retry_html = ""
             if token is not None:
-                retry_html = f'''
+                if _retry_exhausted(conn, meeting["id"], name):
+                    retry_html = (
+                        '<div style="margin-top:8px; font-size:10.5px; color:var(--text3); font-style:italic;">'
+                        f'Retry limit reached ({MAX_RETRIES_PER_PARTICIPANT} attempts).</div>'
+                    )
+                else:
+                    retry_html = f'''
                 <form method="POST" action="/api/meetings/{meeting["id"]}/retry" style="margin-top:8px;">
                   <input type="hidden" name="token" value="{e(token)}">
                   <input type="hidden" name="agent_name" value="{e(name)}">

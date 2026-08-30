@@ -564,14 +564,23 @@ def add_meeting_participant(conn: sqlite3.Connection, meeting_id: int, agent_nam
     agent_runtime.MAX_MEETING_PARTICIPANTS, the one already-approved
     constant, not a second one.
 
-    Called only after a real, successful invocation for `agent_name`
-    already happened — never fabricates a member with no real position
-    (same discipline as _gather_position()). Raises LookupError if the
-    meeting doesn't exist, ValueError if `agent_name` is already a
-    participant (by name) or the meeting is already at
-    `max_participants`. Raises sqlite3.OperationalError on genuine lock
-    contention (BEGIN IMMEDIATE itself, deliberately outside the
-    try/except below — same non-masking discipline as
+    TASK-011 QA round 2 (defect 2): called to RESERVE the slot BEFORE the
+    real invocation, not after — see gather_requested_position()'s
+    docstring in meeting_orchestrator.py. This closes a TOCTOU race QA
+    reproduced: N truly concurrent requests for the same not-yet-
+    participant agent could each pass a read-only pre-check and each
+    make a real, costed invocation before only one of them won this
+    append. Reserving first means a second concurrent caller fails the
+    dup check below immediately and never reaches invoke_agent() at all.
+    A reservation not backed by a real, successful position must not
+    linger — see remove_meeting_participant(), the rollback counterpart
+    a caller here uses if the invocation it reserved for doesn't pan out.
+
+    Raises LookupError if the meeting doesn't exist, ValueError if
+    `agent_name` is already a participant (by name) or the meeting is
+    already at `max_participants`. Raises sqlite3.OperationalError on
+    genuine lock contention (BEGIN IMMEDIATE itself, deliberately outside
+    the try/except below — same non-masking discipline as
     start_ask_agent_run()/decide_meeting(); see either docstring)."""
     conn.execute("BEGIN IMMEDIATE")
     try:
@@ -590,6 +599,45 @@ def add_meeting_participant(conn: sqlite3.Connection, meeting_id: int, agent_nam
         conn.execute(
             "UPDATE meetings SET participating_agents = ? WHERE id = ?",
             (json.dumps(participants), meeting_id),
+        )
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
+def remove_meeting_participant(conn: sqlite3.Connection, meeting_id: int, agent_name: str) -> None:
+    """TASK-011 QA round 2 (defect 2): the rollback counterpart to
+    add_meeting_participant()'s reservation. Called by
+    meeting_orchestrator.gather_requested_position() when a reserved
+    slot's invocation did not, in fact, succeed (a failed invocation, or
+    any unhandled exception afterward) — a reservation with no real
+    position behind it must not linger as a fabricated participant.
+
+    Atomic (BEGIN IMMEDIATE), same JSON read-modify-write shape as
+    add_meeting_participant(). Best-effort/idempotent by design (this is
+    always called from a cleanup path, per _release_reservation()'s own
+    "never let a cleanup-time error mask the real one" discipline in
+    meeting_orchestrator.py): a missing meeting or an agent_name that
+    isn't currently a participant is a silent no-op, not an error — there
+    is nothing to roll back either way, and cleanup code must not itself
+    raise a new, unrelated exception over the one already being handled.
+    Raises sqlite3.OperationalError on genuine lock contention only (same
+    non-masking discipline as every other BEGIN IMMEDIATE function here)."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute("SELECT participating_agents FROM meetings WHERE id = ?", (meeting_id,)).fetchone()
+        if row is None:
+            conn.execute("ROLLBACK")
+            return
+        participants = normalized_participants(row["participating_agents"])
+        remaining = [p for p in participants if p["name"] != agent_name]
+        if len(remaining) == len(participants):
+            conn.execute("ROLLBACK")
+            return
+        conn.execute(
+            "UPDATE meetings SET participating_agents = ? WHERE id = ?",
+            (json.dumps(remaining), meeting_id),
         )
         conn.execute("COMMIT")
     except Exception:

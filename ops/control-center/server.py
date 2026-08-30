@@ -731,6 +731,17 @@ def _reconcile_orphaned_runs() -> None:
         meeting_count = opsdb.reconcile_orphaned_runs(conn, agent_runtime.MEETING_ACTIVITY_LIKE, status="failed")
         if meeting_count:
             print(f"reconciled {meeting_count} orphaned meeting-participant run(s) from a prior server process.")
+        # TASK-011 QA round 2, defect 1: Milestone 2B3B round 2 added a
+        # third run type (Orchestrator's participant-selection validation
+        # step) with its own current_activity prefix ("Orchestrator:%"),
+        # which neither pattern above matches — QA reproduced it staying
+        # open=NULL forever (Orchestrator permanently "Working" on
+        # /agents.html) even after a restart. Same generic
+        # reconcile_orphaned_runs() call, just a third LIKE pattern.
+        orchestrator_count = opsdb.reconcile_orphaned_runs(
+            conn, agent_runtime.ORCHESTRATOR_VALIDATION_ACTIVITY_LIKE, status="failed")
+        if orchestrator_count:
+            print(f"reconciled {orchestrator_count} orphaned orchestrator-validation run(s) from a prior server process.")
     finally:
         conn.close()
 
