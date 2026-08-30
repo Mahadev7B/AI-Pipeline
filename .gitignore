@@ -7,3 +7,10 @@ ops/db/*.CURRENT_STATUS.md
 ops/db/*.overview.html
 __pycache__/
 *.pyc
+
+# Founder credential file (Milestone 2B4) — never committed. Wildcard
+# also covers founder_auth.py's atomic-write temp file, which shares the
+# same dot-prefixed .founder_credential stem. See
+# ops/reviews/cto-milestone2b4-architecture.md §3/§13 and
+# ops/control-center/founder_auth.py.
+ops/control-center/.founder_credential*
