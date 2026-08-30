@@ -242,3 +242,177 @@ has a larger real-dollar blast radius than any other route in this
 system permits today. Retry and request-perspective, by contrast, are
 each bounded (`MAX_RETRIES_PER_PARTICIPANT` and `MAX_MEETING_PARTICIPANTS`
 respectively) and don't carry this same disclosure.
+
+## Founder Identity Verification (Milestone 2B4, TASK-013)
+
+`ops/control-center/server.py` gained a Founder-session layer on top of
+every previous milestone's `SESSION_TOKEN`, plus a new credential-management
+CLI, `ops/control-center/founder_auth.py`. Full design in
+`ops/reviews/cto-milestone2b4-architecture.md`; independently reviewed in
+`ops/reviews/security-milestone2b4-threat-model.md` (REJECT/CONDITIONS at
+the architecture stage, three required fixes — see below) and
+`ops/reviews/red-team-milestone2b4-architecture.md` (PASS with conditions,
+both folded into the shipped design). This directly targets `risks.id=2`
+("Founder approval is not identity-authenticated") — see the risk-status
+note at the end of this section for exactly how far it closes it.
+
+**Technically enforced now:**
+- A single Founder passphrase (minimum 16 characters, bumped from an
+  initial 12 — Security's non-blocking recommendation, adopted as cheap
+  defense-in-depth) is verified via a salted `hashlib.scrypt` hash
+  (`N=2**17, r=8, p=1, dklen=32` — OWASP's current general-purpose
+  recommendation, not the memory-constrained fallback), stored in
+  `ops/control-center/.founder_credential.json` — outside git (`.gitignore`
+  entry landed in the same commit as `founder_auth.py`, before `setup` was
+  ever run for real), mode `0600`, written atomically (`os.O_EXCL` at
+  creation; `os.replace()` for rotation — no window where the file is
+  briefly world-readable or briefly missing). This file never touches
+  `operations.sqlite3`, server logs, or any generated HTML.
+- `POST /api/login` verifies the passphrase and, on success, mints a
+  fresh in-memory session (`secrets.token_urlsafe(32)`, a 256-bit CSPRNG
+  value never derived from or reused as anything client-supplied —
+  session fixation traced and confirmed not present), delivered via
+  `Set-Cookie: fc_session=...; HttpOnly; SameSite=Strict; Path=/` (no
+  `Secure`/`Max-Age`, same loopback-only/no-persistent-cookie reasoning
+  as every other decision in this codebase). Idle timeout 30 minutes,
+  absolute timeout 12 hours, both `time.monotonic()`-based (immune to a
+  wall-clock change), both in-memory only and wiped on every server
+  restart — a deliberate conservative failure mode, not an oversight.
+- **Every route now requires a valid session** — not just the 7 write
+  routes, every GET page too (the "full-app-lock" decision, architecture
+  doc §7, concurred by both independent reviews): the Founder's own named
+  threat item 1 ("another local user/process reaches the Control Center")
+  is a *reading* threat as much as a writing one, and the content behind
+  GET routes (inbox recommendations, meeting positions and financial
+  reasoning, the decision log) is the Founder's own operational record,
+  not public-facing content. The only unauthenticated routes are `/login`
+  itself and the fixed 503 "Founder setup required" page shown while no
+  credential file exists yet (fail-closed: checked fresh on every single
+  request, GET and POST alike, before any other logic).
+- **Brute-force defense, fully serialized (Security's required fix C1).**
+  A concurrent-login race in the original architecture draft would have
+  let N simultaneous `/api/login` requests each observe "not locked yet"
+  before any registered a failure — defeating the stated 5-attempt cap
+  and opening a real concurrent-`scrypt` memory-exhaustion DoS (each
+  verification needs ~128 MiB). Fixed by holding `_LOGIN_LOCK` across the
+  entire check→verify→increment critical section, fully serializing
+  `/api/login` against itself. **Verified live, not just reasoned about**:
+  60 simultaneous wrong-passphrase `/api/login` requests fired at once
+  against a freshly-started server produced exactly 5 real verifications
+  (`401`) and exactly 55 clean `429` lockout rejections — the cap holds
+  exactly, under real concurrent load, not just in the single-threaded
+  case. `hashlib.scrypt` releases the GIL during its computation
+  (independently verified, Red Team's Milestone 2B4 review), so this
+  serialization affects only `/api/login` against itself — every other
+  route on the server remains fully concurrent while a login's `scrypt`
+  call runs.
+- **`/api/login` and `/api/logout` require the same CSRF `SESSION_TOKEN`
+  field as every other write route** (Security's required fix C2 — the
+  architecture draft originally stated this only for `/api/logout`).
+  Verified live: a `POST /api/login` missing the `token` field returns
+  `403` before the passphrase is ever touched.
+- **Malformed-payload handling on `/api/login` is the existing, reused
+  `do_POST()` pattern** — `MAX_BODY_BYTES` cap, `.decode("utf-8",
+  errors="replace")`, `fields.get(name, [""])[0]` defaulting a missing
+  field to `""` (Security's required fix C3). Verified live and by a
+  dedicated test, not just asserted: an oversized body returns `400`; a
+  missing `passphrase` field, a non-UTF-8 body, and an **empty-string**
+  passphrase all return a clean `401` — `hashlib.scrypt(b"", ...)`
+  confirmed not to raise (both Security's and Red Team's independent
+  claim, and Development's own test).
+- **Session fixation is not possible**: the server never accepts a
+  client-supplied `fc_session` cookie value as a lookup key it will
+  create — `_authenticated_session()` only ever looks up or deletes;
+  `_handle_login()` is the only code path that ever inserts a `SESSIONS`
+  entry, always with a freshly generated id. Verified live: a request
+  carrying a made-up `fc_session` cookie value is redirected to `/login`
+  exactly like a request with no cookie at all.
+- **Logout is idempotent and works from an already-expired or missing
+  session** (architecture doc §4) — verified live: logging out twice in a
+  row, and logging out with no session cookie present at all, both return
+  a clean `303` with the cookie-clearing `Set-Cookie` header, never an
+  error.
+- **A malformed/partial credential file (e.g. a concurrent read landing
+  mid-write) is caught and treated exactly like "setup required" (`503`)
+  — never an unhandled `500`** (Red Team's Milestone 2B4 review,
+  non-blocking note, built as specified). Verified with a truncated JSON
+  file: `founder_auth.load_credential()`/`verify_passphrase()` raise a
+  narrow `CredentialError`, caught at every call site.
+- **Credential-file tamper detection (architecture doc §9, built — see
+  "Judgment calls" below)**: the server compares the credential file's
+  mtime against a baseline anchored at server *startup* (Red Team's
+  Milestone 2B4 review, non-blocking note — not only at first request) on
+  every subsequent request; any create/modify while the server is already
+  running is logged loudly to the server's own terminal. This is
+  detection, not prevention — see the residual limitation below.
+- Audit logging (login success/failure/lockout/rejected-while-locked/
+  logout/session-expiry-idle/session-expiry-absolute/denied-protected-
+  action/credential-file-changed-while-running) never includes the
+  passphrase, the derived hash, the salt, a session id, or the CSRF
+  `SESSION_TOKEN` value — verified by reading every log call site.
+
+**Still relies on local/single-user trust — not solved, and cannot be
+solved within this milestone's scope:**
+- **An agent with Bash tool access under the Founder's own OS user
+  (`risks.id=3`, explicitly out of scope) is not defended against, and
+  cannot be by construction.** Such an agent can read
+  `.founder_credential.json` directly (`0600` restricts other OS users,
+  not the file's own owner's other processes), run
+  `founder_auth.py change`/`setup` itself, or — a second, independently
+  found, *easier* bypass that doesn't even need the credential file —
+  `PTRACE_ATTACH` to the running `server.py` process on a default Linux
+  configuration (`yama.ptrace_scope=0`) and read `SESSIONS`/
+  `SESSION_TOKEN` directly out of live process memory. This is not a
+  regression: nothing that worked before this milestone stops working,
+  and the class of attacker this milestone *does* neutralize (any local
+  actor that does NOT already share the Founder's OS-user filesystem/
+  process principal) is real and was genuinely open before. Closing the
+  `risks.id=3` case requires resolving that risk first, or a different
+  class of infrastructure (a separate OS account, a hardware key, an OS
+  keychain with per-process grants) this milestone's own constraints
+  (stdlib-only, no new infra) correctly rule out adding speculatively.
+- **Shared, non-identity-scoped lockout enables a sustained self-DoS
+  against the Founder's own login** (Red Team's Milestone 2B4 review,
+  finding F1 — disclosed here as required, not a code fix). The lockout
+  counter is correctly global, not per-caller (there is exactly one
+  Founder/credential, ever) — but that means an attacker already inside
+  this design's own assumed threat class ("another local process/page
+  reaches the Control Center," which can already read `/login`'s CSRF
+  token) can flood `/api/login` and reliably win most of each 30-second
+  lockout cycle's 5 real-verification slots, denying the Founder's own
+  genuine logins far more often than not for as long as the flood
+  continues. No cheap in-scope fix exists — per-IP limiting is theater on
+  loopback (every caller is `127.0.0.1`), and anything better requires
+  distinguishing "the real Founder" from a co-resident process, i.e.
+  `risks.id=3`'s territory. The remedy is the same one every other
+  same-OS-user gap in this design relies on: identify and stop the
+  flooding process, which the Founder can always do as the owning OS
+  user.
+- The mtime-based tamper-detection warning above is **detection, not
+  prevention** — it narrows "silent forgery" to "forgery the Founder
+  would see logged in their own terminal," not eliminating it. A
+  same-OS-user attacker who disables or doesn't trigger it (e.g. by
+  writing the file with a preserved mtime) leaves no trace here.
+
+**Judgment call — mtime tamper-detection warning (architecture doc §9,
+left as an explicit open question for Development):** built. It reuses a
+`stat()` call the fail-closed setup-required check already has to make on
+every request, so the marginal cost is one integer comparison — cheap
+enough, and clearly enough specified (with Red Team's non-blocking
+startup-anchoring note folded in), to be worth the code for a same-
+OS-user detection signal that costs nothing on the request path.
+
+**Both Phase 1 risks — current disposition:**
+- `risks.id=2` — Founder approval is not identity-authenticated. This
+  milestone's own architecture and Security review draft the language to
+  move this to `mitigated` (not `resolved`) once this implementation
+  ships — narrowing the gap for any local actor that does not already
+  share the Founder's own OS-user filesystem/process principal, while
+  explicitly not closing the `risks.id=3`-class case above. The actual
+  `risk-resolve` DB update is a separate step, gated on a
+  post-implementation Security pass per both reviews' own stated
+  process — not applied directly off this document.
+- `risks.id=3` — Bash tool access cannot be scoped below the
+  tool-category level — **unchanged, untouched, explicitly out of scope**
+  this milestone, and now more concretely the load-bearing boundary this
+  entire feature's own limits trace back to (see above).
