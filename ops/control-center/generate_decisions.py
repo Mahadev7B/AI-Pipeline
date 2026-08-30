@@ -59,7 +59,7 @@ def render_decisions(conn: sqlite3.Connection) -> str:
     return "".join(items)
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     count = conn.execute("SELECT COUNT(*) FROM decisions").fetchone()[0]
@@ -72,7 +72,7 @@ def build_html() -> str:
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 {render_decisions(conn)}'''
-    return page("Decisions", "decisions.html", body,
+    return page("Decisions", "decisions.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

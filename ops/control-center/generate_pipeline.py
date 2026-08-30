@@ -95,7 +95,7 @@ def render_stage_column(conn: sqlite3.Connection, stage: str, tasks_by_substate:
     </div>'''
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -129,7 +129,7 @@ def build_html() -> str:
 <div style="margin-top:16px; font-size:10.5px; color:var(--text3);">
   A major stage is the simple answer; open a lane to see the exact detailed status. Marketing/Launch Prep, when active, runs in parallel inside Release — it does not block the pipeline (AGENT_STATUS.md).
 </div>"""
-    return page("Pipeline", "pipeline.html", body,
+    return page("Pipeline", "pipeline.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

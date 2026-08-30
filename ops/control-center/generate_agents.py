@@ -293,18 +293,18 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: 
   </div>
 </div>
 {render_ask_agent_section(conn, name, token)}'''
-    return page(f"{display_name(name)} — Agent Detail", "agents.html", body, depth=1,
+    return page(f"{display_name(name)} — Agent Detail", "agents.html", body, depth=1, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.")
 
 
-def build_roster_html(conn: sqlite3.Connection) -> str:
+def build_roster_html(conn: sqlite3.Connection, token: str | None = None) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rows = agent_status_rows(conn)
     body = f'''
 <h1>Agents <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">Grouped and sorted by real state (agent_runs), not an invented org chart — see ops/reviews/cto-milestone2a-architecture.md.</div>
 {render_roster(rows)}'''
-    return page("Agents", "agents.html", body,
+    return page("Agents", "agents.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

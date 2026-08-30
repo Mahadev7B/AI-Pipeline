@@ -116,7 +116,7 @@ def build_html(token: str | None = None) -> str:
 <div class="sub" style="margin-top:-14px;">Executive discussion history, from the <span class="mono">meetings</span> table.</div>
 {render_raise_question_form(token)}
 {render_meetings(conn)}'''
-    return page("Meetings", "meetings.html", body,
+    return page("Meetings", "meetings.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Re-run this script (or load via server.py) to refresh.")
 
 
@@ -404,7 +404,7 @@ def build_meeting_detail(conn: sqlite3.Connection, meeting: sqlite3.Row, token: 
 {followup_html}
 {synthesis_html}
 {decision_html}'''
-    return page(f"Meeting #{meeting['id']}", "meetings.html", body, depth=1,
+    return page(f"Meeting #{meeting['id']}", "meetings.html", body, depth=1, token=token,
                 generated_note=f"Generated {now} from the live operational database. Re-run generate_meetings.py (or load via server.py) to refresh.")
 
 

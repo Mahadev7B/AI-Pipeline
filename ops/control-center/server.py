@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""ops/control-center/server.py — Phase 2, Milestones 2B1 + 2B2 + 2B3A.
+"""ops/control-center/server.py — Phase 2, Milestones 2B1 + 2B2 + 2B3A + 2B4.
 
 The one controlled application boundary between the browser and
 operations.sqlite3 (writes) and the Agent Runtime (real model
 invocation). See ops/reviews/cto-milestone2b1-architecture.md,
-ops/reviews/cto-milestone2b2-architecture.md, and
-ops/reviews/cto-milestone2b3a-architecture.md for the full design
-reasoning; this file implements all three, nothing more.
+ops/reviews/cto-milestone2b2-architecture.md,
+ops/reviews/cto-milestone2b3a-architecture.md, and
+ops/reviews/cto-milestone2b4-architecture.md for the full design
+reasoning; this file implements all four, nothing more.
 
 - Loopback-only (127.0.0.1) — never binds 0.0.0.0. There is no network
   exposure to reason about; the only way to reach this server is from a
@@ -94,6 +95,54 @@ invocation. This remains local/single-user trust, narrower in scope than
 Phase 1's CLI-flag "authorization" but not a different category of
 guarantee. See ops/SECURITY.md.
 
+FOUNDER IDENTITY VERIFICATION (Milestone 2B4, TASK-013) — layered on top
+of, not a replacement for, everything above. Full design:
+ops/reviews/cto-milestone2b4-architecture.md,
+ops/reviews/security-milestone2b4-threat-model.md,
+ops/reviews/red-team-milestone2b4-architecture.md.
+
+A single Founder passphrase (founder_auth.py; salted hashlib.scrypt,
+N=2**17, stored outside git in .founder_credential.json, 0600, atomic
+writes, never touching operations.sqlite3) now gates a server-side
+session: POST /api/login verifies it (rate-limited — see
+MAX_FAILED_ATTEMPTS/LOCKOUT_SECONDS below — and, per Security's required
+fix C1, the entire check-verify-increment sequence is fully serialized
+under _LOGIN_LOCK, closing both the stated brute-force cap and a
+concurrent-scrypt memory-exhaustion DoS) and, on success, mints a fresh
+in-memory session (SESSIONS dict; HttpOnly/SameSite=Strict cookie; 30-min
+idle / 12-hour absolute timeout; wiped on restart, deliberately). EVERY
+route — every GET page and every POST write, all 7 pre-2B4 write routes
+plus the two new auth routes — now requires either a valid session or
+membership in the small unauthenticated allowlist (/login, and the fixed
+"setup required" 503 page shown when no credential file exists yet). This
+closes risks.id=2 ("Founder approval is not identity-authenticated") for
+any local actor that does NOT already share the Founder's own OS-user
+filesystem/process principal.
+
+It does NOT close, and cannot by construction close, the case where an
+agent runs with Bash tool access under the Founder's own OS user
+(risks.id=3, explicitly out of scope this milestone): such an agent can
+read or overwrite .founder_credential.json directly (0600 restricts
+other OS users, not the file's own owner's other processes), run
+founder_auth.py itself, or attach to this running process
+(PTRACE_ATTACH, default Linux ptrace_scope) and read SESSIONS/
+SESSION_TOKEN out of memory directly — Security's independently-found,
+strictly-easier second bypass, not requiring the credential file at all.
+Also disclosed, not hidden: the brute-force lockout counter is global,
+not per-caller (correctly so — there is exactly one Founder/credential
+ever) — which means an attacker already inside this design's own assumed
+threat class ("another local process/page reaches the Control Center,"
+which can already read /login's CSRF token) can flood /api/login and win
+most of each 30s lockout cycle's 5 real-verification slots, denying the
+Founder's own genuine logins far more often than not for as long as the
+flood runs (Red Team's Milestone 2B4 review, finding F1). No cheap
+in-scope fix exists (per-IP limiting is theater on loopback; anything
+better requires distinguishing "the real Founder" from a co-resident
+process, i.e. risks.id=3's territory) — the remedy is the same one every
+other same-OS-user gap in this design relies on: identify and stop the
+flooding process, which the Founder can always do as the owning OS user.
+See ops/SECURITY.md for the full disclosure.
+
 Usage:
     python3 ops/control-center/server.py [port]   # default 8420
 """
@@ -103,6 +152,8 @@ import re
 import secrets
 import sqlite3
 import sys
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -116,13 +167,14 @@ import opsdb  # noqa: E402 — the only writer; server.py runs its own read-only
 import dbutil  # noqa: E402
 import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2)
 import meeting_orchestrator  # noqa: E402 — Executive Meeting orchestration (Milestone 2B3B)
+import founder_auth  # noqa: E402 — Founder credential load/verify (Milestone 2B4)
 import generate_overview  # noqa: E402
 import generate_pipeline  # noqa: E402
 import generate_agents  # noqa: E402
 import generate_decisions  # noqa: E402
 import generate_meetings  # noqa: E402
 import generate_inbox  # noqa: E402
-from layout import page, e  # noqa: E402
+from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 8420
@@ -143,6 +195,33 @@ MEETING_RETRY_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/retry$")
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
 
+# ---- Milestone 2B4 (TASK-013): Founder session state ----
+# All in-memory, wiped on restart — deliberate, same reasoning as
+# SESSION_TOKEN itself (architecture doc §4).
+
+SESSION_COOKIE_NAME = "fc_session"
+IDLE_TIMEOUT_S = 1800       # 30 minutes since last_seen_at
+ABSOLUTE_TIMEOUT_S = 43200  # 12 hours since created_at, regardless of activity
+
+SESSIONS_LOCK = threading.Lock()
+SESSIONS: dict[str, dict] = {}  # session id -> {"created_at": float, "last_seen_at": float} (time.monotonic())
+
+# Brute-force lockout — one global counter/timestamp, not per-IP (every
+# caller is 127.0.0.1 — per-IP limiting would be theater) and not
+# per-identity (there is exactly one Founder/credential, ever).
+_LOGIN_LOCK = threading.Lock()
+_failed_count = 0
+_locked_until = 0.0  # time.monotonic()
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_SECONDS = 30
+
+# Credential-file hot-reload + tamper-detection baseline (architecture doc
+# §9's optional mtime warning; Red Team's Milestone 2B4 review non-blocking
+# note: anchor the baseline at server startup, not only at first check —
+# see _prime_credential_mtime_baseline()/_check_credential_gate() below).
+_CREDENTIAL_MTIME_LOCK = threading.Lock()
+_credential_mtime_baseline: float | None = None
+
 
 def _error_page(status: int, title: str, message: str) -> bytes:
     body = f'''
@@ -151,11 +230,51 @@ def _error_page(status: int, title: str, message: str) -> bytes:
   <div style="font-size:12.5px; color:var(--text2);">{e(message)}</div>
 </div>
 <div style="margin-top:14px;"><a href="/inbox.html" style="color:var(--accent); font-size:12px;">&larr; Back to Inbox</a></div>'''
-    return page(title, "inbox.html", body).encode("utf-8")
+    return page(title, "inbox.html", body, token=SESSION_TOKEN).encode("utf-8")
+
+
+def _prime_credential_mtime_baseline() -> None:
+    """Called once at server startup (main(), before serve_forever) — sets
+    the tamper-detection baseline silently (no WARNING logged for whatever
+    state the file is in at process start; only a CHANGE detected on a
+    later request is worth logging). Red Team's Milestone 2B4 review,
+    non-blocking note: anchoring at startup rather than only at the first
+    request closes the gap where a modification landing before the very
+    first request would otherwise have no prior baseline to compare
+    against."""
+    global _credential_mtime_baseline
+    try:
+        _credential_mtime_baseline = founder_auth.CREDENTIAL_PATH.stat().st_mtime
+    except OSError:
+        _credential_mtime_baseline = None
+
+
+def _check_credential_gate() -> bool:
+    """Fail-closed setup-required check (architecture doc §3), combined
+    with the optional mtime tamper-detection warning (§9, open question
+    4 — judged cheap enough to build: it's one extra stat-result
+    comparison layered on a stat() call this function already has to make
+    for the fail-closed check itself). Called as the very first thing in
+    both do_GET() and do_POST(), before any other logic — returns False
+    (credential file absent -> caller must respond 503) or True (present;
+    also updates/logs the tamper baseline as a side effect)."""
+    global _credential_mtime_baseline
+    try:
+        current_mtime = founder_auth.CREDENTIAL_PATH.stat().st_mtime
+    except OSError:
+        return False
+    with _CREDENTIAL_MTIME_LOCK:
+        if _credential_mtime_baseline != current_mtime:
+            sys.stderr.write(
+                "[control-center] WARNING: founder credential file was created or modified while "
+                "this server is running — if you did not just run founder_auth.py, treat this as a "
+                "real incident.\n")
+            _credential_mtime_baseline = current_mtime
+    return True
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ControlCenter/2B3A"
+    server_version = "ControlCenter/2B4"
     timeout = 10  # socket read/write timeout — a stalled client must not hang its request thread
                   # (and, before Milestone 2B3A's ThreadingHTTPServer, the whole server) indefinitely
 
@@ -175,21 +294,112 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    # ---- Milestone 2B4 (TASK-013): Founder session cookie helpers ----
+
+    def _read_session_cookie(self) -> str | None:
+        """Manual, minimal Cookie-header parsing — this app only ever
+        sets one cookie, so http.cookies.SimpleCookie's full RFC-6265
+        machinery buys nothing here. Never trusts a client-supplied
+        session id as anything but a lookup key into the server's own
+        SESSIONS dict — see _authenticated_session()."""
+        cookie_header = self.headers.get("Cookie")
+        if not cookie_header:
+            return None
+        for part in cookie_header.split(";"):
+            part = part.strip()
+            if part.startswith(SESSION_COOKIE_NAME + "="):
+                return part[len(SESSION_COOKIE_NAME) + 1:]
+        return None
+
+    def _authenticated_session(self) -> dict | None:
+        """Cookie lookup + expiry check + last_seen_at bump, all under
+        SESSIONS_LOCK (architecture doc §5/§10). An expired session is
+        removed and treated exactly like "never logged in" — never a
+        silent partial-trust state. Session-fixation-proof by
+        construction: the ONLY place a SESSIONS key is ever created is
+        _handle_login()'s own secrets.token_urlsafe(32) call; this method
+        never inserts anything, it only ever looks up or deletes."""
+        session_id = self._read_session_cookie()
+        if not session_id:
+            return None
+        now = time.monotonic()
+        with SESSIONS_LOCK:
+            session = SESSIONS.get(session_id)
+            if session is None:
+                return None
+            if now - session["last_seen_at"] > IDLE_TIMEOUT_S:
+                del SESSIONS[session_id]
+                sys.stderr.write("[control-center] session expired (idle)\n")
+                return None
+            if now - session["created_at"] > ABSOLUTE_TIMEOUT_S:
+                del SESSIONS[session_id]
+                sys.stderr.write("[control-center] session expired (absolute)\n")
+                return None
+            session["last_seen_at"] = now
+            return session
+
+    def _set_session_cookie(self, session_id: str) -> None:
+        # No Secure (plain HTTP over loopback, same justification as the
+        # rest of this codebase's loopback-only TLS decision), no
+        # Max-Age/Expires (session cookie — disappears when the browser
+        # process closes). HttpOnly + SameSite=Strict per architecture
+        # doc §4.
+        self.send_header("Set-Cookie", f"{SESSION_COOKIE_NAME}={session_id}; HttpOnly; SameSite=Strict; Path=/")
+
+    def _clear_session_cookie(self) -> None:
+        self.send_header("Set-Cookie", f"{SESSION_COOKIE_NAME}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
+
+    def _require_csrf_token(self, fields: dict) -> bool:
+        """The SAME check every write route already performs (§6: kept,
+        not replaced) — factored out here only because /api/login and
+        /api/logout now need it applied identically to the other 7
+        routes (Security's Milestone 2B4 threat-model review, condition
+        C2), still via do_POST()'s single existing call site, not a
+        second parsing path."""
+        token = fields.get("token", [""])[0]
+        if not secrets.compare_digest(token, SESSION_TOKEN):
+            self._send_html(403, _error_page(
+                403, "Forbidden",
+                "Missing or invalid session token. This form was not served by the currently running "
+                "Control Center server — reload the page and try again."))
+            return False
+        return True
+
     # ---- GET: read-only rendering, identical build functions to the static generators ----
 
     def do_GET(self) -> None:
         path = self.path.split("?", 1)[0]
+
+        # Milestone 2B4 (TASK-013): fail-closed setup-required check FIRST,
+        # before any other logic — architecture doc §3. Applies to every
+        # path, including /login itself.
+        if not _check_credential_gate():
+            self._send_html(503, setup_required_page().encode("utf-8"))
+            return
+
+        # Unauthenticated allowlist: /login only (architecture doc §5/§7 —
+        # every other GET route, read or write-adjacent, requires a valid
+        # Founder session; the "read-only UX while locked" option was
+        # deliberately rejected — see §7).
+        if path == "/login":
+            self._send_html(200, login_page(SESSION_TOKEN).encode("utf-8"))
+            return
+
+        if self._authenticated_session() is None:
+            self._redirect("/login")
+            return
+
         try:
             if path in ("/", "/overview.html"):
-                self._send_html(200, generate_overview.build_html().encode("utf-8"))
+                self._send_html(200, generate_overview.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/pipeline.html":
-                self._send_html(200, generate_pipeline.build_html().encode("utf-8"))
+                self._send_html(200, generate_pipeline.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/agents.html":
                 conn = dbutil.connect()
                 try:
-                    self._send_html(200, generate_agents.build_roster_html(conn).encode("utf-8"))
+                    self._send_html(200, generate_agents.build_roster_html(conn, token=SESSION_TOKEN).encode("utf-8"))
                 finally:
                     conn.close()
                 return
@@ -209,7 +419,7 @@ class Handler(BaseHTTPRequestHandler):
                     conn.close()
                 return
             if path == "/decisions.html":
-                self._send_html(200, generate_decisions.build_html().encode("utf-8"))
+                self._send_html(200, generate_decisions.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/meetings.html":
                 self._send_html(200, generate_meetings.build_html(token=SESSION_TOKEN).encode("utf-8"))
@@ -244,23 +454,42 @@ class Handler(BaseHTTPRequestHandler):
             sys.stderr.write(f"[control-center] unhandled GET error on {self.path}: {type(exc).__name__}: {exc}\n")
             self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong rendering this page. See the server's terminal output for detail."))
 
-    # ---- POST: the only seven write routes in the whole application ----
+    # ---- POST: the write routes in the whole application ----
     # (Milestone 2B3B round 2, TASK-011, added three more — request-perspective,
-    # followup, retry — to the four that existed before it.)
+    # followup, retry — to the four that existed before it. Milestone 2B4,
+    # TASK-013, adds two Founder-session routes — /api/login, /api/logout —
+    # that ride through the SAME body-parsing + CSRF-token gate as every
+    # other route (Security's Milestone 2B4 threat-model review, condition
+    # C2/C3) but are exempt from the NEW Founder-session check below, for
+    # the reasons given at each check.)
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0]
-        m_decide = APPROVAL_PATH_RE.match(path)
-        m_ask = None if m_decide else ASK_AGENT_PATH_RE.match(path)
-        m_meeting_decide = None if (m_decide or m_ask) else MEETING_DECIDE_PATH_RE.match(path)
-        m_meeting_request = None if (m_decide or m_ask or m_meeting_decide) else MEETING_REQUEST_PERSPECTIVE_PATH_RE.match(path)
-        m_meeting_followup = None if (m_decide or m_ask or m_meeting_decide or m_meeting_request) else MEETING_FOLLOWUP_PATH_RE.match(path)
-        m_meeting_retry = None if (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup) else MEETING_RETRY_PATH_RE.match(path)
-        is_meeting_create = not (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == MEETING_CREATE_PATH
-        if not (m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_meeting_create):
+
+        # Milestone 2B4: fail-closed setup-required check FIRST, before any
+        # other logic — architecture doc §3. Applies to every path,
+        # including /api/login and /api/logout.
+        if not _check_credential_gate():
+            self._send_html(503, setup_required_page().encode("utf-8"))
+            return
+
+        is_login = path == "/api/login"
+        is_logout = path == "/api/logout"
+        m_decide = None if (is_login or is_logout) else APPROVAL_PATH_RE.match(path)
+        m_ask = None if (is_login or is_logout or m_decide) else ASK_AGENT_PATH_RE.match(path)
+        m_meeting_decide = None if (is_login or is_logout or m_decide or m_ask) else MEETING_DECIDE_PATH_RE.match(path)
+        m_meeting_request = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide) else MEETING_REQUEST_PERSPECTIVE_PATH_RE.match(path)
+        m_meeting_followup = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request) else MEETING_FOLLOWUP_PATH_RE.match(path)
+        m_meeting_retry = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup) else MEETING_RETRY_PATH_RE.match(path)
+        is_meeting_create = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == MEETING_CREATE_PATH
+        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_meeting_create):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
+        # Same existing MAX_BODY_BYTES / utf-8-replace / parse_qs pattern
+        # for every route, /api/login and /api/logout included — no new
+        # parsing logic (Security's Milestone 2B4 threat-model review,
+        # condition C3).
         length = self.headers.get("Content-Length")
         if length is None or not length.isdigit() or int(length) > MAX_BODY_BYTES:
             self._send_html(400, _error_page(400, "Bad request", "Missing or oversized request body."))
@@ -268,12 +497,32 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(int(length)).decode("utf-8", errors="replace")
         fields = parse_qs(body)
 
-        token = fields.get("token", [""])[0]
-        if not secrets.compare_digest(token, SESSION_TOKEN):
-            self._send_html(403, _error_page(
-                403, "Forbidden",
-                "Missing or invalid session token. This form was not served by the currently running "
-                "Control Center server — reload the page and try again."))
+        # Same CSRF token check as every route, now including /api/login
+        # (Security's Milestone 2B4 threat-model review, condition C2 —
+        # §4 originally stated this only for /api/logout) — verified
+        # BEFORE the passphrase is ever touched.
+        if not self._require_csrf_token(fields):
+            return
+
+        if is_login:
+            self._handle_login(fields)
+            return
+        if is_logout:
+            self._handle_logout(fields)
+            return
+
+        # Milestone 2B4: centralized Founder-session check, added
+        # immediately after the existing CSRF token check, before any
+        # _handle_* dispatch (architecture doc §5) — applies to every
+        # pre-2B4 write route. Not applied to /api/login (that's the
+        # route that CREATES a session) or /api/logout (architecture doc
+        # §4: logout must work even from an already-expired/stale
+        # session, handled above before reaching here).
+        if self._authenticated_session() is None:
+            self.log_message(f"rejected {self.command} {path} — no authenticated Founder session")
+            self._send_html(401, _error_page(
+                401, "Sign-in required",
+                'Your Founder session has expired or was never started. <a href="/login">Sign in</a>.'))
             return
 
         if m_decide:
@@ -290,6 +539,83 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_meeting_retry(int(m_meeting_retry.group(1)), fields)
         else:
             self._handle_meeting_create(fields)
+
+    def _handle_login(self, fields: dict) -> None:
+        """POST /api/login. Security's Milestone 2B4 threat-model review,
+        condition C1 (non-negotiable): _LOGIN_LOCK is held across the
+        ENTIRE check-lockout -> verify -> increment-or-reset critical
+        section below, not just the counter update — full serialization
+        of /api/login against itself. This is what actually closes both
+        the stated 5-attempt brute-force cap (a concurrent flood can no
+        longer race past the lockout check before any one request
+        registers a failure) and the concurrent-scrypt memory-exhaustion
+        DoS (N simultaneous ~128 MiB scrypt calls can no longer run at
+        once). hashlib.scrypt releases the GIL during computation
+        (independently verified, Red Team's Milestone 2B4 review) so this
+        only serializes /api/login against itself — every other route
+        stays fully concurrent while a login's scrypt call runs."""
+        global _failed_count, _locked_until
+        passphrase = fields.get("passphrase", [""])[0]
+
+        with _LOGIN_LOCK:
+            now = time.monotonic()
+            if now < _locked_until:
+                self.log_message("login attempt rejected — currently locked")
+                remaining = max(1, int(_locked_until - now) + 1)
+                self._send_html(429, login_page(
+                    SESSION_TOKEN,
+                    error=f"Too many failed attempts. Try again in about {remaining}s.").encode("utf-8"))
+                return
+
+            try:
+                ok = founder_auth.verify_passphrase(passphrase)
+            except founder_auth.CredentialError as exc:
+                # Narrow TOCTOU window between _check_credential_gate()'s
+                # exists() check and this read (Red Team's Milestone 2B4
+                # review, non-blocking note) — treat identically to
+                # "setup required," never an unhandled 500.
+                sys.stderr.write(f"[control-center] could not read Founder credential during login: {type(exc).__name__}: {exc}\n")
+                self._send_html(503, setup_required_page().encode("utf-8"))
+                return
+
+            if ok:
+                _failed_count = 0
+                session_id = secrets.token_urlsafe(32)
+                now_m = time.monotonic()
+                with SESSIONS_LOCK:
+                    SESSIONS[session_id] = {"created_at": now_m, "last_seen_at": now_m}
+                self.log_message("founder login succeeded")
+                self.send_response(303)
+                self._set_session_cookie(session_id)
+                self.send_header("Location", "/overview.html")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+
+            _failed_count += 1
+            self.log_message(f"founder login FAILED ({_failed_count}/{MAX_FAILED_ATTEMPTS})")
+            if _failed_count >= MAX_FAILED_ATTEMPTS:
+                _locked_until = time.monotonic() + LOCKOUT_SECONDS
+                _failed_count = 0
+                self.log_message(f"login lockout triggered — locked for {LOCKOUT_SECONDS}s")
+            self._send_html(401, login_page(SESSION_TOKEN, error="Incorrect passphrase.").encode("utf-8"))
+
+    def _handle_logout(self, fields: dict) -> None:
+        """POST /api/logout. Deliberately does NOT call
+        _authenticated_session() first — architecture doc §4: "I want to
+        make sure I'm logged out" must work even from a stale/expired
+        session's own still-open tab. Idempotent: logging out twice, or
+        with no session cookie at all, is not an error."""
+        session_id = self._read_session_cookie()
+        if session_id:
+            with SESSIONS_LOCK:
+                SESSIONS.pop(session_id, None)
+        self.log_message("founder session ended (logout)")
+        self.send_response(303)
+        self._clear_session_cookie()
+        self.send_header("Location", "/login")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _handle_decide(self, approval_id: int, fields: dict) -> None:
         decision = fields.get("decision", [""])[0]
@@ -749,13 +1075,18 @@ def _reconcile_orphaned_runs() -> None:
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_PORT
     _reconcile_orphaned_runs()
+    _prime_credential_mtime_baseline()  # Milestone 2B4: anchor the tamper-detection baseline at startup, not only at the first request (Red Team's Milestone 2B4 review, non-blocking note)
     httpd = ThreadingHTTPServer((HOST, port), Handler)
     httpd.daemon_threads = True  # explicit — a lingering in-flight request thread must
                                  # never block process exit (default is True in this
                                  # Python version, but stated here rather than relied on)
-    print(f"Control Center running at http://{HOST}:{port}/ (loopback only, up to "
-          f"{agent_runtime.MAX_CONCURRENT_INVOCATIONS} concurrent agent invocation(s)). "
-          f"Press Ctrl+C to stop.")
+    if founder_auth.credential_exists():
+        print(f"Control Center running at http://{HOST}:{port}/ (loopback only, up to "
+              f"{agent_runtime.MAX_CONCURRENT_INVOCATIONS} concurrent agent invocation(s)). "
+              f"Press Ctrl+C to stop.")
+    else:
+        print(f"Control Center running at http://{HOST}:{port}/ — Founder setup required: run "
+              f"'python3 ops/control-center/founder_auth.py setup' before any route will work.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

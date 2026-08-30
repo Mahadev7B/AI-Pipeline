@@ -141,7 +141,7 @@ def build_html(conn: sqlite3.Connection, token: str | None = None) -> str:
 {section("Awaiting decision", pending, "Nothing pending.")}
 {section("Needs follow-up", discuss, "Nothing flagged for discussion.")}
 {section("Resolved", resolved, "No approvals decided yet.")}'''
-    return page("Inbox", "inbox.html", body,
+    return page("Inbox", "inbox.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Re-run this script (or load via server.py) to refresh.")
 
 

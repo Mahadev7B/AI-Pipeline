@@ -121,7 +121,7 @@ def render_inbox(conn: sqlite3.Connection) -> str:
     return "".join(items) + more
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     health_label, health_detail = company_health(conn)
     health_color = HEALTH_COLOR.get(health_label, "var(--text)")
@@ -152,7 +152,7 @@ def build_html() -> str:
     <div style="display:flex; flex-direction:column; gap:10px;">{render_activity(conn)}</div>
   </div>
 </div>"""
-    return page("Overview", "overview.html", body,
+    return page("Overview", "overview.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 
