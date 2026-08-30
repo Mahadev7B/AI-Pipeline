@@ -90,14 +90,26 @@ no pagination UI, no new query-string parameters.
   now, for 95 rows, would be solving a problem that doesn't exist yet.
 - What **does** matter at 95 rows: a flat, ungrouped chronological list
   (Decisions' rendering style, one `<div class="card">` per row) would
-  be a very long, low-signal scroll — 12 QA rows for TASK-006 alone.
-  Grouping by `task_id` (a real column, not invented structure — same
-  category of decision as `STAGE_MAP` in 2A) turns 95 rows into ~10 task
-  sections, each answering "how did this task's review/QA history go,"
-  which is the question a Founder actually has. This is an honest
-  structural choice, not a way to hide volume — every row still
-  renders, just organized by the column that already exists to organize
-  it by.
+  be a very long, low-signal scroll. Grouping by `task_id` (a real
+  column, not invented structure — same category of decision as
+  `STAGE_MAP` in 2A) turns 95 rows into ~10 task sections, each
+  answering "how did this task's review/QA history go," which is the
+  question a Founder actually has. This is an honest structural choice,
+  not a way to hide volume — every row still renders, just organized by
+  the column that already exists to organize it by.
+
+**Correction (Red Team's Milestone 2B5 review)**: this document
+originally cited "12 QA rows for TASK-006" as its illustrative worst
+case. Red Team live-verified the actual current maximum is **TASK-007,
+21 combined review+QA rows** (5 review + 16 QA), not 12 — TASK-006 (18)
+and TASK-010 (17) are also both above the original example. 21
+interleaved rows under one header is not broken, but it's real enough
+that Development must verify rendering against TASK-007 specifically,
+not the smaller original example, and must add a lightweight per-group
+affordance: a native `<details>` "show all N" collapse once a
+task-group exceeds ~10 rows. This is a few lines, not pagination
+infrastructure — folded into the file-by-file list below as a
+requirement, not deferred.
 
 ## Design Decision 3 — What "release readiness" means for this milestone
 
@@ -114,14 +126,35 @@ Phase 1 walkthrough demo) has a `deployments` row. The other ten do not.
 Showing only the 1 real deployment row, with no further comment, would
 materially mislead the Founder about what "release information" this
 screen covers — it would look like the company has shipped once, ever,
-when in fact ten more tasks reached DONE without a deployment record
-being made at all (a real, pre-existing gap in this project's own
-process discipline around the `deployments` table, not a new one this
-milestone invents). The gap list makes that visible instead of hiding
-it, which is the same "empty states are better than fake data" instinct
-2A applied to `meetings.html` when that table had zero rows — here the
-honest thing to show isn't an empty state, it's a *count of what's
-missing*.
+when in fact ten more tasks reached DONE with no deployment record. The
+gap list makes that visible instead of hiding it, the same "empty states
+are better than fake data" instinct 2A applied to `meetings.html` when
+that table had zero rows — here the honest thing to show isn't an empty
+state, it's a *count of what's missing*.
+
+**Correction (Red Team's Milestone 2B5 review, blocking finding)**: this
+document originally characterized the 10-task gap as "a real,
+pre-existing gap in this project's own process discipline around the
+`deployments` table." Red Team checked this against the project's own
+actual rules and found it unsupported: `ops/AGENT_STATUS.md`'s real
+DONE-readiness checklist never mentions the `deployments` table;
+`ops/PROJECT.md`/`ops/ROADMAP.md` both frame production deployment as a
+rare, Founder-gated, explicitly-authorized event, not something every
+completed task is expected to produce a row for; the one existing
+`deployments` row (TASK-001) is itself labeled "Phase 1 pipeline
+validation only," not a real release; and all 10 "gap" tasks are this
+project's own internal Control Center tooling milestones with
+`tasks.deployment_result` empty (consistent with "not applicable," not
+"skipped"). Asserting a process-discipline failure here — when this
+project's own actual DONE checklist never required a deployment row —
+risks the Founder concluding there's a real problem where the evidence
+doesn't support one. **Corrected disposition**: the computed gap list
+itself ships unchanged (it's an honest, real query) — only the
+copy/interpretation changes. `releases.html` and `generate_releases.py`
+present the list as a neutral data observation, e.g. "N of M DONE tasks
+have no `deployments` row — this may reflect internal/tooling work with
+no discrete production release step, not necessarily a process gap,"
+never as an assertion of a pre-existing discipline failure.
 
 This is a computed fact from two real columns (`tasks.status`,
 `deployments.task_id`), not invented structure — same category as
@@ -273,12 +306,26 @@ architecture proposal itself.
    defined in `layout.py` (same tokens Pipeline's "Needs Attention" and
    Decisions' approval-note pills use — no new color introduced). Each
    task-group header links to `pipeline.html#task-{id}` (Decision 4).
-   `OUT_PATH = out_path("reviews.html", "OPSDB_REVIEWS_PATH")`.
+   A task-group with more than ~10 combined rows renders inside a native
+   `<details>` element, collapsed by default with a "show all N" summary
+   — required per Red Team's Milestone 2B5 review, verified against the
+   real worst case (TASK-007, 21 combined rows), not the smaller
+   originally-cited example. The page carries a short, explicit label
+   distinguishing its scope ("full historical record, including
+   resolved failures on now-DONE tasks") from `CURRENT_STATUS.md`'s
+   "unresolved right now" scope — required per Red Team's review, so
+   the two screens read as complementary, not contradictory, on first
+   glance. `OUT_PATH = out_path("reviews.html", "OPSDB_REVIEWS_PATH")`.
 2. **New** `ops/control-center/generate_releases.py` — same shape.
    Renders the real `deployments` rows (version, environment,
    release_notes, rollback_plan, deployed_by_agent, deployed_at,
    founder_authorized) plus the `release_readiness_gap()` list (Decision
-   3), each gap-list task linking to `pipeline.html#task-{id}`.
+   3), each gap-list task linking to `pipeline.html#task-{id}`. The
+   gap-list copy is a neutral data observation ("N of M DONE tasks have
+   no `deployments` row — this may reflect internal/tooling work with no
+   discrete production release step, not necessarily a process gap"),
+   never an assertion of a process-discipline failure — required per
+   Red Team's blocking finding on Decision 3.
    `OUT_PATH = out_path("releases.html", "OPSDB_RELEASES_PATH")`.
 3. **Edit** `ops/db/derived_state.py` — add `release_readiness_gap(conn)`,
    returning tasks with `status IN ('READY_TO_RELEASE','DEPLOYED','DONE')`
@@ -315,4 +362,10 @@ architecture proposal itself.
 
 ## Recommendation
 
-Proceed to Red Team review.
+Red Team PASSed, conditional on the three corrections above (all folded
+into this document — worst-case row count corrected, the collapse
+affordance and explicit scope-labeling requirements added to the
+file-by-file list, Decision 3's framing softened to a neutral data
+observation). See `ops/reviews/red-team-milestone2b5-architecture.md`.
+No re-review required per Red Team's own disposition — proceed to
+Development against this corrected document.
