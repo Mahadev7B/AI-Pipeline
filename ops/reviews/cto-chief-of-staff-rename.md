@@ -416,8 +416,8 @@ discipline.
 | `ops/control-center/generate_agents.py` | Wrap roster label, detail `<h1>`, `<title>` name; Ask-Agent sender label/placeholder | Founder-facing agent identity renders (1b, 2) |
 | `ops/control-center/generate_pipeline.py` | Wrap non-`None` `current_owner` label | Live today — 4 open tasks show raw key (1b) |
 | `ops/control-center/generate_overview.py` | Wrap `render_active_now()`, `render_pipeline()`, `render_activity()`, `render_inbox()` labels | Same entity rendered raw on the landing screen (1b) |
-| `ops/control-center/generate_inbox.py` | Wrap "Requested by" label | Live today (1b) |
-| `ops/control-center/generate_decisions.py` | Wrap "Recommended by" label | Live today, 3 of 5 visible rows (1b) |
+| `ops/control-center/generate_inbox.py` | Add `sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))` (missing today — Red Team finding, 1i) before importing `display_name`; wrap "Requested by" label | Live today (1b); import fix required or this raises ImportError (1i) |
+| `ops/control-center/generate_decisions.py` | Add the same `sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))` line (missing today — Red Team finding, 1i) before importing `display_name`; wrap "Recommended by" label | Live today, 3 of 5 visible rows (1b); import fix required or this raises ImportError (1i) |
 | `ops/control-center/generate_meetings.py` | `render_orchestrator_note()` label via `display_name("orchestrator")`; defensively wrap `render_position_card()`'s `agent_name` | Single source of truth for the hardcoded literal (2); defensive completeness (1d) |
 | `ops/db/report.py` | Wrap the `## Agents` line's name | `CURRENT_STATUS.md` is Founder-facing generated status text (1b, 1h) |
 | `.claude/agents/orchestrator.md` | Prose only: role-title/intro line reads "Chief of Staff," `name:`/`subagent_type` unchanged | Current role documentation (1f) |
