@@ -50,15 +50,55 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 22:51 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-30 23:06 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Reviews <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  Full historical record — 39 code/security review result(s) and 56 QA result(s), grouped by
+  Full historical record — 41 code/security review result(s) and 57 QA result(s), grouped by
   task, most-recently-active task first — including resolved failures on now-DONE tasks. For what needs attention
   right now, see the Founder Inbox or <code class="mono">CURRENT_STATUS.md</code>.
 </div>
 <div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-14" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History &amp; Release Readiness Visibility</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T23:03:28.860Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T23:01:24.569Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Founder-perspective QA of Milestone 2B5 Reviews/Releases screens: verified reviews.html against real 40 review_results + 56 qa_results rows (11 task groups, TASK-007&#x27;s real 21-row group collapses via &lt;details&gt;/show-all-21, TASK-006/010/009 collapse thresholds also verified, pass/reject/fail pill styling correct); verified releases.html against real 1 deployments row (all fields render) plus independently recomputed 10-of-11 DONE-tasks gap count with neutral Red-Team-required copy; verified Reviews/Releases nav links present+correctly depth-adjusted on all 8 existing pages + 14 agent-detail pages; verified pipeline.html#task-{id} anchors are real and correctly placed (incl. TASK-014 itself, a non-DONE task with review history, correctly anchored in Backlog); regression-checked pipeline.html&#x27;s stage columns/Needs Attention/Backlog render unchanged; confirmed real special-character findings/scenario text renders safely escaped; ran report.py --check (OK); ran a full HTTP end-to-end pass (login/session-gate/logout/CSRF) against an isolated scratch copy, then deleted it, confirming zero live-DB writes and no leftover credential file. See ops/reviews/qa-milestone2b5.md for full detail, including one disclosed non-blocking caveat: no orchestrator-attributed review/QA/deployment row exists yet in real data to visually confirm the Chief-of-Staff display_name() rendering end-to-end (verified via direct function call and code-path inspection instead).</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T22:55:56.114Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Verified independently against cto-milestone2b5-architecture.md file-by-file list and the 3 Red Team conditions: scope conformance confirmed via git show --stat (only spec&#x27;d files touched; other changed paths are regenerated build artifacts); TASK-007&#x27;s real 21-row group confirmed live and shown collapsed in shipped reviews.html; neutral gap copy confirmed verbatim in releases.html; scope label on reviews.html confirmed substantive; generate_pipeline.py diff confirmed id= attributes only; server.py diff confirmed zero new auth code; display_name() confirmed applied to all agent-name fields in both generators; no .founder_credential file found in repo; all free-text fields (findings/scenario/defect_summary/release_notes/rollback_plan/etc) confirmed routed through e(); generator structure consistent with generate_decisions.py; report.py --check passes at HEAD. See ops/reviews/code-review-milestone2b5.md.&quot;]</div>
+      
+    </div></div><div class="panel" style="margin-bottom:14px;">
         <a href="pipeline.html#task-13" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>

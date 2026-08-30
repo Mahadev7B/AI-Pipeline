@@ -135,20 +135,27 @@ routes and every GET read; `risks.id=2` moved `open` → `mitigated` (see
 `ops/reviews/red-team-milestone2b4-architecture.md`,
 `ops/reviews/cto-milestone2b4-conformance.md`.
 
-**Milestone 2B5 (current, authorized, not yet started):** Review/QA
-Failure History & Release Readiness Visibility — a Founder-facing view
-surfacing the real `review_results`/`qa_results` history and
-`deployments`/release-readiness records, closing the last two
+**Milestone 2B5 — DONE (TASK-014):** Review/QA Failure History & Release
+Readiness Visibility — two new read-only screens, `reviews.html`
+(grouped `review_results`/`qa_results` history, collapsible past ~10
+rows per task) and `releases.html` (real `deployments` history plus a
+neutrally-framed release-readiness gap list), closing the last two
 Phase-2-scoped capabilities ("QA/review failures," "release
-information") named above that aren't yet built. Same full gate sequence
-as every prior milestone. `risks.id=3` (Bash tool scoping) stays out of
-scope.
+information") named above. Both inherit Milestone 2B4's session gate
+with zero new auth code. See
+`ops/reviews/cto-milestone2b5-architecture.md`,
+`ops/reviews/red-team-milestone2b5-architecture.md`,
+`ops/reviews/cto-milestone2b5-conformance.md`.
 
-Phase 2 is not yet complete — Milestone 2B5 remains open work within it.
-Phase 3 is not authorized and does not begin until Phase 2's own scope,
-including 2B5, is finished and the Founder separately approves the
-Phase 3 transition (see PHASE 3, below, and the Rule at the bottom of
-this file).
+Every Phase-2-scoped capability named at the top of this section
+(project overview, pipeline visualization, agent panel + detail view,
+Ask-Agent conversation interface, Executive Meeting UI, Founder Inbox,
+activity feed, QA/review failures, decision history, project health,
+release information) has now shipped. No further milestone is currently
+authorized. Phase 3 is not authorized and does not begin until the
+Founder separately approves the Phase 3 transition (see PHASE 3, below,
+and the Rule at the bottom of this file) — Phase 2's own scope being
+built out does not itself authorize Phase 3.
 
 ## PHASE 3 — Automated Orchestration *(after Phase 2 is complete)*
 
