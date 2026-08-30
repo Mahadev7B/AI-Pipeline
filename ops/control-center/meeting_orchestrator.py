@@ -356,24 +356,28 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
         opsdb.add_meeting_participant(conn, meeting_id, agent_name, agent_runtime.MAX_MEETING_PARTICIPANTS,
                                        requested_by=requested_by)
 
-        run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
-        prompt = (
-            f"Founder: An Executive Meeting is already under way on this topic: \"{topic}\" "
-            f"The Founder has specifically asked for your perspective. State your position from "
-            f"your own role and responsibilities — your real assessment, not a generic opinion. "
-            f"Be concise (2-4 sentences)."
-        )
-        # Everything from here on operates on an ALREADY-CREATED run row
-        # (run_id) AND an already-reserved participant slot — same
-        # discipline as _handle_ask() in server.py (Code Review,
-        # TASK-009) and _gather_position() above: an unhandled exception
-        # anywhere in this block (a send_message() failure, lock
-        # contention, anything unexpected) must still end the run as
-        # 'failed' AND release the reservation before propagating, or the
-        # run stays open (ended_at IS NULL) until the next server
-        # restart's reconciliation pass, and/or the reservation lingers
-        # as a fabricated participant with no real position.
+        # TASK-011 QA round 2, Code Review's second pass (agent_activity
+        # id=17): once the reservation above succeeds, EVERY exit path
+        # below must release it unless it was converted into a real,
+        # persisted position. Two windows previously broke that: (A)
+        # opsdb.start_run() raising BEFORE a run_id existed, outside any
+        # protection; (B) the cleanup opsdb.end_run(...,"failed") call
+        # itself raising something other than LookupError/ValueError and
+        # skipping the release entirely. Fixed by (A) moving start_run()
+        # inside this same protected try, with run_id defaulting to None
+        # so the except handler knows whether a run was ever opened, and
+        # (B) using `finally`, not a bare statement after the inner try,
+        # so _release_reservation() runs no matter what the cleanup
+        # end_run() call itself does.
+        run_id = None
         try:
+            run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
+            prompt = (
+                f"Founder: An Executive Meeting is already under way on this topic: \"{topic}\" "
+                f"The Founder has specifically asked for your perspective. State your position from "
+                f"your own role and responsibilities — your real assessment, not a generic opinion. "
+                f"Be concise (2-4 sentences)."
+            )
             result = agent_runtime.invoke_agent(agent_name, prompt, wait_for_slot=True)
             if not result.ok:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
@@ -388,10 +392,16 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
             return (True, None)
         except Exception:
             try:
-                opsdb.end_run(conn, run_id, "failed")
+                if run_id is not None:
+                    opsdb.end_run(conn, run_id, "failed")
             except (LookupError, ValueError):
                 pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
-            _release_reservation(conn, meeting_id, agent_name)
+            finally:
+                # Runs even if the end_run() call above itself raised
+                # (e.g. sqlite3.OperationalError, not caught above) —
+                # that is exactly window B; a bare statement after the
+                # try (the pre-fix shape) would have skipped this.
+                _release_reservation(conn, meeting_id, agent_name)
             raise
     finally:
         conn.close()
