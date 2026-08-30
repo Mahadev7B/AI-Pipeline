@@ -45,11 +45,12 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
         <div style="line-height:1.15;">
           <div style="font-size:11.5px; font-weight:600;">Founder</div>
           <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
         </div>
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 13:52 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-30 19:15 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Overview <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="panel" style="margin-bottom:14px;">
@@ -68,23 +69,17 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
   </div>
   <div class="panel" style="grid-column:1 / -1;">
     <div class="label" style="margin-bottom:10px;">Pipeline Snapshot</div>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:170px; font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">TASK-012 — Chief of Staff rename</div>
-          <div style="flex:1; height:6px; border-radius:3px; background:var(--border2); overflow:hidden;"><div style="width:0%; height:100%; background:var(--accent);"></div></div>
-          <div style="width:70px; font-size:11px; color:var(--text2); text-align:right;">not broken into steps</div>
-          <div style="width:110px; font-size:11px; color:var(--text3);">BACKLOG</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:170px; font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions</div>
-          <div style="flex:1; height:6px; border-radius:3px; background:var(--border2); overflow:hidden;"><div style="width:0%; height:100%; background:var(--accent);"></div></div>
-          <div style="width:70px; font-size:11px; color:var(--text2); text-align:right;">not broken into steps</div>
-          <div style="width:110px; font-size:11px; color:var(--text3);">BACKLOG</div>
-        </div></div>
+    <div style="display:flex; flex-direction:column; gap:10px;"><div style="font-size:12px; color:var(--text2);">No open tasks.</div></div>
   </div>
   <div class="panel" style="grid-column:1 / -1;">
     <div class="label" style="margin-bottom:10px;">Just Happened</div>
     <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Implemented Milestone 2B4 Founder Identity Verification (founder_auth.py + server.py session/lockout + login/logout routes + layout.py logout UI + SECURITY.md); C1 concurrency race fix verified live</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Fixed Code Review REJECT: agent_status_rows() now sorts by display_name(row[&#x27;name&#x27;]).lower() in Python (not raw &#x27;ORDER BY a.name&#x27; SQL), so &#x27;Chief of Staff&#x27; sorts between &#x27;ceo&#x27; and &#x27;code-review&#x27; as required. Also wrapped requested_by_agent/requested_by in display_name() at ops/db/report.py:151 and generate_meetings.py&#x27;s render_position_card() per non-blocking findings 2/3. Regenerated agents.html, agent detail pages, overview.html, meetings.html, CURRENT_STATUS.md. Verified live: &#x27;Chief of Staff&#x27; now sits between ceo and code-review in both agents.html and CURRENT_STATUS.md.</div>
+        </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">code-review</b> — Code Review: REJECT — Chief of Staff rename</div>
         </div>
@@ -102,12 +97,6 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
         </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">security</b> — TASK-011 Milestone 2B3B round 2 Security/Privacy review: PASS at HEAD 8cce17a</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">qa</b> — TASK-011 QA round 2 (re-verification): PASS -- all 3 original QA-FAIL defects (id=15) confirmed genuinely fixed, windows A/B (id=17/18) independently re-derived closed, disclosed compound-failure gap (id=19/20) confirmed non-blocking; full regression clean; ready for Security gate</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Correction to 6ee5503&#x27;s disclosure: the deferred orphaned-participant gap is reachable without a crash</div>
         </div></div>
   </div>
 </div>

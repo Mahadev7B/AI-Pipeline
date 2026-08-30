@@ -45,19 +45,48 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
         <div style="line-height:1.15;">
           <div style="font-size:11.5px; font-weight:600;">Founder</div>
           <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
         </div>
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 13:41 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-30 19:15 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (7 records) — structured, queryable state from the
+  This is the operational decision log (9 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#9 — Milestone 2B4: Founder authentication mechanism selection</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The session-token mechanism (Milestone 2B1+) proves a request came from a page this server process rendered, but does not prove a human, specifically the Founder, sent it -- risks.id=2, open since Phase 1. This milestone had to close that gap for the current local/internal, solo-Founder, loopback-only Control Center deployment, without adding a paid identity provider, external cloud infrastructure, or any third-party dependency, unless the threat model genuinely required it (it did not).</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Implemented ops/control-center/founder_auth.py (scrypt N=2**17/r=8/p=1, 16+ character passphrase floor, atomic 0600 credential file outside git) plus a Founder-session cookie (HttpOnly, SameSite=Strict, 30-minute idle / 12-hour absolute timeout, in-memory only) gating all 9 write/auth routes and every GET read at the same centralized location the pre-existing CSRF SESSION_TOKEN check already occupied -- kept, not replaced. Fully serialized login verification closes both the stated brute-force cap and a concurrent-scrypt memory-exhaustion DoS, independently verified under a 60-simultaneous and a 45,820-request sustained flood (Code Review, QA, and Security&#x27;s post-implementation adversarial review each PASS).</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> Smallest credible mechanism for the actual deployment model: a solo Founder&#x27;s own local internal tool, not a public SaaS product. Answers &#x27;does the entity submitting this request know a secret only the Founder was ever told&#x27; with a real, independently-reproduced technical guarantee, without adding infrastructure the threat model does not justify.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Does not and structurally cannot defend against an agent with Bash tool access sharing the Founder&#x27;s own OS-user filesystem/process principal (risks.id=3, explicitly out of scope this milestone) -- such an agent can read/overwrite the credential file directly or PTRACE_ATTACH the running server. Also disclosed: the shared, non-identity-scoped lockout can itself be flooded to deny the Founder&#x27;s own genuine logins (Red Team finding F1) -- no cheap in-scope fix exists without touching risks.id=3. Neither gap is hidden; risks.id=2 moves to mitigated, not resolved.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by cto</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#8 — Human-facing role rename: Orchestrator -&gt; Chief of Staff</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The Founder directed that the human-facing company role called Orchestrator be renamed to Chief of Staff -- a role-name clarification only, not a change to authority, permissions, or responsibilities, and not a second/duplicate agent.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Introduced ops/db/derived_state.py&#x27;s display_name(), a one-entry mapping {&#x27;orchestrator&#x27;: &#x27;Chief of Staff&#x27;} applied only at Founder-facing render sites (agent roster/detail, pipeline owner, overview, inbox, decisions, meeting notes, CURRENT_STATUS.md). Internal machine identity, DB row, .claude/agents/orchestrator.md filename and subagent_type, and all historical records (DECISIONS.md, ops/reviews/*.md, stored message/decision bodies) remain &#x27;orchestrator&#x27; unchanged, permanently.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> Smallest safe change per the Founder&#x27;s explicit instruction to prefer preserving the stable machine identity and avoid unnecessary database/runtime migration, while giving every current and future Founder-facing render site a consistent &#x27;Chief of Staff&#x27; label.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Historical text (old reviews, DECISIONS.md, stored message bodies) will correctly keep reading &#x27;Orchestrator&#x27; forever -- an intended, disclosed tradeoff, not a bug.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#7 — TASK-011 Milestone 2B3B round 2: compound-failure reservation leak in add_meeting_participant() accepted as a known, non-blocking gap (no reconciliation sweep built)</div>
