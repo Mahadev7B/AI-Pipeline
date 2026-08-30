@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-30 14:07 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-30 19:13 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -16,6 +16,7 @@ Generated 2026-08-30 14:07 UTC by `ops/db/report.py` from the live database — 
 - TASK-010 — Phase 2 Milestone 2B3B: real Executive Meetings
 - TASK-011 — Phase 2 Milestone 2B3B round 2: Executive Meetings correction (Orchestrator selection, request-perspective, follow-up, retry)
 - TASK-012 — Chief of Staff rename
+- TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions
 
 ## In progress
 - none
@@ -24,13 +25,12 @@ Generated 2026-08-30 14:07 UTC by `ops/db/report.py` from the live database — 
 - none
 
 ## Waiting (Backlog)
-- TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions
+- none
 
 ## QA failures (unresolved)
 - none open
 
 ## Current risks (open)
-- [medium] Founder approval is not identity-authenticated (company, owner: security)
 - [medium] Bash permissions cannot be scoped below the tool-category level (company, owner: cto)
 
 ## Founder decisions required
