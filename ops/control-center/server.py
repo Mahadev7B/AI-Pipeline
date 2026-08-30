@@ -174,6 +174,8 @@ import generate_agents  # noqa: E402
 import generate_decisions  # noqa: E402
 import generate_meetings  # noqa: E402
 import generate_inbox  # noqa: E402
+import generate_reviews  # noqa: E402
+import generate_releases  # noqa: E402
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -420,6 +422,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/decisions.html":
                 self._send_html(200, generate_decisions.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path == "/reviews.html":
+                self._send_html(200, generate_reviews.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path == "/releases.html":
+                self._send_html(200, generate_releases.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/meetings.html":
                 self._send_html(200, generate_meetings.build_html(token=SESSION_TOKEN).encode("utf-8"))

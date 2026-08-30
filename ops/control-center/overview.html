@@ -36,7 +36,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
           <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
         </div>
-        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a></div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a></div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
@@ -50,7 +50,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 19:15 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-30 22:51 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Overview <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="panel" style="margin-bottom:14px;">
@@ -69,11 +69,20 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
   </div>
   <div class="panel" style="grid-column:1 / -1;">
     <div class="label" style="margin-bottom:10px;">Pipeline Snapshot</div>
-    <div style="display:flex; flex-direction:column; gap:10px;"><div style="font-size:12px; color:var(--text2);">No open tasks.</div></div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:170px; font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History &amp; Release Readiness Visibility</div>
+          <div style="flex:1; height:6px; border-radius:3px; background:var(--border2); overflow:hidden;"><div style="width:0%; height:100%; background:var(--accent);"></div></div>
+          <div style="width:70px; font-size:11px; color:var(--text2); text-align:right;">not broken into steps</div>
+          <div style="width:110px; font-size:11px; color:var(--text3);">BACKLOG</div>
+        </div></div>
   </div>
   <div class="panel" style="grid-column:1 / -1;">
     <div class="label" style="margin-bottom:10px;">Just Happened</div>
     <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">red-team</b> — Red Team architecture review verdict: PASS conditional on Milestone 2B5 (Reviews/Releases screens)</div>
+        </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Implemented Milestone 2B4 Founder Identity Verification (founder_auth.py + server.py session/lockout + login/logout routes + layout.py logout UI + SECURITY.md); C1 concurrency race fix verified live</div>
         </div>
@@ -94,9 +103,6 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
         </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">cto</b> — TASK-011 Milestone 2B3B round 2: CTO post-implementation conformance (FINAL gate) at HEAD 8cce17a: CONFORMS</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">security</b> — TASK-011 Milestone 2B3B round 2 Security/Privacy review: PASS at HEAD 8cce17a</div>
         </div></div>
   </div>
 </div>

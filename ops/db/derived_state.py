@@ -122,3 +122,25 @@ def stage_and_substate(status: str) -> tuple[str, str] | None:
     pipeline column; callers render them separately (a Backlog tray, a
     Needs Attention callout)."""
     return STAGE_MAP.get(status)
+
+
+def release_readiness_gap(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Milestone 2B5 (TASK-014): tasks whose status is READY_TO_RELEASE,
+    DEPLOYED, or DONE but that have no matching row in `deployments` at
+    all. A computed fact from two real columns (tasks.status,
+    deployments.task_id) — same category as company_health()/STAGE_MAP,
+    not invented structure. This function only computes the list; it is
+    NOT an assertion that every such task was expected to carry a
+    deployments row (Red Team's Milestone 2B5 review, blocking finding —
+    see ops/reviews/cto-milestone2b5-architecture.md, Decision 3). Callers
+    must present this as a neutral data observation, never as a
+    process-discipline failure claim."""
+    return conn.execute(
+        """
+        SELECT id, title, status
+        FROM tasks
+        WHERE status IN ('READY_TO_RELEASE', 'DEPLOYED', 'DONE')
+          AND NOT EXISTS (SELECT 1 FROM deployments d WHERE d.task_id = tasks.id)
+        ORDER BY id
+        """
+    ).fetchall()

@@ -43,6 +43,8 @@ NAV_LINKS = [
     ("decisions.html", "Decisions"),
     ("meetings.html", "Meetings"),
     ("inbox.html", "Inbox"),
+    ("reviews.html", "Reviews"),
+    ("releases.html", "Releases"),
 ]
 
 

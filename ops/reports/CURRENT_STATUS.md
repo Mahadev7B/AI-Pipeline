@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-30 19:13 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-30 22:51 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -25,7 +25,7 @@ Generated 2026-08-30 19:13 UTC by `ops/db/report.py` from the live database — 
 - none
 
 ## Waiting (Backlog)
-- none
+- TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History & Release Readiness Visibility
 
 ## QA failures (unresolved)
 - none open

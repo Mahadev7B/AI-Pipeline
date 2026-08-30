@@ -1,0 +1,1260 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Reviews — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-30 22:51 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+
+<h1>Reviews <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
+<div class="sub" style="margin-top:-14px;">
+  Full historical record — 39 code/security review result(s) and 56 QA result(s), grouped by
+  task, most-recently-active task first — including resolved failures on now-DONE tasks. For what needs attention
+  right now, see the Founder Inbox or <code class="mono">CURRENT_STATUS.md</code>.
+</div>
+<div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-13" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T19:09:04.015Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Post-implementation adversarial review, distinct from architecture-stage threat model.&quot;, &quot;All 9 write routes fail closed against no-cookie/no-token/wrong-process-token/forged-cookie combinations, verified via direct curl against isolated scratch servers.&quot;, &quot;Sustained 40s/45,820-request flood with a fresh randomized wrong passphrase each request confirms the lockout counter is not accidentally per-value.&quot;, &quot;Mixed correct+incorrect flood reproduces the already-disclosed F1 shared-lockout self-DoS exactly as documented in SECURITY.md -- known, not new.&quot;, &quot;Idle and absolute session timeouts block real writes with zero DB mutation on rejection, confirmed against the live DB, not just HTTP status codes.&quot;, &quot;Malformed credential files (missing key, unsupported kdf) fail closed 503, not an unhandled 500, confirmed live.&quot;, &quot;No field beyond passphrase/CSRF token can influence /api/login; zero model-invocation surface in this feature, grep-confirmed.&quot;, &quot;No exploitable finding. Full evidence in ops/reviews/security-adversarial-milestone2b4.md.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T18:56:47.169Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Founder Identity Verification (Milestone 2B4) — full user-perspective adversarial pass: correct/incorrect passphrase, CSRF on /api/login+/api/logout, brute-force lockout serialization (C1), fail-closed with no credential file (all routes 503 incl. /login), full-app-lock on GET, forged/tampered cookie + session fixation, secret absence from HTML/logs/SQLite/Git, malformed requests, idle/absolute timeout, restart wipes sessions, concurrent logins, XSS/SQLi-shaped passphrase, existing write-route regression check. 27 mapped scenarios + 4 extra adversarial checks, all against isolated scratch copy (OPSDB_PATH scratch db, scratch CREDENTIAL_PATH, never touching real repo credential path). Report initially found already written by a prior QA run cut off by rate-limit before it could record this result; independently spot-checked 3 highest-stakes claims (CSRF-gate on /api/login, fail-closed 503 with no credential file, brute-force lockout fast-reject incl. correct passphrase rejected 429 during lockout) against a fresh scratch server and confirmed they match the report exactly.</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T14:20:26.137Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;[\&quot;C1 verified genuinely fixed: _LOGIN_LOCK held across the ENTIRE check-verify-increment critical section, independently reproduced with 60 concurrent wrong-passphrase requests against an isolated scratch copy (scratch credential file, scratch OPSDB_PATH, scratch port) -- exactly 5x401 / 55x429, matching Developer&#x27;s claimed numbers exactly\&quot;, \&quot;C2 verified: CSRF token check runs before /api/login dispatch, before passphrase is ever touched\&quot;, \&quot;C3 verified: /api/login reuses the existing MAX_BODY_BYTES/decode/parse_qs pattern, no new parsing logic\&quot;, \&quot;founder_auth.py: no passphrase/hash/salt logged anywhere; atomic O_EXCL (setup) and temp+os.replace (change) writes confirmed as implemented, not just claimed; zero opsdb.py/SQL touch\&quot;, \&quot;Session cookie: HttpOnly + SameSite=Strict confirmed in the literal header string; no Secure, no Max-Age/Expires -- correct per design\&quot;, \&quot;Full-app-lock confirmed: do_GET() requires a valid session for every path except /login, checked above the entire dispatch chain\&quot;, \&quot;Fail-closed confirmed: _check_credential_gate() is the first statement in both do_GET() and do_POST()\&quot;, \&quot;F1 shared-lockout self-DoS disclosure present in SECURITY.md in Red Team&#x27;s required language, not softened\&quot;, \&quot;Zero diff to opsdb.py/schema.sql/agent_runtime.py/meeting_orchestrator.py -- confirmed empty\&quot;, \&quot;SESSIONS dict: every read/insert/delete confirmed under SESSIONS_LOCK, no unguarded access found\&quot;, \&quot;founder_auth.py CLI shape matches opsdb.py&#x27;s argparse convention; stdlib-only; no unnecessary refactor found in the diff\&quot;, \&quot;Non-blocking: the C1 concurrency proof exists only as commit-message prose, not a committed regression test -- recommend a follow-up task\&quot;, \&quot;Non-blocking: tasks.status for TASK-013 still reads BACKLOG and risks.id=2 still open -- correct per design (post-implementation Security pass gates the risk-status change) but flagging for whoever owns task-state transitions\&quot;]&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:56:22.064Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;F1 (required, doc-only): shared/global login lockout enables sustained self-DoS against Founder&#x27;s own access under an already in-scope local-attacker flood; verified hashlib.scrypt releases the GIL so this does not freeze the whole server, only /api/login; must be explicitly disclosed in Sec 8/SECURITY.md, no code change needed&quot;, &quot;F2 (required, doc-only): Sec 10 cites agent_runtime.py&#x27;s &#x27;process-group registry&#x27; as threading.Lock precedent -- verified that registry was proposed then explicitly REJECTED by red-team&#x27;s own 2B3A review and does not exist in shipped code; actual precedent is threading.BoundedSemaphore (_INVOCATION_SEMAPHORE); citation must be corrected&quot;, &quot;non-blocking: handle malformed/partial credential-file read gracefully (503 not 500) during the setup hot-reload race window&quot;, &quot;non-blocking: if Sec 9 optional mtime tamper-detection ships, anchor baseline mtime at server startup not only at first check&quot;, &quot;verified stdlib-only end to end, no opsdb.py DB-write-path violation, no architecture conflicts, no beginner mistakes found, scrypt maxmem/empty-passphrase claims reproduced accurately&quot;, &quot;verdict: PASS with conditions -- design sound, C1-C3 correctly close Security&#x27;s gaps, no rework required, conditions 1-2 are text-only additions to the CTO doc before Development starts&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:49:14.911Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;C1: concurrent-login race defeats the stated 5-attempt lockout and opens a scrypt-based memory-exhaustion DoS -- lock must cover the full check-verify-increment critical section, not just dict get/set&quot;, &quot;C2: /api/login&#x27;s CSRF SESSION_TOKEN requirement is unstated in the design -- must be required explicitly, same as every other write route&quot;, &quot;C3: malformed-payload handling on /api/login (missing field, oversized/non-UTF8 body) is unstated -- must extend the existing MAX_BODY_BYTES/decode/default-empty pattern explicitly&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-12" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-012 — Chief of Staff rename</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T14:03:53.890Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;display_name() call sites all pass through existing e() escaping - no XSS regression&quot;, &quot;No auth/session/write-path files touched by TASK-012 commits&quot;, &quot;_DISPLAY_NAMES confirmed static hardcoded dict, no runtime input source&quot;, &quot;Historical DB values and DECISIONS.md untouched; review docs append-only, no history rewrite&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T14:00:48.527Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Chief of Staff rename: live render sites (agents.html/agents/orchestrator.html/overview/pipeline/inbox/decisions), scratch-DB-seeded task/decision/approval/meeting-validation-note, agent roster + CURRENT_STATUS.md ordering (ceo &lt; Chief of Staff &lt; code-review), historical DB rows (&#x27;orchestrator&#x27; literal preserved in tasks/decisions), DECISIONS.md prose preserved, agents table row count (14, one orchestrator row), .claude/agents/orchestrator.md name: field unchanged, 3 other agents&#x27; pages unaffected, report.py --check clean, generator idempotency (2x run diff = timestamp only), and a deliberate ImportError trigger (renamed derived_state.py in a scratch copy) confirming generate_inbox.py/generate_decisions.py fail loudly, not silently</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:55:25.672Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:50:47.370Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;agent_status_rows() ORDER BY a.name sorts before display_name() applied \u2014 Chief of Staff renders out of alphabetical order on agents.html roster and CURRENT_STATUS.md (confirmed live)&quot;, &quot;report.py Founder-decisions-required line renders requested_by_agent raw, not wrapped in display_name() (non-blocking, recommend fixing same pass)&quot;, &quot;generate_meetings.py render_position_card() requested_by_display else-branch not wrapped in display_name(), unlike adjacent agent_name label (non-blocking, dead code today)&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to developer</div>
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-10" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-010 — Phase 2 Milestone 2B3B: real Executive Meetings</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+            <details>
+              <summary style="cursor:pointer; font-size:11px; color:var(--text2); margin-bottom:8px;">show all 17</summary>
+              
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:22.897Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by cto</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:17.195Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.458Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: testing_guard.py correctly refuses to run with no OPSDB_PATH set (resolves to live DB) and correctly passes through when OPSDB_PATH points at a scratch DB</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.394Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Both Ask-Agent and meeting-participant orphaned-run reconciliation patterns fire independently and correctly in the same server restart</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.334Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Real kill -9 mid-meeting crash test: two real participant subprocesses genuinely in flight, server force-killed, one orphaned meeting-scoped agent_runs row left; restart correctly reconciled it to failed and the meeting page still rendered the existing honest failure fallback</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:07.148Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:10.081Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by cto</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:03.529Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.840Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Route-boundary robustness: XSS/SQL-injection-shaped decision text stored inert and rendered HTML-escaped; GET on write-only route 404; oversized body 400; non-numeric ids 404; path-traversal-shaped GET 404</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.795Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Concurrency bound held under real multi-meeting load: 23 total real agent invocations across the session, zero capacity_exceeded results, zero deadlocks/hangs, MAX_CONCURRENT_INVOCATIONS=3 unchanged</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.748Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Real concurrent/duplicate meeting submission (4 near-simultaneous POST /api/meetings with identical topic text): 4 fully independent, valid, non-corrupted meetings, correctly scoped messages, zero crashes, zero orphaned agent_runs</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.701Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Synthesis-failure-does-not-discard-positions: verified via Development&#x27;s monkeypatched fake-runtime test plus Code Review&#x27;s direct control-flow verification that finalize_meeting_synthesis() only ever updates the four synthesis columns and never touches messages</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.655Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Real (unsimulated) participant invocation failure: a live CEO call failed with a transient runtime_error; agent_runs recorded status=failed, no fabricated message was written, meeting page rendered the honest &#x27;Selected, but no response was recorded&#x27; fallback and &#x27;No synthesis available&#x27;</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.609Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Full HTTP layer via server.py: token gating (403 on missing/wrong token, no DB write), input validation (400 on empty/oversized topic and decision, 404 on nonexistent meeting), POST /api/meetings and POST /api/meetings/&lt;id&gt;/decide redirect correctly, duplicate decide returns 409 with no state change</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.564Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Real, non-mocked end-to-end meeting: CEO selects 5 real participants (product,cto,qa,security,red-team), all 6 concurrently produce real topic-relevant positions, CEO synthesizes a real 4-section recommendation, all agent_runs end cleanly</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:45.228Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:34:08.761Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS with conditions. Verified two of the proposal&#x27;s own claims live rather than trusting them: CEO&#x27;s participant-selection format compliance (2 real runs, both clean, one producing a real 6-participant scenario), and that Handler.timeout=10 does not fire during long synchronous application work (verified with a real 15s-delayed request completing successfully after ~20s).&quot;, &quot;All 5 open questions affirmed with reasoning, not rubber-stamped: cap of 6 (now evidence-backed), wait_for_slot scoped narrowly and shown to be strictly better than a separate meeting-specific pool, meetings.positions left unwritten (consistent with the existing one-conversation-store rule), no exclusivity guard on meeting-participant runs (sound given each invocation is independent/stateless), ~2-minute worst-case synchronous request confirmed safe from the specific failure mode tested.&quot;, &quot;7 conditions for Development: lenient/normalized parsing of CEO&#x27;s selection output (never trust exact formatting); deterministic truncation at the participant cap; a topic length cap matching the existing message-cap pattern; explicit verification that every ThreadPoolExecutor worker opens/closes its own connection; duplicate meeting submission accepted as a disclosed v1 limitation (no new dedup mechanism required) but QA must confirm it doesn&#x27;t corrupt shared state; per-participant failure honesty (no fabricated position, no silent omission that they were asked); CEO synthesis failure must not discard already-gathered real positions.&quot;]</div>
+      
+    </div>
+            </details></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-9" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-009 — Phase 2 Milestone 2B3A: controlled concurrent Agent Runtime foundation</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+            <details>
+              <summary style="cursor:pointer; font-size:11px; color:var(--text2); margin-bottom:8px;">show all 12</summary>
+              
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:54:22.523Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;CTO post-implementation conformance review: PASS. Note on process: performed directly, Agent dispatch tool unavailable this session (disclosed in every review record for this milestone).&quot;, &quot;No new write path: grepped the whole repo for INSERT/UPDATE against agent_runs/messages -- every hit is inside opsdb.py (start_run, start_ask_agent_run, run_heartbeat, end_run, reconcile_orphaned_runs, send_message); server.py contains zero raw write SQL, confirmed by direct grep (the only match for insert-like text is a docstring comment). _reconcile_orphaned_ask_agent_runs() now calls opsdb.reconcile_orphaned_runs() instead of holding its own UPDATE, closing the exact gap this same review found in Milestone 2B2.&quot;, &quot;No duplicated runtime layer: grepped for subprocess/Popen calls outside agent_runtime.py across ops/control-center and ops/db -- zero found. agent_runtime.invoke_agent() remains the sole model-invocation entry point.&quot;, &quot;SQLite remains authoritative, unchanged: no PRAGMA/journal-mode change was made (grepped for journal_mode/wal_checkpoint -- zero hits), confirming the WAL-mode deferral was actually honored, not just documented as a decision and then silently done anyway.&quot;, &quot;agent_runs remain truthful, no fake status/activity: every status label rendered in generate_agents.py&#x27;s render_ask_agent_section() (In progress / Last request failed / Last answered / No requests yet) is gated behind a conditional on real open_run/last_run query results executed against the live database at render time -- no hardcoded or inferred-from-text status found.&quot;, &quot;Concurrency is genuinely bounded, not just claimed: MAX_CONCURRENT_INVOCATIONS is a single hardcoded module constant in agent_runtime.py, never read from any request field (independently re-confirmed via the same field-smuggling test Security already ran) -- verified live under real adversarial load (5-way and 10-way bursts) that the bound holds exactly.&quot;, &quot;Runtime failures are isolated: independently re-confirmed via the timeout-isolation and orphaned-run-on-exception scenarios already tested by QA and Code Review -- a failure of one agent&#x27;s invocation (simulated timeout, or a genuine in-process exception) never corrupts, blocks, or delays a concurrent, unrelated agent&#x27;s successful invocation.&quot;, &quot;Phase 1/2 authorization limitations remain honestly documented: SECURITY.md&#x27;s new Concurrent Agent Runtime section explicitly restates (does not soften) that the session token still doesn&#x27;t distinguish a human Founder from any local process, and that concurrency only changes how many such requests could be in flight at once, not the underlying limitation. Confirmed both Phase 1 risks (risks.id=2, risks.id=3) still show status=open in the live database.&quot;, &quot;No architecture drift beyond what was disclosed and reviewed: confirmed the process-tracking shutdown registry the original CTO proposal included was never implemented (Red Team rejected it; grepped agent_runtime.py/server.py for any registry-like structure -- none exists beyond the pre-existing per-invocation _kill_process_group, which is unrelated and predates this milestone). Confirmed the one real bug Development found and fixed during its own verification (BEGIN IMMEDIATE&#x27;s exception-handling masking a real OperationalError) and the one real bug Code Review found and fixed (an unhandled in-process exception could orphan a run) are both genuinely present in the shipped code, not just described in commit messages.&quot;, &quot;No unnecessary dependency: zero third-party imports across the three changed files, independently re-confirmed via AST scan.&quot;, &quot;Scope boundary respected: no Executive Meeting creation, multi-agent orchestration, agent-to-agent communication, autonomous handoffs, Developer/DevOps write-by-chat, or Phase 3 capability introduced -- this milestone&#x27;s diff touches only server.py, agent_runtime.py, opsdb.py, and documentation.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:53:25.783Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Note on process: performed directly rather than via a spawned security subagent (Agent dispatch tool unavailable this session, disclosed in prior review records for this milestone). Same adversarial standard: all attacks below were actually executed against a live running server on a scratch DB, never simulated in the abstract.&quot;, &quot;Bounded concurrency holds under real adversarial burst load, not just the milestone&#x27;s minimum 2-agent test: fired 5 simultaneous real requests to all 5 allowlisted agents at once -- exactly 3 real invocations proceeded, exactly 2 got a clean capacity_exceeded rejection in single-digit milliseconds, zero crash, zero resource spike. Fired 10 rapid simultaneous requests at the SAME agent (a same-agent DoS attempt) -- exactly 1 real invocation proceeded, 9 got clean 409s, zero duplicate agent_runs rows, zero lingering claude subprocesses afterward (confirmed via ps).&quot;, &quot;No response body (409, capacity_exceeded via 303, or any other path) leaks a traceback, file path, or other internal detail -- grepped every captured response body for traceback/Errno/File-path/line-number patterns, found none.&quot;, &quot;Field smuggling: POSTed max_concurrent_invocations, timeout_s, model, and tools fields alongside a valid token/message -- all silently ignored (server.py&#x27;s do_POST/_handle_ask only ever reads &#x27;token&#x27;, &#x27;decision&#x27;, and &#x27;message&#x27; from the parsed body, confirmed by direct grep of every fields.get() call in the file); the concurrency bound remained exactly 3, unaffected by the smuggled value.&quot;, &quot;Confirmed no new browser-facing capability was introduced by the ThreadingHTTPServer swap -- same route table as before, no new endpoint.&quot;, &quot;Confirmed zero third-party dependencies added (AST-scanned every import in the three changed files; server.py&#x27;s numerous &#x27;non-stdlib&#x27; hits are all this project&#x27;s own local sibling modules, not real third-party packages).&quot;, &quot;Confirmed both Phase 1 risks (risks.id=2: Founder approval not identity-authenticated; risks.id=3: Bash permissions cannot be scoped below tool-category level) remain status=open in the live database, and nothing in this milestone&#x27;s code or SECURITY.md updates claims either is resolved -- the new &#x27;Concurrent Agent Runtime&#x27; section explicitly restates that concurrency does not change the underlying authorization limitation, only how many such requests could be in flight at once.&quot;, &quot;No SQL injection surface introduced -- the two new/changed write functions (opsdb.start_ask_agent_run, the sqlite3.OperationalError handling in server.py) use only parameterized queries; server.py&#x27;s sqlite3 import is exception-type-only, confirmed by reading every use of the name in the file.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:50:03.091Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Cancellation / process cleanup: a real &#x27;kill -9&#x27; of the server process mid-invocation (not simulated) leaves a self-resolving orphaned run, correctly reconciled on next restart</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:54.797Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: SQLite state stays correct under real concurrent load -- no corruption, no lost writes, no duplicate rows across the full test session</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:54.755Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Process crash/restart reconciliation still works correctly with the new atomic start_ask_agent_run() write path</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:23.944Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: A failed/timed-out invocation of one agent does not corrupt or block a concurrent, successful invocation of a different agent</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:47:15.191Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Concurrency is deliberately bounded: 4 real simultaneous requests to 4 different agents produce exactly MAX_CONCURRENT_INVOCATIONS=3 real invocations and 1 clean capacity_exceeded failure</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:46:41.828Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Same-agent simultaneous requests: only one executes, the other gets a clean 409, no duplicate/overlapping runs</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:46:16.732Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Control Center pages remain responsive while a real Ask-Agent invocation is in flight</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:45:59.298Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Two different real, actually-configured agents (cto, financial) invoked concurrently end-to-end via real HTTP POSTs</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:44:59.935Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Note on process: performed directly rather than via a spawned code-review subagent (the Agent dispatch tool became unavailable partway through this milestone, session-level change) -- same rigor, same empirical-testing discipline, disclosed here rather than silently changing how this gate is staffed.&quot;, &quot;One real bug found and fixed: _handle_ask only called opsdb.end_run() on the two EXPECTED outcomes (invoke_agent success/failure) -- an unhandled exception anywhere between a successful start_ask_agent_run() and those two branches (e.g. a send_message() failure, a bug in _build_transcript) would leave that agent_runs row open (ended_at IS NULL) forever, silently blocking every future Ask-Agent request to that same agent until the next server restart&#x27;s reconciliation pass. This directly violates the milestone&#x27;s own acceptance bar (&#x27;failures... in one invocation do not corrupt or block another&#x27;) exactly as surely as the race the milestone&#x27;s headline fix closes. Fixed by wrapping the post-run-creation logic in its own try/except that unconditionally ends the run as &#x27;failed&#x27; before re-raising to the outer handler. Verified live end to end with a real running server: injected a real in-process exception via a monkeypatched send_message call after a genuine model invocation had already completed, confirmed a clean 500 (no crash, no hang), confirmed the run correctly shows status=&#x27;failed&#x27; with ended_at set (not orphaned), and confirmed a subsequent real request to the SAME agent succeeds normally afterward (not blocked).&quot;, &quot;Independently re-verified (not re-trusting Development&#x27;s own claims): the outer try/except/finally structure correctly closes the connection on every exit path including returns from the nested exception handlers (Python&#x27;s finally-on-return guarantee, confirmed by re-reading + the live tests all showing clean behavior with no leaks). No shared mutable state exists anywhere in layout.py/generate_agents.py/dbutil.py that threading would put at risk. Handler.timeout and the daemon_threads setting behave correctly per-instance under ThreadingHTTPServer. Startup reconciliation still runs strictly before serve_forever(), no race with request threads. Re-ran the real concurrent-different-agent test after the fix -- no regression (~4.5s wall time for two real overlapping invocations, both 303).&quot;, &quot;Minor, accepted, not fixed: if opsdb.end_run() itself were to raise something other than LookupError/ValueError inside the new except-and-end-run block (e.g. a raw sqlite3.OperationalError from a genuinely broken connection), that secondary exception would propagate instead of the original one (Python exception chaining preserves both via __context__, but only the outer exception gets logged today). Judged disproportionate to add further nested handling for this already-last-resort, low-probability path.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:36:31.917Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS with conditions. Core diagnosis correct (a real, previously-latent check-then-act race in the one-open-run-per-agent guard, invisible only because nothing could race under strict single-threading) and independently re-verified: reproduced BEGIN IMMEDIATE serializing 5 concurrent threads with zero lost writes.&quot;, &quot;BLOCKING finding, fixed before Development proceeds: the proposed start_ask_agent_run() wraps BEGIN IMMEDIATE inside the same try/except that does ROLLBACK on failure -- reproduced empirically that if BEGIN IMMEDIATE itself fails (busy timeout), no transaction is open, and the subsequent ROLLBACK call raises a SECOND, masking OperationalError (&#x27;cannot rollback - no transaction is active&#x27;) instead of the real &#x27;database is locked&#x27; one. Fix: BEGIN IMMEDIATE must execute outside the rollback-guarded block; server.py must catch sqlite3.OperationalError from this call and handle it as a clean busy/retry signal, same as capacity_exceeded.&quot;, &quot;Answered all 5 open questions: MAX_CONCURRENT_INVOCATIONS=3 affirmed (lightweight, network-bound invocations, not heavy local compute). WAL-mode deferral affirmed, with QA required to watch for real lock-contention evidence to reopen it. BEGIN IMMEDIATE + dedicated function affirmed over a partial-unique-index alternative (avoids fragile schema tricks). Non-blocking semaphore acquire affirmed, conditional on Code Review verifying acquire/release wraps every exit path of invoke_agent(). Process-group shutdown registry REJECTED as unnecessary complexity -- existing startup reconciliation already handles the database consequence of a Ctrl+C-orphaned run; recommend documenting the accepted limitation instead of building new state.&quot;, &quot;No other single-threaded assumptions found: grepped for module-level mutable state (none besides the immutable SESSION_TOKEN and the new semaphore itself), confirmed connections are genuinely fresh-per-request across the codebase, confirmed no new browser-facing surface from the ThreadingHTTPServer swap, ruled out an SQLite commit-visibility race (not a distributed system).&quot;]</div>
+      
+    </div>
+            </details></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-7" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-007 — Phase 2 Milestone 2B2: real Ask-Agent + persistent conversations</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+            <details>
+              <summary style="cursor:pointer; font-size:11px; color:var(--text2); margin-bottom:8px;">show all 21</summary>
+              
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:09:07.667Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;CTO post-implementation conformance review: PASS WITH NOTES (1 real finding, fixed and re-verified). Confirmed agent_runtime.invoke_agent() is the sole shell-out to a model anywhere in the repo (grepped for subprocess/Popen/os.system/os.exec across the whole codebase, not just control-center). Confirmed generate_agents.py&#x27;s render_ask_agent_section() only reads and renders a form -- imports only ASK_AGENT_ALLOWLIST from agent_runtime, never invoke_agent -- the write is only reachable through server.py&#x27;s POST route. Confirmed messages has exactly one writer (opsdb.send_message(), grepped repo-wide) and independently re-verified --no-session-persistence leaves no shadow session file (diffed ~/.claude/projects and ~/.claude/sessions before/after a real invocation, zero new files). Confirmed the Ask-Agent status line is always derived fresh from real agent_runs queries, never hardcoded or inferred from response text. Confirmed all CLI-specific concerns (the claude binary, --tools/--agent/--strict-mcp-config, JSON parsing) stay confined to agent_runtime.py -- none leaked into server.py or generate_agents.py. Confirmed ASK_AGENT_ALLOWLIST and the zero-tool/zero-MCP flags are hardcoded constants, never derived from the HTTP request. Confirmed no architecture drift beyond the disclosed --restricted -&gt; --tools \&quot;\&quot;+--strict-mcp-config substitution (every other deviation from the original proposal traces to a specific, disclosed Red Team condition). No fake agent activity, no unnecessary dependency (stdlib only), scope boundary respected (no Executive Meeting/orchestration/Developer-by-chat/DevOps-by-chat capability introduced).&quot;, &quot;One real finding, fixed immediately: _reconcile_orphaned_ask_agent_runs() in server.py issued a raw UPDATE agent_runs directly, contradicting the same file&#x27;s own docstring claim that opsdb.py functions are the only ones permitted to write agent_runs -- a genuine contradiction between the project&#x27;s central &#x27;opsdb.py is the only writer&#x27; rule and shipped code, missed by Red Team, both Code Review passes, and Security. Fixed by adding opsdb.reconcile_orphaned_runs() (a proper, atomic, LIKE-scoped bulk counterpart to end_run(), with its own CLI wrapper run-reconcile for consistency with every other opsdb.py write) and routing server.py&#x27;s startup reconciliation through it. Re-verified: CLI run-reconcile command works standalone; live server startup reconciliation still correctly touches only Ask-Agent-tagged orphaned runs and leaves an unrelated real review-gate run untouched; a real Ask-Agent request still succeeds afterward.&quot;, &quot;Also closed the duplication risk noted alongside the finding above: the &#x27;Ask-Agent:%&#x27; LIKE pattern and the exact activity-label string were hand-copied inline in four separate places (generate_agents.py&#x27;s two status queries, server.py&#x27;s 409 guard, server.py&#x27;s old raw reconciliation UPDATE) -- exactly the class of drift that caused Code Review&#x27;s earlier blocking REJECT (a scoping predicate copied in one place but not updated everywhere). Centralized as agent_runtime.ASK_AGENT_ACTIVITY_LABEL / ASK_AGENT_ACTIVITY_LIKE, now imported and reused at every call site instead of re-typed. Also centralized opsdb.py&#x27;s (&#x27;ended&#x27;,&#x27;failed&#x27;) status set as RUN_END_STATUSES (was duplicated between end_run()&#x27;s validation and the CLI&#x27;s argparse choices).&quot;, &quot;All fixes compiled clean and re-verified end to end against scratch DBs: unrelated real review-gate runs still don&#x27;t block Ask-Agent, genuine orphaned Ask-Agent runs still correctly reconcile and unblock, and a real live invocation still succeeds after all changes.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:01:33.694Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;No blocking issues found. All attack categories in the brief were exercised directly against a live server instance on a scratch DB (OPSDB_PATH set to a temp file for every write test; real DB touched only for this review-result write and two prior read-only queries). This is a well-built control boundary for the stated threat model (a single trusted local machine, disclosed non-goals). The two carried-forward, already-open, already-disclosed Phase 1 risks (id=2: token doesn&#x27;t prove Founder identity; id=3: Bash-tool-access could forge a request) remain the correct residual risk framing -- nothing in this milestone closes or overclaims past them, and Ask-Agent&#x27;s zero-tool sandbox is itself real (independently re-verified, not merely re-trusted).&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:32.401Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 16. Code Review&#x27;s 409-scoping bug fix verified (regression test)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:26.949Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 15. Conversation scope persistence (messages.scope=&#x27;agent&#x27;, task/project/meeting NULL)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:25.584Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 14. No fake activity/status -- all 4 states verified real</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:22.932Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 13. agent_runs status transitions (ended vs failed)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:21.231Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 12. Empty conversation state (honest &#x27;no requests yet&#x27;)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:19.015Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 11. Runtime timeout/error simulation (runtime_unavailable path)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:13.573Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 10. Malformed request handling</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:11.625Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 9. Invalid agent rejected cleanly</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:09.984Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 8. Duplicate/simultaneous submission behavior</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:07.223Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 7. HTML/script content escaped safely (stored XSS test)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:05.640Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 6. Two different agents remain separated</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:03.938Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 5. Correct agent receives the request (persona check)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:59.398Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 4. Application restart retains conversation</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:58.046Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 3. Browser refresh retains conversation</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:56.837Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 2. Multi-turn conversation with context</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:55.051Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 1. Real successful Ask-Agent request to allowlisted agent (cto)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:46:56.762Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Fast re-check after Code Review&#x27;s REJECT: the blocking finding is fixed and re-verified. server.py&#x27;s _handle_ask 409 guard query was missing the current_activity LIKE &#x27;Ask-Agent:%%&#x27; filter that generate_agents.py&#x27;s UI query and the startup reconciliation query both already had -- meaning ANY open agent_runs row for an allowlisted agent (including this project&#x27;s own real review-gate runs against cto/qa) would spuriously 409 a real Founder Ask-Agent request. Fixed by adding the same scoping filter to the write-route query, matching the other two. Reproduced the exact scenario Code Review found (a task-scoped, non-Ask-Agent open run for cto from a simulated review-gate workflow) against a scratch DB: before the fix this would have 409&#x27;d; after the fix a real Ask-Agent request to cto succeeds (303) while that unrelated run is still open, and a genuine orphaned Ask-Agent run still correctly 409s.&quot;, &quot;Also fixed the 3 non-blocking findings: (1) _MAX_CAPTURED_BYTES comment corrected to accurately describe it as a post-read cap on what&#x27;s parsed/used, not a true read-time ceiling -- proc.communicate() reads all stdout before the slice; accepted as low-risk since --output-format json bounds real output to the model&#x27;s own max-output-tokens. (2) cmd_run_start regained its &#x27;run agent-upsert first&#x27; hint on an unknown-agent error, now attached in the CLI wrapper rather than the plain start_run() function (keeps the reusable function&#x27;s message generic, restores the CLI&#x27;s helpful hint). (3) model_used selection now genuinely picks the modelUsage entry with the largest outputTokens rather than the last one encountered with any nonzero value, matching the comment&#x27;s original intent (currently a dead field, not yet consumed by any caller, but no longer silently wrong).&quot;, &quot;All fixes compiled clean and re-verified against scratch DBs; no regression in the previously-verified end-to-end real invocation, restart persistence, or malformed-input paths.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:44:42.599Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;BLOCKING: server.py _handle_ask&#x27;s &#x27;one open run per agent -&gt; 409&#x27; guard (server.py:277-281) queries ANY open agent_runs row for the agent name (WHERE a.name=? AND ended_at IS NULL, no current_activity/scope filter), while generate_agents.py&#x27;s render_ask_agent_section (generate_agents.py:144-148) and server.py&#x27;s own orphan reconciliation (server.py:329-352) both correctly scope to current_activity LIKE &#x27;Ask-Agent:%&#x27;. This mismatch means: (1) the UI shows an inviting, submittable Ask-Agent form whenever there is no OPEN ASK-AGENT run, even if the SAME agent has an unrelated open agent_runs row (e.g. task-scoped review-gate work created via opsdb.py run-start); (2) submitting from that form then hits a confusing, incorrect 409 from the unrelated row. This is not hypothetical: cto and qa -- two of the five allowlisted Ask-Agent agents -- already have exactly this kind of task-scoped agent_runs history in the live DB from this project&#x27;s own review-gate workflow (confirmed via SELECT against agent_runs). Fix: scope the 409 check in server.py&#x27;s _handle_ask to current_activity LIKE &#x27;Ask-Agent:%&#x27; (or a dedicated marker), matching the UI display query and the reconciliation query.&quot;, &quot;Minor: agent_runtime.py&#x27;s _MAX_CAPTURED_BYTES (line 49, applied line 107) is described as &#x27;a hard ceiling on subprocess stdout we will ever read into memory&#x27; but proc.communicate(timeout=timeout_s) (line 95) reads all of stdout/stderr into memory before the [:_MAX_CAPTURED_BYTES] slice is ever applied -- the cap bounds what is USED, not what is READ. Practical risk is low (claude&#x27;s JSON stdout is bounded by the model&#x27;s own max-output-tokens), but the comment overstates what the code does; Red Team condition 2 asked for a cap on captured output, and a true streaming/incremental cap would be more defensible for the highest-stakes code path in the project so far.&quot;, &quot;Minor: opsdb.py&#x27;s refactored cmd_run_start (opsdb.py:278-284) drops the old, more helpful &#x27;no such agent \u2014 run agent-upsert first&#x27; error-message suffix (previously in _agent_id(), opsdb.py:131) in favor of start_run()&#x27;s bare &#x27;no such agent&#x27; LookupError text -- a small CLI-output regression, not functionally breaking, worth restoring for parity.&quot;, &quot;Minor: agent_runtime.py&#x27;s model_used selection (lines 124-129) iterates modelUsage and overwrites model_used with the LAST entry that has any outputTokens&gt;0, not the entry with the MOST outputTokens as the comment implies (&#x27;the substantive completion is whichever entry actually produced output tokens&#x27;) -- if a small classifier/haiku pass with nonzero output tokens sorts after the real completion in the JSON, it would silently win. Currently unused by server.py/generate_agents.py (dead field), so no live impact today, but will misbehave the moment it&#x27;s consumed.&quot;, &quot;Verified positively: all 7 Red Team conditions substantively satisfied in code (tool restriction via --tools \&quot;\&quot; + --strict-mcp-config verified empirically both against --help text and two live claude invocations reproducing Red Team&#x27;s own --restricted-breaks-custom-agent finding and the zero-tool-enforcement finding; subprocess hardening -- Popen+start_new_session+explicit env+killpg -- all present; MAX_RESPONSE_CHARS truncation is applied to the actually-persisted response; e() applied to every rendered message body/label in render_ask_agent_section; single-threaded blocking disclosed in both server.py&#x27;s module docstring and SECURITY.md; orphan reconciliation correctly scoped to Ask-Agent rows only and called from main() before serve_forever(); SECURITY.md correctly states the 5 agents&#x27; normal tool config includes Bash/cto-Write/Edit, cross-checked against .claude/agents/*.md). No SQL injection found (all queries parameterized). No new third-party dependencies. Migration verified directly against the live DB: agent_runs CHECK constraint now includes &#x27;failed&#x27;, all 13 pre-existing rows intact and still &#x27;ended&#x27;, idx_runs_agent_open re-created, PRAGMA integrity_check ok, foreign_key_check clean.&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:25:20.721Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS with conditions. Core design (agent_runtime.py as a small, provider-neutral, dependency-free module; ASK_AGENT_ALLOWLIST enforced server-side only, never client-supplied; argv-list subprocess.run with shell=False, eliminating shell-injection surface regardless of message content; atomic-style validate-before-write sequence mirroring decide_approval(); additive-only schema migration; --no-session-persistence keeping messages/agent_runs the sole conversation store) correctly targets every hard requirement in the brief and is not overengineered. No simpler design was found that still satisfies &#x27;browser never invokes Claude Code/shell/SQLite directly, server mediates every request, real queued-&gt;running-&gt;completed|failed lifecycle, one conversation store.&#x27;&quot;, &quot;CONDITION (blocking, core safety claim #1): --tools \&quot;\&quot; alone is an unverified, narrower safety boundary than the CLI itself offers for exactly this scenario. Verified directly against the live &#x27;claude --help&#x27; in this environment: the CLI ships a purpose-built --restricted flag whose documented behavior is materially broader than --tools \&quot;\&quot; -- it &#x27;removes the built-in tools that run commands or code (Bash, PowerShell, REPL...) and WebFetch unless --tools names them, and ignores user, project and local settings files (managed settings and --settings still apply; add --strict-mcp-config to skip MCP servers too). Also confines file tools to working directories, refuses bypassPermissions, and lets only a person or the configured permission handler approve writes to settings/git/tool-config files.&#x27; None of that is claimed for --tools \&quot;\&quot; alone -- its own help text says only &#x27;Specify the list of available tools from the built-in set,&#x27; which by its own wording leaves open whether MCP-server-provided tools (not part of the &#x27;built-in set&#x27;) are constrained by it at all, and says nothing about ignoring user/project/local settings files or refusing bypassPermissions. The proposal&#x27;s empirical verification (asking cto to run ls -la / read a file) only exercised Read/Grep-class built-in tools -- it never tested WebFetch (a real network-exfiltration path for prompt-injected Founder text), any MCP-provided tool, or whether a stray user-level settings.json on the actual deployment machine (outside this repo&#x27;s control) could reintroduce permission overrides. Given this milestone&#x27;s own framing as &#x27;the first time an LLM call happens unsupervised,&#x27; relying on the narrower-documented flag when a purpose-built stronger one exists is not adequate. REQUIRED: agent_runtime.py must pass --restricted (layered with --tools \&quot;\&quot; if useful) and --strict-mcp-config; Security must re-run adversarial verification explicitly covering WebFetch/WebSearch, any configured MCP server, and confirm no reachable user/project settings.json can reintroduce tool access, before this ships.&quot;, &quot;CONDITION: subprocess hardening details are unspecified and should be pinned down before implementation, not improvised mid-build -- (a) kill the whole process group on TimeoutExpired (start_new_session=True + os.killpg), not just the direct child, in case the claude CLI spawns children before a runaway call is killed; (b) pass an explicit minimal env= rather than blindly inheriting the full parent environment, as further defense-in-depth given the &#x27;unsupervised process&#x27; risk framing; (c) cap captured stdout size defensively (subprocess.run has no built-in cap).&quot;, &quot;CONDITION: no size cap is proposed for the agent&#x27;s stored RESPONSE text -- the 8KB cap only covers the Founder&#x27;s inbound message. A pathological or adversarially-elicited long response bloats messages/agent_runs indefinitely and gets re-rendered on every subsequent page load with no bound. Add a symmetric cap (truncate-and-flag, or treat as runtime_error) before persisting the response.&quot;, &quot;CONDITION: stored-XSS risk on the new conversation thread is not explicitly addressed in the proposal, and this is the first feature combining fully free-text Founder input with free-text, potentially prompt-injected model output, both persisted and re-rendered as live HTML on every load. The codebase&#x27;s existing layout.e() (html.escape) convention, already applied to every DB-sourced string per the Milestone-1 rule, is the correct and sufficient fix, but the proposal&#x27;s &#x27;Files touched&#x27; list doesn&#x27;t call it out for the new bubbles in build_agent_detail(). REQUIRED: Development must run both Founder and agent message bodies through e() exactly like every other field; QA/Security must add a seeded &lt;script&gt; payload test against both the Founder-submitted message and an adversarial agent response, mirroring the exact test Security already ran for 2B1 (review_results id=14).&quot;, &quot;CONDITION (concurrency, question 4 in the proposal): the &#x27;one open run per agent -&gt; 409&#x27; analysis only reasons about a second request to the SAME agent racing the first. Because HTTPServer is strictly single-threaded and sequential, the real, larger cost is that ANY other request -- a different agent&#x27;s Ask-Agent POST, or simply loading /overview.html, /pipeline.html, /agents.html, or the approvals inbox -- will silently hang in the OS accept queue (not get a clean response, not get a 409) for up to the full timeout_s (90s) while the server is synchronously blocked inside subprocess.run() for an unrelated agent. This is materially broader than the narrow same-agent scenario the proposal frames and asks Red Team about. May be an acceptable tradeoff for a single-Founder internal tool proving one vertical slice, but it must be explicitly disclosed (in this doc and/or SECURITY.md, the way every other tradeoff here is disclosed) rather than framed only as the narrower case, and the Founder/CTO should explicitly accept it. Also recommend lowering the default timeout well below 90s given the proposal&#x27;s own measured real-world latency was ~3-13s.&quot;, &quot;CONDITION: an orphaned &#x27;open&#x27; agent_runs row (ended_at IS NULL) on server crash/restart permanently blocks all future requests to that agent, with no recovery path proposed. Because agent_runs rows in this synchronous, single-process design are inherently process-lifetime-scoped (no cross-process handoff of an in-flight subprocess is possible), any row left open at server startup cannot correspond to a still-running call. REQUIRED: add a startup reconciliation step that marks any pre-existing open agent_runs rows as failed (e.g. note=&#x27;orphaned by server restart&#x27;) before serving new requests, so a crash/restart doesn&#x27;t permanently wedge that agent&#x27;s chat.&quot;, &quot;CONDITION (should-fix): reusing the identical 2B1 session token for this new, higher-blast-radius write route is architecturally consistent but was not re-justified for the escalated risk, and the proposal&#x27;s &#x27;Files touched&#x27; list omits ops/SECURITY.md. SECURITY.md&#x27;s existing disclosure already states this same token does not prove Founder identity and that any local process able to read the served page -- &#x27;including an agent invoked with Bash tool access, per the still-open Phase 1 risk (risks.id=3)&#x27; -- can forge the same POST. Verified against the live .claude/agents/*.md files: all five allowlisted agents (cto, qa, ceo, financial, project-manager) are normally configured WITH Bash tool access in their peacetime setup (cto also has Write/Edit) -- contrary to the proposal&#x27;s framing of them as low-risk &#x27;read-oriented&#x27; agents for this specific point, they are exactly the actors risks.id=3 already worries about. A forged 2B1 request can at most flip an already-Founder-authored approval&#x27;s decision; a forged 2B2 request spends real API budget, invokes a real LLM with attacker-influenced input, and inserts a fabricated Founder message + agent response into what becomes a persisted, trusted-looking conversational record -- a materially larger blast radius through the same weak guarantee. REQUIRED: add a 2B2 section to SECURITY.md mirroring the existing 2B1 section, and have Security explicitly re-affirm risks.id=2/id=3 cover this new route (or open a new tracked risk if the escalation warrants its own entry) before shipping.&quot;, &quot;Question 2 in the proposal (zero tools for all five agents) -- AGREE, this is the right v1 call, not overcautious. The proposal frames these as &#x27;read-oriented&#x27; agents implying Read/Grep/Glob-class low risk, but the actual configured peacetime tool lists (verified against .claude/agents/*.md) include Bash on all five and Write+Edit on cto -- broader than the brief&#x27;s framing suggests. Given that, zero-tools is the only choice that doesn&#x27;t require inventing new per-agent tool-curation policy (e.g. an explicit --tools \&quot;Read,Grep,Glob\&quot; override list per agent) that this milestone correctly chose not to build yet. Not overengineered in reverse; agree with deferring read-only access to an explicitly-reviewed later milestone.&quot;, &quot;Question 1 (queued folded into active) -- acceptable as a status-naming decision on its own terms once the broader blocking behavior in the concurrency condition above is disclosed and accepted; folding queued into active does not itself need a queued status added now.&quot;, &quot;Question 3 (messages.scope=&#x27;agent&#x27; not renamed to &#x27;company&#x27;) -- AGREE with not renaming. Functionally sufficient, and DATA_MODEL.md&#x27;s rule against casually mutating Phase-1 schema is correctly applied here even though &#x27;costs nothing at 0 rows&#x27; is a fair countervailing point; documenting the equivalence explicitly (already the plan) is the right amount of fix.&quot;, &quot;Non-blocking: schema migration technique (rebuild-and-copy for the CHECK-constraint widen) is standard and sound -- verified no FK anywhere in schema.sql references agent_runs(id), and the live table&#x27;s 13 rows are 100% status=&#x27;ended&#x27; (query-verified), so no reinterpretation risk. Reminder for Development: CREATE INDEX idx_runs_agent_open must be re-issued after the rename (dropping the old table drops its indexes), and the rebuild should follow SQLite&#x27;s documented 12-step ALTER-table procedure (temporarily PRAGMA foreign_keys=OFF for the rebuild connection, one transaction, PRAGMA foreign_key_check before commit) as the correct general pattern going forward even though no FK currently targets this table.&quot;, &quot;Non-blocking: cmd_run_end has no WHERE ended_at IS NULL atomic guard the way decide_approval()&#x27;s conditional UPDATE...WHERE does, despite the proposal claiming to mirror that discipline. Low risk today (server.py calls it exactly once per request) but should be added alongside the --status {ended,failed} flag for consistency, and because it becomes the safe other half of the startup-reconciliation fix above.&quot;, &quot;Non-blocking: transcript-rebuilt-every-turn on a single deterministic company-scoped thread per agent (thread_id=f&#x27;agent-{agent_name}-company&#x27;) has no reset mechanism -- a Founder cannot start a fresh conversation with an agent short of a manual DB edit, so transcript size, per-call cost, and risk of hitting --max-budget-usd or the fixed timeout can only grow monotonically over that agent&#x27;s lifetime. Acceptable as documented for &#x27;prove one vertical slice&#x27; but should be a near-term, not someday, follow-up. Also: the proposal never states the actual dollar value planned for --max-budget-usd or confirms what error_kind its exceeded-budget failure maps to -- pin both down before implementation.&quot;, &quot;Non-blocking, verified: no agent named &#x27;founder&#x27; exists in the live agents table (queried directly), so the from_agent=&#x27;founder&#x27; structural convention has no collision risk, as claimed. message-send&#x27;s opsdb.py command design (mirrors risk-add&#x27;s --scope + required/forbidden id pattern) is consistent with existing conventions -- no objection.&quot;]</div>
+      
+    </div>
+            </details></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-6" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-006 — Phase 2 Milestone 2B1: Founder Inbox Approve/Reject/Discuss write path</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+            <details>
+              <summary style="cursor:pointer; font-size:11px; color:var(--text2); margin-bottom:8px;">show all 18</summary>
+              
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:10:02.363Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;CTO post-implementation conformance review: PASS. Confirmed opsdb.decide_approval() is the sole code path in the entire repo that writes approvals.decision -- repo-wide grep for UPDATE approvals/sqlite3.connect( shows exactly three real-connection call sites (dbutil.connect() mode=ro, opsdb.connect() the one writable connection, and the pre-existing unrelated report.py which is read-only) and only two callers of decide_approval() (the CLI and server.py).&quot;, &quot;Confirmed no Phase 1 operating rule bypassed: server.py never touches sqlite3 directly (goes through opsdb.py); zero writes to tasks.status/task_status_history from any 2B1 file (Orchestrator-only rule intact); risks.id=2 and risks.id=3 both still open in the live DB, neither falsely marked resolved.&quot;, &quot;No architecture drift from the approved proposal -- all three items proposal left open for Red Team (token sufficiency, state machine, reusing opsdb&#x27;s writable connect()) were resolved by Red Team&#x27;s review, not improvised during Development. One positive deviation found: server.py opens a fresh connection per request and closes it in finally, rather than the long-lived connection the original proposal assumed -- strictly safer, and docs still accurately describe actual behavior.&quot;, &quot;No duplicated rendering logic, no data-model inconsistency, zero new dependencies, no fake/non-queryable UI state, scope boundary respected (grepped for Ask-Agent/live-conversation/meeting-creation/orchestration/deployment patterns in ops/control-center -- none introduced by this milestone).&quot;, &quot;Two non-blocking findings. (1) opsdb.connect() lacked the same missing-file fail-fast guard dbutil.connect() has -- fixed immediately: connect(require_exists=True) now raises a clean SystemExit before ever silently creating an empty 0-byte DB file; cmd_init uses require_exists=False since creating the file is its whole job. Re-verified: init on a fresh path still works, any other command on a missing path fails cleanly, a normal command against the initialized DB still works, and a live server.py smoke test (GET /inbox.html + a real approve) still succeeds after the change. (2) Code Review&#x27;s specific ask -- exercise the live Approve/Reject/Discuss buttons against a real pending approval in the actual operations.sqlite3, not only a scratch DB -- was not closed out. Deliberately not closing it here: the live DB currently has zero pending approvals, and creating one artificially only to self-decide it would mean an agent (not the Founder) deciding a Founder approval -- exactly the failure mode this milestone&#x27;s whole write-boundary exists to prevent. Recording as an honest, open, non-blocking gap rather than manufacturing usage to look complete: the feature is proven correct against the identical code path in a scratch DB; it awaits the Founder&#x27;s first real use.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:05:08.859Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS. Founder&#x27;s explicit mission -- attempt to bypass Founder-only authorization -- was executed for real, not just reasoned about: fetched /inbox.html, extracted the live session token from rendered HTML via curl+grep (standing in for &#x27;an agent with Bash tool access&#x27;), forged a POST with it, and it worked exactly as SECURITY.md admits it would (303, DB row flipped) -- confirms the doc neither over- nor under-claims.&quot;, &quot;Method bypass (GET/PUT/HEAD/OPTIONS/DELETE/PATCH on the write route): all rejected, no write path. Path bypass (trailing slash, %2f-encoded id, case variation, ../, non-numeric/negative id): all 404. A double-slash //api/... request was investigated down to the byte level and confirmed to be Python 3.11 stdlib http.server&#x27;s own path-collapsing hardening (gh-87389), not an application bug.&quot;, &quot;Concurrency: 40 simultaneous requests deciding one approval -- exactly one 303, 39 clean 409s, exactly one terminal DB state. The atomic UPDATE...WHERE genuinely serializes.&quot;, &quot;Injection/malformed input (SQLi-shaped decision value, SQLi-shaped /agents/&lt;name&gt;.html segment, oversized body, missing Content-Length): all rejected cleanly, no traceback leaked, no unintended write.&quot;, &quot;Network exposure confirmed via /proc/net/tcp: listening socket is literally 127.0.0.1, not 0.0.0.0 -- a connect to the machine&#x27;s real interface IP was refused.&quot;, &quot;No alternate write path found (grepped for any other approvals.decision writer, any other server.py route, any founder_authorized-style client-trusted field, hardcoded secrets, non-parameterized SQL) -- zero found. Stdlib-only, zero dependencies.&quot;, &quot;Confirmed live-DB read-only: risks.id=2 and risks.id=3 both still status=&#x27;open&#x27;, matching SECURITY.md&#x27;s claims exactly -- neither falsely marked resolved by this milestone.&quot;, &quot;One minor finding, fixed and re-verified during this review cycle: an absurdly large approval-id path segment (e.g. 23 digits) hit an unhandled OverflowError at the sqlite3 binding layer, caught only by the generic except-Exception -&gt; 500 fallback rather than clean up-front validation -- not exploitable (no traceback leaked, no write occurred), but imprecise. Fixed by bounding APPROVAL_PATH_RE to 1-15 digits (comfortably covers any real id, well under SQLite&#x27;s 64-bit INTEGER range) so it&#x27;s now a clean 404 at the routing layer. Re-tested: oversized id -&gt; 404, valid ids still work.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:04:11.128Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS. Verdict is for the code as implemented; the Founder&#x27;s primary mission (&#x27;attempt to bypass Founder-only authorization&#x27;) was executed, not just theorized.&quot;, &quot;1) Token bypass: secrets.compare_digest used (server.py:181), token is a fresh secrets.token_urlsafe(32) per process, never logged/persisted (verified via server stderr log inspection - no token appears in any log line), never sent via GET/query string (only read from POST form body). Brute force infeasible (256-bit entropy).&quot;, &quot;2) EXPLOITED AS INSTRUCTED (server.py doc&#x27;s own admitted limitation, confirmed true): using only curl/raw sockets as a stand-in for &#x27;an agent with Bash tool access&#x27; (risks.id=3), extracted the live session token from GET /inbox.html HTML source, then forged POST /api/approvals/1/decide with decision=approve and the extracted token -&gt; got 303, and confirmed via direct DB read the approval row was actually flipped from pending to approve. This exactly matches SECURITY.md/server.py&#x27;s stated claim, no more no less.&quot;, &quot;3) Method/route bypass: GET/PUT/HEAD/OPTIONS/DELETE/PATCH all rejected (404/501, no write). Path variations (trailing slash, %2f-encoded id, case, ../, non-numeric/negative id) all rejected. A literal double-leading-slash request was NOT an app bug -- confirmed via raw-socket test against a minimal reproduction that Python 3.11 stdlib http.server itself collapses leading &#x27;//&#x27; to &#x27;/&#x27; (gh-87389 hardening) before self.path is exposed to app code; the app-level regex is never actually tested against an unnormalized double-slash string.&quot;, &quot;4) No alternate write path: grepped ops/control-center and ops/db for INSERT/UPDATE/DELETE outside opsdb.decide_approval&#x27;s single parameterized UPDATE ... WHERE decision IN (...); confirmed no debug/admin/exec/query-write endpoint in server.py; only one POST route exists (APPROVAL_PATH_RE); CLI&#x27;s other write commands (task-status, decision-record, etc.) are not reachable via HTTP.&quot;, &quot;5) No client-supplied authorization flag: POST body is only ever read for &#x27;decision&#x27; (validated against DECIDABLE_DECISIONS allowlist) and &#x27;token&#x27;; no founder_authorized-style field is read or trusted anywhere.&quot;, &quot;6) Network exposure: confirmed via /proc/net/tcp that the live scratch server bound 0100007F:20E4 = 127.0.0.1:8420 only; direct connect to the machine&#x27;s real interface IP (192.0.2.2:8420) got Connection refused. (A connect to literal 0.0.0.0:8420 succeeded, but that is a well-known Linux client-side quirk treating 0.0.0.0 as localhost, not evidence of exposure -- verified separately.)&quot;, &quot;7) Concurrency: fired 40 simultaneous approve/reject POSTs at one pending approval; exactly one 303 (write) and 39 409s (already decided) came back, and the DB shows exactly one terminal decision -- the atomic UPDATE...WHERE is genuinely doing the serialization, not accidental single-threading.&quot;, &quot;8) Input validation / error handling: malformed decision value, SQL-injection-shaped decision value, SQL-injection-shaped agent-name path segment, oversized body (&gt;64KB), missing Content-Length, and an out-of-int64-range approval id were all tested. All rejected cleanly (400/404/500) with no traceback leaked to the client and no unintended write. Minor non-blocking robustness gap: an approval id outside SQLite&#x27;s 64-bit range raises an unhandled OverflowError caught only by the generic except-&gt;500 path (server.py ~200-210) instead of a clean 400 from up-front int-range validation -- not exploitable (no write occurs, no data disclosed), flagged for QA/dev polish only.&quot;, &quot;9) SQL injection: every query in opsdb.py and server.py (including the dynamic /agents/&lt;name&gt;.html lookup Red Team flagged) is parameterized with &#x27;?&#x27; placeholders; the only dynamic SQL construction is placeholder-count generation (&#x27;,&#x27;.join(&#x27;?&#x27; for _ in from_states)), never data interpolation.&quot;, &quot;10) XSS/escaping: layout.py e() uses html.escape correctly; generate_inbox.py escapes all DB-sourced text and the token field; the only unescaped f-string interpolations are fixed literal strings the developer wrote (e.g. action=&#x27;approve&#x27;), not attacker-controlled input.&quot;, &quot;11) Dependencies: confirmed stdlib-only across server.py, generate_inbox.py, opsdb.py (re, secrets, sys, http.server, pathlib, urllib.parse, sqlite3, argparse, json, os, datetime) -- zero third-party packages, zero new dependency risk.&quot;, &quot;12) No secrets/credentials committed in any new/touched file (grepped for password/secret/api_key/private key patterns -- only legitimate secrets.token_urlsafe/compare_digest usage found).&quot;, &quot;13) Live-DB check (read-only): risks.id=2 (&#x27;Founder approval is not identity-authenticated&#x27;) and risks.id=3 (&#x27;Bash permissions cannot be scoped below the tool-category level&#x27;) both still status=open in ops/db/operations.sqlite3 -- matches SECURITY.md&#x27;s and server.py&#x27;s claims exactly; neither is falsely marked resolved anywhere in this milestone&#x27;s docs or code.&quot;, &quot;14) SECURITY.md and server.py&#x27;s docstring accurately state what is and is not proven by the token: they claim it proves the request came from a page this server process rendered this run, and explicitly admit it does not distinguish a human Founder from any other local process (including a Bash-capable agent). Both the overclaim and underclaim checks pass -- the write-up is calibrated, not just repeated uncritically.&quot;, &quot;All testing done against a scratch OPSDB_PATH database per project convention; live ops/db/operations.sqlite3 was read-only touched (two SELECT queries) and left unmodified by this review.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:56:04.069Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Bonus: new dynamic-query attack surface (Red Team condition 5) — /agents/&lt;name&gt;.html</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:56:01.325Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 11. Static snapshot fails closed</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:58.351Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 10. HTML injection in approval fields</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:56.299Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 9. True concurrency (simultaneous same-row POSTs, plus cross-process CLI-vs-server race)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:51.680Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 8. Persistence across a real application restart</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:49.477Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 7. Unauthorized/non-Founder token attempts</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:48.080Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 6. Malformed requests (missing decision, SQLi-shaped decision value, non-numeric approval id, oversized body)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:44.415Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 5. Decide an already-resolved approval</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:42.367Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 4. Duplicate submission (double-click simulation)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:40.238Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 3. Discuss keeps item visible + discuss-&gt;approve/reject allowed</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:37.751Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 2. Reject a pending approval</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:36.541Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: 1. Approve a pending approval</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:51:09.726Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS. All 5 of Red Team&#x27;s numbered conditions verified satisfied in code, not just claimed (busy timeout + tested cross-process contention; decide_approval() commits explicitly and durability verified from an independent connection; token-injection pinned to build_html(conn, token=None); server-side decision/approval_id validation before any DB call; parameterized query on the dynamic /agents/&lt;name&gt;.html route). secrets.compare_digest used for the token check (not ==). e() escaping applied consistently, verified live with a seeded &lt;script&gt; payload. server.py never holds a connection open across requests -- stricter than the original proposal.&quot;, &quot;3 non-blocking findings fixed immediately, re-verified: (1) do_POST&#x27;s exception handling only caught LookupError/ValueError -- added a catch-all Exception handler around both connect() and decide_approval() returning a clean 500 (server-side detail logged to stderr, generic message to client, never a traceback or internal detail leaked to the response body); same catch-all added to do_GET. (2) do_GET&#x27;s three conn-owning branches (agents.html, agent detail, inbox.html) didn&#x27;t explicitly close their read-only connection -- wrapped each in try/finally: conn.close(); confirmed no fd growth over 40 requests via /proc/&lt;pid&gt;/fd before/after (54 -&gt; 54). (3) No socket timeout on the request handler -- added Handler.timeout=10 (StreamRequestHandler applies it to the connection socket), closing the stalled-slow-client hang risk.&quot;, &quot;Post-fix re-verification: all core smoke tests re-run against a scratch DB after the 3 fixes -- token rejection (403), malformed decision (400), nonexistent approval (404), valid approve (303), duplicate approve (409) all still behave correctly; no regression.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:49:03.549Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS. All 5 Red Team numbered conditions from ops/reviews/red-team-milestone2b1-architecture.md verified satisfied in the actual code, not just claimed: (1) opsdb.py connect() now sets timeout=5.0 (opsdb.py L46-52) -- confirmed empirically with a real cross-process lock-contention test (one process holds BEGIN IMMEDIATE for 2s, a concurrent opsdb.py approval-create call waits and succeeds instead of raising OperationalError). (2) decide_approval() commits explicitly via &#x27;with conn:&#x27; around the UPDATE (opsdb.py L419-440) -- confirmed durability by reading the row from a second independent connection immediately after a live POST returned. (3) token injection is exactly the pinned-down mechanism: build_html(conn, token=None) in generate_inbox.py, server.py passes the real in-memory SESSION_TOKEN, static generation passes None so forms render with an empty token field and fail closed (verified: static inbox.html&#x27;s hidden token field is empty, and POSTing an empty token to a live server returns 403). (4) server.py do_POST validates decision against opsdb.DECIDABLE_DECISIONS and approval_id via the route regex ^/api/approvals/(\\d+)/decide$ BEFORE calling decide_approval() -- confirmed via live malformed-POST tests: bad decision=400, non-numeric id=404 (route does not match), missing/wrong token=403, oversized body(&gt;64KB)=400, all with no traceback. (5) GET /agents/&lt;name&gt;.html validates the name segment against AGENT_NAME_RE before use AND the DB lookup is fully parameterized (conn.execute(&#x27;SELECT * FROM agents WHERE name = ?&#x27;, (name,))) -- confirmed no other GET route interpolates URL-derived input into SQL.&quot;, &quot;Empirically confirmed via a true cross-process concurrency test (CLI approval-decide vs a live server.py POST racing the same approval row): exactly one writer won, the loser got a clean error (409 from the server, or a clean SystemExit message from the CLI), row state was never corrupted or double-written. Also confirmed via a 10-request concurrent-hammer test against a single pending approval: exactly one 303 (success), the other nine 409s.&quot;, &quot;secrets.compare_digest() is used for the token comparison (server.py L168), not &#x27;==&#x27; -- correct constant-time comparison.&quot;, &quot;layout.e() (html.escape) is applied consistently to every DB/user-sourced string in generate_inbox.py and server.py&#x27;s _error_page -- confirmed live by seeding an approval with a literal &lt;script&gt;alert(1)&lt;/script&gt; payload and observing it render HTML-escaped in the live /inbox.html response.&quot;, &quot;server.py never holds a DB connection open longer than one request: GET handlers open a fresh dbutil.connect() (read-only, mode=ro) per request and POST opens a fresh opsdb.connect() closed in a finally block -- this is a stricter, better implementation than the architecture doc&#x27;s original assumption of one long-lived connection; confirmed no lingering sqlite fds after 60 sequential GET requests.&quot;, &quot;MODERATE, non-blocking, recommend fixing before wider use: server.py do_POST only catches LookupError/ValueError from decide_approval(); any other exception (e.g. sqlite3.OperationalError) is unhandled and propagates through socketserver, so the client gets a raw dropped connection (&#x27;Empty reply from server&#x27;) instead of a clean 4xx/5xx -- reproduced live by pointing OPSDB_PATH at a nonexistent file: opsdb.connect() (unlike dbutil.connect()) has no file-existence check and silently creates an empty 0-byte sqlite file, then decide_approval()&#x27;s UPDATE raises &#x27;no such table: approvals&#x27; unhandled. The server process itself survives and serves the next request fine (not a full DoS), and no traceback content reaches the response body, but this still falls short of the &#x27;always return a clean error code&#x27; bar for that one request. Recommend a catch-all except Exception around the DB call in do_POST (and ideally do_GET) returning a generic 500 error page.&quot;, &quot;MINOR, non-blocking: GET handlers (do_GET) never explicitly close() the dbutil.connect() connections they open, unlike do_POST which explicitly closes in a finally -- currently harmless under CPython refcounting (confirmed no fd leak after 60 requests) but inconsistent and not guaranteed by the language; recommend an explicit close() for consistency with the POST handler&#x27;s pattern.&quot;, &quot;MINOR, non-blocking: do_POST reads exactly Content-Length bytes with no socket/request timeout; a stalled or slow client that declares a large Content-Length but sends data slowly/never finishes could hang the single-threaded HTTPServer indefinitely, blocking all other local clients. Low severity given the loopback/local-trust threat model this milestone documents, but worth a QA test and a candidate hardening item (e.g. self.timeout on the handler).&quot;, &quot;QA test list: (a) all scenarios above reproduced live in this review and should be added as a repeatable regression check; (b) test DISCUSS then Approve/Reject transition end-to-end through the browser form, not just via curl; (c) test that re-clicking Discuss on an already-discussed row is rejected (409); (d) test the static inbox.html snapshot&#x27;s forms actually fail closed against a live server started afterward (empty token -&gt; 403), matching the documented banner claim; (e) the real operations.sqlite3 currently has zero pending/discuss approvals -- QA needs at least one real pending approval created via opsdb.py approval-create to smoke-test the live feature end-to-end against the real DB, not just a scratch DB.&quot;, &quot;Docs verified accurate: ops/DATA_MODEL.md&#x27;s decision-transition rule and ops/SECURITY.md&#x27;s write-authorization section match the code&#x27;s actual behavior, not aspirational claims. Red Team condition 6 (false &#x27;Red Team has rejected this before&#x27; precedent citation in the CTO doc) is corrected in this branch&#x27;s ops/reviews/cto-milestone2b1-architecture.md diff.&quot;, &quot;Testing note: all verification in this review used a scratch database via OPSDB_PATH per ops/db/README.md&#x27;s convention -- ops/db/operations.sqlite3 was not modified by this review.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:36:51.964Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;PASS with conditions. Core design (loopback-only HTTPServer, single POST boundary at /api/approvals/&lt;id&gt;/decide, atomic UPDATE...WHERE for state transitions, decide_approval() as sole write path shared by CLI+server, honest non-solved-auth documentation) correctly satisfies every hard requirement in the brief and is appropriately minimal -- no overengineering found.&quot;, &quot;Q1 (token sufficiency): loopback bind + in-memory per-run token is the right call for 2B1 as documented -- honest, not overclaimed. Rejected a cookie/startup-code login upgrade as a REQUIRED change for this milestone because it would itself be a session/login mechanism, which the Founder explicitly ruled out of scope here; flag it as a good candidate for the milestone that actually tackles Founder auth, not now.&quot;, &quot;Q2 (concurrency): atomic UPDATE...WHERE is real and correct, but the proposal only reasons about concurrent HTTP requests (moot -- HTTPServer is single-threaded) and does not address the actual cross-process race: server.py&#x27;s long-lived writable connection vs a concurrently-run opsdb.py CLI write (e.g. approval-decide or any task write) hitting the same file with no busy_timeout set anywhere in connect(). CONDITION: QA must test true cross-process concurrent writes (CLI process + running server, not just concurrent curl to the server), and Development must confirm/set an explicit timeout rather than rely on the sqlite3 module default.&quot;, &quot;Beginner-mistake risk: decide_approval(conn, ...) must explicitly commit its own transaction (not rely on a &#x27;with conn:&#x27; pattern sized for the CLI&#x27;s short-lived connection). server.py will hold one long-lived connection across many requests; if decide_approval() only executes the UPDATE without an explicit commit, the browser response looks successful (200/303, rowcount&gt;0 in-memory) while the write is not yet durable, and a separate process (the CLI, or the server restarting/crashing) would not see it. CONDITION: Development must commit inside decide_approval() itself, and QA must verify durability by reading the row from a second, independent connection immediately after the POST returns, not just trust the HTTP response.&quot;, &quot;Unspecified implementation detail Development must not improvise: how the per-run token reaches the &lt;form&gt; hidden field in inbox.html. Proposal claims build_*_html() functions are reused unchanged (&#x27;zero duplicate rendering logic&#x27;) between server.py and the static generator, but the static generate_inbox.py snapshot has no server/token to embed, while the live server page must embed a real one. CONDITION: pin down before implementation whether build_inbox_html() takes an optional token parameter (preferred, still one function) or server.py post-processes the returned string -- do not leave this to be improvised mid-implementation since it is the crux of the write-gate mechanism.&quot;, &quot;Server-side input validation gaps not explicitly stated: the POST handler must independently re-validate the decision field against the exact 3-value allowlist (approve/reject/discuss) before calling decide_approval(), so a malformed field produces a clean 400 rather than an uncaught sqlite3.IntegrityError/500 leaking a traceback; the approval_id path segment must be validated as an integer before use. CONDITION: QA test malformed POSTs (bad decision value, non-numeric id, missing token) and confirm clean error responses, not tracebacks.&quot;, &quot;New attack-surface note (not a blocker, just needs QA coverage): GET routes like /agents/&lt;name&gt;.html now execute a live parameterized query against attacker-influenceable URL input per request, rather than only ever serving pre-generated static files as in 2A. Loopback-only limits who can reach it, but QA should confirm the existing generator functions use parameterized queries (no string-built SQL) for any URL-derived lookup key, since this is the first time that code path is reachable dynamically instead of only at generation time.&quot;, &quot;Minor accuracy issue, not blocking: the claim &#x27;the exact kind of thing this project&#x27;s Red Team has rejected before&#x27; (re: not forcing Founder actions into agent_activity) is not substantiated by any file in ops/reviews -- no prior review contains that finding. The underlying reasoning is sound on its own merits (agent_activity.agent_id is NOT NULL REFERENCES agents(id), so this literally cannot be done without a schema change or a fake agent identity) and I agree with the decision not to write into agent_activity -- just correct or remove the false precedent citation in the final write-up.&quot;, &quot;State machine (Q3 in proposal): pending-&gt;{approve,reject,discuss}, discuss-&gt;{approve,reject}, discuss-&gt;discuss rejected, approve/reject terminal, is correct and matches the Founder&#x27;s brief; enforcement is properly server-side via the atomic UPDATE regardless of what the UI shows/hides, which is the right defense-in-depth (a forged POST re-clicking Discuss or Approve on a resolved/already-discussed row is rejected the same way a UI click would be). No orphan/FK risk: approvals.task_id has FK enforcement (PRAGMA foreign_keys=ON) and task purge already blocks on any approvals row, so a task cannot be deleted out from under a pending approval. Minor gap only: nothing ties a pending approval&#x27;s fate to its parent task&#x27;s status changing underneath it (e.g., task independently marked done/cancelled elsewhere) -- worth a one-line note in DATA_MODEL.md but not a blocker for 2B1.&quot;, &quot;decide_approval() as the sole writer of approvals.decision, reused by both the CLI wrapper and server.py, is the correct way to honor &#x27;opsdb.py is the only writer&#x27; -- not a second writer. No mechanical enforcement exists to stop a future code path from doing a raw UPDATE approvals SET decision=... elsewhere, but that&#x27;s consistent with how this codebase already documents (not lints) analogous rules elsewhere (e.g. orchestrator-only task-status writes) -- acceptable precedent, not a new gap introduced by this proposal.&quot;]</div>
+      
+    </div>
+            </details></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-5" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-005 — Phase 2 Milestone 2A: Pipeline, Agents, Decisions, Meetings screens</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:20:38.693Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Fast re-check after CTO post-implementation conformance review (task remains SECURITY_REVIEW status; these are the 4 concrete findings from that review, verified fixed, no new full gate cycle required \u2014 same-day, same-scope fixes to files already reviewed):&quot;, &quot;Fixed: generate_agents.py Agent Detail was missing the risks WHERE raised_by_agent=? query the CTO&#x27;s original architecture proposal specified \u2014 added, verified against live DB (security/cto/developer detail pages now show their raised risks).&quot;, &quot;Fixed: generate_agents.py render_roster() indexed by_state[r[&#x27;status&#x27;]] directly (KeyError risk if agent_runs.status were ever a value outside active/blocked/waiting while a run is still open) \u2014 changed to .get() with fallback to the Available bucket, matching generate_overview.py&#x27;s existing defensive pattern.&quot;, &quot;Fixed: Agent Detail &#x27;Evaluation / decision history&#x27; entries were ambiguous about direction of attribution (a QA/review pass shown on an agent&#x27;s own page could read as &#x27;this agent&#x27;s work passed&#x27; rather than &#x27;this agent performed the review&#x27;) \u2014 reworded every entry to state direction explicitly (&#x27;QA performed by this agent&#x27;, &#x27;review performed by this agent&#x27;, &#x27;Decision recommended by this agent&#x27;, &#x27;Risk raised by this agent&#x27;).&quot;, &quot;Fixed: layout.py nav_html() hardcoded the literal name &#x27;Alex&#x27; for the Founder badge on all 19 pages \u2014 not backed by any DB column (no founder/users table exists) and inconsistent with this project&#x27;s own no-fake-data rule. Replaced with the role label &#x27;Founder&#x27; (paired with the existing &#x27;HUMAN&#x27; badge), matching the CEO Agent&#x27;s role-only &#x27;AI ADVISOR&#x27; label rather than an invented specific identity.&quot;, &quot;All 7 files recompiled clean; all 19 output pages regenerated against the live DB and spot-checked.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:15:47.903Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Read-only guarantee verified with an actual write-refusal test (not just asserted): sqlite3 mode=ro URI connection raises OperationalError on an attempted INSERT against a scratch DB.&quot;, &quot;File permissions verified on all 19 generated output files (overview/pipeline/agents/decisions/meetings.html + 14 agent detail pages): all 0600, no group/other access.&quot;, &quot;Credential scan of all 7 new/changed control-center files + derived_state.py: no API keys, secrets, passwords, or private-key material.&quot;, &quot;Dependency scan (AST-based, all imports across the 8 files): zero non-stdlib imports \u2014 Python 3 stdlib only, consistent with the project&#x27;s zero-dependency rule.&quot;, &quot;Injection testing (see QA): all HTML-special-character and script payloads in decisions/meetings fields render fully escaped via the shared e() helper; no raw markup reaches output.&quot;, &quot;Confirmed the two disclosed Phase 1 authorization risks (risk id=2: approval-decide has no real identity check; risk id=3: Bash tool access isn&#x27;t scoped below tool-category level) remain status=open in the risks table \u2014 not silently resolved or hidden by this milestone.&quot;, &quot;No new attack surface introduced: still zero live server, zero JavaScript, zero write path from the Control Center \u2014 same posture as Milestone 1.&quot;, &quot;Note (non-blocking, pre-existing, out of this milestone&#x27;s file scope): &#x27;python3 ops/db/opsdb.py --help&#x27; crashes with a ValueError in argparse&#x27;s help formatter (an unescaped % in a subcommand help string) \u2014 opsdb.py itself was not modified in Milestone 2A; flagging for a future cleanup task rather than fixing here.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:15:38.044Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: HTML/script injection in decision and meeting text fields: &lt;script&gt;, &quot;&gt;&lt;img onerror=...&gt;, unescaped &amp;, and quote/apostrophe payloads inserted into decisions.title/problem/decision/reason and meetings.topic/agreements/disagreements/recommendation.</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:15:37.991Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Meetings empty state reads as &#x27;no meetings yet&#x27;, not broken (Red Team condition #3): with meetings table at 0 rows, meetings.html renders a real panel — &#x27;No executive meetings recorded yet.&#x27; plus explanatory text pointing to EXECUTIVE_MEETINGS.md — not a blank page or error.</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:15:37.936Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Agent Detail evaluation-history attribution: seeded 2 agents (qa-alpha, qa-beta) in a scratch DB with distinct qa_results/review_results/decisions rows; verified qa-alpha&#x27;s detail page shows only its own QA scenario + code review + decision, and qa-beta&#x27;s page shows only its own — zero cross-contamination (Red Team condition #2).</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:15:37.877Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Empty-database rendering: fresh schema-only scratch DB, all 5 generators run without error and every screen (Overview/Pipeline/Agents/Decisions/Meetings) shows an honest &#x27;nothing yet&#x27; empty state, no fake/sample data, no crash.</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:13:19.830Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Fixed: generate_decisions.py line 39 interpolated founder_approval_id without the e() escape helper \u2014 structurally safe integer FK but fixed for universal-escaping consistency (no judgment-call exceptions, per Milestone 1 Red Team rule).&quot;, &quot;Fixed: generate_agents.py imported DB_PATH from dbutil but never used it \u2014 removed from import.&quot;, &quot;Verified: all 7 new/changed files (layout.py, dbutil.py, generate_pipeline.py, generate_agents.py, generate_decisions.py, generate_meetings.py, refactored generate_overview.py) plus derived_state.py additions compile cleanly (py_compile).&quot;, &quot;Verified: no other DB-value interpolation skips e() across the 4 new generator files (grep-based scan).&quot;, &quot;Verified: read-only connect() from dbutil.py (mode=ro, URI-quoted path) is reused by every new generator \u2014 no per-file duplication of DB access or URI-escaping logic.&quot;, &quot;Verified: Pipeline stage-mapping (STAGE_MAP/stage_and_substate) lives once in derived_state.py, not duplicated in generate_pipeline.py.&quot;, &quot;Verified: Agents roster/detail grouping uses real agent_runs state (STATE_ORDER), not an invented functional-group taxonomy, matching CTO&#x27;s architecture decision.&quot;, &quot;No dependency additions; stdlib only.&quot;]</div>
+      
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-4" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-004 — Phase 2 Milestone 1: DB-backed Overview generator</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T22:16:35.359Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Genuinely read-only - verified a write attempt through this connection is refused at the SQLite level, not just by convention&quot;, &quot;HTML injection confirmed blocked with a deliberately hostile task title&quot;, &quot;Zero external network dependencies - improvement over the Phase 0 mockup&#x27;s Google Fonts link&quot;, &quot;No credentials/secrets, no new third-party dependencies&quot;, &quot;overview.html was world-readable after generation - fixed to 0600, same reasoning as operations.sqlite3&quot;, &quot;Independently re-verified the URI path-escaping fix Code Review found&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T22:15:53.995Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Empty database (no agents/tasks/risks), missing database file, HTML/script injection in a task title (all against disposable scratch databases, never the live one)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T22:15:35.736Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Read-only URI connection built the file: URI by direct string interpolation - a path containing &#x27;#&#x27; or &#x27;?&#x27; would silently open the wrong (or a schema-less) database instead of erroring. Confirmed with a real reproduction, fixed with urllib.parse.quote() before use.&quot;, &quot;Universal HTML-escaping confirmed by inspection: every DB-sourced field interpolation goes through the e() helper, no exceptions found via grep.&quot;, &quot;No button/onclick/cursor-pointer/anchor element anywhere in the output - Red Team&#x27;s &#x27;nothing styled as clickable unless it is&#x27; condition holds structurally, not just by convention.&quot;, &quot;derived_state.py extraction verified behavior-preserving via a byte-diff regression test against a fixed scratch fixture (only the generated timestamp line differed).&quot;]</div>
+      
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-2" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-002 — Phase 1: Data Model &amp; Operational CLI</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:49:09.857Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;No credentials/secrets/PII anywhere in schema or code&quot;, &quot;SQL injection: not present, all writes parameterized&quot;, &quot;Foreign keys enforced via PRAGMA on every connection&quot;, &quot;approval-decide had no guard at all - fixed with a --confirm-founder-decision speed-bump flag (not real auth, flagged as a known gap)&quot;, &quot;deployment-record correctly enforces founder_authorized at the schema (CHECK) level, not just the CLI&quot;, &quot;operations.sqlite3 was world-readable after init - tightened to 0600&quot;, &quot;Bash tool grants are not scoped below the tool-category level - flagged as a known environment-level gap, not fixed in Phase 1&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:47:46.066Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Invalid status value, missing --task-id reference, re-run init idempotently, fail result with no destination, zero-step task progress, BLOCKED/FOUNDER_APPROVAL transitions</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:46:51.708Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;task-step-status originally built its UPDATE statement with an f-string for the completed_at clause instead of a bind parameter - not exploitable (the fragment was a hardcoded constant, not user input) but fixed to a fully parameterized CASE expression for clarity&quot;, &quot;qa-result/review-result/handoff/approval-create/deployment-record relied on a raw sqlite3.IntegrityError traceback for a bad --task-id instead of a clean message - added a top-level handler in main() so every command now fails cleanly&quot;, &quot;report.py&#x27;s Founder-decisions section read only the approvals table and would miss a task literally sitting at FOUNDER_APPROVAL status - fixed to include both&quot;]</div>
+      
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="pipeline.html#task-1" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-001 — Verify Agent Pipeline</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:44:21.174Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:44:08.026Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Rapid double-click on the toggle (re-test)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:44:07.862Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">fail</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:44:07.358Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Rapid double-click on the toggle — Defect: Double-clicking within 200ms leaves the switch in a visually-stuck mid-state, though internal state is correct</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28T19:43:54.384Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      
+      
+    </div></div>
+</div>
+</body>
+</html>
