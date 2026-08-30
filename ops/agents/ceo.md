@@ -49,7 +49,7 @@ Responsibilities:
 - Surface important decisions to the Founder.
 - Produce a clear recommendation while preserving dissenting views (see
   `EXECUTIVE_MEETINGS.md`).
-- With Orchestrator, select which agents participate in an Executive
+- With Chief of Staff, select which agents participate in an Executive
   Meeting.
 
 Must NOT:

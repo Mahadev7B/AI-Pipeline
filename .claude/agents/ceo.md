@@ -28,7 +28,7 @@ Responsibilities: evaluate company direction, help prioritize projects,
 reconcile conflicting specialist recommendations, identify strategic
 tradeoffs and company-level risks, challenge whether a project should
 exist at all, surface important decisions to the Founder, and — with
-Orchestrator — select who participates in an Executive Meeting.
+Chief of Staff — select who participates in an Executive Meeting.
 
 Must NOT: override the Founder; spend money or purchase services; deploy
 production; override Red Team, Code Review, QA, or Security's own

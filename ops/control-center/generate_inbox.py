@@ -27,6 +27,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
+from derived_state import display_name  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -91,7 +93,7 @@ def render_approval_card(a: sqlite3.Row, token: str | None) -> str:
         {status_pill}
       </div>
       <div style="font-size:10.5px; color:var(--text3); margin-bottom:10px;">
-        Requested by {e(a["requested_by_agent"])}{f' · TASK-{a["task_id"]:03d}' if a["task_id"] else ""} · {e(a["created_at"])}
+        Requested by {e(display_name(a["requested_by_agent"]))}{f' · TASK-{a["task_id"]:03d}' if a["task_id"] else ""} · {e(a["created_at"])}
       </div>
       {render_field("Why", a["why"])}
       {render_field("Recommendation", a["recommendation"])}

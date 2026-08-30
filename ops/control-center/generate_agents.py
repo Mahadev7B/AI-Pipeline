@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
-from derived_state import agent_status_rows, scope_label  # noqa: E402
+from derived_state import agent_status_rows, display_name, scope_label  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 from agent_runtime import ASK_AGENT_ALLOWLIST, ASK_AGENT_ACTIVITY_LIKE  # noqa: E402 — Milestone 2B2
@@ -82,7 +82,7 @@ def render_roster(rows: list[sqlite3.Row]) -> str:
             <a href="agents/{e(r["name"])}.html" class="card" style="display:flex; align-items:center; gap:10px;">
               {agent_avatar(r["name"])}
               <div style="flex:1; min-width:0;">
-                <div style="font-size:12.5px; font-weight:600;">{e(r["name"])}{label_extra}</div>
+                <div style="font-size:12.5px; font-weight:600;">{e(display_name(r["name"]))}{label_extra}</div>
                 {activity}
               </div>
             </a>''')
@@ -158,7 +158,7 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
         is_founder = m["from_agent"] == "founder"
         align = "flex-end" if is_founder else "flex-start"
         bubble_style = "background:var(--violet); color:#1a1220;" if is_founder else "background:var(--panel2); border:1px solid var(--border2);"
-        label = "Founder" if is_founder else e(name)
+        label = "Founder" if is_founder else e(display_name(name))
         bubbles.append(f'''
         <div style="align-self:{align}; display:flex; flex-direction:column; align-items:{align}; gap:3px; max-width:80%;">
           <div class="bubble" style="max-width:100%; padding:11px 14px; border-radius:14px; font-size:12.5px; line-height:1.5; {bubble_style}">{e(m["body"])}</div>
@@ -180,7 +180,7 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
         form_html = f'''
         <form method="POST" action="/api/agents/{e(name)}/ask" style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
           <input type="hidden" name="token" value="{e(token or "")}">
-          <input type="text" name="message" placeholder="Ask {e(name)} a question&hellip;" maxlength="8000" required
+          <input type="text" name="message" placeholder="Ask {e(display_name(name))} a question&hellip;" maxlength="8000" required
                  style="flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:12.5px;">
           <button type="submit" style="padding:6px 14px; border-radius:8px; background:var(--accent); border:none; font-size:11.5px; font-weight:600; color:#1a1206; cursor:pointer;">Send</button>
         </form>'''
@@ -263,7 +263,7 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: 
                      if is_ceo(name) else "")
 
     body = f'''
-<h1>{e(name)} {header_badge}</h1>
+<h1>{e(display_name(name))} {header_badge}</h1>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
   <div style="width:8px; height:8px; border-radius:50%; background:{status_color};"></div>
   <span style="font-size:12.5px;">{e(STATE_LABEL.get(status, "Available"))}</span>
@@ -293,7 +293,7 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: 
   </div>
 </div>
 {render_ask_agent_section(conn, name, token)}'''
-    return page(f"{name} — Agent Detail", "agents.html", body, depth=1,
+    return page(f"{display_name(name)} — Agent Detail", "agents.html", body, depth=1,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.")
 
 

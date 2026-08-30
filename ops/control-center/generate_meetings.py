@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
+from derived_state import display_name  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 from agent_runtime import (  # noqa: E402 — Milestone 2B3B(+round 2)
@@ -147,7 +148,7 @@ def render_position_card(agent_name: str, body_text: str, requested_by: str | No
         label_suffix = ""
     return f'''
     <div class="card" style="{style}">
-      <div style="font-size:10.5px; font-weight:700; color:{label_color}; margin-bottom:5px; text-transform:uppercase;">{e(agent_name)}{label_suffix}</div>
+      <div style="font-size:10.5px; font-weight:700; color:{label_color}; margin-bottom:5px; text-transform:uppercase;">{e(display_name(agent_name))}{label_suffix}</div>
       <div style="font-size:12px; color:var(--text2); line-height:1.5;">{e(body_text)}</div>
     </div>'''
 
@@ -185,7 +186,7 @@ def render_orchestrator_note(conn: sqlite3.Connection, meeting_id: int) -> str:
         return ""
     return f'''
     <div class="panel" style="margin-bottom:14px; border-color:var(--border2);">
-      <div class="label" style="margin-bottom:6px;">Orchestrator — participant selection validated</div>
+      <div class="label" style="margin-bottom:6px;">{e(display_name("orchestrator"))} — participant selection validated</div>
       <div style="font-size:11.5px; color:var(--text2); line-height:1.5;">{e(row["body"])}</div>
     </div>'''
 

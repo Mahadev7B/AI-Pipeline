@@ -49,15 +49,43 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-29 19:04 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-30 13:41 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (5 records) — structured, queryable state from the
+  This is the operational decision log (7 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#7 — TASK-011 Milestone 2B3B round 2: compound-failure reservation leak in add_meeting_participant() accepted as a known, non-blocking gap (no reconciliation sweep built)</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> gather_requested_position()&#x27;s reservation-then-invoke pattern (opsdb.add_meeting_participant() reserves a manually-requested participant&#x27;s slot before invoking them) correctly closes the primary TOCTOU race (QA id=15 defect 2) and its own two exception windows A/B (Code Review id=17, fixed at 6ee5503) via a try/finally-guaranteed _release_reservation() call. But one narrower path remains open: if the cleanup opsdb.end_run(...,&#x27;failed&#x27;) call AND _release_reservation()&#x27;s own opsdb.remove_meeting_participant() call both raise sqlite3.OperationalError in sequence on the same connection (ordinary write contention, not a process kill -- Code Review id=19/20 corrected the record on this after 6ee5503&#x27;s own disclosure undersold it as &#x27;SIGKILL only&#x27;), the reservation leaks permanently: a phantom &#x27;requested&#x27; participant with no message and no open agent_runs row, occupying a MAX_MEETING_PARTICIPANTS cap slot with no automated path back to a real position or removal short of manual DB surgery. No reconciliation sweep for orphaned participant reservations exists (unlike agent_runs orphans, which DO have one via reconcile_orphaned_runs() and the 3 ACTIVITY_LIKE patterns).</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> (b) -- accepted as a known, disclosed, non-blocking gap for this round. Independently re-verified by CTO post-implementation conformance (this review): QA&#x27;s own 8-real-concurrent-thread load test (id=21) produced zero sqlite3.OperationalError at this project&#x27;s realistic concurrency ceiling (MAX_CONCURRENT_INVOCATIONS=3), and Security&#x27;s review (id=22) found that anyone able to force the double-fault already holds the SESSION_TOKEN and has a strictly easier way to deny participant slots (call request-perspective 6 times legitimately). Not a privilege escalation, not a materially worse DoS than the existing trust model already grants a token holder -- an availability/integrity nuisance, not a security-severity gap.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> Recorded as its own decision (not left only in agent_activity log entries id=17/18/19/20/21/22, five gates deep in a long fix chain) so a future round&#x27;s CTO/Red Team/Security can find this accepted gap without re-deriving it, the same durability the participant-cap revision (an earlier decision this same round) already gets. This is exactly the kind of accumulated-context item this gate exists to surface rather than silently pass over.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> If this gap is ever actually triggered in practice (requires sustained above-normal write-lock contention hitting two specific sequential writes within one failed invocation&#x27;s cleanup path), a phantom participant permanently occupies a cap slot until manual DB surgery -- no user-facing crash, no data corruption elsewhere, no privilege escalation. A future round should build the reconciliation sweep (option a) before this feature sees production-scale concurrent load meaningfully higher than this milestone&#x27;s own MAX_CONCURRENT_INVOCATIONS=3 ceiling, since QA&#x27;s own load test only validated the gap&#x27;s non-reachability at THIS ceiling, not at a higher one.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by cto</div>
+            
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#6 — Milestone 2B3B round 2: manually-requested meeting participants are not bound by MAX_MEETING_PARTICIPANTS</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The first pass capped total meeting participants (including CEO) at 6 to bound worst-case synchronous cost/time, with no carve-out for a manual add (the feature didn&#x27;t exist yet). Item 2 (mid-meeting &#x27;request another agent&#x27;s perspective&#x27;, TASK-011) needs a real answer to whether a manually-requested addition counts against that cap. The mockup&#x27;s only example (ExecutiveMeeting.dc.html) shows 6 initial cards plus 1 requested card, 7 total -- implying it does not.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> (b) -- manual adds are not bound by MAX_MEETING_PARTICIPANTS; a new MAX_REQUESTED_PARTICIPANTS=2 bounds them instead.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> A manually-requested addition is Founder-initiated and one-at-a-time, a materially different trust/cost posture than an LLM&#x27;s own unattended batch nomination the original cap was sized around; the mockup&#x27;s only depicted example is factual evidence the cap was never meant to bind this case.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Worst-case total participants and cost per meeting rises from 6 to 8; the original cap&#x27;s stated cost bound no longer describes the true worst case without also reading MAX_REQUESTED_PARTICIPANTS.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by cto</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#5 — Phase 0 final approval</div>
@@ -68,7 +96,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> Two rounds of mockup refinement resolved every open concern; the remaining data-model clarifications are architecture-level fixes, not design changes. [Recorded retroactively 2026-08-28 from DECISIONS.md DEC-003 - predates the operational database; approved by the Founder directly in conversation, no approvals-table row exists for it.]</div>
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> None - this is a gate opening, not a scope tradeoff.</div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <div style="font-size:10.5px; color:var(--text3);">Recommended by orchestrator</div>
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
@@ -96,7 +124,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The Founder&#x27;s stated priority is minimizing interruptions to founder-only decisions; Command Center is the only variant that puts Founder Inbox, Risks, and Executive Discussion front-and-center. [Recorded retroactively 2026-08-28 from DECISIONS.md DEC-001 - this decision predates the operational database; approved by the Founder directly in conversation, no approvals-table row exists for it.]</div>
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Command Center is the busiest single screen; agent capability detail is a drill-in rather than on the landing view.</div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <div style="font-size:10.5px; color:var(--text3);">Recommended by orchestrator</div>
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
@@ -110,7 +138,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> All required review gates passed (Architecture, Red Team, Code Review, QA, Security); two known gaps are disclosed and tracked as risks rather than blocking closure.</div>
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Founder is trusting procedural/documented enforcement over technical enforcement for approval-decide and Bash scoping until Phase 2/3 introduces a real identity/permission layer.</div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <div style="font-size:10.5px; color:var(--text3);">Recommended by orchestrator</div>
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
             <span class="pill" style="background:var(--green-soft); color:var(--green);">Founder approval linked — #3</span>
           </div>
         </div>

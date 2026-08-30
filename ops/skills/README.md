@@ -25,7 +25,7 @@ Each entry uses `SKILL_TEMPLATE.md`'s field set.
 
 | Agent | Skills used | When |
 |---|---|---|
-| Orchestrator | `prompt-master`, `skill-creator`, `loop` | precise handoff instructions; maintaining this registry; Phase 3 recurring checks |
+| Chief of Staff | `prompt-master`, `skill-creator`, `loop` | precise handoff instructions; maintaining this registry; Phase 3 recurring checks |
 | Product | `prompt-master` | turning a rough idea into a precise brief |
 | Design | `design` | producing real mockup artifacts |
 | CTO/Architect | `init`, `claude-api` | codebase docs bootstrap; Claude/Anthropic API integration decisions |

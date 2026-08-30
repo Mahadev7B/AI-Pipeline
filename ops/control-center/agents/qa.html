@@ -49,7 +49,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-29 19:04 UTC from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.</div>
+<div class="sub">Generated 2026-08-30 13:41 UTC from the live operational database. Not hand-edited; re-run generate_agents.py to refresh.</div>
 
 <h1>qa </h1>
 <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
@@ -108,7 +108,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     </div>
     <div style="margin-bottom:12px;">
       <div class="label" style="margin-bottom:6px;">Recent activity</div>
-      <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:11.5px; color:var(--text2);">Live subagent smoke test (post session-restart): invoked the qa subagent via the Agent tool for real. It confirmed its available tools are exactly Read/Bash/Grep/Glob/Skill, that Write and Edit are absent, and correctly cited its own Must-Not list. Resolves the &#x27;not live-tested&#x27; flag from the prior functional-vs-mocked report - subagent wiring and tool-scoping are confirmed working, not just validated syntax.</div><div style="font-size:11.5px; color:var(--text2);">Subagent wiring: claude plugin validate .claude/agents passed (syntactically correct, valid frontmatter) but live invocation via the Agent tool failed in this session - confirmed via claude-code-guide this requires a session restart for first-time .claude/agents/ directory discovery. Not live-tested end-to-end; flagged for the Founder.</div></div>
+      <div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size:11.5px; color:var(--text2);">TASK-011 QA round 2 (re-verification): PASS -- all 3 original QA-FAIL defects (id=15) confirmed genuinely fixed, windows A/B (id=17/18) independently re-derived closed, disclosed compound-failure gap (id=19/20) confirmed non-blocking; full regression clean; ready for Security gate</div><div style="font-size:11.5px; color:var(--text2);">TASK-011 QA: FAIL — Orchestrator run-reconciliation gap (regression of item #18 class) + request-perspective concurrency race (duplicate real invocations/messages) + non-cap-aware Retry button; items 1/3/4 core mechanics and all cap/eligibility/invalid-input/regression checks otherwise verified passing via real invocations</div><div style="font-size:11.5px; color:var(--text2);">Live subagent smoke test (post session-restart): invoked the qa subagent via the Agent tool for real. It confirmed its available tools are exactly Read/Bash/Grep/Glob/Skill, that Write and Edit are absent, and correctly cited its own Must-Not list. Resolves the &#x27;not live-tested&#x27; flag from the prior functional-vs-mocked report - subagent wiring and tool-scoping are confirmed working, not just validated syntax.</div><div style="font-size:11.5px; color:var(--text2);">Subagent wiring: claude plugin validate .claude/agents passed (syntactically correct, valid frontmatter) but live invocation via the Agent tool failed in this session - confirmed via claude-code-guide this requires a session restart for first-time .claude/agents/ directory discovery. Not live-tested end-to-end; flagged for the Founder.</div></div>
     </div>
     <div>
       <div class="label" style="margin-bottom:6px;">Evaluation / decision history</div>

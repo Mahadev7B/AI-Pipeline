@@ -66,7 +66,7 @@ An agent is **Working** if it has a row here with `status=active` and no
 `ended_at`. **Blocked** / **Waiting** come from a row with that status
 instead. **Available** means no open run at all. `scope_type=company`
 covers coordination work with no single task/project/meeting behind it
-(e.g. Orchestrator triage, CEO general strategy review, PM compiling a
+(e.g. Chief of Staff triage, CEO general strategy review, PM compiling a
 status report) — company-scoped work is still a real run, not an
 exception to the rule. See `ARCHITECTURE.md`, "Derived UI state must be
 deterministic."
@@ -191,7 +191,7 @@ of objects, not bare strings:
 ```
 
 `source` is `"selected"` for CEO (always) and every participant CEO
-nominated/Orchestrator validated at meeting-creation time, or
+nominated/Chief of Staff validated at meeting-creation time, or
 `"requested"` for a participant added later via `POST
 /api/meetings/<id>/request-perspective` (item 2). `requested_by` is
 `null` for a `"selected"` entry, or the literal string `"founder"` for a
@@ -242,7 +242,7 @@ same `from_agent`:
   *original* position is written to (unchanged since Milestone 2B3B;
   item 2's manually-requested participants write here too, once —
   it's a real position on the topic, just gathered later).
-- `meeting-{id}-orchestrator` — Orchestrator's one-time validation note
+- `meeting-{id}-orchestrator` — Chief of Staff's one-time validation note
   (item 1), never a participant's position.
 - `meeting-{id}-{agent_name}` — one distinct thread per (meeting,
   participant) follow-up conversation (item 3), separate from that
@@ -270,7 +270,7 @@ Control Center must use — never an LLM's free-text estimate:
 
 ## Rules
 
-- The Orchestrator is the only writer of `tasks.status` and
+- The Chief of Staff is the only writer of `tasks.status` and
   `task_status_history`. Nothing else mutates status directly (see
   `ARCHITECTURE.md`).
 - Each agent writes its own `agent_runs`, `agent_activity`, `qa_results`,

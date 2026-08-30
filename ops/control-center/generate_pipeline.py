@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
-from derived_state import PIPELINE_STAGES, stage_and_substate, task_progress_fraction  # noqa: E402
+from derived_state import PIPELINE_STAGES, display_name, stage_and_substate, task_progress_fraction  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -76,7 +76,7 @@ def render_stage_column(conn: sqlite3.Connection, stage: str, tasks_by_substate:
             <div class="card">
               <div class="mono" style="font-size:9.5px; color:var(--text3); margin-bottom:4px;">TASK-{t["id"]:03d}</div>
               <div style="font-size:12px; font-weight:600;">{e(t["title"])}</div>
-              <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(t["current_owner"] or "unassigned")}</div>
+              <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(display_name(t["current_owner"]) if t["current_owner"] else "unassigned")}</div>
               {progress_html}
             </div>''')
         lanes.append(f'''

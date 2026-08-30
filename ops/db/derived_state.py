@@ -15,6 +15,19 @@ from __future__ import annotations
 
 import sqlite3
 
+_DISPLAY_NAMES = {"orchestrator": "Chief of Staff"}
+
+
+def display_name(machine_key: str) -> str:
+    """Founder-facing label for an agents.name value. Out of scope for
+    every agent except 'orchestrator' by explicit Founder instruction —
+    do not add entries for the other 13; the default fallback (the key
+    itself, unchanged) is correct for all of them. Never apply this to a
+    stored DB value, a query predicate, a thread_id, or historical
+    message/decision/review body text — only to a label rendered for the
+    Founder to read. See ops/reviews/cto-chief-of-staff-rename.md."""
+    return _DISPLAY_NAMES.get(machine_key, machine_key)
+
 
 def company_health(conn: sqlite3.Connection) -> tuple[str, str]:
     high_risks = conn.execute(

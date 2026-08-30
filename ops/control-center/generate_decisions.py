@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
+from derived_state import display_name  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -50,7 +52,7 @@ def render_decisions(conn: sqlite3.Connection) -> str:
           {f'<div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> {e(d["reason"])}</div>' if d["reason"] else ""}
           {f'<div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> {e(d["tradeoffs"])}</div>' if d["tradeoffs"] else ""}
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <div style="font-size:10.5px; color:var(--text3);">Recommended by {e(d["recommending_agent"])}</div>
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by {e(display_name(d["recommending_agent"]))}</div>
             {approval_note}
           </div>
         </div>''')

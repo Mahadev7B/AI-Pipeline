@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from derived_state import (  # noqa: E402 — see sys.path.insert above
     agent_status_rows,
     company_health,
+    display_name,
     scope_label,
     task_progress_pct,
 )
@@ -157,9 +158,9 @@ def build_report() -> str:
     lines.append("## Agents")
     for row in agent_status_rows(conn):
         if row["status"] is None:
-            lines.append(f"- {row['name']}: available")
+            lines.append(f"- {display_name(row['name'])}: available")
         else:
-            lines.append(f"- {row['name']}: {row['status']} "
+            lines.append(f"- {display_name(row['name'])}: {row['status']} "
                           f"({scope_label(row['scope_type'], row['scope_id'])}) — {row['current_activity'] or ''}")
     lines.append("")
 
