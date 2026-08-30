@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-30 13:41 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-30 13:52 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -23,7 +23,8 @@ Generated 2026-08-30 13:41 UTC by `ops/db/report.py` from the live database — 
 - none
 
 ## Waiting (Backlog)
-- none
+- TASK-012 — Chief of Staff rename
+- TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions
 
 ## QA failures (unresolved)
 - none open
@@ -37,6 +38,7 @@ Generated 2026-08-30 13:41 UTC by `ops/db/report.py` from the live database — 
 
 ## Agents
 - ceo: available
+- Chief of Staff: available
 - code-review: available
 - cto: available
 - design: available
@@ -44,7 +46,6 @@ Generated 2026-08-30 13:41 UTC by `ops/db/report.py` from the live database — 
 - devops: available
 - financial: available
 - marketing: available
-- Chief of Staff: available
 - product: available
 - project-manager: available
 - qa: available

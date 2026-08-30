@@ -148,7 +148,7 @@ def build_report() -> str:
     founder_status = conn.execute("SELECT id, title FROM tasks WHERE status = 'FOUNDER_APPROVAL'").fetchall()
     if pending or founder_status:
         for a in pending:
-            lines.append(f"- Approval #{a['id']} — {a['request']} (requested by {a['requested_by_agent']})")
+            lines.append(f"- Approval #{a['id']} — {a['request']} (requested by {display_name(a['requested_by_agent'])})")
         for t in founder_status:
             lines.append(f"- TASK-{t['id']:03d} — {t['title']} is waiting at FOUNDER_APPROVAL")
     else:

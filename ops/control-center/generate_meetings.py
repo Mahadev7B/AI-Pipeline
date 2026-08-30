@@ -140,7 +140,7 @@ def render_position_card(agent_name: str, body_text: str, requested_by: str | No
     elif requested_by:
         style = "border-color:var(--accent); background:var(--accent-soft);"
         label_color = "var(--accent)"
-        requested_by_display = "Founder" if requested_by == "founder" else requested_by
+        requested_by_display = "Founder" if requested_by == "founder" else display_name(requested_by)
         label_suffix = f" — requested by {e(requested_by_display)}"
     else:
         style = ""
