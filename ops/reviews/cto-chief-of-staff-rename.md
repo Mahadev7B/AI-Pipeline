@@ -265,6 +265,65 @@ sweep:
   it is not, itself, the reason to do the rename, and does not extend to
   fixing the same gap for the other 13 agents, which is out of scope.)
 
+## 1i. Correction (Red Team round 1, ops/reviews/red-team-chief-of-staff-rename.md) — verification gaps in this document
+
+Red Team's round-1 review rejected the original version of this document for
+demonstrably incomplete verification, despite this document's own claim of a
+"full-repo sweep." Every point below is independently re-verified, folded in
+here so the file list in section 4 is now actually complete:
+
+- **`generate_decisions.py` and `generate_inbox.py` cannot reach
+  `ops/db/derived_state.py` as currently written.** Verified: only
+  `generate_overview.py`, `generate_pipeline.py`, `generate_agents.py`, and
+  `generate_meetings.py` carry the second `sys.path.insert(0,
+  str(Path(__file__).resolve().parent.parent / "db"))` line needed to import
+  `derived_state`; `generate_decisions.py` and `generate_inbox.py` only
+  insert their own directory (for `dbutil`/`layout`). The original claim "no
+  new cross-directory sys.path wiring needed beyond what each already has"
+  was false for 2 of 6 generators. **Fix, now reflected in section 4**:
+  Development must add the same `sys.path.insert(0,
+  str(Path(__file__).resolve().parent.parent / "db"))` line to both files,
+  before `from derived_state import display_name`.
+- **`ops/ARCHITECTURE.md` (root-level) was missed entirely.** Verified live,
+  it names "Orchestrator" as a role with real authority, twice: line 10
+  ("2. **Orchestrator** — the only thing that decides what happens next and
+  assigns work...") and lines 39/41 ("The Orchestrator is the only writer of
+  Task State... Orchestrator — it does not mutate rows directly."). This is
+  the same class of live, current documentation as `AGENT_ARCHITECTURE.md`
+  (already included) — now added to section 4.
+- **Other agents' own current role docs name "Orchestrator" and were
+  omitted**, which would leave a directly inconsistent doc set (Orchestrator's
+  own doc says "Chief of Staff," CEO's and Project Manager's docs keep
+  calling the same entity "Orchestrator"). Verified live:
+  `.claude/agents/ceo.md:31` ("Orchestrator — select who participates in an
+  Executive Meeting."), `ops/agents/ceo.md:52` ("With Orchestrator, select
+  which agents participate..."), `.claude/agents/project-manager.md:18`
+  ("(that's Orchestrator's job)"), `ops/agents/project-manager.md:24` ("that's
+  Orchestrator's..."). Now added to section 4, same prose-only treatment as
+  Orchestrator's own docs.
+- **Lower-priority: four `ops/skills/**` docs** (`ops/skills/README.md`,
+  `ops/skills/operations/loop.md`, `ops/skills/operations/skill-creator.md`,
+  `ops/skills/product/prompt-master.md`) reference "Orchestrator Agent" as a
+  named skill user/owner — same "current documentation" bucket, lower
+  material weight (internal skill registry, not Founder-facing). Added to
+  section 4 for completeness.
+- **Accuracy correction**: section 4's original note that `ops/db/opsdb.py`
+  has "no `orchestrator` literal found in it at all" was imprecise — a grep
+  returns six hits, all in comments/docstrings describing
+  `meeting_orchestrator.py`'s behavior, none a Founder-rendered string or a
+  code literal needing change. The conclusion (no code change needed) still
+  holds; the stated justification was wrong. Corrected below.
+- **`ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL`/`_LIKE`** (1d): Red Team
+  affirmed "leave unchanged" as reasonable — every render site showing
+  `current_activity` is a static, regenerate-on-demand page, not a
+  live-polling dashboard, making the real exposure window lower than even
+  this document's own original reasoning suggested. Red Team also confirmed
+  a *display-only* decoupling (substituting "Orchestrator:" → "Chief of
+  Staff:" at exactly the four render sites, never touching the stored
+  `LABEL`/`LIKE` constants) is technically feasible if the Founder later
+  wants it — noted as an optional, cheap future follow-up in section 5, not
+  required now.
+
 ## 2. Recommended design: smallest safe change
 
 Adopt the brief's candidate design, refined per 1c:
@@ -306,8 +365,12 @@ inconsistent outcome, not a smaller-risk one. Concretely:
 - `generate_overview.py`: `render_active_now()`'s name label, `render_pipeline()`'s
   owner field (same column as Pipeline, same rule), `render_activity()`'s
   agent label, `render_inbox()`'s "Requested by" label.
-- `generate_inbox.py`: "Requested by" label.
-- `generate_decisions.py`: "Recommended by" label.
+- `generate_inbox.py`: add `sys.path.insert(0,
+  str(Path(__file__).resolve().parent.parent / "db"))` (missing today —
+  Red Team finding, 1i) before importing `display_name`; wrap "Requested by"
+  label.
+- `generate_decisions.py`: add the same `sys.path.insert(...)` line (missing
+  today — Red Team finding, 1i); wrap "Recommended by" label.
 - `generate_meetings.py`: `render_orchestrator_note()`'s label — this one
   is a hardcoded string literal today (1b), not derived from `agents.name`
   at render time; replace the literal `"Orchestrator"` with
@@ -362,9 +425,15 @@ discipline.
 | `ops/AGENT_ARCHITECTURE.md` | Update the template line (line 23) | Live, reusable documentation, not a historical record (1h) |
 | `ops/DATA_MODEL.md` | Update the 4 prose mentions; leave the `meeting-{id}-orchestrator` thread-id string itself unchanged | Live schema/behavior documentation vs. a stored identifier (1h) |
 | `ops/EXECUTIVE_MEETINGS.md` | Update the "Orchestrator + CEO Agent select participants" line | Live functional spec (1h) |
+| `ops/ARCHITECTURE.md` | Update the 2 live mentions (lines 10, 39, 41) | Live, current architecture documentation naming the role's authority — Red Team finding, 1i |
+| `.claude/agents/ceo.md`, `ops/agents/ceo.md` | Prose-only: "Orchestrator" → "Chief of Staff" | Current role doc naming the entity — Red Team finding, 1i |
+| `.claude/agents/project-manager.md`, `ops/agents/project-manager.md` | Prose-only: "Orchestrator" → "Chief of Staff" | Current role doc naming the entity — Red Team finding, 1i |
+| `ops/skills/README.md`, `ops/skills/operations/loop.md`, `ops/skills/operations/skill-creator.md`, `ops/skills/product/prompt-master.md` | Prose-only: "Orchestrator Agent" → "Chief of Staff" | Current skill-registry documentation, lower priority — Red Team finding, 1i |
 
-Not in this list, deliberately: `ops/db/schema.sql`, `ops/db/opsdb.py`
-(no `orchestrator` literal found in it at all, confirmed by grep),
+Not in this list, deliberately: `ops/db/schema.sql`, `ops/db/opsdb.py` (6
+grep hits, all in comments/docstrings describing `meeting_orchestrator.py`'s
+behavior, none a Founder-rendered string or a code literal needing change —
+corrected per 1i from the original, imprecise "no literal found" claim),
 `ops/control-center/agent_runtime.py` (1d), `ops/control-center/
 meeting_orchestrator.py` (1e), `ops/control-center/server.py` (1g),
 `ops/DECISIONS.md`, every `ops/reviews/*.md`, `prompts/phase-0-
@@ -393,7 +462,12 @@ architecture-proposal.md`, and the three `.dc.html` mockup files (1h).
   cosmetic gain). If the Founder later decides this specific text must
   change too, it is a small, separate, well-scoped follow-up (change
   `LABEL` and `LIKE` together, atomically, in the same commit as the code
-  that starts new runs) — not bundled into this rename.
+  that starts new runs) — not bundled into this rename. A cheaper
+  alternative, confirmed feasible by Red Team's round-1 review (1i), also
+  exists if ever wanted: a display-only substitution ("Orchestrator:" to
+  "Chief of Staff:") applied only at the four render sites that show
+  `current_activity`, never touching the stored `LABEL`/`LIKE` constants —
+  lower risk than changing the constants themselves, still not required now.
 - **`meeting_orchestrator.py`'s module name is unchanged** (1e) — a
   legacy/coincidental name, never Founder-visible, not worth the
   cross-file churn for zero display benefit.
