@@ -53,14 +53,20 @@ def scope_label(scope_type: str, scope_id: int | None) -> str:
 
 
 def agent_status_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    return conn.execute(
+    """Ordered by display_name(a.name), not the raw machine key — callers
+    render display_name() at render time, so sorting must happen here on
+    the same displayed label or the sort order and the labels disagree
+    (e.g. "Chief of Staff" landing in orchestrator's alphabetical slot
+    instead of between "ceo" and "code-review"). See
+    ops/reviews/code-review-chief-of-staff-rename.md."""
+    rows = conn.execute(
         """
         SELECT a.name, r.status, r.scope_type, r.scope_id, r.current_activity
         FROM agents a
         LEFT JOIN agent_runs r ON r.agent_id = a.id AND r.ended_at IS NULL
-        ORDER BY a.name
         """
     ).fetchall()
+    return sorted(rows, key=lambda row: display_name(row["name"]).lower())
 
 
 def task_progress_fraction(conn: sqlite3.Connection, task_id: int) -> tuple[float, float] | None:
