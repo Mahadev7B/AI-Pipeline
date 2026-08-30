@@ -626,6 +626,79 @@ do.
   applied via `opsdb.py risk-resolve` by whoever owns that step after
   Security's review, not by this document.
 
+## 13. Correction (Security's threat-model review, ops/reviews/security-milestone2b4-threat-model.md) — three required fixes before Development starts
+
+Security REJECTed/CONDITIONed the design above pending three concrete
+fixes. Design direction, credential handling, session-fixation resistance,
+scrypt parameters, and §11's central claim were all independently
+re-verified and affirmed (§11's claim was found *understated* — Security
+identified a second same-UID bypass, `PTRACE_ATTACH` to the live
+`server.py` process reading `SESSIONS`/`SESSION_TOKEN` directly out of
+memory, not mentioned above; this strengthens rather than weakens §11's
+conclusion that only `risks.id=3` or new infrastructure can close that
+gap). All three required fixes stay within stdlib/no-new-infra constraints
+and do not touch `risks.id=3`:
+
+- **C1 — serialize login verification, don't just guard the lockout
+  counter.** §8/§10 as originally written hold `_LOGIN_LOCK` only across
+  brief dict get/sets, not across the `~1s`/`~128 MiB` `scrypt` call
+  itself — meaning N simultaneous `/api/login` requests can each observe
+  "not locked yet" before any of them registers a failure, defeating the
+  stated 5-attempt cap (threat item 16) and opening a real memory-exhaustion
+  DoS via unbounded concurrent scrypt calls (threat item 22, exactly what
+  "concurrent authentication attempts" as a named threat warns about).
+  **Fix, superseding §8/§10 above**: hold `_LOGIN_LOCK` across the entire
+  check→verify→increment critical section — i.e. `/api/login` requests are
+  fully serialized end-to-end, not just the counter update. For a solo
+  Founder's actual login frequency this costs nothing (worst case: a second
+  concurrent login attempt waits ~1s for the first's scrypt call to
+  finish) and closes both the brute-force-cap gap and the DoS exposure at
+  once. (Security's stated alternative — a `BoundedSemaphore` capping
+  in-flight `/api/login` requests, matching `MAX_CONCURRENT_INVOCATIONS` —
+  is equivalent for this route's actual traffic pattern; full serialization
+  via the existing lock is simpler and is the adopted fix.)
+- **C2 — `/api/login` requires the same CSRF `SESSION_TOKEN` field as every
+  other write route.** §4 stated this explicitly for `/api/logout` but left
+  `/api/login` unstated. Without it, a page in another browser tab could
+  blind cross-origin POST guessed passphrases at `127.0.0.1:8420/api/login`
+  (`SameSite=Strict` blocks the *cookie* from riding along on the
+  response, but does not block the POST itself from being sent). **Fix**:
+  `/login`'s rendered page embeds the current `SESSION_TOKEN` exactly like
+  every other form this server renders (§12 does not need a new file for
+  this — `/login`'s own minimal template, per §12's `layout.py` line,
+  carries it the same way), and `/api/login` checks it via the identical
+  `secrets.compare_digest(...)` call already used for every other route,
+  before ever touching the passphrase. This closes threat items 3 and 4
+  for this route explicitly, matching every other route's disposition.
+- **C3 — malformed-payload handling on `/api/login` is explicit, not
+  inferred.** The existing `do_POST()` pattern (`MAX_BODY_BYTES` cap before
+  parsing, `.decode("utf-8", errors="replace")`, `fields.get(name, [""])[0]`
+  defaulting a missing field to `""`) already handles a missing field,
+  oversized body, and non-UTF-8 bytes safely — **Fix**: `/api/login`
+  explicitly reuses this exact existing pattern (no new parsing logic), and
+  Development confirms via a real test that `hashlib.scrypt(b"", ...)` does
+  not raise on an empty-string passphrase (Security confirmed this is true
+  by reading the stdlib behavior, but Development must add a test, not just
+  rely on the claim) — an empty passphrase must fail verification cleanly
+  (wrong-hash, ordinary 401), never crash the request.
+
+**Non-blocking, adopted anyway as cheap defense-in-depth**: passphrase
+minimum bumped from 12 to **16 characters** (§2's floor) — Security's
+stated reasoning (adequate either way for the in-scope online-guessing
+threat once C1 ships; the only scenario the floor meaningfully affects is
+offline cracking of an exfiltrated credential file, which already requires
+`risks.id=3`-class access) is correct, and 16 costs nothing to adopt.
+`founder_auth.py`'s `change` subcommand's atomic temp file (§3) must use
+the same `.founder_credential` dot-prefixed stem so it falls under the
+`.gitignore` entry's glob (§12) — not previously specified. The
+`.gitignore` entry itself must land in the same commit that introduces
+`founder_auth.py`, before `setup` is ever run for real.
+
+**`risks.id=2` disposition — corrected**: move to `mitigated` only after
+Development ships C1–C3 and Security completes a post-implementation pass
+confirming them — not directly off this architecture-stage document. See
+Security's review for the exact final language to use at that point.
+
 ## Open questions for Red Team and Security
 
 1. Is `scrypt` at `N=2**17, r=8, p=1` the right cost parameter, or should
