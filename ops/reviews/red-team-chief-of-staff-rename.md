@@ -206,3 +206,67 @@ also need their `sys.path` extended (finding 1) is wrong.
 None of these require rethinking the design — they are completeness fixes
 to the file list and two accuracy corrections to the verification
 narrative. Once folded in, this plan is implementation-ready.
+
+## Round 2 re-review
+
+Re-reading `ops/reviews/cto-chief-of-staff-rename.md` after its "1i.
+Correction" section and updated section 4, and independently re-verifying
+every round-1 finding live against the repo (not just checking that text
+was added).
+
+### Verdict: REJECT (narrow)
+
+Findings 2–5 from round 1 are now genuinely, accurately fixed:
+
+- **Finding 2** (`ops/ARCHITECTURE.md`): now in section 4. Verified live —
+  lines 10, 39, 41 match exactly what the doc cites.
+- **Finding 3** (ceo.md/project-manager.md): now in section 4. Verified
+  live — `.claude/agents/ceo.md:31`, `ops/agents/ceo.md:52`,
+  `.claude/agents/project-manager.md:18`, `ops/agents/project-manager.md:24`
+  all match exactly.
+- **Finding 4** (skill registry docs): now in section 4. Verified live —
+  all four files' cited lines match exactly.
+- **Finding 5** (`opsdb.py` claim): corrected in section 4's "Not in this
+  list" note. Verified live — grep confirms exactly 6 hits, at lines 529,
+  530, 563, 569, 612, 621, all in comments/docstrings, matching the doc's
+  corrected claim precisely.
+
+**Finding 1 (sys.path fix) is only partially addressed.** The specific
+line the doc now recommends —
+`sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))`
+— is verified correct: it is the exact line already used by
+`generate_pipeline.py` (line 21) and `generate_overview.py` (line 23) to
+reach `ops/db/derived_state.py`, and `generate_decisions.py`/
+`generate_inbox.py` are confirmed, live, to still lack it (each currently
+has only `sys.path.insert(0, str(Path(__file__).resolve().parent))` for
+its own directory). Section 2 (lines 368–373) and section 1i correctly
+narrate this fix.
+
+However, **section 4's table rows for these two files were not updated**
+— they still read "Wrap 'Requested by' label" / "Wrap 'Recommended by'
+label" with no mention of the sys.path change (verified: lines 419–420 of
+the current doc). Round 1's required fix #1 was explicit: "Add explicit
+`sys.path.insert(...)` instruction to §4's rows for `generate_decisions.py`
+and `generate_inbox.py`," precisely because round 1 also noted "Development
+is instructed to work strictly off section 4's file list." A Development
+agent reading section 4 literally, without cross-referencing section 2,
+will still hit the same `ImportError` round 1 flagged.
+
+**Fix required for round 3**: add the `sys.path.insert(0,
+str(Path(__file__).resolve().parent.parent / "db"))` instruction directly
+into section 4's `generate_inbox.py` and `generate_decisions.py` rows
+(e.g. "Add `sys.path.insert(...)` for `derived_state`; wrap 'Requested
+by'/'Recommended by' label"). This is a one-line edit to two table cells,
+not a design or scope problem — the underlying plan, module placement, and
+every other file-list entry are confirmed correct and complete.
+
+## Round 3 re-review
+
+Confirmed: section 4's table rows for `generate_inbox.py` (line 419) and
+`generate_decisions.py` (line 420) now explicitly state the required
+`sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))` fix
+(flagged "missing today — Red Team finding, 1i") before importing
+`display_name`, in addition to the label-wrap change. This closes the Round 2
+gap; section 4 is now consistent with section 2's narrative.
+
+**Verdict: PASS**
