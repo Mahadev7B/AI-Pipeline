@@ -126,3 +126,78 @@ fix pass. Once finding 1 is fixed, re-review the fix (not the whole diff
 again) before this proceeds — do not move TASK-012 to QA in the
 meantime. Task status itself is not mine to move; that stays with the
 Chief-of-Staff/orchestrator per `ops/DATA_MODEL.md`.
+
+---
+
+# Re-review — fix for blocking finding 1 + non-blocking 2/3 (commits 3a4f47d, 2a9041e)
+
+Re-reviewing only the fix, not the whole diff again. Read `git show
+3a4f47d` and `git show 2a9041e` directly.
+
+## Verdict: PASS
+
+## Finding 1 (blocking) — verified fixed
+
+`ops/db/derived_state.py`'s `agent_status_rows()` (commit `3a4f47d`) now
+fetches rows with the `ORDER BY a.name` clause removed from SQL, and
+re-sorts in Python: `sorted(rows, key=lambda row:
+display_name(row["name"]).lower())`. Verified the `.lower()` is not
+decorative but load-bearing: `display_name()` maps only `orchestrator`
+to `"Chief of Staff"` (capital C); every other machine key is already
+lowercase. Simulated both variants —
+
+- without `.lower()`: `['Chief of Staff', 'ceo', 'code-review', 'cto',
+  ...]` — "Chief of Staff" sorts *first*, before every other agent
+  (ASCII `'C'` (67) < `'c'` (99)), which is a *different*, arguably worse
+  bug than the one originally rejected.
+- with `.lower()`: `['ceo', 'Chief of Staff', 'code-review', 'cto',
+  ...]` — correct.
+
+Confirmed live against the real DB (read-only, working tree left clean
+afterward): ran `python3 ops/control-center/generate_agents.py` and
+`python3 ops/db/report.py`. `agents.html`'s "Available" grid and
+`CURRENT_STATUS.md`'s `## Agents` section both show `ceo`, `Chief of
+Staff`, `code-review`, `cto`, `design`, ... in that order — "Chief of
+Staff" sits between "ceo" and "code-review" as required, not in
+orchestrator's old alphabetical slot between "marketing" and "product."
+
+## Findings 2/3 (non-blocking) — verified fixed
+
+Commit `2a9041e`: `ops/db/report.py` line 151 now wraps
+`a['requested_by_agent']` in `display_name(...)`; `display_name` is
+imported at the top of the file (confirmed). `generate_meetings.py`
+line 143's `render_position_card()` else-branch now does
+`display_name(requested_by)` instead of the raw string; `display_name`
+is imported. Both match the pattern used at every other
+requested-by/recommending-agent render site in the codebase.
+
+## Scope check — no creep
+
+- `git show --stat 3a4f47d`: touches only `ops/db/derived_state.py`
+  (+8/-2). Matches the blocking finding exactly.
+- `git show --stat 2a9041e`: touches the two one-line fixes
+  (`report.py`, `generate_meetings.py`) plus regenerated artifacts the
+  commit message says it regenerates (`agents.html`, `agents/*.html`,
+  `overview.html`, `meetings.html`, `CURRENT_STATUS.md`) and
+  `operations.sqlite3` (binary, DB state — not a code change). No files
+  outside this footprint.
+
+## Artifact freshness — verified, not stale
+
+Ran `generate_agents.py`, `generate_meetings.py`, and `report.py` live
+against the current DB and diffed the result against the committed
+artifacts. Every diff line was the "Generated ... UTC" timestamp
+string only (regenerated ~2 min after the committed run) — no content or
+ordering differences. `overview.html`'s larger diff in the commit
+itself (new Pipeline Snapshot/Just Happened rows) reflects legitimate
+DB state that changed between generator runs (new tasks/events), not
+stale or fabricated content. Working tree restored to clean
+(`git checkout --`) after the live verification run.
+
+## Disposition
+
+Both the blocking finding and the two non-blocking recommended cleanups
+are correctly fixed, with no unresolved carry-over and no new scope
+creep. TASK-012 is ready for QA next. Task status itself is not mine to
+move; that stays with the Chief-of-Staff/orchestrator per
+`ops/DATA_MODEL.md`.
