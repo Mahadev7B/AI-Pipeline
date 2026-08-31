@@ -129,7 +129,7 @@ def render_running(automation: dict) -> str:
     for r in rows:
         cards.append(f'''
         <div class="card" style="margin-bottom:8px;">
-          <a href="pipeline.html#task-{r["task_id"]}" style="font-size:12.5px; font-weight:600;">TASK-{r["task_id"]:03d} — {e(r["task_title"])}</a>
+          <a href="tasks/{r["task_id"]}.html" style="font-size:12.5px; font-weight:600;">TASK-{r["task_id"]:03d} — {e(r["task_title"])}</a>
           <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">started {e(r["started_at"])} — still reviewing, ends automatically either way (120s timeout, $0.50 cap)</div>
         </div>''')
     return f'<div class="panel" style="margin-bottom:16px;"><div class="label" style="margin-bottom:8px;">Running now</div>{"".join(cards)}</div>'
@@ -159,7 +159,7 @@ def render_recent(automation: dict) -> str:
         cards.append(f'''
         <div class="card" style="margin-bottom:8px; border-color:{border};">
           <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
-            <a href="pipeline.html#task-{r["task_id"]}" style="font-size:12.5px; font-weight:600;">TASK-{r["task_id"]:03d} — {e(r["task_title"])}</a>
+            <a href="tasks/{r["task_id"]}.html" style="font-size:12.5px; font-weight:600;">TASK-{r["task_id"]:03d} — {e(r["task_title"])}</a>
             <div style="display:flex; gap:6px; align-items:center;">{flag}{_status_pill(r)}</div>
           </div>
           <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(r["ended_at"] or r["started_at"])}{cost}{truncated_note}{review_link}</div>

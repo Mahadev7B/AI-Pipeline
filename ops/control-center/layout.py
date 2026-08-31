@@ -31,6 +31,8 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans)
 .panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
 .card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
 a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
 h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 .sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
 """
@@ -38,6 +40,12 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 # (href, label) for every top-level screen — same six links everywhere.
 NAV_LINKS = [
     ("overview.html", "Overview"),
+    ("active-work.html", "Active Work"),  # Milestone A (TASK-019) — placed right after
+                                           # Overview: the natural next click from the
+                                           # broad company-health snapshot to "what needs
+                                           # me, per task." /tasks/<id>.html is NOT a
+                                           # nav-bar item, matching /agents/<name>.html and
+                                           # /meetings/<id>.html precedent.
     ("pipeline.html", "Pipeline"),
     ("agents.html", "Agents"),
     ("decisions.html", "Decisions"),

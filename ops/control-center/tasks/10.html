@@ -1,0 +1,616 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-010 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-31 23:24 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-010 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Phase 2 Milestone 2B3B: real Executive Meetings</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">developer</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">2d17h since created<br><span style="color:var(--text3); font-size:10.5px;">2d4h in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available</span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Requirements</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Development · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">2 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">10 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">4 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:32.645Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Correction to Milestone 2B3B complete: the one objective defect (meeting-run crash/restart reconciliation) is fixed and live-verified; test-isolation guard added. NOT a Founder acceptance of original 2B3B scope -- six items remain open for explicit Founder decision per ops/reviews/founder-conformance-review-milestone2b3b.md.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:22.957Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Correction complete: CTO post-implementation PASS — see ops/reviews/cto-milestone2b3b-post-correction.md. The one objective defect (missing crash/restart reconciliation for meeting-scoped agent_runs) is fixed and live-verified. TASK-010 is engineering-complete again. It is NOT YET fully Founder-accepted: six items from ops/reviews/founder-conformance-review-milestone2b3b.md remain reserved for explicit Founder decision (do not treat DONE as Founder acceptance of original 2B3B scope).</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:17.132Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS for the correction — see ops/reviews/qa-milestone2b3b-correction.md.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.274Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review PASS for the correction — see ops/reviews/code-review-milestone2b3b-correction.md. All 4 Red Team conditions verified directly.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:07.089Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Correction complete: server.py&#x27;s startup reconciliation extended from Ask-Agent-only to also cover meeting-scoped agent_runs (opsdb.reconcile_orphaned_runs() called a second time with MEETING_ACTIVITY_LIKE); new ops/db/testing_guard.py opt-in structural test-isolation guard. Verified live: a real server process kill -9&#x27;d mid-meeting (two real participant subprocesses genuinely in flight) left one orphaned agent_runs row; a fresh restart correctly reconciled it to failed and the meeting page rendered the existing honest failure fallback with no code changes needed there. A second live test confirmed both Ask-Agent and meeting reconciliation patterns fire independently in the same restart.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Deployment &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:01.237Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">REOPENED: Founder-requested conformance review of Milestone 2B3B found TASK-010 not yet Founder-accepted (see ops/reviews/founder-conformance-review-milestone2b3b.md). One objective defect found requiring correction under the full workflow: meeting-scoped agent_runs were never covered by startup crash/restart reconciliation (server.py only reconciled Ask-Agent runs). Six additional deviations from ops/EXECUTIVE_MEETINGS.md / the approved ExecutiveMeeting.dc.html mockup were found and are NOT corrected here — reserved for explicit Founder decision (joint Orchestrator+CEO selection vs CEO-only, mid-meeting perspective request, meeting-scoped follow-up thread, preset vs free-text decision, participant retry, and two items with no repository evidence found). This correction addresses only the objective defect and adds a test-isolation guard (ops/db/testing_guard.py) after a second live-DB test-contamination incident.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:17.405Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone 2B3B (Real Executive Meetings) shipped. Founder review requested.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:10.129Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone 2B3B complete: full gate sequence passed (Design Conformance routed 3 scope questions to CTO, CTO architecture proposal resolved them, Red Team PASS with 7 conditions, Development addressed all 7 and self-caught two real bugs before Code Review, Code Review PASS verifying all 7 conditions directly, QA PASS with 7 scenarios incl. a real unsimulated participant failure and a real 4-way concurrent duplicate submission, Security PASS incl. a live prompt-injection resistance test and XSS/SQLi-shaped payload test, CTO post-implementation PASS confirming no architectural drift). Real, non-mocked multi-agent Executive Meeting verified end to end live (6 real participants + real synthesis). Internal tooling -- release is the git commit, no deployment-record entry. risks.id=2 and risks.id=3 remain open, unchanged, per standing constraint.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:03.480Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS, 7 scenarios recorded — see ops/reviews/qa-milestone2b3b.md. Includes one genuinely real (not simulated) participant-invocation failure and a genuinely real 4-way concurrent duplicate-submission test.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.516Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review PASS, no blocking findings — see ops/reviews/code-review-milestone2b3b.md. All 7 Red Team conditions verified directly by reading the implementation (lenient selection parsing, deterministic cap truncation, topic length cap in two places, every ThreadPoolExecutor worker opens/closes its own opsdb.connect(), no shared mutable state across concurrent run_meeting() calls, honest per-participant failure rendering, synthesis failure never discards persisted positions).</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:45.181Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Development complete: opsdb.py (create_meeting/finalize_meeting_synthesis/decide_meeting, record_decision/_insert_decision split), agent_runtime.py (MEETING_PARTICIPANT_ALLOWLIST, wait_for_slot param on invoke_agent, non-blocking capacity unchanged at 3), meeting_orchestrator.py (new — selection/concurrent gathering/synthesis), server.py (POST /api/meetings, POST /api/meetings/&lt;id&gt;/decide, GET /meetings/&lt;id&gt;.html), generate_meetings.py (rewritten — raise-question form, meeting detail rendering, honest failure/no-synthesis fallbacks). All 7 Red Team conditions addressed. Verified live end to end against a scratch DB: a real 6-participant meeting (ceo + product/cto/qa/security/red-team selected by a real CEO call) ran to completion with real positions and a real synthesis; a real participant failure (ceo, transient runtime_error) was recorded honestly with no fabricated content; 4 real concurrent duplicate-topic submissions produced 4 clean independent meetings; a real decide flow recorded a linked decisions row and correctly rejected a duplicate decide with 409.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Development · Ready &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:34:42.464Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Development · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:34:42.420Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by red-team</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:34:08.714Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Architecture proposal written: ops/reviews/cto-milestone2b3b-architecture.md.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:30:37.919Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design conformance PASS. ops/reviews/design-conformance-milestone2b3b.md</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:30:10.788Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Product requirements already fully specified in ops/EXECUTIVE_MEETINGS.md (Phase 2 design doc) and the approved Phase 0 ExecutiveMeeting.dc.html mockup -- no new requirements/mockup work needed, proceeding straight to Design Conformance.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:30:01.903Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:30:01.862Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #32</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:22.897Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #31</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:17.195Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #54</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.458Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: testing_guard.py correctly refuses to run with no OPSDB_PATH set (resolves to live DB) and correctly passes through when OPSDB_PATH points at a scratch DB</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #53</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.394Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Both Ask-Agent and meeting-participant orphaned-run reconciliation patterns fire independently and correctly in the same server restart</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #52</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:13.334Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Real kill -9 mid-meeting crash test: two real participant subprocesses genuinely in flight, server force-killed, one orphaned meeting-scoped agent_runs row left; restart correctly reconciled it to failed and the meeting page still rendered the existing honest failure fallback</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #30</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T19:04:07.148Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #29</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:10.081Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #28</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:38:03.529Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #51</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.840Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Route-boundary robustness: XSS/SQL-injection-shaped decision text stored inert and rendered HTML-escaped; GET on write-only route 404; oversized body 400; non-numeric ids 404; path-traversal-shaped GET 404</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #50</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.795Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Concurrency bound held under real multi-meeting load: 23 total real agent invocations across the session, zero capacity_exceeded results, zero deadlocks/hangs, MAX_CONCURRENT_INVOCATIONS=3 unchanged</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #49</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.748Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Real concurrent/duplicate meeting submission (4 near-simultaneous POST /api/meetings with identical topic text): 4 fully independent, valid, non-corrupted meetings, correctly scoped messages, zero crashes, zero orphaned agent_runs</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #48</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.701Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Synthesis-failure-does-not-discard-positions: verified via Development&#x27;s monkeypatched fake-runtime test plus Code Review&#x27;s direct control-flow verification that finalize_meeting_synthesis() only ever updates the four synthesis columns and never touches messages</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #47</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.655Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Real (unsimulated) participant invocation failure: a live CEO call failed with a transient runtime_error; agent_runs recorded status=failed, no fabricated message was written, meeting page rendered the honest &#x27;Selected, but no response was recorded&#x27; fallback and &#x27;No synthesis available&#x27;</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #46</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.609Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Full HTTP layer via server.py: token gating (403 on missing/wrong token, no DB write), input validation (400 on empty/oversized topic and decision, 404 on nonexistent meeting), POST /api/meetings and POST /api/meetings/&lt;id&gt;/decide redirect correctly, duplicate decide returns 409 with no state change</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #45</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:58.564Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Real, non-mocked end-to-end meeting: CEO selects 5 real participants (product,cto,qa,security,red-team), all 6 concurrently produce real topic-relevant positions, CEO synthesizes a real 4-section recommendation, all agent_runs end cleanly</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #27</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T12:37:45.228Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="color:var(--text3);">No findings text recorded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #26</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T05:34:08.761Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS with conditions. Verified two of the proposal&#x27;s own claims live rather than trusting them: CEO&#x27;s participant-selection format compliance (2 real runs, both clean, one producing a real 6-participant scenario), and that Handler.timeout=10 does not fire during long synchronous application work (verified with a real 15s-delayed request completing successfully after ~20s).</div><div style="margin-bottom:6px;">&bull; All 5 open questions affirmed with reasoning, not rubber-stamped: cap of 6 (now evidence-backed), wait_for_slot scoped narrowly and shown to be strictly better than a separate meeting-specific pool, meetings.positions left unwritten (consistent with the existing one-conversation-store rule), no exclusivity guard on meeting-participant runs (sound given each invocation is independent/stateless), ~2-minute worst-case synchronous request confirmed safe from the specific failure mode tested.</div><div style="margin-bottom:6px;">&bull; 7 conditions for Development: lenient/normalized parsing of CEO&#x27;s selection output (never trust exact formatting); deterministic truncation at the participant cap; a topic length cap matching the existing message-cap pattern; explicit verification that every ThreadPoolExecutor worker opens/closes its own connection; duplicate meeting submission accepted as a disclosed v1 limitation (no new dedup mechanism required) but QA must confirm it doesn&#x27;t corrupt shared state; per-participant failure honesty (no fabricated position, no silent omission that they were asked); CEO synthesis failure must not discard already-gathered real positions.</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible only via Agent Detail pages until a future company-wide Risks register (Milestone C) ships. This is correct, disclosed behavior, not a gap.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>

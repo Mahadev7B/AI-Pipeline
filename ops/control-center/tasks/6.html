@@ -1,0 +1,580 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-006 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-31 23:24 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-006 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Phase 2 Milestone 2B1: Founder Inbox Approve/Reject/Discuss write path</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">Chief of Staff</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">2d21h since created<br><span style="color:var(--text3); font-size:10.5px;">2d21h in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available</span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Development · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">2 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">12 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">3 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:10:08.149Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:10:08.093Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone 2B1 complete: full gate sequence passed (CTO architecture, Red Team PASS-with-conditions, Development, Code Review PASS, QA PASS 12/12, Security PASS, CTO post-implementation PASS). Internal tooling -- release is the git commit, no deployment-record entry, same precedent as TASK-002/004/005.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:05:36.290Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Correcting an erroneous status move — task-status has no dedicated stage for CTO post-implementation conformance review (same as Milestone 2A&#x27;s TASK-005 precedent); it happens here, status stays SECURITY_REVIEW until CTO&#x27;s review clears the task for READY_TO_RELEASE.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:05:25.338Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">placeholder</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:56:31.762Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by qa</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:51:13.422Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by code-review</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:42:50.214Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Development complete: opsdb.decide_approval() atomic write-once fix, server.py (loopback HTTP boundary, session-token gate, single POST write route), generate_inbox.py, Overview inbox summary link-out, SECURITY.md/DATA_MODEL.md updated. Smoke-tested end to end against a scratch DB: all GET routes, token rejection, malformed input, duplicate-submit, cross-process CLI+server concurrent write, and restart persistence all behaved as specified.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Development · Ready &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:38:22.747Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Development · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:38:22.693Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by red-team</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:33:02.095Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Architecture proposal written: ops/reviews/cto-milestone2b1-architecture.md — loopback-only stdlib HTTP server, single POST write route, atomic pending-check UPDATE moved into opsdb.decide_approval(), per-process in-memory session token, discuss as a checkpoint state not a 4th terminal outcome.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:31:40.614Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:31:40.563Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #16</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:10:02.363Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; CTO post-implementation conformance review: PASS. Confirmed opsdb.decide_approval() is the sole code path in the entire repo that writes approvals.decision -- repo-wide grep for UPDATE approvals/sqlite3.connect( shows exactly three real-connection call sites (dbutil.connect() mode=ro, opsdb.connect() the one writable connection, and the pre-existing unrelated report.py which is read-only) and only two callers of decide_approval() (the CLI and server.py).</div><div style="margin-bottom:6px;">&bull; Confirmed no Phase 1 operating rule bypassed: server.py never touches sqlite3 directly (goes through opsdb.py); zero writes to tasks.status/task_status_history from any 2B1 file (Orchestrator-only rule intact); risks.id=2 and risks.id=3 both still open in the live DB, neither falsely marked resolved.</div><div style="margin-bottom:6px;">&bull; No architecture drift from the approved proposal -- all three items proposal left open for Red Team (token sufficiency, state machine, reusing opsdb&#x27;s writable connect()) were resolved by Red Team&#x27;s review, not improvised during Development. One positive deviation found: server.py opens a fresh connection per request and closes it in finally, rather than the long-lived connection the original proposal assumed -- strictly safer, and docs still accurately describe actual behavior.</div><div style="margin-bottom:6px;">&bull; No duplicated rendering logic, no data-model inconsistency, zero new dependencies, no fake/non-queryable UI state, scope boundary respected (grepped for Ask-Agent/live-conversation/meeting-creation/orchestration/deployment patterns in ops/control-center -- none introduced by this milestone).</div><div style="margin-bottom:6px;">&bull; Two non-blocking findings. (1) opsdb.connect() lacked the same missing-file fail-fast guard dbutil.connect() has -- fixed immediately: connect(require_exists=True) now raises a clean SystemExit before ever silently creating an empty 0-byte DB file; cmd_init uses require_exists=False since creating the file is its whole job. Re-verified: init on a fresh path still works, any other command on a missing path fails cleanly, a normal command against the initialized DB still works, and a live server.py smoke test (GET /inbox.html + a real approve) still succeeds after the change. (2) Code Review&#x27;s specific ask -- exercise the live Approve/Reject/Discuss buttons against a real pending approval in the actual operations.sqlite3, not only a scratch DB -- was not closed out. Deliberately not closing it here: the live DB currently has zero pending approvals, and creating one artificially only to self-decide it would mean an agent (not the Founder) deciding a Founder approval -- exactly the failure mode this milestone&#x27;s whole write-boundary exists to prevent. Recording as an honest, open, non-blocking gap rather than manufacturing usage to look complete: the feature is proven correct against the identical code path in a scratch DB; it awaits the Founder&#x27;s first real use.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #15</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:05:08.859Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS. Founder&#x27;s explicit mission -- attempt to bypass Founder-only authorization -- was executed for real, not just reasoned about: fetched /inbox.html, extracted the live session token from rendered HTML via curl+grep (standing in for &#x27;an agent with Bash tool access&#x27;), forged a POST with it, and it worked exactly as SECURITY.md admits it would (303, DB row flipped) -- confirms the doc neither over- nor under-claims.</div><div style="margin-bottom:6px;">&bull; Method bypass (GET/PUT/HEAD/OPTIONS/DELETE/PATCH on the write route): all rejected, no write path. Path bypass (trailing slash, %2f-encoded id, case variation, ../, non-numeric/negative id): all 404. A double-slash //api/... request was investigated down to the byte level and confirmed to be Python 3.11 stdlib http.server&#x27;s own path-collapsing hardening (gh-87389), not an application bug.</div><div style="margin-bottom:6px;">&bull; Concurrency: 40 simultaneous requests deciding one approval -- exactly one 303, 39 clean 409s, exactly one terminal DB state. The atomic UPDATE...WHERE genuinely serializes.</div><div style="margin-bottom:6px;">&bull; Injection/malformed input (SQLi-shaped decision value, SQLi-shaped /agents/&lt;name&gt;.html segment, oversized body, missing Content-Length): all rejected cleanly, no traceback leaked, no unintended write.</div><div style="margin-bottom:6px;">&bull; Network exposure confirmed via /proc/net/tcp: listening socket is literally 127.0.0.1, not 0.0.0.0 -- a connect to the machine&#x27;s real interface IP was refused.</div><div style="margin-bottom:6px;">&bull; No alternate write path found (grepped for any other approvals.decision writer, any other server.py route, any founder_authorized-style client-trusted field, hardcoded secrets, non-parameterized SQL) -- zero found. Stdlib-only, zero dependencies.</div><div style="margin-bottom:6px;">&bull; Confirmed live-DB read-only: risks.id=2 and risks.id=3 both still status=&#x27;open&#x27;, matching SECURITY.md&#x27;s claims exactly -- neither falsely marked resolved by this milestone.</div><div style="margin-bottom:6px;">&bull; One minor finding, fixed and re-verified during this review cycle: an absurdly large approval-id path segment (e.g. 23 digits) hit an unhandled OverflowError at the sqlite3 binding layer, caught only by the generic except-Exception -&gt; 500 fallback rather than clean up-front validation -- not exploitable (no traceback leaked, no write occurred), but imprecise. Fixed by bounding APPROVAL_PATH_RE to 1-15 digits (comfortably covers any real id, well under SQLite&#x27;s 64-bit INTEGER range) so it&#x27;s now a clean 404 at the routing layer. Re-tested: oversized id -&gt; 404, valid ids still work.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #14</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T02:04:11.128Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS. Verdict is for the code as implemented; the Founder&#x27;s primary mission (&#x27;attempt to bypass Founder-only authorization&#x27;) was executed, not just theorized.</div><div style="margin-bottom:6px;">&bull; 1) Token bypass: secrets.compare_digest used (server.py:181), token is a fresh secrets.token_urlsafe(32) per process, never logged/persisted (verified via server stderr log inspection - no token appears in any log line), never sent via GET/query string (only read from POST form body). Brute force infeasible (256-bit entropy).</div><div style="margin-bottom:6px;">&bull; 2) EXPLOITED AS INSTRUCTED (server.py doc&#x27;s own admitted limitation, confirmed true): using only curl/raw sockets as a stand-in for &#x27;an agent with Bash tool access&#x27; (risks.id=3), extracted the live session token from GET /inbox.html HTML source, then forged POST /api/approvals/1/decide with decision=approve and the extracted token -&gt; got 303, and confirmed via direct DB read the approval row was actually flipped from pending to approve. This exactly matches SECURITY.md/server.py&#x27;s stated claim, no more no less.</div><div style="margin-bottom:6px;">&bull; 3) Method/route bypass: GET/PUT/HEAD/OPTIONS/DELETE/PATCH all rejected (404/501, no write). Path variations (trailing slash, %2f-encoded id, case, ../, non-numeric/negative id) all rejected. A literal double-leading-slash request was NOT an app bug -- confirmed via raw-socket test against a minimal reproduction that Python 3.11 stdlib http.server itself collapses leading &#x27;//&#x27; to &#x27;/&#x27; (gh-87389 hardening) before self.path is exposed to app code; the app-level regex is never actually tested against an unnormalized double-slash string.</div><div style="margin-bottom:6px;">&bull; 4) No alternate write path: grepped ops/control-center and ops/db for INSERT/UPDATE/DELETE outside opsdb.decide_approval&#x27;s single parameterized UPDATE ... WHERE decision IN (...); confirmed no debug/admin/exec/query-write endpoint in server.py; only one POST route exists (APPROVAL_PATH_RE); CLI&#x27;s other write commands (task-status, decision-record, etc.) are not reachable via HTTP.</div><div style="margin-bottom:6px;">&bull; 5) No client-supplied authorization flag: POST body is only ever read for &#x27;decision&#x27; (validated against DECIDABLE_DECISIONS allowlist) and &#x27;token&#x27;; no founder_authorized-style field is read or trusted anywhere.</div><div style="margin-bottom:6px;">&bull; 6) Network exposure: confirmed via /proc/net/tcp that the live scratch server bound 0100007F:20E4 = 127.0.0.1:8420 only; direct connect to the machine&#x27;s real interface IP (192.0.2.2:8420) got Connection refused. (A connect to literal 0.0.0.0:8420 succeeded, but that is a well-known Linux client-side quirk treating 0.0.0.0 as localhost, not evidence of exposure -- verified separately.)</div><div style="margin-bottom:6px;">&bull; 7) Concurrency: fired 40 simultaneous approve/reject POSTs at one pending approval; exactly one 303 (write) and 39 409s (already decided) came back, and the DB shows exactly one terminal decision -- the atomic UPDATE...WHERE is genuinely doing the serialization, not accidental single-threading.</div><div style="margin-bottom:6px;">&bull; 8) Input validation / error handling: malformed decision value, SQL-injection-shaped decision value, SQL-injection-shaped agent-name path segment, oversized body (&gt;64KB), missing Content-Length, and an out-of-int64-range approval id were all tested. All rejected cleanly (400/404/500) with no traceback leaked to the client and no unintended write. Minor non-blocking robustness gap: an approval id outside SQLite&#x27;s 64-bit range raises an unhandled OverflowError caught only by the generic except-&gt;500 path (server.py ~200-210) instead of a clean 400 from up-front int-range validation -- not exploitable (no write occurs, no data disclosed), flagged for QA/dev polish only.</div><div style="margin-bottom:6px;">&bull; 9) SQL injection: every query in opsdb.py and server.py (including the dynamic /agents/&lt;name&gt;.html lookup Red Team flagged) is parameterized with &#x27;?&#x27; placeholders; the only dynamic SQL construction is placeholder-count generation (&#x27;,&#x27;.join(&#x27;?&#x27; for _ in from_states)), never data interpolation.</div><div style="margin-bottom:6px;">&bull; 10) XSS/escaping: layout.py e() uses html.escape correctly; generate_inbox.py escapes all DB-sourced text and the token field; the only unescaped f-string interpolations are fixed literal strings the developer wrote (e.g. action=&#x27;approve&#x27;), not attacker-controlled input.</div><div style="margin-bottom:6px;">&bull; 11) Dependencies: confirmed stdlib-only across server.py, generate_inbox.py, opsdb.py (re, secrets, sys, http.server, pathlib, urllib.parse, sqlite3, argparse, json, os, datetime) -- zero third-party packages, zero new dependency risk.</div><div style="margin-bottom:6px;">&bull; 12) No secrets/credentials committed in any new/touched file (grepped for password/secret/api_key/private key patterns -- only legitimate secrets.token_urlsafe/compare_digest usage found).</div><div style="margin-bottom:6px;">&bull; 13) Live-DB check (read-only): risks.id=2 (&#x27;Founder approval is not identity-authenticated&#x27;) and risks.id=3 (&#x27;Bash permissions cannot be scoped below the tool-category level&#x27;) both still status=open in ops/db/operations.sqlite3 -- matches SECURITY.md&#x27;s and server.py&#x27;s claims exactly; neither is falsely marked resolved anywhere in this milestone&#x27;s docs or code.</div><div style="margin-bottom:6px;">&bull; 14) SECURITY.md and server.py&#x27;s docstring accurately state what is and is not proven by the token: they claim it proves the request came from a page this server process rendered this run, and explicitly admit it does not distinguish a human Founder from any other local process (including a Bash-capable agent). Both the overclaim and underclaim checks pass -- the write-up is calibrated, not just repeated uncritically.</div><div style="margin-bottom:6px;">&bull; All testing done against a scratch OPSDB_PATH database per project convention; live ops/db/operations.sqlite3 was read-only touched (two SELECT queries) and left unmodified by this review.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #20</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:56:04.069Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Bonus: new dynamic-query attack surface (Red Team condition 5) — /agents/&lt;name&gt;.html</div><div style="margin-bottom:6px;">Repro: GET /agents/&lt;sqli-shaped-name&gt;.html and /agents/&lt;name-not-matching-slug-regex&gt;.html both returned clean 404s (blocked by AGENT_NAME_RE before any DB query runs). GET on a valid existing agent name returned 200; a valid-shaped but nonexistent agent name returned 404 via a parameterized SELECT ... WHERE name = ? (LookupError-style row-is-None handling), not a string-built query. Verified afterward that the agents and approvals tables were fully intact (no rows dropped/altered) — confirms no injection succeeded.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #19</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:56:01.325Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 11. Static snapshot fails closed</div><div style="margin-bottom:6px;">Repro: Ran &#x27;python3 ops/control-center/generate_inbox.py&#x27; (OPSDB_INBOX_PATH override, no server) against the scratch DB — no exceptions, wrote inbox.html containing the honest banner (&#x27;Actions on this page require python3 ops/control-center/server.py running...&#x27;). Grepped the file&#x27;s hidden token fields: value=&quot;&quot; (empty), confirmed no live token leaked into the static file. Then, with a live server running (its own freshly-generated, different in-memory token), POSTed decision=approve with token= (the static file&#x27;s empty value) against a still-pending approval on that live server: got 403 Forbidden, and independent-connection DB read confirmed the row was untouched.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #18</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:58.351Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 10. HTML injection in approval fields</div><div style="margin-bottom:6px;">Repro: Created an approval whose request/why/recommendation fields contained literal &lt;script&gt;alert(N)&lt;/script&gt; and a double-quote. Fetched the rendered /inbox.html: grep confirmed all three fields render fully HTML-escaped (&amp;lt;script&amp;gt;...&amp;lt;/script&amp;gt; and &amp;quot;), and grep for a raw unescaped &#x27;&lt;script&gt;alert&#x27; tag found zero matches anywhere in the page. Renders as inert text, never as live markup.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #17</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:56.299Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 9. True concurrency (simultaneous same-row POSTs, plus cross-process CLI-vs-server race)</div><div style="margin-bottom:6px;">Repro: Fired two backgrounded curl POSTs (approve vs reject) at the exact same pending approval simultaneously, then &#x27;wait&#x27;. Exactly one won (303), the other got a clean 409 — no crash, no dual-write, final DB state consistent with the winner. Additionally tested the cross-process race Red Team specifically flagged (condition 1): fired 5 concurrent &#x27;opsdb.py approval-decide --confirm-founder-decision&#x27; CLI processes against one row while simultaneously POSTing to the live server against a different row, at the same instant. One CLI call won cleanly, the other four got clean &#x27;already approve&#x27; errors (no &#x27;database is locked&#x27; crash, no traceback), and the simultaneous server-side POST on the other row succeeded independently (303). Confirms the atomic UPDATE...WHERE plus the explicit timeout=5.0 in opsdb.connect() is doing real work across process boundaries, not just relying on single-threaded HTTPServer as an accident.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #16</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:51.680Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 8. Persistence across a real application restart</div><div style="margin-bottom:6px;">Repro: Made several Approve/Reject/Discuss decisions against one server process (PID tracked), then fully killed that process (kill + verified via ps that the PID was gone), started a brand-new server.py process on a different port against the SAME OPSDB_PATH scratch file. GET /inbox.html on the new process showed every prior decision (decision value AND original decided_at timestamp, unchanged) still present and correctly rendered in the right section (Resolved/Needs follow-up). Proves state lives in SQLite, not server-process memory.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #15</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:49.477Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 7. Unauthorized/non-Founder token attempts</div><div style="margin-bottom:6px;">Repro: POST with no token field, POST with a garbage/wrong token string, POST with an empty-string token, all against a live pending approval. All three returned 403 Forbidden with a clean message. Independent-connection read after each attempt confirmed the approval row was never written (decision stayed &#x27;pending&#x27;, decided_at stayed NULL).</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #14</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:48.080Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 6. Malformed requests (missing decision, SQLi-shaped decision value, non-numeric approval id, oversized body)</div><div style="margin-bottom:6px;">Repro: Missing &#x27;decision&#x27; field -&gt; 400, clean page. decision=&#x27;DELETE FROM approvals&#x27; (SQLi-shaped) -&gt; 400, clean page, rejected by exact-3-value allowlist before touching decide_approval(). Non-numeric id (/api/approvals/abc/decide and /api/approvals/1%20OR%201=1/decide) -&gt; 404 (route regex requires digits, doesn&#x27;t even match). 200KB body against a 64KB cap -&gt; 400. Grepped every response body for &#x27;Traceback&#x27;/&#x27;.py&quot;&#x27;/&#x27;line N, in&#x27; — none found in any case. Confirmed target approval row remained untouched (still pending) across all 5 attack attempts plus a later 6th attempt (empty static-snapshot token, scenario 11) against the same row.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #13</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:44.415Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 5. Decide an already-resolved approval</div><div style="margin-bottom:6px;">Repro: Pre-approved an approval via CLI (opsdb.py approval-decide --confirm-founder-decision) before the server started. POSTed decision=reject against it via the running server. Got 409 Conflict, clean message, and independent-connection read confirmed decision/decided_at were byte-for-byte unchanged from the pre-existing CLI-set values.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #12</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:42.367Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 4. Duplicate submission (double-click simulation)</div><div style="margin-bottom:6px;">Repro: POSTed decision=approve twice in a row for the same pending approval with the same token. First: 303, DB updated. Second (identical request): 409 Conflict with a clean error page (&#x27;approval 4 is already approve — cannot record approve from that state&#x27;), no stack trace. DB row unchanged by the second call (same decision/timestamp as after the first).</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #11</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:40.238Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 3. Discuss keeps item visible + discuss-&gt;approve/reject allowed</div><div style="margin-bottom:6px;">Repro: POST decision=discuss -&gt; 303, DB shows decision=&#x27;discuss&#x27;. Re-fetched /inbox.html: item appeared in &#x27;Needs follow-up&#x27; section (count 1), NOT removed from the page. Then POST decision=approve on the same (now-discuss) row succeeded (303, DB updated to approve). Separately created another approval, discuss then reject -&gt; also succeeded (303, DB updated to reject). Both discuss-&gt;approve and discuss-&gt;reject transitions work as designed.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #10</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:37.751Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 2. Reject a pending approval</div><div style="margin-bottom:6px;">Repro: Same method as Approve scenario, decision=reject. 303 returned; fresh-connection read confirmed decision=&#x27;reject&#x27; and decided_at set.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #9</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:55:36.541Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 1. Approve a pending approval</div><div style="margin-bottom:6px;">Repro: Seeded scratch DB (OPSDB_PATH), started server.py, GET /inbox.html, extracted hidden token, POST decision=approve. Got 303 redirect. Read row via fresh independent sqlite3.connect() (not opsdb.py) — decision=&#x27;approve&#x27;, decided_at set to real timestamp.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #13</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:51:09.726Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS. All 5 of Red Team&#x27;s numbered conditions verified satisfied in code, not just claimed (busy timeout + tested cross-process contention; decide_approval() commits explicitly and durability verified from an independent connection; token-injection pinned to build_html(conn, token=None); server-side decision/approval_id validation before any DB call; parameterized query on the dynamic /agents/&lt;name&gt;.html route). secrets.compare_digest used for the token check (not ==). e() escaping applied consistently, verified live with a seeded &lt;script&gt; payload. server.py never holds a connection open across requests -- stricter than the original proposal.</div><div style="margin-bottom:6px;">&bull; 3 non-blocking findings fixed immediately, re-verified: (1) do_POST&#x27;s exception handling only caught LookupError/ValueError -- added a catch-all Exception handler around both connect() and decide_approval() returning a clean 500 (server-side detail logged to stderr, generic message to client, never a traceback or internal detail leaked to the response body); same catch-all added to do_GET. (2) do_GET&#x27;s three conn-owning branches (agents.html, agent detail, inbox.html) didn&#x27;t explicitly close their read-only connection -- wrapped each in try/finally: conn.close(); confirmed no fd growth over 40 requests via /proc/&lt;pid&gt;/fd before/after (54 -&gt; 54). (3) No socket timeout on the request handler -- added Handler.timeout=10 (StreamRequestHandler applies it to the connection socket), closing the stalled-slow-client hang risk.</div><div style="margin-bottom:6px;">&bull; Post-fix re-verification: all core smoke tests re-run against a scratch DB after the 3 fixes -- token rejection (403), malformed decision (400), nonexistent approval (404), valid approve (303), duplicate approve (409) all still behave correctly; no regression.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #12</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:49:03.549Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS. All 5 Red Team numbered conditions from ops/reviews/red-team-milestone2b1-architecture.md verified satisfied in the actual code, not just claimed: (1) opsdb.py connect() now sets timeout=5.0 (opsdb.py L46-52) -- confirmed empirically with a real cross-process lock-contention test (one process holds BEGIN IMMEDIATE for 2s, a concurrent opsdb.py approval-create call waits and succeeds instead of raising OperationalError). (2) decide_approval() commits explicitly via &#x27;with conn:&#x27; around the UPDATE (opsdb.py L419-440) -- confirmed durability by reading the row from a second independent connection immediately after a live POST returned. (3) token injection is exactly the pinned-down mechanism: build_html(conn, token=None) in generate_inbox.py, server.py passes the real in-memory SESSION_TOKEN, static generation passes None so forms render with an empty token field and fail closed (verified: static inbox.html&#x27;s hidden token field is empty, and POSTing an empty token to a live server returns 403). (4) server.py do_POST validates decision against opsdb.DECIDABLE_DECISIONS and approval_id via the route regex ^/api/approvals/(\d+)/decide$ BEFORE calling decide_approval() -- confirmed via live malformed-POST tests: bad decision=400, non-numeric id=404 (route does not match), missing/wrong token=403, oversized body(&gt;64KB)=400, all with no traceback. (5) GET /agents/&lt;name&gt;.html validates the name segment against AGENT_NAME_RE before use AND the DB lookup is fully parameterized (conn.execute(&#x27;SELECT * FROM agents WHERE name = ?&#x27;, (name,))) -- confirmed no other GET route interpolates URL-derived input into SQL.</div><div style="margin-bottom:6px;">&bull; Empirically confirmed via a true cross-process concurrency test (CLI approval-decide vs a live server.py POST racing the same approval row): exactly one writer won, the loser got a clean error (409 from the server, or a clean SystemExit message from the CLI), row state was never corrupted or double-written. Also confirmed via a 10-request concurrent-hammer test against a single pending approval: exactly one 303 (success), the other nine 409s.</div><div style="margin-bottom:6px;">&bull; secrets.compare_digest() is used for the token comparison (server.py L168), not &#x27;==&#x27; -- correct constant-time comparison.</div><div style="margin-bottom:6px;">&bull; layout.e() (html.escape) is applied consistently to every DB/user-sourced string in generate_inbox.py and server.py&#x27;s _error_page -- confirmed live by seeding an approval with a literal &lt;script&gt;alert(1)&lt;/script&gt; payload and observing it render HTML-escaped in the live /inbox.html response.</div><div style="margin-bottom:6px;">&bull; server.py never holds a DB connection open longer than one request: GET handlers open a fresh dbutil.connect() (read-only, mode=ro) per request and POST opens a fresh opsdb.connect() closed in a finally block -- this is a stricter, better implementation than the architecture doc&#x27;s original assumption of one long-lived connection; confirmed no lingering sqlite fds after 60 sequential GET requests.</div><div style="margin-bottom:6px;">&bull; MODERATE, non-blocking, recommend fixing before wider use: server.py do_POST only catches LookupError/ValueError from decide_approval(); any other exception (e.g. sqlite3.OperationalError) is unhandled and propagates through socketserver, so the client gets a raw dropped connection (&#x27;Empty reply from server&#x27;) instead of a clean 4xx/5xx -- reproduced live by pointing OPSDB_PATH at a nonexistent file: opsdb.connect() (unlike dbutil.connect()) has no file-existence check and silently creates an empty 0-byte sqlite file, then decide_approval()&#x27;s UPDATE raises &#x27;no such table: approvals&#x27; unhandled. The server process itself survives and serves the next request fine (not a full DoS), and no traceback content reaches the response body, but this still falls short of the &#x27;always return a clean error code&#x27; bar for that one request. Recommend a catch-all except Exception around the DB call in do_POST (and ideally do_GET) returning a generic 500 error page.</div><div style="margin-bottom:6px;">&bull; MINOR, non-blocking: GET handlers (do_GET) never explicitly close() the dbutil.connect() connections they open, unlike do_POST which explicitly closes in a finally -- currently harmless under CPython refcounting (confirmed no fd leak after 60 requests) but inconsistent and not guaranteed by the language; recommend an explicit close() for consistency with the POST handler&#x27;s pattern.</div><div style="margin-bottom:6px;">&bull; MINOR, non-blocking: do_POST reads exactly Content-Length bytes with no socket/request timeout; a stalled or slow client that declares a large Content-Length but sends data slowly/never finishes could hang the single-threaded HTTPServer indefinitely, blocking all other local clients. Low severity given the loopback/local-trust threat model this milestone documents, but worth a QA test and a candidate hardening item (e.g. self.timeout on the handler).</div><div style="margin-bottom:6px;">&bull; QA test list: (a) all scenarios above reproduced live in this review and should be added as a repeatable regression check; (b) test DISCUSS then Approve/Reject transition end-to-end through the browser form, not just via curl; (c) test that re-clicking Discuss on an already-discussed row is rejected (409); (d) test the static inbox.html snapshot&#x27;s forms actually fail closed against a live server started afterward (empty token -&gt; 403), matching the documented banner claim; (e) the real operations.sqlite3 currently has zero pending/discuss approvals -- QA needs at least one real pending approval created via opsdb.py approval-create to smoke-test the live feature end-to-end against the real DB, not just a scratch DB.</div><div style="margin-bottom:6px;">&bull; Docs verified accurate: ops/DATA_MODEL.md&#x27;s decision-transition rule and ops/SECURITY.md&#x27;s write-authorization section match the code&#x27;s actual behavior, not aspirational claims. Red Team condition 6 (false &#x27;Red Team has rejected this before&#x27; precedent citation in the CTO doc) is corrected in this branch&#x27;s ops/reviews/cto-milestone2b1-architecture.md diff.</div><div style="margin-bottom:6px;">&bull; Testing note: all verification in this review used a scratch database via OPSDB_PATH per ops/db/README.md&#x27;s convention -- ops/db/operations.sqlite3 was not modified by this review.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #11</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T01:36:51.964Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS with conditions. Core design (loopback-only HTTPServer, single POST boundary at /api/approvals/&lt;id&gt;/decide, atomic UPDATE...WHERE for state transitions, decide_approval() as sole write path shared by CLI+server, honest non-solved-auth documentation) correctly satisfies every hard requirement in the brief and is appropriately minimal -- no overengineering found.</div><div style="margin-bottom:6px;">&bull; Q1 (token sufficiency): loopback bind + in-memory per-run token is the right call for 2B1 as documented -- honest, not overclaimed. Rejected a cookie/startup-code login upgrade as a REQUIRED change for this milestone because it would itself be a session/login mechanism, which the Founder explicitly ruled out of scope here; flag it as a good candidate for the milestone that actually tackles Founder auth, not now.</div><div style="margin-bottom:6px;">&bull; Q2 (concurrency): atomic UPDATE...WHERE is real and correct, but the proposal only reasons about concurrent HTTP requests (moot -- HTTPServer is single-threaded) and does not address the actual cross-process race: server.py&#x27;s long-lived writable connection vs a concurrently-run opsdb.py CLI write (e.g. approval-decide or any task write) hitting the same file with no busy_timeout set anywhere in connect(). CONDITION: QA must test true cross-process concurrent writes (CLI process + running server, not just concurrent curl to the server), and Development must confirm/set an explicit timeout rather than rely on the sqlite3 module default.</div><div style="margin-bottom:6px;">&bull; Beginner-mistake risk: decide_approval(conn, ...) must explicitly commit its own transaction (not rely on a &#x27;with conn:&#x27; pattern sized for the CLI&#x27;s short-lived connection). server.py will hold one long-lived connection across many requests; if decide_approval() only executes the UPDATE without an explicit commit, the browser response looks successful (200/303, rowcount&gt;0 in-memory) while the write is not yet durable, and a separate process (the CLI, or the server restarting/crashing) would not see it. CONDITION: Development must commit inside decide_approval() itself, and QA must verify durability by reading the row from a second, independent connection immediately after the POST returns, not just trust the HTTP response.</div><div style="margin-bottom:6px;">&bull; Unspecified implementation detail Development must not improvise: how the per-run token reaches the &lt;form&gt; hidden field in inbox.html. Proposal claims build_*_html() functions are reused unchanged (&#x27;zero duplicate rendering logic&#x27;) between server.py and the static generator, but the static generate_inbox.py snapshot has no server/token to embed, while the live server page must embed a real one. CONDITION: pin down before implementation whether build_inbox_html() takes an optional token parameter (preferred, still one function) or server.py post-processes the returned string -- do not leave this to be improvised mid-implementation since it is the crux of the write-gate mechanism.</div><div style="margin-bottom:6px;">&bull; Server-side input validation gaps not explicitly stated: the POST handler must independently re-validate the decision field against the exact 3-value allowlist (approve/reject/discuss) before calling decide_approval(), so a malformed field produces a clean 400 rather than an uncaught sqlite3.IntegrityError/500 leaking a traceback; the approval_id path segment must be validated as an integer before use. CONDITION: QA test malformed POSTs (bad decision value, non-numeric id, missing token) and confirm clean error responses, not tracebacks.</div><div style="margin-bottom:6px;">&bull; New attack-surface note (not a blocker, just needs QA coverage): GET routes like /agents/&lt;name&gt;.html now execute a live parameterized query against attacker-influenceable URL input per request, rather than only ever serving pre-generated static files as in 2A. Loopback-only limits who can reach it, but QA should confirm the existing generator functions use parameterized queries (no string-built SQL) for any URL-derived lookup key, since this is the first time that code path is reachable dynamically instead of only at generation time.</div><div style="margin-bottom:6px;">&bull; Minor accuracy issue, not blocking: the claim &#x27;the exact kind of thing this project&#x27;s Red Team has rejected before&#x27; (re: not forcing Founder actions into agent_activity) is not substantiated by any file in ops/reviews -- no prior review contains that finding. The underlying reasoning is sound on its own merits (agent_activity.agent_id is NOT NULL REFERENCES agents(id), so this literally cannot be done without a schema change or a fake agent identity) and I agree with the decision not to write into agent_activity -- just correct or remove the false precedent citation in the final write-up.</div><div style="margin-bottom:6px;">&bull; State machine (Q3 in proposal): pending-&gt;{approve,reject,discuss}, discuss-&gt;{approve,reject}, discuss-&gt;discuss rejected, approve/reject terminal, is correct and matches the Founder&#x27;s brief; enforcement is properly server-side via the atomic UPDATE regardless of what the UI shows/hides, which is the right defense-in-depth (a forged POST re-clicking Discuss or Approve on a resolved/already-discussed row is rejected the same way a UI click would be). No orphan/FK risk: approvals.task_id has FK enforcement (PRAGMA foreign_keys=ON) and task purge already blocks on any approvals row, so a task cannot be deleted out from under a pending approval. Minor gap only: nothing ties a pending approval&#x27;s fate to its parent task&#x27;s status changing underneath it (e.g., task independently marked done/cancelled elsewhere) -- worth a one-line note in DATA_MODEL.md but not a blocker for 2B1.</div><div style="margin-bottom:6px;">&bull; decide_approval() as the sole writer of approvals.decision, reused by both the CLI wrapper and server.py, is the correct way to honor &#x27;opsdb.py is the only writer&#x27; -- not a second writer. No mechanical enforcement exists to stop a future code path from doing a raw UPDATE approvals SET decision=... elsewhere, but that&#x27;s consistent with how this codebase already documents (not lints) analogous rules elsewhere (e.g. orchestrator-only task-status writes) -- acceptable precedent, not a new gap introduced by this proposal.</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible only via Agent Detail pages until a future company-wide Risks register (Milestone C) ships. This is correct, disclosed behavior, not a gap.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>

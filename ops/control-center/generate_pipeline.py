@@ -37,10 +37,10 @@ def render_needs_attention(conn: sqlite3.Connection) -> str:
     for t in rows:
         note = e(t["blockers"]) if t["status"] == "BLOCKED" and t["blockers"] else e(t["status"])
         items.append(f'''
-        <div id="task-{t["id"]}" class="card" style="border-color:oklch(66% 0.17 25 / 0.4); background:var(--red-soft);">
+        <a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block; border-color:oklch(66% 0.17 25 / 0.4); background:var(--red-soft);">
           <div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div>
           <div style="font-size:11px; color:var(--red); margin-top:2px;">{note}</div>
-        </div>''')
+        </a>''')
     return f'''
     <div class="panel" style="margin-bottom:16px; border-color:oklch(66% 0.17 25 / 0.35);">
       <div class="label" style="margin-bottom:10px; color:var(--red);">Needs Attention</div>
@@ -53,7 +53,7 @@ def render_backlog(conn: sqlite3.Connection) -> str:
     if not rows:
         return '<div style="font-size:11.5px; color:var(--text2);">Nothing in backlog.</div>'
     return "".join(
-        f'<div id="task-{t["id"]}" class="card" style="margin-bottom:6px;"><div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div></div>'
+        f'<a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block; margin-bottom:6px;"><div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div></a>'
         for t in rows
     )
 
@@ -73,12 +73,12 @@ def render_stage_column(conn: sqlite3.Connection, stage: str, tasks_by_substate:
                   <div style="flex:1; height:4px; border-radius:2px; background:var(--border2); overflow:hidden;"><div style="width:{pct}%; height:100%; background:var(--accent);"></div></div>
                   <span class="mono" style="font-size:9.5px; color:var(--text2);">{pct}%</span></div>'''
             cards.append(f'''
-            <div id="task-{t["id"]}" class="card">
+            <a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block;">
               <div class="mono" style="font-size:9.5px; color:var(--text3); margin-bottom:4px;">TASK-{t["id"]:03d}</div>
               <div style="font-size:12px; font-weight:600;">{e(t["title"])}</div>
               <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(display_name(t["current_owner"]) if t["current_owner"] else "unassigned")}</div>
               {progress_html}
-            </div>''')
+            </a>''')
         lanes.append(f'''
         <div style="border-radius:10px; border:1px solid var(--border); background:var(--panel); padding:9px; margin-bottom:8px;">
           <div class="label" style="margin-bottom:6px;">{e(substate)}</div>

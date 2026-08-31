@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Automation — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="active-work.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="automation.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Automation</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-31 23:23 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+
+<h1>Automation <span style="font-size:11px; color:var(--text3); font-weight:400;">— Phase 3A Part B</span></h1>
+<div class="sub" style="margin-top:-14px;">
+  Limited automated Code Review: when turned on, a background poller reviews a completed Developer
+  handoff at most once per real Code Review entry. A PASS never advances the task past Code Review
+  automatically; a REJECT is routed back to Development mechanically — never a new Developer invocation.
+  See <span class="mono">ops/reviews/cto-phase3a-architecture.md</span> and
+  <span class="mono">ops/SECURITY.md</span>.
+</div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <div class="label">Kill switch</div>
+        <span class="pill" style="background:var(--gray-soft); color:var(--text2);">AUTOMATION OFF</span>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.5; margin-bottom:10px;">
+        Stopping prevents any <b>new</b> automatic action from starting on the poller's next check
+        (at most ~20 seconds later). It does <b>not</b> forcibly kill an already-in-flight
+        Code Review invocation — bounded at $0.50 and 120 seconds, the same honest limitation Ctrl+C has
+        always had for Ask-Agent. See <span class="mono">ops/SECURITY.md</span>.
+      </div>
+      
+        <form method="POST" action="/api/automation/start" style="display:inline;">
+          <input type="hidden" name="token" value="">
+          <button type="submit" style="padding:9px 20px; border-radius:8px; border:1px solid var(--green);
+            background:var(--green)22; color:var(--green); font-size:13px; font-weight:700; cursor:pointer;">START automation</button>
+        </form>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Last changed by system at 2026-08-31T01:37:33.759Z: Phase 3A shipped disabled by default — Founder must explicitly enable it.</div>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="label" style="margin-bottom:8px;">Today's automation spend</div>
+      <div style="font-size:20px; font-weight:700; margin-bottom:6px;">$0.00 <span style="font-size:12px; font-weight:400; color:var(--text3);">/ $10.00 daily ceiling</span></div>
+      <div style="height:6px; border-radius:3px; background:var(--panel2); overflow:hidden;">
+        <div style="height:100%; width:0%; background:var(--green);"></div>
+      </div>
+    </div>
+<div class="panel" style="margin-bottom:16px;"><div class="label" style="margin-bottom:6px;">Running now</div><div style="font-size:12px; color:var(--text2);">Nothing running right now.</div></div>
+<div class="panel"><div class="label" style="margin-bottom:6px;">Recent</div><div style="font-size:12px; color:var(--text2);">No automated events recorded yet.</div></div>
+</div>
+</body>
+</html>

@@ -180,6 +180,8 @@ import generate_inbox  # noqa: E402
 import generate_reviews  # noqa: E402
 import generate_releases  # noqa: E402
 import generate_automation  # noqa: E402 — Phase 3A Part B (TASK-015)
+import generate_active_work  # noqa: E402 — Milestone A (TASK-019)
+import generate_task  # noqa: E402 — Milestone A (TASK-019)
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -214,6 +216,11 @@ AUTOMATION_START_PATH = "/api/automation/start"
 # "reuse of an existing mechanism via a new route," not a new
 # authorization boundary).
 TASK_REVIEW_PATH_RE = re.compile(r"^/api/tasks/(\d{1,15})/review/(code|security|red-team)$")
+# Milestone A (TASK-019): /tasks/<id>.html — same 15-digit bound as
+# APPROVAL_PATH_RE/MEETING_DECIDE_PATH_RE (ops/reviews/cto-milestone-a-
+# architecture.md §4.1). Read-only GET route, not a write path — no
+# relation to TASK_REVIEW_PATH_RE above.
+TASK_DETAIL_ID_RE = re.compile(r"^\d{1,15}$")
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -415,6 +422,24 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ("/", "/overview.html"):
                 self._send_html(200, generate_overview.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path == "/active-work.html":
+                self._send_html(200, generate_active_work.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path.startswith("/tasks/") and path.endswith(".html"):
+                id_part = path[len("/tasks/"):-len(".html")]
+                if not TASK_DETAIL_ID_RE.match(id_part):
+                    self._send_html(404, _error_page(404, "Not found", "No such task."))
+                    return
+                conn = dbutil.connect()
+                try:
+                    task_row = conn.execute("SELECT * FROM tasks WHERE id = ?", (int(id_part),)).fetchone()
+                    if task_row is None:
+                        self._send_html(404, _error_page(404, "Not found", f"No task #{id_part}."))
+                        return
+                    self._send_html(200, generate_task.build_task_detail(conn, task_row, token=SESSION_TOKEN).encode("utf-8"))
+                finally:
+                    conn.close()
                 return
             if path == "/pipeline.html":
                 self._send_html(200, generate_pipeline.build_html(token=SESSION_TOKEN).encode("utf-8"))

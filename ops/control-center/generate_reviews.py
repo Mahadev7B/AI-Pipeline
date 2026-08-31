@@ -87,7 +87,7 @@ def render_run_review_now(conn: sqlite3.Connection, token: str | None) -> str:
             )
             cards.append(f'''
             <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-              <a href="pipeline.html#task-{t["id"]}" style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</a>
+              <a href="tasks/{t["id"]}.html" style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</a>
               <form method="POST" action="/api/tasks/{t["id"]}/review/{kind}" style="display:flex; align-items:center; gap:0;">
                 <input type="hidden" name="token" value="{tok}">
                 {extra_field}
@@ -192,7 +192,7 @@ def render_reviews(conn: sqlite3.Connection) -> str:
         rows = _task_rows(conn, g["id"])
         rows_html = "".join(_render_row(r) for r in rows)
         header = f'''
-        <a href="pipeline.html#task-{g["id"]}" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/{g["id"]}.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-{g["id"]:03d} — {e(g["title"])}</div>
           <div style="font-size:10.5px; color:var(--text3);">{e(g["status"])}</div>
         </a>'''

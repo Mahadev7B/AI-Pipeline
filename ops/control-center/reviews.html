@@ -24,6 +24,8 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans)
 .panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
 .card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
 a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
 h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 .sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
 </style>
@@ -36,7 +38,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
           <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
         </div>
-        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a></div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="active-work.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a></div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
@@ -50,16 +52,289 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 23:06 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-08-31 23:23 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Reviews <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  Full historical record — 41 code/security review result(s) and 57 QA result(s), grouped by
+  Full historical record — 52 code/security review result(s) and 67 QA result(s), grouped by
   task, most-recently-active task first — including resolved failures on now-DONE tasks. For what needs attention
   right now, see the Founder Inbox or <code class="mono">CURRENT_STATUS.md</code>.
 </div>
+
 <div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-14" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/19.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-019 — Milestone A: Active Work dashboard + Task Detail page</div>
+          <div style="font-size:10.5px; color:var(--text3);">IN_DEVELOPMENT</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T23:13:26.090Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;gates_remaining() breaks on backward status transitions through GATE_STATUS_ORDER (Design&#x27;s TASK-019 finding, confirmed) - reproduced on TASK-019 (ARCHITECTURE/MOCKUP_REVIEW overlap) and independently on TASK-6&#x27;s real row-61 history (QA/SECURITY_REVIEW overlap), confirming this is general to any reject/rework loop, not a one-off&quot;, &quot;Fix specified: gates_remaining(effective_status, completed) must exclude anything already in gates_completed() (high-water-mark model) - one-parameter signature change, zero new queries, no schema change&quot;, &quot;gates_completed() itself (evidenced-forward-exit logic) is correct as designed; only gates_remaining() needed the fix&quot;, &quot;Design&#x27;s layout recommendations (items 1/2/3/7/8/10) confirmed sound, no Red Team changes needed&quot;, &quot;Non-blocking follow-ups recorded: MOCKUP_REVIEW-as-Design-review-proxy semantic oddity, and review_results/qa_results should be queried once not 3x in generate_task.py&quot;, &quot;Scope discipline confirmed - no creep beyond DEC-009 Milestone A (read-only GET pages, no writes, no TASK-017/risks.id=3 touch, no Milestone B/C/D)&quot;, &quot;Full findings: ops/reviews/red-team-milestone-a-review.md&quot;]</div>
+      
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="tasks/17.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist</div>
+          <div style="font-size:10.5px; color:var(--text3);">BLOCKED</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T21:41:59.430Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;sys.exit() reordering fix verified correct via direct trace&quot;, &quot;nested except fallback correctly scoped, does not reintroduce bug&quot;, &quot;Zod-schema/SIGKILL follow-ups substantive not superficial&quot;, &quot;non-blocking: success-path _log_denial unguarded, symmetry recommended&quot;, &quot;non-blocking: _evaluate() sketch as literally transcribed would deny 100% of Bash calls (fails closed, self-revealing via required canary test)&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:26:18.269Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;\u00a72.2a pseudocode bug: final sys.exit() sits inside the try guarded by except BaseException, so SystemExit from the normal success path is caught too - the script as sketched denies 100% of tool calls, not just crash cases&quot;, &quot;except-BaseException catch itself is correct and closes the original fail-open finding&quot;, &quot;per-step guard nesting resolves the outer/inner boundary concern&quot;, &quot;stdout-JSON rationale should cite Zod schema validation failure, not stray text, as the exit-code-independent fail-open mechanism (non-blocking, already covered by required empirical test)&quot;, &quot;timeout/cancelled disclosure confirmed accurate; recommend also naming OS-level signal termination in the same disclosed-residual paragraph (non-blocking)&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:12:55.107Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;REJECT (architecture-stage review, recorded as reject/returned-to-cto per this project&#x27;s established precedent). Full report: ops/reviews/red-team-risk3-milestone-review.md.&quot;, &quot;Both of Security&#x27;s required corrections (S1.1 CTO-self-edit disclosure in Sections 2.5/4; S1.2 the Section 2.3 overclaim + Section 2.2 substring-list addition) independently verified as genuinely fixed, not softened or buried -- checked against the actual corrected document text, not accepted on CTO&#x27;s word.&quot;, &quot;NEW FINDING, missed by both CTO and Security: independently read the installed Claude Code CLI source&#x27;s own PreToolUse hook contract directly. Confirmed: exit code 2 blocks the tool call; ALL other exit codes (including Python&#x27;s default exit 1 on an uncaught exception) result in &#x27;continue with tool call&#x27; -- fail OPEN, not fail closed. developer_pretooluse.py&#x27;s own described logic (shlex-based tokenization, which raises ValueError on unbalanced quotes; JSON/path parsing that can raise on unexpected input) is not specified anywhere in the design to be wrapped in a catch-all that defaults to deny. As written, a Developer session hitting a routine quoting edge case in an ordinary Bash command -- no adversarial intent required -- would silently bypass the hook entirely, undenied and unlogged. Confirmed no hook script exists anywhere in this codebase today as a reference pattern (ls/find both empty).&quot;, &quot;REQUIRED before Development builds: add an explicit fail-closed exception-handling and exit-code/output-contract specification to Section 2.2/2.4 -- developer_pretooluse.py must wrap all parsing/tokenization/resolution logic in a broad try/except whose failure path is treated as a denial, and must use an explicit, confirmed-correct signaling mechanism (exit code 2, or hookSpecificOutput.permissionDecision:deny) for every deny path including the exception fallback. This is a one-paragraph specification addition, not a redesign -- same cost/severity class as Security&#x27;s own two required fixes. Development should empirically verify it (malformed tool_input, unbalanced-quote Bash command -&gt; confirmed denied, not allowed) alongside the matcher-YAML test Section 2.1 already requires.&quot;, &quot;Independently re-verified and confirmed correct, no changes needed: sessionHooks per-invocation scoping (read cli.js&#x27;s zR7/NH6 registration+lookup functions and the aR() fresh-agentId generation directly, a third independent read after CTO&#x27;s and Security&#x27;s own); the reviewer_invocations/hook_denials tables are justified and not overengineered (checked automation_events&#x27; UNIQUE constraint and start_ask_agent_run&#x27;s race-prevention directly against schema.sql/opsdb.py); scope discipline against Appendix E is clean; the Section 2.2 substring-list fix closes exactly the one case Security named and no more (constructed two further no-encoding-needed bypasses -- a glob pattern and plain string concatenation -- confirming, not contradicting, the document&#x27;s own honest &#x27;remains open, undiminished&#x27; framing, so this is not itself a required fix).&quot;, &quot;Non-blocking notes for Development, not required before this gate: the handoffs-lookup query for Code Review/Security does not check current task stage before running -- likely caught by opsdb.record_task_status()&#x27;s existing transition-validity guard, but the design doc doesn&#x27;t say so; the start_ask_agent_run single-running-invocation-per-role guard means a human triggering two different tasks&#x27; reviews of the same kind concurrently will hit a raw error rather than a friendly message. Both confirmed non-blocking, same category as Security&#x27;s own non-UTF8-artifact and CSRF-confirming-sentence notes.&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:03:15.953Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;CONCERNS (recorded as reject/returned-to-cto, matching this project&#x27;s own architecture-stage-review precedent). Full report: ops/reviews/security-risk3-milestone-threat-model.md.&quot;, &quot;Independently re-verified (not accepted on CTO&#x27;s word) via direct reading of agent_runtime.py and the installed CLI source (cli.js v2.1.42): the zero-tool structural carve-out claim holds, and the per-subagent hooks: frontmatter scoping claim holds (sessionHooks keyed by a fresh per-invocation agent id, registered before the tool-execution loop begins).&quot;, &quot;REQUIRED before Development builds: CTO&#x27;s own .claude/agents/cto.md carries native Write/Edit and is untouched by any hook in this design -- this is the same self-widening capability Red Team&#x27;s S8 named for Developer AND CTO, but Section 2.5&#x27;s disclosure names only DevOps. The risks.id=3 disclosure text must name CTO&#x27;s own Write/Edit capability explicitly, not just DevOps&#x27;s Bash capability.&quot;, &quot;REQUIRED before Development builds: Section 2.3&#x27;s &#x27;closes the loop...completely&#x27; framing overclaims relative to Section 2.2&#x27;s own disclosed Bash-string bypass, specifically for the four self-protection paths, which are covered only by a narrow command-anchored check (cat &gt;, sed -i, cp, mv, rm), not the plain substring list -- a plain &#x27;python3 -c open(path,\&quot;w\&quot;).write(...)&#x27; command bypasses it with no encoding needed. Add the four self-protection paths to the plain-substring check and reword Section 2.3 to distinguish registration-timing closure (proven) from detection-completeness (not proven).&quot;, &quot;Confirmed correct and should ship as designed: CSRF/session-gate reuse (verified directly in server.py&#x27;s do_POST() chain); the new reviewer_invocations table&#x27;s reasoning vs. automation_events (verified against schema.sql, and confirmed start_ask_agent_run()&#x27;s reuse prevents a double-submission race, does not reintroduce one); Part 3&#x27;s sqlite3/opsdb.py bypass disclosure (verified accurate against schema.sql directly, not overstated).&quot;, &quot;Scope discipline: no QA/CTO/DevOps tool scoping proposed; no deployment-gating change. One non-blocking interpretive question worth an explicit confirming sentence: whether adding 3 new Founder-facing HTTP routes (reusing the existing CSRF/session mechanism) is within the authorization&#x27;s &#x27;no change to Founder-facing routes&#x27; exclusion -- CTO&#x27;s reading (mechanism reuse, not a change to it) is persuasive and matches Phase 3A precedent, not required to block on.&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="tasks/16.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-016 — Risk id=3 architecture investigation: can agent access be scoped below the Bash tool-category level</div>
+          <div style="font-size:10.5px; color:var(--text3);">FOUNDER_APPROVAL</div>
+        </a>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T17:52:58.235Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;See ops/reviews/security-risk3-threat-model.md for full findings (S1-S7 required conditions). Verdict CONCERNS: agree with CTOs two-tier direction and REDUCE-with-specifics disposition for risks.id=3, but the specifics are not complete as written.&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div></div><div class="panel" style="margin-bottom:14px;">
+        <a href="tasks/15.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-015 — Phase 3A: Chief of Staff Founder Interface + Limited Automated Orchestration</div>
+          <div style="font-size:10.5px; color:var(--text3);">DONE</div>
+        </a>
+            <details>
+              <summary style="cursor:pointer; font-size:11px; color:var(--text2); margin-bottom:8px;">show all 15</summary>
+              
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T13:09:13.134Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Post-implementation adversarial review PASS. Full report: ops/reviews/security-adversarial-phase3a.md.&quot;, &quot;Tested in isolated scratch clone (never the real repo&#x27;s live DB/credential file).&quot;, &quot;Path traversal/symlink/null-byte payloads all rejected; content read via git object DB (immune to filesystem TOCTOU).&quot;, &quot;SHA/argv injection payloads all rejected (regex + fixed argv + -- separator, empirically verified git show -- silent-failure behavior).&quot;, &quot;VERDICT: parsing battery (homoglyphs, trailing text, multi-line, indentation) all fail-closed or select the objectively correct verdict.&quot;, &quot;Idempotency verified under 20 real concurrent threads: exactly 1 success, 19 clean None, DB row count 1.&quot;, &quot;Kill-switch has exactly one write call site (grepped exhaustively) and 403/401 confirmed live via curl with no CSRF/no session.&quot;, &quot;Per-task automated-invocation cap verified live (4th attempt correctly capped).&quot;, &quot;Unauthorized-triggering blast radius reproduced end-to-end via opsdb.py CLI + direct DB write: cost 0.0838 USD, model explicitly detected and refused a live prompt-injection payload embedded in handoff.work_completed and correctly REJECTed.&quot;, &quot;Chief of Staff live-tested with combined tool-access-claim + literal-stop-command + fake CONSULT injection: refused all three, explicitly flagged the injection attempt, zero meetings created.&quot;, &quot;Zero-tool guarantee reconfirmed: _run_claude() has zero diff lines in this milestone; only invoke_agent()&#x27;s allowlist membership check changed.&quot;, &quot;One non-blocking informational finding: empty/whitespace files_changed entries pass path validation but git show &lt;sha&gt;: only returns a repo-root tree listing, no security boundary crossed. Not required before ship.&quot;, &quot;No REJECT-worthy finding across all 15 attack categories.&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.636Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 12: regression sweep on pre-existing Control Center pages plus the new Automation nav link and orchestrator.html chat form</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.586Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 11: REJECT path, constructed to actually draw a REJECT verdict</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.534Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 10 / Red Team NB4: regression check on the existing Founder-initiated POST /api/meetings flow after the meeting_orchestrator.py refactor</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.481Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 9 / Red Team NB2: real CONSULT:-triggering question end-to-end</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.430Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 8 / Red Team NB2: general conversational questions against real state, and stale-information recognition</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:52:27.381Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 7 (KEY): Chief of Staff explains a real, freshly-produced automated Code Review result in plain language, via real POST /api/chief-of-staff/ask, real model invocations, against real state</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:51:58.219Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 5: emergency STOP/START via real HTTP, and item 6: /automation.html auditability</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:51:58.153Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 4: loop/spend limits (per-task lifetime cap, daily invocation-count cap, daily spend cap)</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:51:58.102Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 3: restart/crash recovery</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:51:58.047Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by qa</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Scenario: Acceptance item 1-2: exactly one automatic Code Review run per trigger, no Founder click; duplicate/racing claim attempts never create a second real invocation</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T12:29:58.454Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;[\&quot;PASS \u2014 RT3/RT2/C1/C4 all independently verified correct, including by direct execution (RT3 claim-first ordering, RT2 VERDICT parsing, C1 git show -- vs no -- behavior). See ops/reviews/code-review-phase3a-partb.md for full findings. Two non-blocking documentation nits noted (spend_ceiling_usd docstring/return mismatch in derived_state.py; SECURITY.md says risks.id=3 mitigation-append went to description field, actually mitigation field).\&quot;]&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T01:20:57.638Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by code-review</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Zero-tool guarantee holds: _run_claude() untouched, CHIEF_OF_STAFF_ALLOWLIST only widens agent_name acceptance, never flags&quot;, &quot;orchestrator stays out of ASK_AGENT_ALLOWLIST, /api/agents/orchestrator/ask still 404s, exactly one route&quot;, &quot;CSRF+session gating in existing do_POST() order&quot;, &quot;CONSULT: candidate tuple exactly matches Security&#x27;s C3 fix (MEETING_PARTICIPANT_ALLOWLIST minus ceo)&quot;, &quot;CONSULT: parsed by deterministic Python only, never trusted as instruction&quot;, &quot;meeting_orchestrator.py _gather_and_synthesize() extraction is genuinely mechanical/behavior-preserving, Red Team NB4 satisfied&quot;, &quot;run_consult_meeting() correctly skips CEO selection&quot;, &quot;state digest bounded at MAX_STATE_DIGEST_CHARS=6000, each derived_state helper respects its own limit=, automation_status_digest() correctly not implemented&quot;, &quot;never-fabricate/never-execute instructions present in persona docs, structurally backed by zero tools&quot;, &quot;orphan reconciliation extended with CHIEF_OF_STAFF_ACTIVITY_LIKE&quot;, &quot;XSS escaping via existing e() helper unchanged&quot;, &quot;opsdb.py/schema.sql untouched&quot;, &quot;report.py --check fails STALE but bisected to pre-existing gap from e81519d predating this diff, not introduced by this commit&quot;, &quot;Full findings in ops/reviews/code-review-phase3a-parta.md&quot;]</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review (code)</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T00:53:06.518Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by red-team</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;RT1: false &#x27;verified facts&#x27; claim + missing opsdb.py plain function (record_task_status-equivalent) the \u00a7B.8 REJECT path depends on but the file-list never schedules&quot;, &quot;RT2: VERDICT: PASS|REJECT line parsing, reusing _parse_synthesis()&#x27;s overwrite-on-repeat semantics, can silently select the wrong verdict (false PASS) if the model&#x27;s own reasoning mentions the other value earlier in its reply; no specified fail-closed behavior for zero/ambiguous matches&quot;, &quot;RT3: automation_events claim-vs-eligibility-check ordering stated only in a 4-word pseudocode comment, not in prose; built the wrong way this creates infinite non-adversarial reprocessing of any candidate lacking a valid handoff/SHA/path&quot;, &quot;Non-blocking: dead &#x27;capped&#x27; outcome enum value, thin Part A acceptance-test coverage vs Part B, recommend splitting Development into two passes given size, meeting_orchestrator.py refactor verified low-risk&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T00:41:13.433Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">by security</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;REJECT/CONDITIONS at architecture stage (matches Milestone 2B4 threat-model precedent) - see ops/reviews/security-phase3a-threat-model.md&quot;, &quot;C1: base_commit_sha/head_commit_sha are unvalidated free text passed as git subprocess args - require format+existence validation and a -- separator before every git diff/show invocation&quot;, &quot;C2: poll cycle needs per-candidate try/except so one malformed candidate (e.g. null-byte path) cannot abort processing of every other legitimate candidate in the same cycle&quot;, &quot;C3: SS A.3&#x27;s CONSULT: candidate-list definition is self-contradictory (ceo excluded then re-included) - must be stated unambiguously before Development builds the parser&quot;, &quot;C4: reject-requires-returned_to invariant must move into record_review_result() itself, not remain only in the CLI wrapper, since automation.py calls it in-process&quot;, &quot;Central SS B.1 zero-tool decision independently re-verified correct by reading agent_runtime.py directly - tool/MCP flags are unconditional, no special-casing possible&quot;, &quot;Non-blocking R1-R6: git show vs live filesystem read for content retrieval; spend/count caps are read-then-decide not DB-enforced (single-poller-process assumption, must be disclosed); chat-triggered consult cost has no rate limit (amplifies already-accepted risk); name the cross-file-duplication defect class SS B.1.1 misses; truncate automation.py error logs; visually flag SS B.10 scenario 6&quot;, &quot;Draft ops/SECURITY.md Phase 3A section included in the review doc, naming risks.id=3&#x27;s two new consequence mechanisms with more precision than the CTO doc&#x27;s generic framing&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
+    </div>
+            </details></div><div class="panel" style="margin-bottom:14px;">
+        <a href="tasks/14.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History &amp; Release Readiness Visibility</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -99,7 +374,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Verified independently against cto-milestone2b5-architecture.md file-by-file list and the 3 Red Team conditions: scope conformance confirmed via git show --stat (only spec&#x27;d files touched; other changed paths are regenerated build artifacts); TASK-007&#x27;s real 21-row group confirmed live and shown collapsed in shipped reviews.html; neutral gap copy confirmed verbatim in releases.html; scope label on reviews.html confirmed substantive; generate_pipeline.py diff confirmed id= attributes only; server.py diff confirmed zero new auth code; display_name() confirmed applied to all agent-name fields in both generators; no .founder_credential file found in repo; all free-text fields (findings/scenario/defect_summary/release_notes/rollback_plan/etc) confirmed routed through e(); generator structure consistent with generate_decisions.py; report.py --check passes at HEAD. See ops/reviews/code-review-milestone2b5.md.&quot;]</div>
       
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-13" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/13.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -163,7 +438,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;C1: concurrent-login race defeats the stated 5-attempt lockout and opens a scrypt-based memory-exhaustion DoS -- lock must cover the full check-verify-increment critical section, not just dict get/set&quot;, &quot;C2: /api/login&#x27;s CSRF SESSION_TOKEN requirement is unstated in the design -- must be required explicitly, same as every other write route&quot;, &quot;C3: malformed-payload handling on /api/login (missing field, oversized/non-UTF8 body) is unstated -- must extend the existing MAX_BODY_BYTES/decode/default-empty pattern explicitly&quot;]</div>
       <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to cto</div>
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-12" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/12.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-012 — Chief of Staff rename</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -215,7 +490,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;agent_status_rows() ORDER BY a.name sorts before display_name() applied \u2014 Chief of Staff renders out of alphabetical order on agents.html roster and CURRENT_STATUS.md (confirmed live)&quot;, &quot;report.py Founder-decisions-required line renders requested_by_agent raw, not wrapped in display_name() (non-blocking, recommend fixing same pass)&quot;, &quot;generate_meetings.py render_position_card() requested_by_display else-branch not wrapped in display_name(), unlike adjacent agent_name label (non-blocking, dead code today)&quot;]</div>
       <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">Returned to developer</div>
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-10" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/10.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-010 — Phase 2 Milestone 2B3B: real Executive Meetings</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -427,7 +702,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       
     </div>
             </details></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-9" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/9.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-009 — Phase 2 Milestone 2B3A: controlled concurrent Agent Runtime foundation</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -579,7 +854,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       
     </div>
             </details></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-7" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/7.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-007 — Phase 2 Milestone 2B2: real Ask-Agent + persistent conversations</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -839,7 +1114,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       
     </div>
             </details></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-6" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/6.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-006 — Phase 2 Milestone 2B1: Founder Inbox Approve/Reject/Discuss write path</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -1063,7 +1338,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       
     </div>
             </details></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-5" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/5.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-005 — Phase 2 Milestone 2A: Pipeline, Agents, Decisions, Meetings screens</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -1151,7 +1426,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Fixed: generate_decisions.py line 39 interpolated founder_approval_id without the e() escape helper \u2014 structurally safe integer FK but fixed for universal-escaping consistency (no judgment-call exceptions, per Milestone 1 Red Team rule).&quot;, &quot;Fixed: generate_agents.py imported DB_PATH from dbutil but never used it \u2014 removed from import.&quot;, &quot;Verified: all 7 new/changed files (layout.py, dbutil.py, generate_pipeline.py, generate_agents.py, generate_decisions.py, generate_meetings.py, refactored generate_overview.py) plus derived_state.py additions compile cleanly (py_compile).&quot;, &quot;Verified: no other DB-value interpolation skips e() across the 4 new generator files (grep-based scan).&quot;, &quot;Verified: read-only connect() from dbutil.py (mode=ro, URI-quoted path) is reused by every new generator \u2014 no per-file duplication of DB access or URI-escaping logic.&quot;, &quot;Verified: Pipeline stage-mapping (STAGE_MAP/stage_and_substate) lives once in derived_state.py, not duplicated in generate_pipeline.py.&quot;, &quot;Verified: Agents roster/detail grouping uses real agent_runs state (STATE_ORDER), not an invented functional-group taxonomy, matching CTO&#x27;s architecture decision.&quot;, &quot;No dependency additions; stdlib only.&quot;]</div>
       
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-4" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/4.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-004 — Phase 2 Milestone 1: DB-backed Overview generator</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -1191,7 +1466,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;Read-only URI connection built the file: URI by direct string interpolation - a path containing &#x27;#&#x27; or &#x27;?&#x27; would silently open the wrong (or a schema-less) database instead of erroring. Confirmed with a real reproduction, fixed with urllib.parse.quote() before use.&quot;, &quot;Universal HTML-escaping confirmed by inspection: every DB-sourced field interpolation goes through the e() helper, no exceptions found via grep.&quot;, &quot;No button/onclick/cursor-pointer/anchor element anywhere in the output - Red Team&#x27;s &#x27;nothing styled as clickable unless it is&#x27; condition holds structurally, not just by convention.&quot;, &quot;derived_state.py extraction verified behavior-preserving via a byte-diff regression test against a fixed scratch fixture (only the generated timestamp line differed).&quot;]</div>
       
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-2" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/2.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-002 — Phase 1: Data Model &amp; Operational CLI</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>
@@ -1231,7 +1506,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div style="font-size:11px; color:var(--text2); margin-top:4px;">Findings: [&quot;task-step-status originally built its UPDATE statement with an f-string for the completed_at clause instead of a bind parameter - not exploitable (the fragment was a hardcoded constant, not user input) but fixed to a fully parameterized CASE expression for clarity&quot;, &quot;qa-result/review-result/handoff/approval-create/deployment-record relied on a raw sqlite3.IntegrityError traceback for a bad --task-id instead of a clean message - added a top-level handler in main() so every command now fails cleanly&quot;, &quot;report.py&#x27;s Founder-decisions section read only the approvals table and would miss a task literally sitting at FOUNDER_APPROVAL status - fixed to include both&quot;]</div>
       
     </div></div><div class="panel" style="margin-bottom:14px;">
-        <a href="pipeline.html#task-1" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+        <a href="tasks/1.html" style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
           <div style="font-size:13px; font-weight:600; color:var(--text);">TASK-001 — Verify Agent Pipeline</div>
           <div style="font-size:10.5px; color:var(--text3);">DONE</div>
         </a>

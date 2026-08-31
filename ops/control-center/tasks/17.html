@@ -1,0 +1,360 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-017 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-31 23:24 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-017 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="border-radius:10px; border:1px solid oklch(66% 0.17 25 / 0.4); background:var(--red-soft); padding:12px 14px; margin-bottom:16px;">
+  <div style="font-size:11px; font-weight:700; color:var(--red); letter-spacing:0.03em; text-transform:uppercase; margin-bottom:4px;">Blocked · paused, not stuck</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">Founder directive 2026-08-31 (&#x27;PAUSE SECURITY HARDENING, FINISH PRODUCT ARCHITECTURE FIRST&#x27;), DECISIONS.md DEC-008: paused mid-Development by explicit Founder prioritization decision, not a technical blocker and not acceptance that risks.id=3 is solved. Development&#x27;s implementation pass (already in flight when the directive arrived and could not be interrupted) is preserved as-committed but has NOT been through Code Review, QA, Security-adversarial review, or CTO conformance -- it must not be treated as validated, safe, or shipped. No further TASK-017 gates proceed until the Founder-defined resume checkpoint (before broader unattended automation, external users, production credentials, production deployment automation, or multi-user access).</div>
+</div>
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">Chief of Staff</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">3h47m since created<br><span style="color:var(--text3); font-size:10.5px;">1h24m since paused</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; color:var(--red); font-weight:600;">3 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available</span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass &middot; 3 reject/fail (Security review reject, Red Team review reject, Red Team review reject) <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--accent-soft); color:var(--accent);">CURRENT</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">Waiting &mdash; task is currently BLOCKED, has not exited this gate.</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Code Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">QA</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Security</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Release · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; not reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; BLOCKED</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T22:00:47.143Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Founder directive 2026-08-31 (&#x27;PAUSE SECURITY HARDENING, FINISH PRODUCT ARCHITECTURE FIRST&#x27;), DECISIONS.md DEC-008: paused mid-Development by explicit Founder prioritization decision, not a technical blocker and not acceptance that risks.id=3 is solved. Development&#x27;s implementation pass (already in flight when the directive arrived and could not be interrupted) is preserved as-committed but has NOT been through Code Review, QA, Security-adversarial review, or CTO conformance -- it must not be treated as validated, safe, or shipped. No further TASK-017 gates proceed until the Founder-defined resume checkpoint (before broader unattended automation, external users, production credentials, production deployment automation, or multi-user access).</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T21:42:30.850Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Architecture PASSED after Security CONCERNS (fixed) and two Red Team REJECT rounds (both fixed and re-verified: fail-closed hook contract, control-flow bug). ops/reviews/cto-risk3-milestone-architecture.md is the approved design. Development begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T19:53:05.532Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO architecture scoping done (ops/reviews/cto-risk3-milestone-architecture.md). Security threat model next.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T19:38:19.139Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Founder authorized the narrow scope in ops/reviews/chief-of-staff-risk3-synthesis.md Appendix E. CTO to scope architecture for the three-part slice only.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T19:38:04.633Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #51</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T21:41:59.430Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; sys.exit() reordering fix verified correct via direct trace</div><div style="margin-bottom:6px;">&bull; nested except fallback correctly scoped, does not reintroduce bug</div><div style="margin-bottom:6px;">&bull; Zod-schema/SIGKILL follow-ups substantive not superficial</div><div style="margin-bottom:6px;">&bull; non-blocking: success-path _log_denial unguarded, symmetry recommended</div><div style="margin-bottom:6px;">&bull; non-blocking: _evaluate() sketch as literally transcribed would deny 100% of Bash calls (fails closed, self-revealing via required canary test)</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #50</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:26:18.269Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; §2.2a pseudocode bug: final sys.exit() sits inside the try guarded by except BaseException, so SystemExit from the normal success path is caught too - the script as sketched denies 100% of tool calls, not just crash cases</div><div style="margin-bottom:6px;">&bull; except-BaseException catch itself is correct and closes the original fail-open finding</div><div style="margin-bottom:6px;">&bull; per-step guard nesting resolves the outer/inner boundary concern</div><div style="margin-bottom:6px;">&bull; stdout-JSON rationale should cite Zod schema validation failure, not stray text, as the exit-code-independent fail-open mechanism (non-blocking, already covered by required empirical test)</div><div style="margin-bottom:6px;">&bull; timeout/cancelled disclosure confirmed accurate; recommend also naming OS-level signal termination in the same disclosed-residual paragraph (non-blocking)</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to cto</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #49</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:12:55.107Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; REJECT (architecture-stage review, recorded as reject/returned-to-cto per this project&#x27;s established precedent). Full report: ops/reviews/red-team-risk3-milestone-review.md.</div><div style="margin-bottom:6px;">&bull; Both of Security&#x27;s required corrections (S1.1 CTO-self-edit disclosure in Sections 2.5/4; S1.2 the Section 2.3 overclaim + Section 2.2 substring-list addition) independently verified as genuinely fixed, not softened or buried -- checked against the actual corrected document text, not accepted on CTO&#x27;s word.</div><div style="margin-bottom:6px;">&bull; NEW FINDING, missed by both CTO and Security: independently read the installed Claude Code CLI source&#x27;s own PreToolUse hook contract directly. Confirmed: exit code 2 blocks the tool call; ALL other exit codes (including Python&#x27;s default exit 1 on an uncaught exception) result in &#x27;continue with tool call&#x27; -- fail OPEN, not fail closed. developer_pretooluse.py&#x27;s own described logic (shlex-based tokenization, which raises ValueError on unbalanced quotes; JSON/path parsing that can raise on unexpected input) is not specified anywhere in the design to be wrapped in a catch-all that defaults to deny. As written, a Developer session hitting a routine quoting edge case in an ordinary Bash command -- no adversarial intent required -- would silently bypass the hook entirely, undenied and unlogged. Confirmed no hook script exists anywhere in this codebase today as a reference pattern (ls/find both empty).</div><div style="margin-bottom:6px;">&bull; REQUIRED before Development builds: add an explicit fail-closed exception-handling and exit-code/output-contract specification to Section 2.2/2.4 -- developer_pretooluse.py must wrap all parsing/tokenization/resolution logic in a broad try/except whose failure path is treated as a denial, and must use an explicit, confirmed-correct signaling mechanism (exit code 2, or hookSpecificOutput.permissionDecision:deny) for every deny path including the exception fallback. This is a one-paragraph specification addition, not a redesign -- same cost/severity class as Security&#x27;s own two required fixes. Development should empirically verify it (malformed tool_input, unbalanced-quote Bash command -&gt; confirmed denied, not allowed) alongside the matcher-YAML test Section 2.1 already requires.</div><div style="margin-bottom:6px;">&bull; Independently re-verified and confirmed correct, no changes needed: sessionHooks per-invocation scoping (read cli.js&#x27;s zR7/NH6 registration+lookup functions and the aR() fresh-agentId generation directly, a third independent read after CTO&#x27;s and Security&#x27;s own); the reviewer_invocations/hook_denials tables are justified and not overengineered (checked automation_events&#x27; UNIQUE constraint and start_ask_agent_run&#x27;s race-prevention directly against schema.sql/opsdb.py); scope discipline against Appendix E is clean; the Section 2.2 substring-list fix closes exactly the one case Security named and no more (constructed two further no-encoding-needed bypasses -- a glob pattern and plain string concatenation -- confirming, not contradicting, the document&#x27;s own honest &#x27;remains open, undiminished&#x27; framing, so this is not itself a required fix).</div><div style="margin-bottom:6px;">&bull; Non-blocking notes for Development, not required before this gate: the handoffs-lookup query for Code Review/Security does not check current task stage before running -- likely caught by opsdb.record_task_status()&#x27;s existing transition-validity guard, but the design doc doesn&#x27;t say so; the start_ask_agent_run single-running-invocation-per-role guard means a human triggering two different tasks&#x27; reviews of the same kind concurrently will hit a raw error rather than a friendly message. Both confirmed non-blocking, same category as Security&#x27;s own non-UTF8-artifact and CSRF-confirming-sentence notes.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to cto</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #48</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31T20:03:15.953Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; CONCERNS (recorded as reject/returned-to-cto, matching this project&#x27;s own architecture-stage-review precedent). Full report: ops/reviews/security-risk3-milestone-threat-model.md.</div><div style="margin-bottom:6px;">&bull; Independently re-verified (not accepted on CTO&#x27;s word) via direct reading of agent_runtime.py and the installed CLI source (cli.js v2.1.42): the zero-tool structural carve-out claim holds, and the per-subagent hooks: frontmatter scoping claim holds (sessionHooks keyed by a fresh per-invocation agent id, registered before the tool-execution loop begins).</div><div style="margin-bottom:6px;">&bull; REQUIRED before Development builds: CTO&#x27;s own .claude/agents/cto.md carries native Write/Edit and is untouched by any hook in this design -- this is the same self-widening capability Red Team&#x27;s S8 named for Developer AND CTO, but Section 2.5&#x27;s disclosure names only DevOps. The risks.id=3 disclosure text must name CTO&#x27;s own Write/Edit capability explicitly, not just DevOps&#x27;s Bash capability.</div><div style="margin-bottom:6px;">&bull; REQUIRED before Development builds: Section 2.3&#x27;s &#x27;closes the loop...completely&#x27; framing overclaims relative to Section 2.2&#x27;s own disclosed Bash-string bypass, specifically for the four self-protection paths, which are covered only by a narrow command-anchored check (cat &gt;, sed -i, cp, mv, rm), not the plain substring list -- a plain &#x27;python3 -c open(path,&quot;w&quot;).write(...)&#x27; command bypasses it with no encoding needed. Add the four self-protection paths to the plain-substring check and reword Section 2.3 to distinguish registration-timing closure (proven) from detection-completeness (not proven).</div><div style="margin-bottom:6px;">&bull; Confirmed correct and should ship as designed: CSRF/session-gate reuse (verified directly in server.py&#x27;s do_POST() chain); the new reviewer_invocations table&#x27;s reasoning vs. automation_events (verified against schema.sql, and confirmed start_ask_agent_run()&#x27;s reuse prevents a double-submission race, does not reintroduce one); Part 3&#x27;s sqlite3/opsdb.py bypass disclosure (verified accurate against schema.sql directly, not overstated).</div><div style="margin-bottom:6px;">&bull; Scope discipline: no QA/CTO/DevOps tool scoping proposed; no deployment-gating change. One non-blocking interpretive question worth an explicit confirming sentence: whether adding 3 new Founder-facing HTTP routes (reusing the existing CSRF/session mechanism) is within the authorization&#x27;s &#x27;no change to Founder-facing routes&#x27; exclusion -- CTO&#x27;s reading (mechanism reuse, not a change to it) is persuasive and matches Phase 3A precedent, not required to block on.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to cto</div>
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible only via Agent Detail pages until a future company-wide Risks register (Milestone C) ships. This is correct, disclosed behavior, not a gap.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>

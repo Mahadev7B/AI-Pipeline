@@ -49,7 +49,7 @@ def render_deployments(conn: sqlite3.Connection) -> str:
         items.append(f'''
         <div class="card" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
-            <a href="pipeline.html#task-{d["task_id"]}" style="font-size:13px; font-weight:600; color:var(--text);">TASK-{d["task_id"]:03d} — {e(d["title"])}</a>
+            <a href="tasks/{d["task_id"]}.html" style="font-size:13px; font-weight:600; color:var(--text);">TASK-{d["task_id"]:03d} — {e(d["title"])}</a>
             <div class="mono" style="font-size:10px; color:var(--text3);">{e(d["deployed_at"])}</div>
           </div>
           <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;">
@@ -72,7 +72,7 @@ def render_gap(conn: sqlite3.Connection) -> str:
         return '<div style="font-size:12px; color:var(--text2);">Every READY_TO_RELEASE/DEPLOYED/DONE task has a matching deployments row.</div>'
     items = "".join(
         f'''<div class="card" style="margin-bottom:6px;">
-          <a href="pipeline.html#task-{t["id"]}" style="display:flex; align-items:baseline; justify-content:space-between;">
+          <a href="tasks/{t["id"]}.html" style="display:flex; align-items:baseline; justify-content:space-between;">
             <div style="font-size:12px; font-weight:600; color:var(--text);">TASK-{t["id"]:03d} — {e(t["title"])}</div>
             <div style="font-size:10.5px; color:var(--text3);">{e(t["status"])}</div>
           </a>

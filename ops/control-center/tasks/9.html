@@ -1,0 +1,492 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-009 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-08-31 23:24 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-009 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Phase 2 Milestone 2B3A: controlled concurrent Agent Runtime foundation</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">Chief of Staff</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">2d18h since created<br><span style="color:var(--text3); font-size:10.5px;">2d18h in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available</span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Development · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">8 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">2 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:54:29.435Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:54:29.393Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone 2B3A complete: full gate sequence passed (CTO architecture, Red Team PASS-with-conditions incl. one real BEGIN IMMEDIATE bug found and fixed, Development, Code Review PASS with one real orphaned-run bug found and fixed, QA PASS with extensive real concurrent invocations, Security PASS after real adversarial burst testing, CTO post-implementation PASS). Internal tooling -- release is the git commit, no deployment-record entry.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:50:11.839Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by qa</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:45:04.249Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by code-review</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:41:58.457Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Development complete: ThreadingHTTPServer swap, agent_runtime.MAX_CONCURRENT_INVOCATIONS=3 bounded via non-blocking semaphore, opsdb.start_ask_agent_run() atomic BEGIN IMMEDIATE fix for the real check-then-act race Red Team found, sqlite3.OperationalError mapped to a clean 503, process-group registry dropped per Red Team&#x27;s simplification. Verified live end to end: two different real agents invoked truly concurrently (overlapping timestamps, ~5s total not ~10s+ sequential); GET /overview.html returned in 11ms while a real Ask-Agent call was in flight; same-agent concurrent requests correctly serialize to one 303 + one 409; 4 concurrent requests to 4 different agents produced exactly 3 real invocations + 1 clean capacity_exceeded failure within milliseconds.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Development · Ready &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:36:38.502Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Development · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:36:38.461Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by red-team</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:34:12.777Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Architecture proposal written: ops/reviews/cto-milestone2b3a-architecture.md — ThreadingHTTPServer, semaphore-bounded invocations (N=3), BEGIN IMMEDIATE atomicity fix for a real check-then-act race the single-threaded design was quietly relying on, subprocess cleanup registry, WAL mode explicitly considered and deferred with reasoning.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:32:44.272Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:32:44.230Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #25</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:54:22.523Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; CTO post-implementation conformance review: PASS. Note on process: performed directly, Agent dispatch tool unavailable this session (disclosed in every review record for this milestone).</div><div style="margin-bottom:6px;">&bull; No new write path: grepped the whole repo for INSERT/UPDATE against agent_runs/messages -- every hit is inside opsdb.py (start_run, start_ask_agent_run, run_heartbeat, end_run, reconcile_orphaned_runs, send_message); server.py contains zero raw write SQL, confirmed by direct grep (the only match for insert-like text is a docstring comment). _reconcile_orphaned_ask_agent_runs() now calls opsdb.reconcile_orphaned_runs() instead of holding its own UPDATE, closing the exact gap this same review found in Milestone 2B2.</div><div style="margin-bottom:6px;">&bull; No duplicated runtime layer: grepped for subprocess/Popen calls outside agent_runtime.py across ops/control-center and ops/db -- zero found. agent_runtime.invoke_agent() remains the sole model-invocation entry point.</div><div style="margin-bottom:6px;">&bull; SQLite remains authoritative, unchanged: no PRAGMA/journal-mode change was made (grepped for journal_mode/wal_checkpoint -- zero hits), confirming the WAL-mode deferral was actually honored, not just documented as a decision and then silently done anyway.</div><div style="margin-bottom:6px;">&bull; agent_runs remain truthful, no fake status/activity: every status label rendered in generate_agents.py&#x27;s render_ask_agent_section() (In progress / Last request failed / Last answered / No requests yet) is gated behind a conditional on real open_run/last_run query results executed against the live database at render time -- no hardcoded or inferred-from-text status found.</div><div style="margin-bottom:6px;">&bull; Concurrency is genuinely bounded, not just claimed: MAX_CONCURRENT_INVOCATIONS is a single hardcoded module constant in agent_runtime.py, never read from any request field (independently re-confirmed via the same field-smuggling test Security already ran) -- verified live under real adversarial load (5-way and 10-way bursts) that the bound holds exactly.</div><div style="margin-bottom:6px;">&bull; Runtime failures are isolated: independently re-confirmed via the timeout-isolation and orphaned-run-on-exception scenarios already tested by QA and Code Review -- a failure of one agent&#x27;s invocation (simulated timeout, or a genuine in-process exception) never corrupts, blocks, or delays a concurrent, unrelated agent&#x27;s successful invocation.</div><div style="margin-bottom:6px;">&bull; Phase 1/2 authorization limitations remain honestly documented: SECURITY.md&#x27;s new Concurrent Agent Runtime section explicitly restates (does not soften) that the session token still doesn&#x27;t distinguish a human Founder from any local process, and that concurrency only changes how many such requests could be in flight at once, not the underlying limitation. Confirmed both Phase 1 risks (risks.id=2, risks.id=3) still show status=open in the live database.</div><div style="margin-bottom:6px;">&bull; No architecture drift beyond what was disclosed and reviewed: confirmed the process-tracking shutdown registry the original CTO proposal included was never implemented (Red Team rejected it; grepped agent_runtime.py/server.py for any registry-like structure -- none exists beyond the pre-existing per-invocation _kill_process_group, which is unrelated and predates this milestone). Confirmed the one real bug Development found and fixed during its own verification (BEGIN IMMEDIATE&#x27;s exception-handling masking a real OperationalError) and the one real bug Code Review found and fixed (an unhandled in-process exception could orphan a run) are both genuinely present in the shipped code, not just described in commit messages.</div><div style="margin-bottom:6px;">&bull; No unnecessary dependency: zero third-party imports across the three changed files, independently re-confirmed via AST scan.</div><div style="margin-bottom:6px;">&bull; Scope boundary respected: no Executive Meeting creation, multi-agent orchestration, agent-to-agent communication, autonomous handoffs, Developer/DevOps write-by-chat, or Phase 3 capability introduced -- this milestone&#x27;s diff touches only server.py, agent_runtime.py, opsdb.py, and documentation.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #24</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:53:25.783Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Note on process: performed directly rather than via a spawned security subagent (Agent dispatch tool unavailable this session, disclosed in prior review records for this milestone). Same adversarial standard: all attacks below were actually executed against a live running server on a scratch DB, never simulated in the abstract.</div><div style="margin-bottom:6px;">&bull; Bounded concurrency holds under real adversarial burst load, not just the milestone&#x27;s minimum 2-agent test: fired 5 simultaneous real requests to all 5 allowlisted agents at once -- exactly 3 real invocations proceeded, exactly 2 got a clean capacity_exceeded rejection in single-digit milliseconds, zero crash, zero resource spike. Fired 10 rapid simultaneous requests at the SAME agent (a same-agent DoS attempt) -- exactly 1 real invocation proceeded, 9 got clean 409s, zero duplicate agent_runs rows, zero lingering claude subprocesses afterward (confirmed via ps).</div><div style="margin-bottom:6px;">&bull; No response body (409, capacity_exceeded via 303, or any other path) leaks a traceback, file path, or other internal detail -- grepped every captured response body for traceback/Errno/File-path/line-number patterns, found none.</div><div style="margin-bottom:6px;">&bull; Field smuggling: POSTed max_concurrent_invocations, timeout_s, model, and tools fields alongside a valid token/message -- all silently ignored (server.py&#x27;s do_POST/_handle_ask only ever reads &#x27;token&#x27;, &#x27;decision&#x27;, and &#x27;message&#x27; from the parsed body, confirmed by direct grep of every fields.get() call in the file); the concurrency bound remained exactly 3, unaffected by the smuggled value.</div><div style="margin-bottom:6px;">&bull; Confirmed no new browser-facing capability was introduced by the ThreadingHTTPServer swap -- same route table as before, no new endpoint.</div><div style="margin-bottom:6px;">&bull; Confirmed zero third-party dependencies added (AST-scanned every import in the three changed files; server.py&#x27;s numerous &#x27;non-stdlib&#x27; hits are all this project&#x27;s own local sibling modules, not real third-party packages).</div><div style="margin-bottom:6px;">&bull; Confirmed both Phase 1 risks (risks.id=2: Founder approval not identity-authenticated; risks.id=3: Bash permissions cannot be scoped below tool-category level) remain status=open in the live database, and nothing in this milestone&#x27;s code or SECURITY.md updates claims either is resolved -- the new &#x27;Concurrent Agent Runtime&#x27; section explicitly restates that concurrency does not change the underlying authorization limitation, only how many such requests could be in flight at once.</div><div style="margin-bottom:6px;">&bull; No SQL injection surface introduced -- the two new/changed write functions (opsdb.start_ask_agent_run, the sqlite3.OperationalError handling in server.py) use only parameterized queries; server.py&#x27;s sqlite3 import is exception-type-only, confirmed by reading every use of the name in the file.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #44</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:50:03.091Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Cancellation / process cleanup: a real &#x27;kill -9&#x27; of the server process mid-invocation (not simulated) leaves a self-resolving orphaned run, correctly reconciled on next restart</div><div style="margin-bottom:6px;">Repro: Fired a real, slow Ask-Agent request, then killed the running server process with SIGKILL while the request was genuinely in flight (the underlying claude subprocess was independently observed still running via ps at that moment, confirming this was a real cancellation scenario, not a mock). The orphaned agent_runs row was left open as expected -- the documented, accepted 2B3A limitation, not a bug. Restarted the server against the same DB: startup reconciliation correctly found and marked the orphaned run &#x27;failed&#x27;, and a subsequent real request to the same agent (qa) succeeded normally (303) -- confirms Red Team&#x27;s rejected-registry decision was sound: the existing reconciliation path alone is sufficient, no additional process-tracking mechanism was needed.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #43</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:54.797Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: SQLite state stays correct under real concurrent load -- no corruption, no lost writes, no duplicate rows across the full test session</div><div style="margin-bottom:6px;">Repro: Across all prior scenarios in this QA session (roughly 15 real and simulated concurrent HTTP requests against a shared scratch DB), verified row counts and content directly via independent sqlite3 connections at each step: every successful invocation produced exactly 2 messages (Founder + agent) and exactly 1 agent_runs row; every rejected/failed invocation (409, capacity_exceeded, simulated timeout) produced zero orphaned Founder-only messages and the run correctly terminal (&#x27;failed&#x27;); no partial writes, no duplicate primary keys, no thread interleaving artifacts observed in any query.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #42</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:54.755Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Process crash/restart reconciliation still works correctly with the new atomic start_ask_agent_run() write path</div><div style="margin-bottom:6px;">Repro: Manually created an orphaned open Ask-Agent-labeled agent_runs row (simulating a crash before opsdb.end_run() could ever run), then started a fresh server process against the same scratch DB. Confirmed the startup log correctly reports reconciling exactly 1 orphaned run, and the row is now status=&#x27;failed&#x27; with ended_at set -- no regression from the 2B2 mechanism despite the underlying write path changing.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #41</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:48:23.944Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: A failed/timed-out invocation of one agent does not corrupt or block a concurrent, successful invocation of a different agent</div><div style="margin-bottom:6px;">Repro: Fired real simultaneous POSTs to cto (its runtime response artificially forced to a timeout failure via a standalone driver script that monkeypatched agent_runtime._run_claude for cto only -- server.py&#x27;s own request-handling code path was not modified) and financial (untouched, ran the real live runtime). Verified: cto&#x27;s run correctly shows status=&#x27;failed&#x27;, financial&#x27;s run correctly shows status=&#x27;ended&#x27; with a real, on-persona response persisted; financial&#x27;s conversation was completely unaffected by cto&#x27;s concurrent failure (no corruption, no cross-agent leakage, no blocked/delayed response) -- confirms the &#x27;no fake status&#x27; and &#x27;failures isolated&#x27; requirements hold under a real failure scenario, not just a real success scenario.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #40</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:47:15.191Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Concurrency is deliberately bounded: 4 real simultaneous requests to 4 different agents produce exactly MAX_CONCURRENT_INVOCATIONS=3 real invocations and 1 clean capacity_exceeded failure</div><div style="margin-bottom:6px;">Repro: Fired 4 simultaneous real POSTs to 4 different allowlisted agents. All 4 HTTP responses were 303 (capacity_exceeded is handled the same as any other invoke_agent failure -- an honest &#x27;Last request failed&#x27; status, not a distinct HTTP code -- so the HTTP response alone doesn&#x27;t show which one was rejected). Verified via DB: exactly 3 runs genuinely ran (4-8s real durations, overlapping timestamps within 15ms of each other) and exactly 1 (financial) failed in 2ms with the exact &#x27;at capacity -- 3 agent invocation(s) already running&#x27; message in the server log -- confirms the bound is real, enforced, and never silently queues or fans out beyond the configured limit.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #39</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:46:41.828Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Same-agent simultaneous requests: only one executes, the other gets a clean 409, no duplicate/overlapping runs</div><div style="margin-bottom:6px;">Repro: Fired two real POSTs to /api/agents/ceo/ask 150ms apart at the SAME agent. First returned 303 (real invocation proceeded), second returned 409 immediately (rejected before touching the runtime). Verified in DB: only ONE agent_runs row exists for ceo (no duplicate), only question A&#x27;s message was persisted (question B, the rejected one, was never written) -- confirms the atomic BEGIN IMMEDIATE guard holds under real request timing, not just synthetic thread tests.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #38</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:46:16.732Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Control Center pages remain responsive while a real Ask-Agent invocation is in flight</div><div style="margin-bottom:6px;">Repro: Started a real, slow Ask-Agent request (a 200-word essay prompt to qa) in the background, then fired two separate GET requests (/overview.html, /pipeline.html) 400ms into the in-flight call. Both returned 200 in 8-9ms each -- not blocked by the concurrent model invocation, directly proving the ThreadingHTTPServer swap plus the fresh-connection-per-request/brief-transaction design achieves the milestone&#x27;s core goal.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #37</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:45:59.298Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Two different real, actually-configured agents (cto, financial) invoked concurrently end-to-end via real HTTP POSTs</div><div style="margin-bottom:6px;">Repro: Fired simultaneous curl POSTs to /api/agents/cto/ask and /api/agents/financial/ask against a running ThreadingHTTPServer instance (scratch DB). Both returned 303. Verified via independent sqlite3 query: both runs started within 3ms of each other and both ran concurrently (~4-5s overlap, not sequential); each response is genuinely on-persona (cto answered a math question and described its architecture role; financial correctly described never spending money, unlike a generic/swapped answer); messages are correctly isolated by distinct thread_id values with zero cross-contamination between the two conversations.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #23</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:44:59.935Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Note on process: performed directly rather than via a spawned code-review subagent (the Agent dispatch tool became unavailable partway through this milestone, session-level change) -- same rigor, same empirical-testing discipline, disclosed here rather than silently changing how this gate is staffed.</div><div style="margin-bottom:6px;">&bull; One real bug found and fixed: _handle_ask only called opsdb.end_run() on the two EXPECTED outcomes (invoke_agent success/failure) -- an unhandled exception anywhere between a successful start_ask_agent_run() and those two branches (e.g. a send_message() failure, a bug in _build_transcript) would leave that agent_runs row open (ended_at IS NULL) forever, silently blocking every future Ask-Agent request to that same agent until the next server restart&#x27;s reconciliation pass. This directly violates the milestone&#x27;s own acceptance bar (&#x27;failures... in one invocation do not corrupt or block another&#x27;) exactly as surely as the race the milestone&#x27;s headline fix closes. Fixed by wrapping the post-run-creation logic in its own try/except that unconditionally ends the run as &#x27;failed&#x27; before re-raising to the outer handler. Verified live end to end with a real running server: injected a real in-process exception via a monkeypatched send_message call after a genuine model invocation had already completed, confirmed a clean 500 (no crash, no hang), confirmed the run correctly shows status=&#x27;failed&#x27; with ended_at set (not orphaned), and confirmed a subsequent real request to the SAME agent succeeds normally afterward (not blocked).</div><div style="margin-bottom:6px;">&bull; Independently re-verified (not re-trusting Development&#x27;s own claims): the outer try/except/finally structure correctly closes the connection on every exit path including returns from the nested exception handlers (Python&#x27;s finally-on-return guarantee, confirmed by re-reading + the live tests all showing clean behavior with no leaks). No shared mutable state exists anywhere in layout.py/generate_agents.py/dbutil.py that threading would put at risk. Handler.timeout and the daemon_threads setting behave correctly per-instance under ThreadingHTTPServer. Startup reconciliation still runs strictly before serve_forever(), no race with request threads. Re-ran the real concurrent-different-agent test after the fix -- no regression (~4.5s wall time for two real overlapping invocations, both 303).</div><div style="margin-bottom:6px;">&bull; Minor, accepted, not fixed: if opsdb.end_run() itself were to raise something other than LookupError/ValueError inside the new except-and-end-run block (e.g. a raw sqlite3.OperationalError from a genuinely broken connection), that secondary exception would propagate instead of the original one (Python exception chaining preserves both via __context__, but only the outer exception gets logged today). Judged disproportionate to add further nested handling for this already-last-resort, low-probability path.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #22</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:36:31.917Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS with conditions. Core diagnosis correct (a real, previously-latent check-then-act race in the one-open-run-per-agent guard, invisible only because nothing could race under strict single-threading) and independently re-verified: reproduced BEGIN IMMEDIATE serializing 5 concurrent threads with zero lost writes.</div><div style="margin-bottom:6px;">&bull; BLOCKING finding, fixed before Development proceeds: the proposed start_ask_agent_run() wraps BEGIN IMMEDIATE inside the same try/except that does ROLLBACK on failure -- reproduced empirically that if BEGIN IMMEDIATE itself fails (busy timeout), no transaction is open, and the subsequent ROLLBACK call raises a SECOND, masking OperationalError (&#x27;cannot rollback - no transaction is active&#x27;) instead of the real &#x27;database is locked&#x27; one. Fix: BEGIN IMMEDIATE must execute outside the rollback-guarded block; server.py must catch sqlite3.OperationalError from this call and handle it as a clean busy/retry signal, same as capacity_exceeded.</div><div style="margin-bottom:6px;">&bull; Answered all 5 open questions: MAX_CONCURRENT_INVOCATIONS=3 affirmed (lightweight, network-bound invocations, not heavy local compute). WAL-mode deferral affirmed, with QA required to watch for real lock-contention evidence to reopen it. BEGIN IMMEDIATE + dedicated function affirmed over a partial-unique-index alternative (avoids fragile schema tricks). Non-blocking semaphore acquire affirmed, conditional on Code Review verifying acquire/release wraps every exit path of invoke_agent(). Process-group shutdown registry REJECTED as unnecessary complexity -- existing startup reconciliation already handles the database consequence of a Ctrl+C-orphaned run; recommend documenting the accepted limitation instead of building new state.</div><div style="margin-bottom:6px;">&bull; No other single-threaded assumptions found: grepped for module-level mutable state (none besides the immutable SESSION_TOKEN and the new semaphore itself), confirmed connections are genuinely fresh-per-request across the codebase, confirmed no new browser-facing surface from the ThreadingHTTPServer swap, ruled out an SQLite commit-visibility race (not a distributed system).</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible only via Agent Detail pages until a future company-wide Risks register (Milestone C) ships. This is correct, disclosed behavior, not a gap.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>
