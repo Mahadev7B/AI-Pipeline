@@ -84,12 +84,17 @@ not assumed:
   a plain, directly-callable, `conn`-taking function (`decide_approval()`,
   `start_run()`, `end_run()`, `send_message()`, `record_decision()`,
   `reconcile_orphaned_runs()`) plus a thin `cmd_*` CLI wrapper around it.
-  **`cmd_review_result` is the one write path that does not yet follow
-  this shape** — it operates directly on `args: argparse.Namespace` with
-  no plain function underneath. This needs a small refactor (§B.6, files
-  list) for Phase 3A's automation to call it the same way every other
-  in-process caller in this codebase already calls a write — never a
-  subprocess shelling out to `opsdb.py` itself, which would be new,
+  **Correction (Red Team's Phase 3A review, RT1): this claim was
+  originally stated as "`cmd_review_result` is the one write path that
+  does not yet follow this shape" — independently verified false.**
+  `cmd_task_status` (`ops/db/opsdb.py`) has the identical problem — it
+  also operates directly on `args: argparse.Namespace` with no plain,
+  `conn`-taking function underneath it, and no such function exists
+  anywhere in this file today. `cmd_review_result` and `cmd_task_status`
+  are two write paths not yet following this shape, not one. **Both**
+  need the same small refactor (§B.6/§B.8, file-list) for Phase 3A's
+  automation to call either the same way every other in-process caller
+  in this codebase already calls a write — never a
   unjustified indirection for an in-process caller (`meeting_orchestrator.py`
   already establishes the precedent: import `opsdb`, call its functions
   directly).
@@ -221,6 +226,65 @@ Six non-blocking recommendations (R1-R6), adopted:
   skips) is visually distinguished on `/automation.html` and in the
   Chief of Staff's `automation_status_digest()`, without a new
   Founder-visible-flag mechanism.
+
+## Correction (Red Team's Phase 3A review, ops/reviews/red-team-phase3a-architecture.md) — three required fixes, folded in
+
+Red Team's independent review verdict: **REJECT/CONDITIONS**. Direction
+sound — the central §B.1 decision is not reopened, and Security's C1-C4/
+R1-R6 were verified genuinely folded in (not merely present as words).
+Three real, previously-unidentified gaps found by applying Red Team's
+own lens (completeness of the file-change list; single-value
+verdict-parsing correctness; state-machine ordering under
+non-adversarial, good-faith operation) and independently verifying this
+document's own factual claims against the actual shipped code — none
+require new infrastructure, touch `risks.id=3`'s own resolution, or
+change the central §B.1 decision. All three folded into the relevant
+sections below and summarized here:
+
+- **RT1 (§ "Verified facts"/file-list, folded in below)**: this
+  document's own claim that `cmd_review_result` was "the one write path"
+  in `opsdb.py` not yet following the plain-function shape was
+  independently verified **false** — `cmd_task_status` has the identical
+  problem, and §B.8's automated-REJECT path already depends on a plain
+  function backing it that the original file-list never scheduled.
+  **Required**: correct the claim (two write paths, not one) and add
+  `record_task_status()` to the file-list, same refactor shape as
+  `record_review_result()`.
+- **RT2 (§B.1.1/§B.8, folded in below)**: the specified `VERDICT:
+  PASS|REJECT` parsing (reusing `_parse_synthesis()`'s label-overwrite
+  style verbatim) can silently select the **wrong** verdict — a real
+  false-PASS mechanism, not merely the already-disclosed missed-defect-
+  class limitation, because a model explaining a REJECT verdict has
+  every natural reason to mention the other value earlier in its own
+  reasoning. **Required**: the `VERDICT:` line must be the strictly last
+  non-blank line of the reply and only that line is parsed; zero matches
+  or a match anywhere else is a parse failure, routed to
+  `automation_events status='failed', outcome='error'`, never a guess.
+- **RT3 (§B.2/§B.3, folded in below)**: the claim-vs-eligibility-check
+  ordering was stated only in a four-word pseudocode comment, not in
+  prose — read literally elsewhere in the document, a candidate failing
+  an eligibility check (missing handoff, invalid SHA, invalid path)
+  might never get claimed, meaning it would be re-evaluated every
+  `POLL_INTERVAL_S` cycle forever under entirely non-adversarial
+  conditions (an old handoff, a human testing a status change) — a real
+  infinite-reprocessing defect, not merely a missed edge case.
+  **Required**: state explicitly, in prose, that the `automation_events`
+  claim happens as the very first step for any eligible-looking trigger
+  row, strictly before every §B.10 eligibility check, not only before
+  the real invocation.
+
+Five non-blocking recommendations (NB1-NB5), adopted: NB1 (`outcome='capped'`
+actually used for the two cap scenarios, closing a schema/behavior
+mismatch), NB2 (explicit Part A acceptance-test lines for the
+`CONSULT:` end-to-end flow and stale-information recognition, matching
+Part B's existing per-mechanism test detail), NB3 (recommend Development
+build this in two sequential passes — Part A then Part B — given the
+realistically-scoped-but-large total surface; Part A and Part B touch
+almost entirely disjoint files and are independently shippable), NB4
+(an explicit, named Development acceptance check confirming the
+`meeting_orchestrator.py` refactor preserves the already-shipped
+Founder-initiated meeting flow unchanged), NB5 (two cheap indexes on
+`automation_events`, not required at this project's actual scale).
 
 ---
 
@@ -696,9 +760,47 @@ deciding whether to trust an automated PASS before manually advancing a
 task to `QA` should know precisely what wasn't checked. The required
 fixed-format output line for this mode specifically:
 `VERDICT: PASS` or `VERDICT: REJECT`, followed by findings in the same
-free-text shape a human-supervised review already produces — parsed the
-same deterministic, label-anchored way `meeting_orchestrator._parse_synthesis()`
-already parses CEO's synthesis output. `review_results.reviewed_by_agent`
+free-text shape a human-supervised review already produces.
+
+**Correction (Red Team's Phase 3A review, required fix RT2)**: this
+document originally specified reusing `meeting_orchestrator._parse_synthesis()`'s
+own parsing style verbatim — Red Team found this genuinely unsafe for a
+single binary label, not merely a style mismatch.
+`_parse_synthesis()`'s label-anchored parser **overwrites** on a
+repeated label (last occurrence silently wins), which is harmless for
+its actual use case (four narrative sections a model has no reason to
+repeat) but dangerous here: a model explaining a REJECT verdict has
+every natural, benign reason to write something like "Normally this
+would warrant `VERDICT: PASS`, but because the diff duplicates an
+existing scoping predicate, my actual conclusion is `VERDICT: REJECT`"
+— a last-match-wins (or first-match-wins) parser can silently select
+the **wrong** verdict from prose like this, with no error and no
+signal, purely from how a model naturally reasons out loud. This is a
+real false-PASS mechanism in the parsing implementation itself, distinct
+from the already-disclosed "cannot explore beyond the assembled bundle"
+limitation (§B.1.1, above).
+
+**Required parsing specification**: the `VERDICT:` line must be the
+strictly last non-blank line of the reply, and only that line is
+parsed — unambiguous, and matches how a human reviewer's own verdict
+naturally lands, at the end, after reasoning. Any reply where the
+required line is missing, or a `VERDICT:` token appears anywhere other
+than that exact final-line position, is treated as a **parse failure**,
+never a guess: routed to `automation_events` `status='failed',
+outcome='error'` — the same "never fabricate a PASS/REJECT from a call
+that didn't actually produce one" discipline §B.8 already applies to a
+genuine invocation failure (timeout/capacity/runtime error), extended
+here to cover a genuine parsing failure as a distinct, fourth case (see
+§B.8's correction, below, for the exact `error_kind` handling this
+requires). **Non-blocking, adopted anyway**: a transcript flagged
+`truncated=1` (below) cannot receive `VERDICT: PASS` — the code-review
+persona note (§B.1.1) instructs that truncation itself is REJECT-worthy
+("incomplete review context") unless the reviewed content is
+independently, unambiguously acceptable; Python cannot decide code
+correctness, so this instruction is the only layer that can actually
+close this narrow, real false-PASS path.
+
+`review_results.reviewed_by_agent`
 is recorded as `code-review` either way — same mechanism, same table,
 same column, per the Founder's own explicit instruction — but the linked
 `automation_events` row (§B.3) is what lets anyone later distinguish "a
@@ -874,6 +976,14 @@ CREATE TABLE IF NOT EXISTS automation_events (
   ended_at          TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_automation_events_task ON automation_events(task_id);
+CREATE INDEX IF NOT EXISTS idx_automation_events_status ON automation_events(status);
+CREATE INDEX IF NOT EXISTS idx_automation_events_started ON automation_events(started_at);
+-- NB5 (Red Team's Phase 3A review): "what is running right now" (§B.12)
+-- and the daily spend-guard query (§B.6) filter on status/started_at.
+-- Not a real performance concern at this project's actual scale (a
+-- handful of events/day at most) -- added for cheap completeness/
+-- consistency with every other indexed lookup column in this schema,
+-- not because it's required.
 ```
 
 **`trigger_status_history_id UNIQUE` is the load-bearing idempotency
@@ -887,7 +997,34 @@ established for the identical class of "reserve exclusivity before
 spending a real invocation" problem), inside its own transaction — a
 second cycle, or a hypothetical second poller, attempting the same
 insert gets a clean `IntegrityError`/pre-check rejection, never a second
-real invocation. This is also the answer to "how do we tell an automated
+real invocation.
+
+**Correction (Red Team's Phase 3A review, required fix RT3) — stated
+here in prose, not only in §B.2's pseudocode comment, because the whole
+design's idempotency and no-infinite-reprocessing properties depend on
+getting this ordering exactly right**: the claim (this `INSERT`,
+`status='running'`) happens as the **very first** step for *any*
+`task_status_history` row with `to_status='CODE_REVIEW'` lacking a prior
+`automation_events` row — strictly **before** the handoff-existence
+check (§B.10 scenario 2), the SHA presence/validity checks (scenarios
+3/8), and the file-path validation (scenario 6), not only before the
+real model invocation. Every one of those scenarios therefore produces
+exactly one already-claimed, `status='skipped'` row, not a candidate
+that was merely looked at and discarded without a record. This is what
+makes scenario 1's own "a trigger row already claimed (any status) is
+skipped on sight" rule actually correct: without claiming first, a task
+manually moved to `CODE_REVIEW` with no handoff (or a typo'd SHA, or an
+older pre-Phase-3A handoff with nothing to validate) would be
+re-evaluated by the candidate-finding query on **every** subsequent
+`POLL_INTERVAL_S=20` cycle, forever, for the life of the server
+process — not dangerous, but a real, entirely avoidable defect under
+ordinary, non-adversarial operation (spamming `stderr` and repeating
+wasted DB/`git` work every 20 seconds). Claiming first, unconditionally,
+closes this: every eligibility failure still produces exactly one
+permanent, claimed row, and the same trigger event is genuinely never
+re-evaluated again.
+
+This is also the answer to "how do we tell an automated
 review apart from a human-supervised one without touching the shared
 `review_results` table's shape": a `review_results` row referenced by
 some `automation_events.review_result_id` is automated; every other
@@ -1010,8 +1147,9 @@ current UTC day, **plus** a worst-case `$0.50` reservation for every row
 currently `status='running'` (so concurrent/near-simultaneous cycles
 can't slip past the check before their own cost is known) — if adding
 one more worst-case `$0.50` would exceed the ceiling, the candidate is
-skipped (`status='skipped'`, `skip_reason='daily automation spend
-ceiling reached'`), not silently dropped. `automation_events.cost_usd`
+skipped (`status='skipped'`, `outcome='capped'` — Correction, NB1 below,
+`skip_reason='daily automation spend ceiling reached'`), not silently
+dropped. `automation_events.cost_usd`
 is populated from `RuntimeResult.cost_usd` once the real invocation
 completes — this closes the pre-existing gap (§ "Verified facts") where
 that value was computed but never persisted; it does not retroactively
@@ -1058,10 +1196,22 @@ MAX_AUTOMATED_INVOCATIONS_PER_DAY   = 20
   per-event UNIQUE constraint (§B.3) alone would let this repeat
   indefinitely. The lifetime cap is the actual defense-in-depth answer
   to "loop prevention" for that legitimate-but-repeatable case: a 4th
-  automatic attempt on the same task is skipped
-  (`skip_reason='per-task automated-invocation cap reached — needs
-  manual review'`), surfaced on `/automation.html`, never silently
-  retried forever.
+  automatic attempt on the same task is skipped (`outcome='capped'` —
+  Correction, NB1 below, `skip_reason='per-task automated-invocation cap
+  reached — needs manual review'`), surfaced on `/automation.html`,
+  never silently retried forever.
+
+**Correction (Red Team's Phase 3A review, NB1)**: `outcome='capped'`
+(above, and in §B.6) is the two cases that actually produce it — the
+schema's `CHECK (outcome IN (..., 'capped', NULL))` value is not dead as
+originally specified; the per-cycle batch cap (below) does not produce
+it, since a candidate beyond the 5th in one cycle is never claimed at
+all (picked up on a later cycle, no row created, no state to mark).
+Using `outcome='capped'` for the two genuine cap scenarios gives
+`/automation.html`/`automation_status_digest()` a structured way to
+query "how many were capped this week" without string-matching
+`skip_reason`, at no cost beyond the two call sites already needing to
+set some `outcome` value regardless.
 - **Why #2 (max invocations) and #3 (max transitions) collapse to one
   enforced number in Phase 3A specifically**: this milestone's only
   automatic transition is the REJECT -> `IN_DEVELOPMENT` status
@@ -1095,10 +1245,14 @@ MAX_AUTOMATED_INVOCATIONS_PER_DAY   = 20
   requires a reject to name a destination — unchanged). The directive
   explicitly *does* want the task "routed toward Developer" — this is a
   single, mechanical `tasks.status` transition, `CODE_REVIEW ->
-  IN_DEVELOPMENT`, via `opsdb.task_status`-equivalent (the plain
-  function backing `cmd_task_status`, called with
-  `changed_by_agent="orchestrator"` and a note prefixed
-  `AUTOMATION_NOTE_PREFIX` — §B.9) — pure bookkeeping, not a new
+  IN_DEVELOPMENT`, via **`record_task_status(conn, task_id, "IN_DEVELOPMENT",
+  changed_by_agent="orchestrator", note=...)`** (Correction, Red Team's
+  Phase 3A review, RT1: this is a **new** plain function, extracted from
+  `cmd_task_status` the same way `record_review_result()` is extracted
+  from `cmd_review_result` — it did not already exist; the original text
+  here incorrectly implied it did. See the file-list's `opsdb.py`
+  section, below, for the extraction itself), called with a note
+  prefixed `AUTOMATION_NOTE_PREFIX` — §B.9) — pure bookkeeping, not a new
   Developer invocation. This satisfies "move/route the task toward
   Developer" without violating "DO NOT automatically start another
   Developer model invocation": the task simply becomes visible,
@@ -1118,6 +1272,20 @@ MAX_AUTOMATED_INVOCATIONS_PER_DAY   = 20
   "automated review did not complete for TASK-XXX, needs a look" state,
   answerable via `/automation.html` and the Chief of Staff. This is
   fail-closed by construction, not a special case to remember to build.
+- **New, fourth case (Correction, Red Team's Phase 3A review, RT2):
+  successful invocation, unparseable verdict.** `result.ok=True` (the
+  model responded, no `error_kind`) but the reply contains no
+  `VERDICT:` line as the strictly-last-non-blank-line (per the parsing
+  specification above) — a real, plausible outcome for a model that gets
+  confused, hits `MAX_REVIEW_TRANSCRIPT_CHARS` truncation, or simply
+  forgets the required format. Treated identically to an invocation
+  failure: **no `review_results` row is fabricated**,
+  `automation_events` marked `status='failed', outcome='error'`, never
+  automatically retried, same Founder-visible "needs a look" state. This
+  is a distinct case from the three `error_kind` values above (the
+  invocation itself succeeded; only the output was unparseable) and must
+  be checked and handled explicitly, not left to fall through as
+  undefined behavior.
 
 ## B.9 Clear automatic-vs-Founder-triggered audit history
 
@@ -1326,6 +1494,39 @@ executed:
   scratch-`OPSDB_PATH` convention (`ops/db/README.md`) so this never
   touches the live database.
 
+**Correction (Red Team's Phase 3A review, NB2)**: two specific Part A
+mechanisms this document spends real design effort on need their own
+explicit test lines, the same discipline Part B's mechanisms already
+get above, not folded into the one generic bullet:
+- **`CONSULT:` end-to-end**: a chat message asking the Chief of Staff to
+  consult specific agents (e.g. "ask CTO and Financial what they
+  think") produces a real `meetings` row via `run_consult_meeting()`;
+  confirm the underlying per-agent positions and CEO's synthesis are
+  real and persisted (`meetings.html`/`meetings/<id>.html` show it, same
+  as any Founder-initiated meeting); confirm the Chief of Staff's final
+  reply narrates a recommendation and references that meeting, not a
+  raw paste of the individual positions.
+- **Stale-information recognition**: §A.2's "must recognize when stored
+  information is stale" requirement is satisfied by construction (a
+  fresh digest every turn) but is ultimately a persona-instruction-
+  dependent model behavior, not a purely structural guarantee — test it
+  directly: ask a question, change the underlying state via a real
+  write (e.g. resolve the risk/decide the approval just discussed), ask
+  the same or a related question again, and confirm the reply
+  explicitly acknowledges the change rather than silently repeating the
+  earlier, now-stale answer.
+
+**Correction (Red Team's Phase 3A review, NB4)**: Development's own
+acceptance check for the `meeting_orchestrator.py` refactor (§A.3,
+extracting `_gather_and_synthesize()`) is an explicit, named item, not
+left implicit in a general regression pass: confirm a Founder-initiated
+meeting via `POST /api/meetings` behaves identically before and after
+the extraction — same participant-list construction, same concurrency
+bound, same persisted synthesis fields. Red Team read `run_meeting()` in
+full and confirmed the proposed extraction is a clean, mechanical cut
+with no branch logic to preserve incorrectly — this check confirms that
+holds in the actual implementation, not only in the proposal.
+
 ---
 
 # What Phase 3A explicitly does NOT do (recap, so it isn't lost in the detail above)
@@ -1385,7 +1586,14 @@ executed:
   refactored write function in this file already raises for a
   caller-side contract violation, not reliance on the schema's own
   `CHECK` constraint alone (still fail-safe either way, but inconsistent
-  with this file's established convention). New
+  with this file's established convention). **New (Correction, Red
+  Team's Phase 3A review, RT1 — this was missing from the original
+  file-list despite §B.8 already depending on it):**
+  `record_task_status(conn, task_id, to_status, changed_by_agent,
+  note=None, owner=None)`, refactored out of `cmd_task_status` the same
+  way `record_review_result()` is refactored out of `cmd_review_result`
+  — `cmd_task_status` becomes its thin CLI wrapper, same shape as every
+  other command in this file. New
   `set_automation_enabled(conn, enabled, reason=None, by="founder")`;
   new `create_automation_event(conn, task_id, trigger_status_history_id)`
   (atomic claim) and `end_automation_event(conn, event_id, status,
