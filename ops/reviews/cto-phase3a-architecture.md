@@ -114,6 +114,116 @@ not assumed:
 
 ---
 
+## Correction (Security's Phase 3A threat-model review, ops/reviews/security-phase3a-threat-model.md) — four required fixes, folded in
+
+Security's independent review verdict: **REJECT/CONDITIONS**, direction
+sound (the central §B.1 decision independently re-derived and confirmed
+correct — verified `agent_runtime._run_claude()`'s `--tools ""`/
+`--strict-mcp-config` are unconditional, no code path could special-case
+either new invocation into more tools). Four required fixes, all folded
+into the relevant sections below and summarized here so they aren't
+lost in the detail:
+
+- **C1 (§B.1/§B.1.2/§B.13, folded in below)**: `base_commit_sha`/
+  `head_commit_sha` were unvalidated free text passed as positional `git`
+  subprocess arguments — no format check, no existence check, no `--`
+  separator between revision and pathspec args (unlike §B.1.2's own
+  careful `files_changed` path validation). **Required**: validate SHA
+  format (`^[0-9a-f]{7,40}$`) before use; confirm each SHA resolves to a
+  real commit object in this repository (`git cat-file -e <sha>^{commit}`)
+  before trusting it for a diff; always separate revision arguments from
+  pathspec arguments with `--` in every `git` invocation. Failure routes
+  to a new, eighth §B.10 fail-closed scenario ("recorded base/head SHA
+  does not resolve to a real commit"), not an unhandled subprocess error.
+- **C2 (§B.2, folded in below)**: the poll-loop pseudocode wrapped only
+  the *entire* `_poll_once()` call in `try/except`, not each candidate
+  individually — one malformed candidate (e.g. a null-byte path, which
+  Python's own stdlib raises `ValueError` on immediately) could silently
+  starve every other legitimate candidate in that cycle. **Required**:
+  `_poll_once()`'s per-candidate loop body wraps each candidate's
+  processing individually; any exception marks that candidate's
+  already-claimed `automation_events` row `failed`/`skipped` with a
+  concrete reason before continuing to the next candidate in the same
+  cycle — never left silently `running` for restart-time reconciliation
+  to find, never aborting the batch. Same "one bad participant must not
+  abort the whole meeting" discipline `_gather_position()` already
+  applies one layer up in `meeting_orchestrator.py`.
+- **C3 (§A.3, folded in below)**: the candidate-list text for `CONSULT:`
+  parsing was internally self-contradictory (CEO excluded, then
+  re-included) — exactly the specification a prompt-injection-safety
+  property depends on being unambiguous. **Required**: state the final
+  candidate tuple exactly, once, with no contradiction, before
+  Development builds the parser against it.
+- **C4 (§B.3/file-list, folded in below)**: the reject-requires-
+  `returned_to` invariant must live in the plain `record_review_result()`
+  function itself, not only its CLI wrapper — `automation.py` calls it
+  in-process, never through the CLI, so it needs the same clear, typed
+  `ValueError` every other refactored write function in `opsdb.py`
+  raises for a caller-side contract violation, not reliance on the
+  schema's `CHECK` constraint alone (still fail-safe either way, but
+  inconsistent with this file's own convention).
+
+None of C1-C4 require new infrastructure, touch `risks.id=3`'s own
+resolution, or change this document's central §B.1 decision.
+
+**Also independently re-derived and stated with more precision than this
+document's original generic framing** — the Founder's own required gate
+question ("how does autonomous operation change the consequence of
+Bash access under the same OS-user principal") has **two, not one,**
+distinct additive answers, both now stated exactly in `ops/SECURITY.md`'s
+drafted Phase 3A section (§ file-list, below): (1) `automation.py`'s
+poller is the first background actor in this codebase's history that
+acts without any HTTP request at all — a same-OS-user attacker no
+longer needs to forge a session-gated request to get a real invocation
+to run, only to write a plausible `CODE_REVIEW` transition via
+`opsdb.py` directly (already possible today); (2) the Python code
+assembling diff/file content now walks real filesystem paths and shells
+`git` based on database content the same attacker already controls — a
+second, independent, additive new surface, distinct from (1). Security
+confirmed neither is closed, narrowed, or claimed resolved by this
+design, and required this two-part precision replace the single generic
+"consequence increases" line this document originally used.
+
+Six non-blocking recommendations (R1-R6), adopted:
+- **R1**: "full final content of every changed/added file" (§B.1) is
+  retrieved via `git show <head_commit_sha>:<path>` (the git object
+  database), never a live filesystem read of the working tree — closes a
+  working-tree symlink/TOCTOU exposure more robustly than path
+  validation alone; `resolve()`-based containment validation remains
+  correct, necessary defense-in-depth for the pathspec arguments the
+  `git diff`/`git show` invocations still need.
+- **R2**: `ops/SECURITY.md` states explicitly that the aggregate
+  spend/count ceilings (§B.6/§B.7) are enforced by a read-then-decide
+  check, correct and race-free only under this design's own
+  single-poller-process assumption (the same implicit assumption
+  `SESSION_TOKEN`'s per-process design already relies on) — the
+  per-event idempotency guarantee (§B.3) is unaffected either way,
+  genuinely DB-enforced regardless. No new locking required; written
+  down, not built around.
+- **R3**: `ops/SECURITY.md` discloses Part A's `CONSULT:` mechanism as a
+  new, lower-friction path to the same already-accepted "no rate limit
+  on a consequential write route" risk class `POST /api/meetings`/
+  `/followup` already carry.
+- **R4**: §B.1.1's disclosure names the specific defect class automated
+  Code Review's bounded context structurally cannot catch — cross-file
+  consistency/duplication defects (a helper reimplemented instead of
+  reused, an invariant defined outside `files_changed` silently
+  violated) — not only the generic "cannot explore beyond the assembled
+  bundle" framing. This is the specific defect class this codebase's own
+  development history has already produced (the Milestone 2B2 scoping-
+  predicate duplication `agent_runtime.py`'s own comment documents;
+  `derived_state.py`'s explicit reason for existing).
+- **R5**: `automation.py`'s unhandled-error log lines truncate the same
+  way `agent_runtime.py` already truncates `stderr_text[:2000]` — the
+  assembled review transcript can be up to 60,000 characters.
+- **R6**: §B.10 scenario 6 (invalid file path — a stronger signal of a
+  real/possibly-adversarial data problem than the other six routine
+  skips) is visually distinguished on `/automation.html` and in the
+  Chief of Staff's `automation_status_digest()`, without a new
+  Founder-visible-flag mechanism.
+
+---
+
 # PART A — Chief of Staff Founder Interface
 
 ## A.1 Route and invocation mechanism
@@ -283,15 +393,34 @@ every other model output already trusted this way in this codebase.
 
 `chief_of_staff.py` parses `CONSULT:` out of the model's raw reply
 before anything is persisted or shown — the Founder never sees the raw
-control line. Candidates are filtered to
-`agent_runtime.MEETING_PARTICIPANT_ALLOWLIST` minus `ceo`/`orchestrator`
-(CEO is always eligible for consultation too — allowed through
-unchanged, same list) and deduplicated/capped exactly the way
-`_validate_selection()` already caps CEO's own nomination — that
-dedup+cap logic is extracted into a small shared helper (`_cap_participants()`
-or equivalent) callable from both call sites, so there is exactly one
-implementation of "at most `MAX_MEETING_PARTICIPANTS - 1` others,
-deduped" in the codebase, not two.
+control line.
+
+**Correction (Security's Phase 3A threat-model review, required fix C3)**:
+the candidate tuple this parser matches against, stated exactly, once,
+with no contradiction — the final, authoritative definition:
+**`agent_runtime.MEETING_PARTICIPANT_ALLOWLIST` with `"ceo"` removed**
+(`("product", "cto", "financial", "marketing", "qa", "security",
+"red-team")`). `"orchestrator"` was never a member of
+`MEETING_PARTICIPANT_ALLOWLIST` in the first place (confirmed by reading
+its definition in `agent_runtime.py`), so there is nothing to separately
+subtract for it — the Chief of Staff cannot name itself as a consult
+target because it was never in the candidate set to begin with, not
+because of an extra exclusion rule. `"ceo"` is removed because CEO
+already, always, unconditionally participates in `run_consult_meeting()`
+(§A.3, below) performing synthesis — the same automatic-participation
+role it has in every existing Executive Meeting, never a name the
+Founder needs to (or can) explicitly request. A `CONSULT: ceo` or
+`CONSULT: orchestrator` line, whether Founder-typed or adversarially
+prompt-injected, simply never matches this tuple and has no effect —
+the parser's only behavior for an unrecognized name is to drop it,
+identical to how `_select_participants()`'s own parser already treats
+any name outside its own fixed candidate list. Candidates are
+deduplicated/capped exactly the way `_validate_selection()` already caps
+CEO's own nomination — that dedup+cap logic is extracted into a small
+shared helper (`_cap_participants()` or equivalent) callable from both
+call sites, so there is exactly one implementation of "at most
+`MAX_MEETING_PARTICIPANTS - 1` others, deduped" in the codebase, not
+two.
 
 **New, narrow addition to `meeting_orchestrator.py`**: `run_meeting()`'s
 existing body (CEO selects -> Orchestrator validates -> gather
@@ -358,6 +487,25 @@ synthesis call) + 1 (Chief of Staff's final narrated answer) = **8 real,
 non-consulting question already costs (1 invocation, ~$0.50). This must
 be disclosed in `ops/SECURITY.md`'s Phase 3A section alongside the
 existing meeting-cost disclosure, not left implicit.
+
+**Correction (Security's Phase 3A threat-model review, R3)**: `POST
+/api/chief-of-staff/ask` carries the identical CSRF+session gate as
+every other write route — no new authorization gap. But there is no
+rate limit on the chat messages themselves, only on what happens
+downstream once a message triggers a consult
+(`MAX_MEETING_PARTICIPANTS`/`MAX_CONCURRENT_INVOCATIONS`/the `$0.50`
+per-call cap bound *one* meeting's cost, not how many meetings can be
+triggered per unit time). This is "more of the same disclosed risk" in
+the same sense `ops/SECURITY.md`'s existing "Executive Meetings round 2"
+section already frames `POST /api/meetings`/`/followup`'s own lack of a
+rate limit — not a new authorization gap. What is new is the
+*amplification in convenience*: a single, ordinary-looking chat message
+("what does CTO and Financial think?") can now trigger the same
+up-to-~$4 real spend a purpose-built meeting-creation form previously
+required a deliberate, separate action to reach — lowering the friction
+for the same already-accepted risk class, not creating a new one. This
+needs its own explicit `ops/SECURITY.md` line, not folded silently into
+the existing meeting-cost disclosure.
 
 ## A.4 Plain-English persona — a durable instruction, not a per-call prompt trick
 
@@ -458,13 +606,28 @@ not inside any LLM invocation) can assemble a transcript containing:
   `files_changed`, `tests_added`, `expected_behavior`,
   `known_limitations` (from `handoffs`) — Code Review's own frameworks
   section already treats a handoff as real input, not an incidental one;
-- a real `git diff` between two explicit commits (§B.7 — a new,
+- a real `git diff` between two explicit commits (§B.13 — a new,
   explicit `handoffs.base_commit_sha` / `head_commit_sha` pair, not a
   timestamp heuristic — see rationale there) scoped to exactly the paths
-  in `files_changed`;
+  in `files_changed`, both SHAs validated per required fix C1 (format
+  `^[0-9a-f]{7,40}$`, confirmed to resolve to a real commit object) and
+  every invocation separating revision arguments from pathspec arguments
+  with `--`;
 - the **full final content** of every changed/added file, not diff
   hunks alone — closing the specific gap a bare diff has (limited
-  surrounding context) without granting exploratory access;
+  surrounding context) without granting exploratory access. **Correction
+  (Security's Phase 3A threat-model review, R1)**: retrieved via `git
+  show <head_commit_sha>:<path>` — reading the committed blob from git's
+  own object database — never a live filesystem read of the working tree
+  (`Path(...).read_text()`). This closes a working-tree symlink/TOCTOU
+  exposure more robustly than path validation alone can: git never
+  touches a filesystem symlink at that path when resolving a tree
+  object, so a symlink swapped in between validation and read (or simply
+  present in the working tree regardless of what the commit's own tree
+  object says) cannot affect what content is actually read. The
+  `resolve()`-based containment check (§B.1.2) remains correct,
+  necessary defense-in-depth for the pathspec arguments these `git
+  diff`/`git show` invocations still need;
 - `CODING_STANDARDS.md`'s content, verbatim (small, always relevant,
   and exactly what a human-supervised Code Review session already reads
   as part of its normal configuration).
@@ -518,7 +681,19 @@ automated." `ops/agents/code-review.md` / `.claude/agents/code-review.md`
 gain a short, explicit note describing this second mode: what content it
 receives (exactly the bullet list above), what it cannot do that a
 human-supervised session can (explore beyond the assembled bundle, run
-anything, consult files not listed in `files_changed`), and the required
+anything, consult files not listed in `files_changed`) — **naming the
+specific defect class this structurally misses (Security's Phase 3A
+threat-model review, R4): cross-file consistency and duplication
+defects** (a helper reimplemented instead of reused, an invariant
+defined in a file outside `files_changed` silently violated, a scoping
+predicate copy-pasted instead of centralized) — this is not a generic
+"less context is worse" caveat; it is the specific defect class this
+codebase's own development history has already produced (the Milestone
+2B2 scoping-predicate duplication `agent_runtime.py`'s own comment
+documents as a root cause; `derived_state.py`'s explicit reason for
+existing is a direct response to this exact failure mode). A human
+deciding whether to trust an automated PASS before manually advancing a
+task to `QA` should know precisely what wasn't checked. The required
 fixed-format output line for this mode specifically:
 `VERDICT: PASS` or `VERDICT: REJECT`, followed by findings in the same
 free-text shape a human-supervised review already produces — parsed the
@@ -540,7 +715,13 @@ disclosed truncation (an appended note, and the persisted
 plausibly needs longer than a short Ask-Agent exchange; this only blocks
 the poller's own background thread, never a Founder-facing HTTP request
 (GET/read traffic is unaffected either way, per the existing threading
-model).
+model). **Correction (R5)**: any unhandled-error log line in
+`automation.py` truncates the assembled transcript the same way
+`agent_runtime.py` already truncates `stderr_text[:2000]` — this
+transcript can be up to 60,000 characters and an unbounded dump into a
+failure log line is an avoidable inconsistency with this codebase's
+existing style (not a secret-exposure risk — no real secrets/PII exist
+in this system's scope).
 
 ### B.1.2 A new, necessary filesystem-touching surface — and its concrete mitigation
 
@@ -607,6 +788,43 @@ def run_poll_loop():
             sys.stderr.write(f"[automation] unhandled error in poll cycle: {type(exc).__name__}: {exc}\n")
         _stop_event.wait(POLL_INTERVAL_S)
 ```
+
+**Correction (Security's Phase 3A threat-model review, required fix
+C2)**: the outer `try/except` above protects the poll *thread* from
+dying, and is correct as far as it goes, but is insufficient on its own —
+it does not protect one cycle's *other* legitimate candidates from one
+malformed candidate (a null-byte path, which Python's own stdlib raises
+`ValueError` on immediately; a `git` error; any other exception during
+transcript assembly for a single task). `_poll_once()`'s own
+per-candidate loop body must wrap each candidate's processing
+individually:
+
+```python
+def _poll_once():
+    if not _automation_enabled():           # §B.4 — re-checked, not cached
+        return
+    for candidate in _find_candidates(limit=MAX_CANDIDATES_PER_CYCLE):
+        try:
+            _process_candidate(candidate)    # claim -> assemble -> invoke -> record
+        except Exception as exc:  # noqa: BLE001 — one candidate's failure must not abort the batch
+            _fail_candidate_if_claimed(candidate, exc)   # marks the already-claimed
+                                                           # automation_events row failed/skipped
+                                                           # with a concrete reason, if a row was
+                                                           # already inserted before the exception
+            sys.stderr.write(f"[automation] candidate task={candidate.task_id} failed: "
+                              f"{type(exc).__name__}: {exc}\n")
+            continue
+```
+
+Any exception during one candidate's processing must (a) mark that
+candidate's already-claimed `automation_events` row `failed`/`skipped`
+with a concrete reason before moving on — never left silently `running`
+for `reconcile_stuck_automation_events()` to find only at the next
+server restart — and (b) continue to the next candidate in the same
+cycle, never abort the whole batch. Same "one bad participant must not
+abort the whole meeting" discipline `_gather_position()` already applies
+one layer up in `meeting_orchestrator.py`, applied one layer deeper
+here.
 
 Started in `server.py`'s `main()`, right after the existing startup
 reconciliation calls, before `serve_forever()`. `_stop_event.set()` on
@@ -800,6 +1018,28 @@ that value was computed but never persisted; it does not retroactively
 add cost tracking to any other invocation path, which is a separate,
 future decision if the Founder wants it.
 
+**Correction (Security's Phase 3A threat-model review, R2)**, disclosed
+explicitly rather than left implicit: this spend ceiling and the
+invocation-count ceilings (§B.7) are enforced by a read-then-decide
+check (`SELECT SUM(...)` then, separately, an `INSERT`), not by a
+database constraint the way §B.3's per-event idempotency guarantee is.
+This is correct and race-free only under this design's own implicit
+assumption of exactly one poller thread in exactly one running
+`server.py` process — the same implicit single-process assumption
+`SESSION_TOKEN`'s in-memory, per-process design already relies on
+throughout this codebase, never previously required to be enforced by a
+lock. Nothing today technically prevents a second `server.py` process
+from being started against the same `operations.sqlite3` (no PID file,
+no exclusive lock, no startup check) — if that ever happened, two
+independent pollers could each independently decide a candidate fits
+under the ceiling and both proceed, exceeding the daily
+spend/invocation-count ceilings by up to one extra poll cycle's worth of
+invocations (a bounded, one-cycle overshoot, not runaway spend; the
+per-event `UNIQUE`-constraint idempotency guarantee is unaffected either
+way — no duplicate review of the *same* candidate could ever result).
+This assumption is written down here and in `ops/SECURITY.md`, not built
+around with new locking machinery Security does not require.
+
 ## B.7 Loop prevention and per-task caps
 
 ```python
@@ -929,7 +1169,15 @@ of sync with what actually happened.
 6. A `files_changed` path fails validation (§B.1.2) — **skip the whole
    candidate**, never silently proceed with a partial file set while
    dropping the bad entry unremarked; `skip_reason='invalid file path in
-   handoff — see server log'`.
+   handoff — see server log'`. **Correction (Security's Phase 3A
+   threat-model review, R6)**: this scenario is a stronger signal of a
+   real, possibly-adversarial data problem than the other six routine
+   skips (an invalid path is a different class of event than "a human
+   moved the status for an unrelated reason" or "the base commit
+   predates this milestone") — `/automation.html` and the Chief of
+   Staff's `automation_status_digest()` visually distinguish it (e.g. a
+   distinct label/color) from the other routine skip reasons, without
+   building a new Founder-visible-flag/notification mechanism.
 7. An `automation_events` row is found `status='running'` at server
    **startup** (§B.11) — the prior process crashed mid-cycle. **Never
    silently mark it complete or resumed** — startup reconciliation marks
@@ -937,6 +1185,17 @@ of sync with what actually happened.
    constraint) its trigger event is never automatically retried; it
    becomes exactly the same Founder-visible "needs a look" state as any
    other failure above.
+8. **New scenario (Security's Phase 3A threat-model review, required fix
+   C1)**: the recorded `base_commit_sha`/`head_commit_sha` do not resolve
+   to a real commit object in this repository (a typo, a SHA from a
+   different clone/fork, a stale value from a history rewrite) — **fail
+   closed: skip**, `skip_reason='recorded base/head SHA does not resolve
+   to a real commit in this repository'`, never fall through to an
+   unhandled `git` subprocess error, and never proceed with a diff
+   computed against the wrong commit (which would feed a *misleading*,
+   not merely incomplete, transcript to the automated reviewer —
+   directly undermining §B.1's own central claim that the assembled
+   transcript is real and useful).
 
 ## B.11 Crash/restart recovery and orphaned-run reconciliation
 
@@ -1116,7 +1375,17 @@ executed:
 - `ops/db/opsdb.py` — refactor `cmd_review_result` into a plain
   `record_review_result(conn, task_id, review_type, by, result,
   findings=None, returned_to=None)` function plus its existing thin CLI
-  wrapper (matches every other write function's shape); new
+  wrapper (matches every other write function's shape). **Required fix
+  C4 (Security's Phase 3A threat-model review)**: the
+  reject-requires-`returned_to` check (`if result == "reject" and not
+  returned_to: raise ValueError(...)`) must move into
+  `record_review_result()` itself, not remain only in the CLI argument
+  check — `automation.py` calls this function in-process, never through
+  the CLI, so it needs the same clear, typed error every other
+  refactored write function in this file already raises for a
+  caller-side contract violation, not reliance on the schema's own
+  `CHECK` constraint alone (still fail-safe either way, but inconsistent
+  with this file's established convention). New
   `set_automation_enabled(conn, enabled, reason=None, by="founder")`;
   new `create_automation_event(conn, task_id, trigger_status_history_id)`
   (atomic claim) and `end_automation_event(conn, event_id, status,
@@ -1169,27 +1438,39 @@ executed:
   additionally be reviewed by Phase 3A's automation, and that the
   existing "failed review/QA returns to `IN_DEVELOPMENT`" rule now has a
   documented automated case alongside the existing human one.
-- `ops/SECURITY.md` — new "Phase 3A: Chief of Staff Founder Interface +
-  Limited Automated Orchestration" section, same disclosure discipline
-  as every prior milestone: the new allowlist widenings and exactly why
-  each is bounded; the new filesystem-touching poller surface and its
-  path-validation mitigation (§B.1.2); the honest STOP semantics
-  (§B.5); the explicit statement that `risks.id=3`'s practical
-  consequence increases under autonomous operation, per the Founder's
-  own instruction, and is not mitigated by anything in this design; the
-  Part A consult-meeting worst-case cost disclosure (§A.3).
-- `risks` table — no status change to `id=3` (stays `open`). Recommend
-  Security append (not overwrite) a note to its `description` once this
-  ships, along the lines of: "Phase 3A (TASK-015) introduced limited
-  automated orchestration; this risk's practical consequence increased
-  as a result (an unsupervised, though zero-tool, invocation now occurs
-  without a human directly initiating it) — see
-  `ops/reviews/cto-phase3a-architecture.md`, §B.1." This is a
-  description update, not a resolution, and should go through whatever
-  mechanism Security judges preserves the audit trail correctly, not a
-  direct edit.
+- `ops/SECURITY.md` — new "Chief of Staff Interface + Limited Automated
+  Orchestration (Phase 3A, TASK-015)" section. **Use the exact drafted
+  language in `ops/reviews/security-phase3a-threat-model.md`'s "Draft
+  ops/SECURITY.md language" section verbatim** (not this document's own
+  earlier, less precise framing) — it states the two-part, independently
+  additive `risks.id=3` consequence-increase mechanism (an unattended
+  background actor; a same-OS-user-controlled filesystem/subprocess
+  surface) with the precision Security's review found this document's
+  original generic framing lacked, plus R2's single-poller-process
+  assumption disclosure and R3's chat-cost-amplification disclosure.
+- `risks` table — no status change to `id=3` (stays `open`). Apply
+  Security's exact drafted `description` append once this ships (see
+  the same threat-model review doc) — a description update, not a
+  resolution, applied via whatever mechanism preserves the audit trail
+  correctly (`opsdb.py risk-resolve` with `--status open` unchanged,
+  updating only `--mitigation`/description text), not a direct edit.
 
 ---
+
+# Security's threat-model review — REJECT/CONDITIONS, four required fixes, all folded in above
+
+`ops/reviews/security-phase3a-threat-model.md` reviewed this document in
+full and returned **REJECT/CONDITIONS**: direction sound, central §B.1
+decision independently re-derived and confirmed correct, four required
+fixes (C1-C4, all folded into the relevant sections above and
+summarized in the "Correction" section immediately following "Verified
+facts") and six non-blocking recommendations (R1-R6, also folded in)
+before Development starts. All six of this document's own open
+questions for Security (below) were answered in full in that review —
+see "The six explicit open questions, answered in full" in the
+threat-model doc for Security's complete reasoning on each; the
+short answers are noted inline below for convenience, not as a
+replacement for reading the full review.
 
 # Open questions for Security and Red Team
 
@@ -1222,3 +1503,20 @@ executed:
    Founder's explicit "emergency STOP" framing, even though this project
    previously reviewed and accepted the identical limitation for
    Ask-Agent (Milestone 2B3A)?
+
+**Security's answers, in brief** (full reasoning in the threat-model
+review): (1) all five values reasonable as ceilings — no change, though
+R2 requires their single-poller-process enforcement assumption be
+written down; (2) yes, sufficient for the disclosed, bounded scope —
+recommendation unchanged — but R4 requires naming the specific
+cross-file-duplication defect class this mode structurally cannot catch;
+(3) no, not as specified — this became required fix C1, not a deferral;
+(4) no, the existing session gate is sufficient, same sensitivity class
+as every other already-gated page; (5) yes, skip-and-discover is right
+for all seven original scenarios (R6 only asks for visual distinction of
+scenario 6, not a new escalation mechanism) — the new eighth scenario
+(C1) follows the same skip discipline; (6) no, concur with the design
+as-is — the bound (120s timeout, $0.50 cap, at most one invocation per
+event) is at least as tight as Ask-Agent's own previously-accepted
+precedent, and this is unattended automation, not a Founder actively
+watching a live conversation.
