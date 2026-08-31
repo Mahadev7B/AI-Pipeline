@@ -553,3 +553,177 @@ need to become a required fix.
 Recorded via `python3 ops/db/opsdb.py review-result --task-id 17 --type
 code --by red-team --result reject --returned-to cto`, citing this
 section.
+
+---
+
+## 7. Third pass — verifying the reordering fix to §2.2a (TASK-017, third pass)
+
+Read §6 above (my own prior finding) and the current
+`ops/reviews/cto-risk3-milestone-architecture.md` §2.2a in full before
+writing this section, per the task brief. Traced the "Required structure"
+pseudocode line by line against the actual text now in the document
+(lines 563–629 as currently committed), not against the summary of what
+CTO claims to have changed.
+
+### 7.1 The success path genuinely never passes through `except BaseException`
+
+Confirmed by direct trace. The guarded `try` in `main()` now contains
+exactly three statements — `raw_stdin = sys.stdin.read()`,
+`payload = _parse_payload(raw_stdin)`, `decision, matched_rule =
+_evaluate(payload)` — and nothing else; the block ends with a comment
+("the guarded region ends here") immediately followed by the `except
+BaseException as exc:` clause. Ordinary Python scoping rules apply: if
+none of the three statements raises, control does not enter the `except`
+clause at all — it falls through to the first statement textually
+following the entire `try/except` construct, which is the "Success path"
+block (`_emit_decision(decision, matched_rule)`, the conditional
+`_log_denial`, then `sys.exit(0 if decision == "allow" else 2)`). That
+block sits at the same indentation level as `try:`/`except:`, i.e.
+outside both, so its `sys.exit()` call — which raises `SystemExit`, a
+`BaseException` — has no enclosing `try` left to be caught by. This is
+exactly the reordering CTO's document claims and it is correct. The
+maximally-loud bug from my second-pass review (100% of calls, including
+the canary, denied) is genuinely gone.
+
+### 7.2 The nested fallback (point 4) does not reintroduce any version of the bug
+
+Traced the `except BaseException` block's own structure: its two
+substantive calls (`_emit_decision("deny", "hook_internal_error")`,
+`_best_effort_log_internal_error(raw_stdin, exc)`) are wrapped in a nested
+`try/except BaseException: <hardcoded stdout.write fallback>`, and the
+handler's own `sys.exit(2)` sits **after** that nested `try/except`,
+at the outer `except` block's indentation — i.e., inside the outer
+`except`'s scope but outside the nested `try`. There is no third layer of
+`try` wrapping this `sys.exit(2)`, so nothing re-catches it. This
+resolves cleanly and matches the same pattern already verified correct
+for the outer level in §7.1: an exit call is safe exactly when it sits
+outside every `try` whose matching `except` could intercept
+`SystemExit`, and that is true here at both the outer and nested level.
+
+### 7.3 No other blocking control-flow bug in the "required to convey" properties
+
+The document is explicit (line 552) that this pseudocode's job is to pin
+down three specific properties — `BaseException` (not `Exception`)
+catching; per-step guards with a diagnosable `matched_rule`; and exit
+calls never running inside the handler's own scope — not to be Development's
+literal, field-accurate implementation. Checked all three against the
+actual text: all three are correctly conveyed and, per §7.1–§7.2, actually
+compile-and-run correctly as sketched, not merely correctly described in
+prose. No exit call, return, or raise anywhere in the corrected structure
+sits inside a scope that unintentionally catches it.
+
+### 7.4 The three follow-ups are substantive, not superficial
+
+- **Zod-schema attribution (point 5)**: re-checked against my own §6.4
+  trace of `Es4()`/`iI()`/`Wj6`. The corrected text now states precisely
+  what I found independently last round — stray non-JSON text alone does
+  *not* force fail-open (exit code still governs when stdout doesn't parse
+  as JSON at all), and the actual exit-code-independent trap is
+  syntactically-valid JSON that fails the harness's Zod schema. This is a
+  real technical correction, not a rewording — the prior text was
+  factually imprecise about the mechanism and is now accurate.
+- **SIGKILL/SIGTERM addition (point 6)**: re-checked. The added sentence
+  correctly generalizes the disclosed timeout/"cancelled" residual to the
+  same "no Python code runs at all" class for OS-level signal termination,
+  correctly scoped as non-required given the hook's synchronous,
+  subprocess-free, stdlib-only design (no plausible long-running or
+  externally-killable code path). Accurate, not just superficially present.
+- **Nested fallback (point 4)**: verified structurally correct in §7.2
+  above, not merely claimed.
+
+### 7.5 Two non-blocking specification-completeness findings for Development
+
+Neither of these is a bug in what's written — the document is explicit
+that this pseudocode is a sketch of *shape*, not a literal
+implementation — but both are exactly the kind of thing a Developer
+skimming this section (having just absorbed two rounds of careful
+`sys.exit()`-placement reasoning) could transcribe without noticing, so
+I'm naming them rather than leaving them to be rediscovered:
+
+1. **The success path's own `_log_denial` call is exactly as unguarded as
+   the except-handler's calls were before this round's fix, and did not
+   get the same treatment.** `_emit_decision(decision, matched_rule)` and
+   `_log_denial(payload, matched_rule)` (the latter commented "best-effort;
+   must not raise") sit in the success-path block, deliberately outside
+   any `try`, so that `sys.exit()` isn't caught (correct, per §7.1). But
+   that also means if `_log_denial` — a real SQLite write, the single most
+   failure-prone line in this script — raises (e.g. a lock contention
+   error), nothing catches it: the process crashes with Python's default
+   uncaught-exception behavior (exit 1), which is fail-open by the
+   harness's exit-code contract. In practice this is very likely safe:
+   `_emit_decision` runs first and, per §2.2a's own traced `Es4()`
+   behavior, the harness parses whatever valid JSON already reached stdout
+   *regardless of exit code*, and CPython's normal interpreter-shutdown
+   sequence flushes stdout on an uncaught exception (this is not an abrupt
+   kill of the kind §2.2a's own SIGKILL disclosure describes). But that
+   safety is an unstated assumption about buffering/shutdown order, not a
+   structural guarantee — exactly the standard the document itself just
+   applied to the except-handler's own calls ("the document's own comment
+   ... is currently an assertion, not a structural guarantee," §6.4).
+   Recommend one line of symmetry: either wrap `_log_denial` (and,
+   trivially, `_emit_decision`) in their own best-effort guard the same
+   way the except-handler's calls now are, or add `sys.stdout.flush()`
+   immediately after `_emit_decision()` and say explicitly that this is
+   why a subsequent `_log_denial` failure is safe to leave unguarded.
+   Cheap, same cost class as everything else in this document's disclosure
+   discipline.
+
+2. **`_evaluate()`'s sketch, if transcribed literally, denies 100% of
+   Bash calls for the wrong reason, before ever reaching the Bash-specific
+   checks.** The sketch unconditionally does `path =
+   Path(payload["tool_input"]["file_path"]).resolve()` first, catching
+   `KeyError` and returning `("deny", "file_path resolve failed: ...")`,
+   *before* the Bash-specific `shlex.split()` block runs. A real
+   `Bash(command="echo canary")` `tool_input` has no `file_path` key at
+   all, so the first check's `KeyError` fires unconditionally for every
+   Bash call, returning an early deny before the Bash-specific logic is
+   ever reached — meaning, if implemented exactly as sketched, *every*
+   Bash tool call is denied with a nonsensical "file_path resolve failed"
+   reason, never mind what the command actually contains. This fails
+   closed, not open — the opposite direction from every finding in §1 and
+   §6 above — and would almost certainly be caught immediately by §2.1's
+   own required canary test (`Bash(command="echo canary")`, expected
+   allow) before any real Developer session relied on the hook. I am not
+   treating this as blocking for that reason, and because the document is
+   explicit the field-access details here are elided ("..." placeholders)
+   and not one of the three properties the sketch is required to convey.
+   But it is the same defect *class* — an unconditional check placed where
+   a conditional one belongs — that produced this document's two prior
+   REJECTs, now in a new spot, and it costs one sentence to close: state
+   explicitly that the file_path check and the command check are
+   mutually exclusive per `tool_name` (or per key presence via `.get()`
+   rather than unconditional indexing), not sequential-and-unconditional
+   as literally sketched.
+
+Neither of these changes the verdict. Both fail toward safety or toward
+an immediately-visible break (not silent fail-open), both are cheap
+one-line fixes, and neither reaches the severity bar that produced my
+first two REJECTs on this document (a silent, hard-to-notice fail-open
+under ordinary non-adversarial input, or a total, undetected denial of
+every call). I record them because the task asked me to hunt for exactly
+this class of thing on this pass, not because either one independently
+justifies a fourth REJECT round.
+
+### 7.6 Verdict
+
+**PASS.** The control-flow bug that produced my second REJECT (the
+success-path `sys.exit()` sitting inside the `except BaseException`
+guard) is genuinely, verifiably fixed by the one-line reordering — traced
+directly against the actual pseudocode text, not accepted on CTO's
+summary. The nested fallback added for my prior §6.4 non-blocking note is
+structurally sound and does not reintroduce any version of the bug at its
+own level. The three follow-up corrections (Zod-schema attribution,
+SIGKILL/SIGTERM disclosure, nested-fallback guard) are substantive
+technical corrections, independently re-verified against my own §6.4
+trace, not superficial rewording. I found two further non-blocking
+specification-completeness gaps (§7.5) worth folding into the same edit
+pass Development will make anyway, but neither is a defect in what's
+written, neither is silent-fail-open, and neither meets the bar that
+justified the first two REJECTs. Three rounds of REJECT on one document
+is a real cost; this document has earned the close. Development may
+proceed against `ops/reviews/cto-risk3-milestone-architecture.md` §2.2a
+as currently written, folding in §7.5's two recommendations on the same
+pass as the rest of Development's own implementation work.
+
+Recorded via `python3 ops/db/opsdb.py review-result --task-id 17 --type
+code --by red-team --result pass`, citing this section.
