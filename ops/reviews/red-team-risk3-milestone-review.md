@@ -342,3 +342,214 @@ Recorded via `python3 ops/db/opsdb.py review-result --type code --by
 red-team --result reject --returned-to cto` (architecture-stage review,
 same pattern as Security's own Stage 2 CONCERNS/reject recording),
 citing this document.
+
+---
+
+## 6. Re-verification of §2.2a's correction (TASK-017, second pass)
+
+CTO added §2.2a to `ops/reviews/cto-risk3-milestone-architecture.md`,
+marked "Correction (Red Team's TASK-017 milestone review section 1)."
+This section re-verifies that correction against the installed CLI
+source directly (`/opt/node22/lib/node_modules/@anthropic-ai/claude-code/cli.js`),
+a third independent read of the hook-dispatch code (after my own §1 read
+above), tracing the actual functions this time by name: `iI()` (the
+`PreToolUse` result reducer), `rZ6()` (the hook-subprocess spawn/collect
+function), `Es4()` (the stdout-JSON parser), `ks4()` (the JSON-to-permission-
+decision mapper), and the Zod schema `Wj6` the harness validates hook
+stdout against. Not accepted on the document's word — read independently,
+line by line, against the actual minified source.
+
+**Verdict: REJECT again.** The core exception-handling mechanism CTO's
+correction specifies — wrapping the hook in `except BaseException` — is
+genuinely, verifiably correct and closes the finding it was written to
+close. But the "Required structure" pseudocode in §2.2a that is supposed
+to pin down this fix contains a control-flow bug that, if implemented as
+literally sketched, denies **every single tool call, including benign
+allowed ones**, on every invocation — not a redesign to fix, a one-line
+structural correction, the same severity/cost class as my original
+finding and CTO's own §2.2a correction itself.
+
+### 6.1 Confirmed correct: `except BaseException` genuinely catches the crash class that mattered
+
+Read directly: `iI()`'s per-hook execution path calls `rZ6()`, which spawns
+the hook's `command:` via `spawn(..., {shell:true})`. Ordinary OS process
+semantics govern what happens inside that child process — nothing in
+`rZ6()` intercepts or special-cases a Python traceback. Confirmed: a
+`ValueError` from `shlex.split()` on unbalanced quotes, an uncaught
+`KeyError`/`TypeError` from malformed `tool_input`, or any other ordinary
+Python exception, left uncaught, produces Python's default behavior
+(traceback to stderr, exit code 1) — and `except BaseException` catches
+all of these, including a stray `sys.exit()`/`SystemExit` raised deeper in
+the call stack (`SystemExit` is a direct subclass of `BaseException`, not
+of `Exception` — CTO's stated reason for the broader catch is technically
+correct). This part of the correction holds.
+
+### 6.2 Confirmed correct: the per-step guard structure resolves my original "boundary" concern
+
+Traced the pseudocode's control flow directly: every narrower `try/except`
+(around `json.loads`, `Path.resolve()`, `shlex.split()`) is nested
+*inside* the single outer `try` in `main()`, not structured as several
+independent top-level `try/except` blocks. Any code running between two
+guarded steps — including glue code in `_evaluate()` not itself wrapped —
+is still covered by the outer `except BaseException`, because it executes
+within the outer `try`'s dynamic scope. There is no gap between steps of
+the kind my original review's "outer vs. inner boundary" concern named.
+This resolves cleanly.
+
+### 6.3 REQUIRED — the pseudocode's own `sys.exit()` placement causes every invocation, including successful ones, to hit the except branch
+
+The "Required structure" pseudocode (§2.2a) is:
+
+```python
+def main():
+    raw_stdin = None
+    try:
+        raw_stdin = sys.stdin.read()
+        payload = _parse_payload(raw_stdin)
+        decision, matched_rule = _evaluate(payload)
+        _emit_decision(decision, matched_rule)
+        if decision == "deny":
+            _log_denial(payload, matched_rule)
+        sys.exit(0 if decision == "allow" else 2)   # <-- inside the try
+    except BaseException as exc:
+        _emit_decision("deny", "hook_internal_error")
+        _best_effort_log_internal_error(raw_stdin, exc)
+        sys.exit(2)
+```
+
+`sys.exit(...)` raises `SystemExit`. The final `sys.exit(0 if decision ==
+"allow" else 2)` line — the *normal, successful* termination for every
+ordinary invocation, allowed or denied — sits **inside** the same `try`
+block the `except BaseException` clause guards. Since `SystemExit` is a
+`BaseException`, this call is caught by the very handler that is supposed
+to be reserved for genuine internal failures. Concretely: a completely
+benign, non-adversarial Write to an allowed path — `_evaluate()` returns
+`("allow", None)` cleanly, no exception anywhere in the real logic — still
+raises `SystemExit(0)` on the pseudocode's own last line of the `try`
+block, which is then caught by `except BaseException`, which
+unconditionally overwrites the decision to `"deny"` with
+`matched_rule="hook_internal_error"` and exits 2. **As literally sketched,
+this script denies 100% of tool calls, always, regardless of `_evaluate()`'s
+actual result.** This is not a hypothetical edge case reachable only by
+malformed input — it is the default, every-single-invocation behavior of
+the pseudocode as written.
+
+This is a basic, well-documented Python semantics fact (any exception
+raised anywhere inside a `try` block, including its own last statement, is
+caught by a matching `except` clause in the same frame) — not a subtle
+misreading. I traced it against the actual control flow twice to be sure
+before including it here.
+
+**Why this must be corrected in the document, not left to Development to
+discover and patch under pressure**: this bug is maximally loud — it
+would deny literally the first canary test §2.1 already requires
+(`Write(file_path="/tmp/canary.txt", ...)`, expected to be allowed) — so
+it is very likely to surface immediately, unlike my original finding,
+which was silent. That is real mitigation, but it is not the same as the
+document being correct. Two concrete risks of leaving it as-is:
+
+1. A developer under time pressure, seeing "every tool call is being
+   denied," has an obvious, tempting, **wrong** fix: wrap the final
+   `sys.exit()` call (or the whole hook) in a broader
+   `try/except SystemExit: pass`-style pattern to "stop it from
+   interfering" — which would suppress the *legitimate* deny path's own
+   `sys.exit(2)` too, silently reintroducing something close to the
+   original fail-open bug this correction exists to close, from the
+   opposite direction.
+2. The document explicitly frames this pseudocode as pinning down "the
+   shape" Development implements against (§2.2a: "this sketch exists to
+   pin down the shape, not to be copied verbatim... Two properties this
+   sketch is required to convey, not merely illustrate"). A shape that
+   itself doesn't run correctly is not a reliable reference for the one
+   piece of code this entire milestone's headline property depends on.
+
+**Required fix** (one-line class of correction, not a redesign — matching
+the cost of my original finding and of this correction's own framing):
+move the success-path `sys.exit(...)` call **outside** the guarded `try`
+block (e.g., compute `decision` inside `try`, `except BaseException` sets
+a local flag/re-derives a forced-deny decision, then a single `sys.exit(...)`
+call after the `try/except` — reached in both the normal and exception
+cases — decides the process's actual exit code). Any structure where the
+*legitimate* exit calls are not themselves inside the scope of the
+`except BaseException` handler resolves this.
+
+### 6.4 Non-blocking, worth folding in on the same edit pass
+
+- **The except handler's own two calls are not themselves guarded.** If
+  `_emit_decision("deny", "hook_internal_error")` or
+  `_best_effort_log_internal_error(raw_stdin, exc)` were to raise inside
+  the `except` block (e.g., a write failure formatting the JSON), nothing
+  catches that — Python's default uncaught-exception behavior applies
+  again, one layer deeper, reproducing the original bug. Low probability
+  (tiny in-memory writes to a normal pipe/DB connection) but the
+  document's own comment ("must not itself raise") is currently an
+  assertion, not a structural guarantee. A trivial nested
+  `try/except: pass` around these two calls, immediately before the final
+  `sys.exit(2)`, closes this without adding real complexity.
+- **CTO's stated mechanism for why "stray text on stdout" causes fail-open
+  is not quite what the source shows, though the practical requirement
+  survives it.** I traced `Es4()` directly: if trimmed stdout doesn't
+  start with `{`, or `JSON.parse` throws outright, `Es4()` returns
+  `{plainText: A}` with **no** `validationError` set — and `iI()` falls
+  through to plain exit-code semantics (`status===2` → still correctly
+  denies). Stray non-JSON text around the JSON therefore does **not**, by
+  itself, force fail-open the way §2.2a states — as long as exit code 2 is
+  still set, the deny is still honored. What **does** force fail-open
+  *regardless of exit code* is different and more subtle: stdout that
+  starts with `{` and parses as syntactically valid JSON but fails the
+  harness's Zod schema (`Wj6` — every field optional, but a wrong enum
+  value, e.g. `"permissionDecision": "denied"` instead of `"deny"`, or
+  content nested outside `hookSpecificOutput`, fails validation) —
+  `iI()`'s `if(p){...non_blocking_error...return}` branch fires
+  **before exit code is even checked**, ignoring `status===2` entirely.
+  In practice this is adequately covered by §2.2a's own required empirical
+  test (both the canary and the malformed-input test exercise the same
+  shared `_emit_decision()` and would catch a schema-shape bug directly
+  against the real harness) — so this is not a new required fix, but the
+  document's rationale should be corrected: the actual risk is a
+  schema-invalid JSON *shape* in `_emit_decision()`'s own output, not
+  "stray print() text" per se, and exit code 2 is **not** a reliable
+  fallback for that specific failure mode the way §2.2a's text implies.
+- **The disclosed timeout/"cancelled" residual is accurate, confirmed by
+  direct source read, and should be joined by one more sentence naming a
+  sibling gap of the same class.** Traced `iI()`'s hook-result loop
+  directly: when `rZ6()` reports `U.aborted` (timeout), the yielded result
+  carries only `message`/`outcome:"cancelled"` — no `blockingError`, no
+  `permissionBehavior` — so nothing in the reducer loop ever sets a deny
+  decision for that hook, confirming CTO's disclosure exactly as written.
+  Worth adding, in the same paragraph rather than as a new separate
+  finding: `except BaseException` cannot catch OS-level process
+  termination (a `SIGKILL` from an OOM-killer, or an unhandled `SIGTERM`)
+  — the same "no Python code runs at all" failure class as the timeout
+  case, not closed by anything in §2.2a's fix, and — like the timeout
+  case — very low-probability given the hook's cheap, stdlib-only,
+  no-subprocess, no-network design. Naming both together, rather than only
+  the timeout case, keeps the disclosure complete without changing its
+  conclusion (still non-required, still disclosed rather than fixed).
+
+### 6.5 What must change before Development starts (this pass)
+
+**One required change**: fix §2.2a's "Required structure" pseudocode so
+the legitimate `sys.exit(...)` call(s) are not themselves inside the
+`try` block guarded by `except BaseException` (§6.3) — the pseudocode as
+currently written denies every tool call unconditionally, not just crash
+cases. This is the one thing between this document and a genuine PASS,
+the same framing my original review used for the first-pass finding.
+
+**Recommended, same edit pass, not independently blocking** (§6.4): guard
+the except handler's own two calls; correct the stated rationale for the
+stdout-JSON requirement (schema validation, not "stray text," is the
+actual exit-code-independent fail-open mechanism); and extend the
+disclosed timeout/"cancelled" residual to also name OS-level signal
+termination as the same class of gap.
+
+**Everything else re-verified in this pass holds**: the `BaseException`
+catch itself is correct and sufficient for the crash class my original
+finding named; the per-step guard nesting resolves the boundary concern
+cleanly; the timeout/"cancelled" disclosure is accurate and appropriately
+scoped, matching this project's own disclosure discipline, and does not
+need to become a required fix.
+
+Recorded via `python3 ops/db/opsdb.py review-result --task-id 17 --type
+code --by red-team --result reject --returned-to cto`, citing this
+section.
