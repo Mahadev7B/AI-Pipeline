@@ -459,6 +459,192 @@ Stage 2 already named for the realistic threat model (scope creep,
 prompt-injection-influenced ordinary work) this system actually faces,
 restated here rather than re-litigated.
 
+### 2.2a `developer_pretooluse.py`'s fail-closed contract — REQUIRED, not optional hardening
+
+**Correction (Red Team's TASK-017 milestone review §1, "`PreToolUse` hooks
+fail OPEN on any exit code except exactly 2") — this subsection did not
+exist anywhere in this document's original text.** Red Team independently
+read `cli.js`'s hook-dispatch code and found that §2.1–§2.4 as originally
+written specify *what* the hook denies but never *how it fails* when its
+own parsing logic (`shlex.split()`, `json.loads()`, `Path.resolve()`) hits
+an ordinary, non-adversarial edge case — and the harness's own default
+behavior for that case is silent allow, not deny. This document
+independently re-verified the same code paths directly, rather than take
+Red Team's reading on its own word (this project's own established
+discipline — the same standard §3 already applied to the `sessionHooks`
+question):
+
+**Verified directly** (`iI(...)`, the `PreToolUse` hook-result reducer in
+`cli.js`, and `rZ6(...)`, the function that spawns each hook's `command:`
+string as a subprocess):
+
+- `rZ6()` spawns the hook's `command:` string via a shell (`spawn(...,
+  {shell:true})`), writes the full JSON payload to the child process's
+  **stdin**, and captures stdout/stderr/exit status once the process
+  closes. A Python traceback from an uncaught exception is ordinary
+  process behavior here — nothing in the invocation path intercepts or
+  special-cases it. This directly answers Red Team's verification ask:
+  the harness's invocation pattern (plain OS subprocess, JSON on stdin,
+  no wrapper that could intercept an exception before it reaches our own
+  code) does not prevent an uncaught exception from reaching a top-level
+  `except` block in the script — ordinary Python exception semantics
+  apply throughout, with the one caveat noted below (`SystemExit`).
+- After the process exits, `iI()` first tries to parse the **entire
+  trimmed stdout** as JSON (`Es4(...)`). If it starts with `{` and parses
+  as valid JSON matching the hook-output schema, the decision comes from
+  that JSON's `hookSpecificOutput.permissionDecision` field —
+  **regardless of the process's exit code**; the exit-code branches below
+  are only reached when stdout produced no valid JSON at all.
+- Only then does exit code matter: exit `0` → allow (success), exit
+  exactly `2` → deny (`stderr` shown to the model as the reason), **any
+  other exit code (1, 3, 130, ...) → treated as `"non_blocking_error"`,
+  i.e. allow, with stderr shown only to the human, not the model** — the
+  exact fail-open path Red Team identified. A raised exception *inside*
+  `rZ6()` itself (e.g. `EPIPE`, a spawn failure) is separately caught by
+  `cli.js`'s own code and also lands in this same fail-open branch
+  (`status:1`).
+- Python's default behavior on an uncaught exception — an unhandled
+  traceback to stderr, process exit code `1` — lands squarely in the
+  fail-open branch above, not the deny branch. This is exactly Red Team's
+  finding, confirmed by independent reading of the dispatch code, not
+  merely accepted.
+- A second, distinct trap worth naming precisely because it could defeat
+  a hastily-written fix that "emits JSON but isn't careful": `Es4(...)`
+  parses the **entire** trimmed stdout as one JSON value, not just a JSON
+  substring within it. Any stray non-JSON text on stdout — a debug
+  `print()` before or after the JSON decision, for instance — causes the
+  JSON parse to fail, which itself is treated as `"non_blocking_error"`
+  (fail-open), the very outcome this correction exists to prevent. The
+  except-handler's stdout must contain **only** the JSON decision object,
+  nothing else.
+
+**Why this is a REQUIRED property, not optional hardening**: the entire
+self-immune Developer denylist this milestone exists to ship depends on
+§2.2's checks actually running to completion and reaching an explicit
+deny decision on every input — not on the harness's default behavior when
+they don't. Because this hook's checks involve non-trivial parsing over
+untrusted, harness-supplied input (an ordinary Bash command with
+unbalanced quotes is enough to raise `ValueError` from `shlex.split()`),
+and this project has no existing hook-script convention to fall back on
+(Red Team independently confirmed no hook script exists anywhere in this
+codebase today), leaving this unspecified means the most natural, literal
+implementation of §2.2 as originally drafted would fail open on a routine
+edge case — no adversarial input required, and no logging either, since
+the code path that would call `record_hook_denial` never executes. This
+is the same severity class as Security's two required findings (Red
+Team's own assessment), and is required before Development starts, not a
+deferred hardening pass.
+
+**Required structure** (pseudocode — Development implements this against
+the real `opsdb`/`json`/`shlex` APIs; this sketch exists to pin down the
+shape, not to be copied verbatim):
+
+```python
+import sys, json, shlex
+from pathlib import Path
+
+def main():
+    raw_stdin = None
+    try:
+        raw_stdin = sys.stdin.read()               # inside the try — nothing
+                                                     # executes before this line
+        payload = _parse_payload(raw_stdin)         # guarded individually, below
+        decision, matched_rule = _evaluate(payload) # runs all of §2.2's checks
+        _emit_decision(decision, matched_rule)       # stdout: ONLY the JSON object
+        if decision == "deny":
+            _log_denial(payload, matched_rule)        # best-effort; must not raise
+        sys.exit(0 if decision == "allow" else 2)     # exit code as a redundant
+                                                        # second signal, never the
+                                                        # only one
+    except BaseException as exc:
+        # BaseException, not Exception: a stray sys.exit() anywhere in
+        # _evaluate() (present or future — e.g. if a future edit reaches
+        # for argparse, which calls sys.exit() on its own error paths)
+        # raises SystemExit, which a narrower `except Exception:` would
+        # NOT catch — silently reproducing the exact fail-open bug this
+        # correction exists to close.
+        _emit_decision("deny", "hook_internal_error")   # stdout: ONLY this JSON
+        _best_effort_log_internal_error(raw_stdin, exc) # must not itself raise
+        sys.exit(2)
+
+def _parse_payload(raw_stdin):
+    try:
+        return json.loads(raw_stdin)
+    except (ValueError, TypeError) as exc:
+        raise HookInputError(f"payload JSON parse failed: {exc}") from exc
+
+def _evaluate(payload):
+    try:
+        path = Path(payload["tool_input"]["file_path"]).resolve()
+    except (KeyError, TypeError, OSError, RuntimeError) as exc:
+        return "deny", f"file_path resolve failed: {exc}"
+    # ... §2.2's Write/Edit containment + self-protection checks against `path` ...
+
+    try:
+        tokens = shlex.split(payload.get("tool_input", {}).get("command", ""))
+    except ValueError as exc:
+        return "deny", f"shlex parse failed: {exc}"
+    # ... §2.2's Bash substring + token-anchored checks ...
+```
+
+Two properties this sketch is required to convey, not merely illustrate:
+
+1. **The outer handler catches `BaseException`, not `Exception`** — see
+   the comment above. This is not hypothetical defensiveness: it is the
+   difference between this hook remaining fail-closed or silently
+   reverting to fail-open the first time any code path (now or in a
+   future edit) calls `sys.exit()` directly.
+2. **Every intermediate parsing step (`json.loads`, `Path.resolve()`,
+   `shlex.split()`) gets its own narrow `try/except`, not just reliance on
+   the single outermost handler.** This is not redundant with the outer
+   handler — it exists so a failure in, say, Bash-side `shlex`
+   tokenization is logged with a specific, diagnosable `matched_rule`
+   (`"shlex parse failed: ..."`) distinct from a generic
+   `"hook_internal_error"`. This matters directly for Security's S6
+   periodic-transcript-sampling discipline (§2.4): a human or Security
+   reviewing `hook_denials` later needs to be able to tell "this was
+   denied because it looked like a credential-file write" from "this was
+   denied because the hook itself couldn't parse its own input" —
+   collapsing both into one opaque catch-all defeats that distinction
+   without adding any real robustness.
+
+**Output mechanism, empirically resolved from the source above, not left
+ambiguous**: for every deny decision — including the exception-handling
+fallback — emit **both** signals, not either/or: the JSON form
+(`{"hookSpecificOutput": {"hookEventName": "PreToolUse",
+"permissionDecision": "deny", "permissionDecisionReason": "..."}}`) as the
+**only** content on stdout, **and** exit with code `2`. The JSON form is
+the more robust primary signal (checked and honored before exit-code
+branches are even reached, per `iI()` above); exit code `2` is the
+fallback carrier of intent if stdout somehow fails to carry valid,
+exclusive JSON (e.g. a write error on an already-failing process), and is
+also what puts the raw denial reason on `stderr` for the
+human-visible "hook blocking error" surface `cli.js` renders separately
+from the model-visible one.
+
+**Not required by this correction, disclosed as a separate, smaller
+residual** (matching this document's own disclosure discipline rather
+than silently folding it in as if fixed): a hook process that hangs past
+its timeout is killed and surfaces as `"cancelled"`, not `"blocking"` — a
+third fail-open mode, distinct from the exception/exit-code question
+above, that this correction does not attempt to close. This is named here
+only so Development doesn't have to rediscover it, not as a new required
+fix — the denylist's checks (§2.2) are all cheap, synchronous, stdlib-only
+operations (`shlex`, `json`, `pathlib`) with no plausible unbounded-time
+path (no network calls, no subprocesses of the hook's own per §2.2's
+"no subprocess calls of its own" design choice), so this residual is far
+smaller in practice than the exception-handling gap this correction
+closes.
+
+**Development's empirical verification, extending §2.1's existing test
+list**: feed the hook a deliberately malformed `tool_input` (e.g. a
+missing `file_path` key, non-UTF8 bytes in `command`) and a Bash command
+with unbalanced quotes; confirm each produces a logged `hook_denials` row
+and an observed deny — not a silent allow — before trusting the hook in a
+real Developer session. This is the same test Red Team's §1 requires,
+folded into this document's own existing "flag-and-verify" discipline
+rather than treated as a separate, optional step.
+
 ### 2.3 Why this hook self-protects continuously, not just after the fact
 
 Per §3.4's direct evidence from the installed CLI source: a subagent's
