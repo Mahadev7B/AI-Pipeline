@@ -327,3 +327,58 @@ CREATE TABLE IF NOT EXISTS automation_state (
 );
 INSERT OR IGNORE INTO automation_state (id, enabled, changed_by, reason)
   VALUES (1, 0, 'system', 'Phase 3A shipped disabled by default — Founder must explicitly enable it.');
+
+-- TASK-017 (risks.id=3 reduction milestone): the audit record for the
+-- three new synchronous, human-triggered reviewer routes (POST
+-- /api/tasks/<id>/review/{code,security,red-team}). Deliberately NOT a
+-- new column on automation_events -- that table's
+-- trigger_status_history_id UNIQUE constraint is a load-bearing,
+-- deliberate idempotency guarantee for the poller's "claim exactly once,
+-- unattended" model; forcing a human-repeatable "run this review again"
+-- action through that constraint would either block a legitimate re-run
+-- or require weakening a guarantee Red Team's own Phase 3A review
+-- required be strict. A second, small, structurally distinct table, same
+-- start/end-row shape this codebase already uses four times over
+-- (automation_events, agent_runs, qa_results, review_results) -- see
+-- ops/reviews/cto-risk3-milestone-architecture.md §1.4.
+CREATE TABLE IF NOT EXISTS reviewer_invocations (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id           INTEGER NOT NULL REFERENCES tasks(id),
+  review_kind       TEXT NOT NULL CHECK (review_kind IN ('code','security','red-team')),
+  reviewed_by_agent TEXT NOT NULL,             -- 'code-review' | 'security' | 'red-team'
+  triggered_by      TEXT NOT NULL DEFAULT 'founder',
+  status            TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running','completed','failed')),
+  outcome           TEXT CHECK (outcome IN ('pass','reject','error',NULL)),
+  review_result_id  INTEGER REFERENCES review_results(id),
+  agent_run_id      INTEGER REFERENCES agent_runs(id),
+  cost_usd          REAL,
+  truncated         INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0,1)),
+  base_commit_sha   TEXT,        -- code/security kind only
+  head_commit_sha   TEXT,        -- all kinds
+  artifact_paths    TEXT,        -- json array; red-team kind: the file(s) reviewed
+  skip_reason       TEXT,
+  started_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  ended_at          TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_reviewer_invocations_task ON reviewer_invocations(task_id);
+CREATE INDEX IF NOT EXISTS idx_reviewer_invocations_status ON reviewer_invocations(status);
+
+-- TASK-017: the self-immune Developer denylist's own audit record (§2.4)
+-- — ops/control-center/hooks/developer_pretooluse.py logs a row here for
+-- every DENIED tool call it observes (never every allowed call — the
+-- same disclosed cost tradeoff Security's Stage 2 §6 accepted). Written
+-- by opsdb.record_hook_denial(), called by the hook script itself via
+-- its own short-lived opsdb.connect() (a standalone subprocess the
+-- harness spawns per tool call).
+CREATE TABLE IF NOT EXISTS hook_denials (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  role               TEXT NOT NULL,           -- 'developer' (only role hooked this milestone)
+  tool_name          TEXT NOT NULL,           -- 'Bash' | 'Write' | 'Edit'
+  matched_rule       TEXT NOT NULL,           -- which specific pattern fired, e.g. 'operations.sqlite3'
+  tool_input_summary TEXT NOT NULL,           -- truncated (2,000 chars), the command or file_path
+  session_id         TEXT,
+  transcript_path    TEXT,
+  created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_hook_denials_role ON hook_denials(role);
+CREATE INDEX IF NOT EXISTS idx_hook_denials_created ON hook_denials(created_at);

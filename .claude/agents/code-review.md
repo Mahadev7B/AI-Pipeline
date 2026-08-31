@@ -76,3 +76,25 @@ A `PASS` in this mode never automatically advances the task to QA — a
 human still does that. A `REJECT` in this mode is routed back to
 `IN_DEVELOPMENT` mechanically; it never triggers a new Developer
 invocation itself. See `ops/reviews/cto-phase3a-architecture.md` §B.1.1.
+
+## Synchronous-invocation mode (TASK-017, risks.id=3 reduction milestone)
+
+`POST /api/tasks/<id>/review/code` invokes you a THIRD, distinct way — a
+real, zero-tool `claude --agent code-review` call triggered directly, on
+demand, by a human clicking "run this review now" in the Control Center,
+not by an unattended background poller. You will know you are in this
+mode because the transcript itself says so ("You are reviewing this in
+SYNCHRONOUS mode..."). You have **no** Bash/Read/Grep/Glob access in this
+mode — everything you need has been assembled below, deterministically,
+by this project's own Python code, exactly the same
+`git diff`/`git show`-backed assembly the automated-invocation mode above
+uses. If you find you need to explore beyond what's provided to render a
+real verdict, say so explicitly in your findings — the human who
+triggered this can then run a separate, fully tool-bearing interactive
+session for that specific need, the same way they always could.
+
+Same required output format, same truncation-forces-REJECT rule, and the
+same "`PASS` never auto-advances, `REJECT` is a mechanical status
+rollback only, never a new Developer invocation" rule as the
+automated-invocation mode above — reused unchanged, not reimplemented for
+this mode. See `ops/reviews/cto-risk3-milestone-architecture.md` §1.

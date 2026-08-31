@@ -1,7 +1,17 @@
 # ROADMAP.md
 
-Four phases. Each phase requires a separate, explicit Founder go-ahead before
-the next one starts. No phase begins itself.
+Three phases are currently defined and gated (Phase 0-3 below; Phase 3
+itself ships as authorized sub-slices, not all at once). A possible Phase 4
+is proposed, not yet defined or approved, at the bottom of this file. Each
+phase requires a separate, explicit Founder go-ahead before the next one
+starts. No phase begins itself.
+
+*(Correction, Founder directive "PAUSE SECURITY HARDENING, FINISH PRODUCT
+ARCHITECTURE FIRST", 2026-08-31: this file previously said "Four phases"
+while only ever defining Phase 0 through Phase 3 — an inconsistency the
+Founder flagged. Phase 4 was never scoped. It is now proposed, clearly
+marked NOT STARTED / NOT APPROVED, at the bottom of this file — see
+PROPOSED PHASE 4, below.)
 
 ## PHASE 0 — Design & Architecture Proposal *(APPROVED 2026-08-28 — see DEC-003)*
 
@@ -78,8 +88,17 @@ information.
   (TASK-016, CTO → Security → Red Team → Chief of Staff, investigation
   only — no implementation): see
   `ops/reviews/chief-of-staff-risk3-synthesis.md` for the Founder-facing
-  synthesis and the smallest-first-step authorization proposed. `risks.id=3`
-  remains `open` pending that Founder decision.
+  synthesis and the smallest-first-step authorization proposed. The
+  Founder then authorized a narrow implementation milestone (TASK-017)
+  which went through three real review rounds (Security: one CONCERNS,
+  fixed; Red Team: two REJECTs, both fixed and re-verified, final PASS)
+  before the Founder paused it mid-Development to prioritize finishing
+  the product architecture first — see `DECISIONS.md` DEC-008.
+  TASK-017's findings and approved design are preserved, not discarded;
+  work resumes before any broader unattended automation, external
+  users, production credentials, production deployment automation, or
+  multi-user access. `risks.id=3` remains `open`, explicitly deferred
+  by Founder direction, not resolved.
 
 Phase 2 ships as a sequence of small, separately reviewed milestones
 (Architecture → Red Team → Development → Code Review → QA → Security
@@ -216,6 +235,50 @@ deployment) **remains explicitly unauthorized** and does not begin
 until the Founder separately approves that specific expansion — Phase
 3A shipping does not itself authorize Phase 3B or any later slice, per
 the Rule at the bottom of this file.
+
+**TASK-017 (risks.id=3 hardening milestone) — paused mid-Development by
+Founder direction, 2026-08-31** (see `DECISIONS.md` DEC-008): the
+Founder chose to prioritize completing the product architecture needed
+for Founder testing over continuing repeated architecture/Red Team
+correction cycles on this one security mechanism. This is a
+prioritization decision, not acceptance that `risks.id=3` is solved —
+its findings, the approved (post-three-round) architecture document,
+and CTO/Security/Red Team's recommendations are all preserved for when
+this work resumes, which is required before any broader unattended
+automation, external users, production credentials, production
+deployment automation, or multi-user access.
+
+**Remaining Phase 3 / Founder-testability architecture** — under
+review per the same Founder directive: CTO and Chief of Staff are
+producing a completion assessment covering the rest of Phase 3's
+orchestration (remaining handoffs, rejection/rework loops, Founder
+approval boundaries), a Founder Work Progress capability (per-task gate
+visibility, sourced from the existing operational database, no second
+project-management system), a cost/token tracking architecture, and a
+concrete definition of "Founder Test Readiness" — see `ops/reviews/`
+for the resulting documents once complete, and the Founder-facing
+synthesis this produces.
+
+## PROPOSED PHASE 4 — Human AI Team Experience (NOT STARTED, NOT APPROVED)
+
+Proposed only, per Founder directive 2026-08-31 ("PAUSE SECURITY
+HARDENING, FINISH PRODUCT ARCHITECTURE FIRST"), Part 7. Nothing below
+is built, scoped in detail, or authorized — this section exists solely
+to position the idea in the roadmap for a later, separate Founder
+approval, the same as any other phase.
+
+Potential scope, as the Founder described it: persistent human-like
+identity for each agent; individual voices; realtime voice
+conversation; realistic avatars; lip sync / expression / listening
+states; the Founder talking naturally to the Chief of Staff; Ask-Agent
+with voice/avatar; Executive Meetings with visible, speaking agents; a
+provider-neutral avatar and TTS architecture; graceful voice-only
+fallback if avatar rendering lags.
+
+This phase would not begin until Phase 3's remaining scope (or
+whatever subset of it the Founder authorizes) is itself complete and
+separately approved, per the Rule below — a phase that is technically
+easy to start early is still not started early.
 
 ## Rule
 

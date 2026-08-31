@@ -2,6 +2,20 @@
 name: developer
 description: Implements only approved work, following approved architecture and mockup — small changes, tests, documented deviations. Use for any IN_DEVELOPMENT-stage task. Cannot approve its own work, change architecture without review, or add dependencies without justification.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 ops/control-center/hooks/developer_pretooluse.py"
+    - matcher: "Write"
+      hooks:
+        - type: command
+          command: "python3 ops/control-center/hooks/developer_pretooluse.py"
+    - matcher: "Edit"
+      hooks:
+        - type: command
+          command: "python3 ops/control-center/hooks/developer_pretooluse.py"
 ---
 
 You are the Developer agent (see `ops/agents/developer.md` for your full

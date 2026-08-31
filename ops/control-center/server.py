@@ -169,6 +169,7 @@ import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2
 import meeting_orchestrator  # noqa: E402 — Executive Meeting orchestration (Milestone 2B3B)
 import chief_of_staff  # noqa: E402 — Chief of Staff Founder interface (Phase 3A Part A, TASK-015)
 import automation  # noqa: E402 — the automation poller (Phase 3A Part B, TASK-015)
+import reviewer_sync  # noqa: E402 — the three synchronous reviewer routes (TASK-017, risks.id=3 reduction milestone)
 import founder_auth  # noqa: E402 — Founder credential load/verify (Milestone 2B4)
 import generate_overview  # noqa: E402
 import generate_pipeline  # noqa: E402
@@ -205,6 +206,14 @@ CHIEF_OF_STAFF_ASK_PATH = "/api/chief-of-staff/ask"
 # gate as every other write route — no new authorization boundary.
 AUTOMATION_STOP_PATH = "/api/automation/stop"
 AUTOMATION_START_PATH = "/api/automation/start"
+# TASK-017 (risks.id=3 reduction milestone), §1.3: the three new
+# synchronous, zero-tool reviewer routes — same digit-bounded task-id
+# convention as APPROVAL_PATH_RE/MEETING_DECIDE_PATH_RE, one combined
+# regex capturing both the task id and which of the three review kinds,
+# reusing the existing CSRF+session gate unchanged (§1.3's own framing:
+# "reuse of an existing mechanism via a new route," not a new
+# authorization boundary).
+TASK_REVIEW_PATH_RE = re.compile(r"^/api/tasks/(\d{1,15})/review/(code|security|red-team)$")
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -508,7 +517,8 @@ class Handler(BaseHTTPRequestHandler):
         is_meeting_create = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask) and path == MEETING_CREATE_PATH
         is_automation_stop = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create) and path == AUTOMATION_STOP_PATH
         is_automation_start = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop) and path == AUTOMATION_START_PATH
-        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop or is_automation_start):
+        m_task_review = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop or is_automation_start) else TASK_REVIEW_PATH_RE.match(path)
+        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop or is_automation_start or m_task_review):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
@@ -569,6 +579,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_automation_toggle(False, fields)
         elif is_automation_start:
             self._handle_automation_toggle(True, fields)
+        elif m_task_review:
+            self._handle_task_review(int(m_task_review.group(1)), m_task_review.group(2), fields)
         else:
             self._handle_meeting_create(fields)
 
@@ -1145,6 +1157,56 @@ class Handler(BaseHTTPRequestHandler):
 
         self._redirect("/automation.html")
 
+    def _handle_task_review(self, task_id: int, kind: str, fields: dict) -> None:
+        """POST /api/tasks/<id>/review/{code,security,red-team} (TASK-017,
+        risks.id=3 reduction milestone, §1.3). Same CSRF+session gate as
+        every other write route (do_POST()'s existing dispatch already
+        applied both before this is ever called). The whole synchronous
+        flow (eligibility checks -> transcript assembly -> the real,
+        zero-tool invocation -> verdict handling) lives in
+        reviewer_sync.py — this handler only validates the HTTP-facing
+        input (the red-team-only `artifact_paths` field) and maps outcomes
+        to responses, the same separation _handle_meeting_create/
+        _handle_chief_of_staff_ask already keep from their own
+        orchestration modules."""
+        redirect_to = f"/pipeline.html#task-{task_id}"
+
+        try:
+            if kind == "red-team":
+                raw = fields.get("artifact_paths", [""])[0]
+                artifact_paths = [p.strip() for p in raw.split(",") if p.strip()]
+                if len(artifact_paths) > reviewer_sync.MAX_ARTIFACT_PATHS:
+                    self._send_html(400, _error_page(
+                        400, "Bad request",
+                        f"At most {reviewer_sync.MAX_ARTIFACT_PATHS} artifact_paths entries are allowed."))
+                    return
+                reviewer_sync.run_red_team_review_sync(task_id, artifact_paths)
+            elif kind == "code":
+                reviewer_sync.run_code_review_sync(task_id)
+            else:
+                reviewer_sync.run_security_review_sync(task_id)
+        except LookupError as exc:
+            self._send_html(404, _error_page(404, "Not found", str(exc)))
+            return
+        except reviewer_sync.ReviewNotEligible as exc:
+            self._send_html(400, _error_page(400, "Not eligible", str(exc)))
+            return
+        except ValueError as exc:
+            self._send_html(409, _error_page(409, "Already in progress", str(exc)))
+            return
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention starting a {kind} sync review "
+                              f"for task {task_id}: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled {kind} sync review error for task {task_id}: "
+                              f"{type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong running this review. See the server's terminal output for detail."))
+            return
+
+        self._redirect(redirect_to)
+
 
 def _reconcile_orphaned_runs() -> None:
     """Startup reconciliation (Red Team's Milestone 2B2 review, condition
@@ -1210,6 +1272,20 @@ def _reconcile_orphaned_runs() -> None:
             conn, agent_runtime.AUTOMATED_CODE_REVIEW_ACTIVITY_LIKE, status="failed")
         if automated_review_count:
             print(f"reconciled {automated_review_count} orphaned automated Code Review run(s) from a prior server process.")
+        # TASK-017 (risks.id=3 reduction milestone), §1.4: a sixth run
+        # type, a synchronous reviewer invocation ("Synchronous review:%")
+        # — same generic opsdb.reconcile_orphaned_runs() call, distinct
+        # LIKE pattern from every existing one so a crash mid-review isn't
+        # mislabeled as an orphaned automated or human-supervised run (or
+        # vice versa), even though a synchronous code-review invocation is
+        # attributed to the same agents.name = "code-review" row as both
+        # of those. Omitting this would reproduce the exact defect
+        # TASK-011 QA round 2 already found and fixed once for
+        # Orchestrator's validation runs.
+        reviewer_sync_count = opsdb.reconcile_orphaned_runs(
+            conn, agent_runtime.REVIEWER_SYNC_ACTIVITY_LIKE, status="failed")
+        if reviewer_sync_count:
+            print(f"reconciled {reviewer_sync_count} orphaned synchronous reviewer run(s) from a prior server process.")
         # §B.11: the new automation_events table's own crash-recovery
         # counterpart — any status='running' row here means the prior
         # process crashed mid-cycle; marked failed/interrupted once, never

@@ -54,6 +54,62 @@ def _result_pill(result: str) -> str:
     return f'<span class="pill" style="background:{soft}; color:{color};">{e(result)}</span>'
 
 
+# TASK-017 (risks.id=3 reduction milestone), §1.3/§5: the three new
+# synchronous, zero-tool reviewer routes need a real UI entry point — a
+# route with none is dead code. Distinct from _task_groups() below
+# (history of PAST review/QA rows): these are tasks currently SITTING at
+# a review gate, which may have zero prior review_results rows (e.g. a
+# task's very first Code Review) and so would not appear in that history
+# section at all.
+_GATE_TO_REVIEW_KIND = (
+    ("CODE_REVIEW", "code", "Run Code Review now"),
+    ("SECURITY_REVIEW", "security", "Run Security Review now"),
+    ("RED_TEAM_REVIEW", "red-team", "Run Red Team Review now"),
+)
+
+
+def _tasks_at_gate(conn: sqlite3.Connection, status: str) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT id, title, status FROM tasks WHERE status = ? ORDER BY id", (status,)
+    ).fetchall()
+
+
+def render_run_review_now(conn: sqlite3.Connection, token: str | None) -> str:
+    tok = e(token or "")
+    cards = []
+    for status, kind, label in _GATE_TO_REVIEW_KIND:
+        for t in _tasks_at_gate(conn, status):
+            extra_field = (
+                '<input type="text" name="artifact_paths" placeholder="ops/reviews/your-doc.md" '
+                'style="font-size:11px; padding:6px 8px; border-radius:6px; border:1px solid var(--border2); '
+                'background:var(--panel2); color:var(--text); margin-right:6px; width:260px;">'
+                if kind == "red-team" else ""
+            )
+            cards.append(f'''
+            <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <a href="pipeline.html#task-{t["id"]}" style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</a>
+              <form method="POST" action="/api/tasks/{t["id"]}/review/{kind}" style="display:flex; align-items:center; gap:0;">
+                <input type="hidden" name="token" value="{tok}">
+                {extra_field}
+                <button type="submit" style="padding:7px 14px; border-radius:8px; border:1px solid var(--accent);
+                  background:var(--accent)22; color:var(--accent); font-size:11.5px; font-weight:700; cursor:pointer;">{e(label)}</button>
+              </form>
+            </div>''')
+    if not cards:
+        return ''
+    return f'''
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="label" style="margin-bottom:8px;">Run a review now — synchronous, zero-tool, human-triggered</div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:10px; line-height:1.5;">
+        Tasks currently sitting at a review gate. Runs the real reviewer agent with no Bash/Read/Grep/Glob access —
+        everything it needs is assembled deterministically from git and the task record. Takes up to 120 seconds;
+        this page will not respond until it finishes. Red Team review needs one or more comma-separated
+        repo-relative artifact paths (e.g. an architecture doc).
+      </div>
+      {"".join(cards)}
+    </div>'''
+
+
 def _task_groups(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Distinct task_ids with review/QA rows, ordered by that task's own
     most-recent review/QA row (most-recently-active task first), joined
@@ -165,6 +221,7 @@ def build_html(token: str | None = None) -> str:
   task, most-recently-active task first — including resolved failures on now-DONE tasks. For what needs attention
   right now, see the Founder Inbox or <code class="mono">CURRENT_STATUS.md</code>.
 </div>
+{render_run_review_now(conn, token)}
 {render_reviews(conn)}'''
     return page("Reviews", "reviews.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")

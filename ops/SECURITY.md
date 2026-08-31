@@ -631,3 +631,134 @@ mitigated by anything in this design; the invocation this actor triggers
 remains zero-tool, unconditionally, by construction. See
 `ops/reviews/cto-phase3a-architecture.md`,
 `ops/reviews/security-phase3a-threat-model.md`."
+
+## risks.id=3 reduction milestone (Phase 3, TASK-017)
+
+Full design in `ops/reviews/cto-risk3-milestone-architecture.md`;
+independently reviewed in `ops/reviews/security-risk3-milestone-threat-model.md`
+(CONCERNS at the architecture stage — two required fixes, folded into the
+shipped design) and `ops/reviews/red-team-risk3-milestone-review.md`
+(REJECT, twice — a fail-closed hook-contract gap, then a control-flow bug
+in the fix itself, both fixed and independently re-verified; final PASS).
+Authorized by the Founder's exact scope in Appendix E of
+`ops/reviews/chief-of-staff-risk3-synthesis.md` — explicitly NOT
+authorized: QA/CTO/DevOps tool scoping, any Founder-facing route/auth/
+CSRF change, any deployment-gating change.
+
+**Part 1 — three new synchronous, zero-tool reviewer routes.** `POST
+/api/tasks/<id>/review/{code,security,red-team}` reuse the exact same
+CSRF (`_require_csrf_token()`) + Founder-session (`_authenticated_session()`)
+gate as every other write route — no new authorization boundary — and
+call `agent_runtime.invoke_agent()` exclusively, the same unconditional
+`--tools ""`/`--strict-mcp-config` zero-tool mechanism Phase 3A's
+automated Code Review already used. Code Review/Security review the same
+handoff-recorded `git diff` the automated poller reviews; Red Team's
+route is artifact-scoped (a human supplies repo-relative paths, the
+server — never the client — computes `git rev-parse HEAD` and retrieves
+each file's committed content from git's own object database). This
+milestone touches nothing about Security's/Red Team's own interactive/
+Task-tool-delegated investigative sessions — that is a structurally
+separate code path that never calls `agent_runtime.invoke_agent()`, not a
+documented carve-out a model is trusted to honor.
+
+**Part 2 — the self-immune Developer denylist.**
+`ops/control-center/hooks/developer_pretooluse.py`, registered only in
+`.claude/agents/developer.md`'s own `hooks:` frontmatter, is a real,
+harness-enforced `PreToolUse` gate narrowing what Developer's existing
+Bash/Write/Edit tool grants may touch — the credential file,
+`operations.sqlite3` and raw-sqlite access patterns, `ptrace`/`sudo`/
+`gdb`/`strace`, and its own defining files (self-protection). Both check
+paths (Write/Edit's typed `file_path`, Bash's string matching) are
+explicitly, honestly disclosed as bypassable by a deliberately
+adversarial agent (base64/heredoc indirection; glob/string-concatenation
+evasion of the substring list; a symlink plus an unrelated-looking Bash
+command) — this hook raises the bar for realistic, non-adversarial scope
+creep, and is not, and does not claim to be, a sandbox.
+
+**The fail-closed contract is the load-bearing property, not
+optional hardening** — added and twice corrected across Red Team's three
+review rounds (see `ops/reviews/red-team-risk3-milestone-review.md` §1,
+§6, §7 for the full history). Claude Code's own `PreToolUse` hook
+dispatch fails OPEN — silently ALLOWS the tool call — on any hook exit
+code other than exactly 2, including Python's default behavior on an
+uncaught exception. The hook wraps every parsing/evaluation step that can
+raise on ordinary, non-adversarial input in one `try` guarded by `except
+BaseException` (not `Exception` — a stray `sys.exit()` raises
+`SystemExit`, itself a `BaseException`), with the legitimate exit calls
+(success path and the exception handler's own) placed outside any `try`
+whose `except` could re-catch them, and a nested best-effort fallback if
+even the exception handler's own emit/log calls fail. Verified directly,
+not merely asserted: fed the hook malformed JSON, a non-object payload, a
+missing `tool_input`, a Bash command with unbalanced quotes (the concrete
+`shlex.split()` `ValueError` case Red Team's original finding named), a
+non-string `file_path`/`command`, and an unrecognized `tool_input` shape
+— every one produced an explicit, logged deny, never a silent allow; a
+benign in-repo Write and a benign Bash command were both correctly
+allowed. `hook_denials` records a specific, diagnosable `matched_rule`
+for each (distinguishing "denied because it looked like a credential-file
+write" from "denied because the hook itself couldn't parse its own
+input"), confirmed by direct query against a scratch database during this
+verification.
+
+**Registration timing is proven; bypass-detection completeness for the
+self-protection paths is not, and this document does not claim it is.**
+Per direct reading of the installed CLI source (`ops/reviews/cto-risk3-milestone-architecture.md`
+§3), a subagent's `hooks:` frontmatter is registered into a
+per-invocation `sessionHooks` map before that invocation's own
+tool-execution loop begins — there is no code path where a Developer tool
+call executes before the hook is active for that invocation. This is
+real and unconditional. It does NOT mean the hook cannot be edited in a
+**future** invocation, nor does it mean detection of the self-protection
+paths is complete — the same base64/heredoc/glob/concatenation
+indirection that defeats every other denylist entry in this hook defeats
+these too.
+
+**Part 3 — the raw-`sqlite3`-bypasses-`opsdb.py` vector: partial fix,
+undiluted disclosure of the rest.** `operations.sqlite3` and the specific
+raw-access patterns (`import sqlite3`, `sqlite3.connect`, the literal
+filename) are named explicitly in the Developer denylist — a real,
+harness-enforced narrowing for Developer specifically, not a closure: a
+deliberately adversarial Developer session can still reach it via
+encoding indirection, and the deeper structural gap (Python-only
+invariants — e.g. task-status transition validity — not mirrored as SQL
+`CHECK`/trigger constraints) is completely untouched.
+
+**`risks.id=3`** moves from `open` to `mitigated`, per the disclosure text
+below, appended via `python3 ops/db/opsdb.py risk-resolve` once this
+milestone has passed the full gate sequence through CTO conformance — not
+executed by Development, per this project's convention that the
+risk-register status change happens after the review chain confirms the
+shipped design, not before it:
+
+> TASK-017 (risks.id=3 reduction milestone) shipped three things: (1)
+> Code Review, Security, and Red Team's normal invocations are now
+> zero-tool via new synchronous, human-triggered routes reusing Phase
+> 3A's existing pattern — their interactive/investigative sessions are
+> completely unaffected, a structurally separate code path, not merely a
+> documented carve-out. (2) A Developer-role `PreToolUse` denylist
+> (Bash + Write/Edit, covering the credential file, `operations.sqlite3`
+> and raw-sqlite access patterns, `ptrace`/`sudo`, and its own
+> configuration files) is live and self-protecting against Developer
+> specifically — confirmed, not assumed, to be scoped to Developer's own
+> per-invocation session only. It is NOT technically closed against
+> DevOps **or CTO**, both of whose unrestricted native tool grants (Bash
+> for DevOps, Write/Edit for CTO) remain sanctioned-by-capability (if no
+> longer sanctioned-by-documentation, for DevOps) paths to the same
+> files — a named, disclosed scope conflict in this milestone's own
+> authorization, not an oversight. CTO's own native `Write`/`Edit` grant
+> is, if anything, a more direct version of the same capability than
+> DevOps's Bash-routed one, since it requires no shell-parsing indirection
+> at all. (3) QA, CTO, and DevOps remain completely unscoped — exactly as
+> before this milestone. (4) The raw-`sqlite3`-bypasses-`opsdb.py` vector
+> is narrowed for Developer only, via string-pattern denial, itself
+> disclosed as bypassable by a deliberately adversarial session
+> (base64/heredoc indirection) — the deeper gap (Python-only invariants,
+> e.g. task status transition validity, not mirrored as SQL
+> `CHECK`/trigger constraints) is completely untouched and would require a
+> separate, materially larger architecture investigation neither
+> attempted nor in-scope here. `risks.id=3` remains a live master-key
+> exposure for three of seven tool-bearing roles and a real, disclosed
+> residual gap for the fourth. See
+> `ops/reviews/cto-risk3-milestone-architecture.md`,
+> `ops/reviews/security-risk3-milestone-threat-model.md`,
+> `ops/reviews/red-team-risk3-milestone-review.md`.

@@ -67,7 +67,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 import sqlite3
 import threading
@@ -78,9 +77,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
 import opsdb  # noqa: E402
 import agent_runtime  # noqa: E402
+import review_transcripts  # noqa: E402 — TASK-017: the six git-object-database-backed
+                            # transcript-assembly primitives this module used to define
+                            # itself now live there, imported below, unchanged internals
+                            # (ops/reviews/cto-risk3-milestone-architecture.md §5, "a pure
+                            # move — no behavior change"). Both this poller and the new
+                            # synchronous reviewer routes (reviewer_sync.py) import the
+                            # SAME functions, so "reuse" is a real shared import.
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-CODING_STANDARDS_PATH = REPO_ROOT / "ops" / "CODING_STANDARDS.md"
+REPO_ROOT = review_transcripts.REPO_ROOT
+CODING_STANDARDS_PATH = review_transcripts.CODING_STANDARDS_PATH
 
 POLL_INTERVAL_S = 20  # Red Team's Phase 3A review, open question 1: affirmed, no change
 _stop_event = threading.Event()
@@ -98,15 +104,17 @@ MAX_AUTOMATED_INVOCATIONS_PER_DAY = 20
 MAX_AUTOMATION_SPEND_USD_PER_DAY = 10.00
 _RESERVED_COST_PER_RUNNING_USD = 0.50  # matches agent_runtime.MAX_BUDGET_USD
 
-MAX_REVIEW_TRANSCRIPT_CHARS = 60_000
+MAX_REVIEW_TRANSCRIPT_CHARS = review_transcripts.MAX_REVIEW_TRANSCRIPT_CHARS
 
 AUTOMATION_NOTE_PREFIX = "[Automated, Phase 3A]"
 
 # §B.1/§B.13/Security's required fix C1: SHA format validation, before
-# ANY git subprocess call ever touches a caller-supplied SHA.
-_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+# ANY git subprocess call ever touches a caller-supplied SHA. TASK-017:
+# now defined in review_transcripts.py — re-exported here (unchanged
+# value/behavior) since this module's own code below still refers to it
+# as `_SHA_RE`.
+_SHA_RE = review_transcripts._SHA_RE
 
-_GIT_TIMEOUT_S = 30.0
 _MAX_LOG_CHARS = 2_000  # R5: same truncation agent_runtime.py already applies to stderr_text[:2000]
 
 
@@ -313,45 +321,8 @@ def _check_daily_spend_cap(conn: sqlite3.Connection, event_id: int) -> str | Non
     return None
 
 
-def _commit_exists(sha: str) -> bool:
-    """Security's required fix C1: confirms a SHA resolves to a real
-    commit object in THIS repository before it is trusted for a diff —
-    `git cat-file -e <sha>^{commit}` is a read-only existence check, no
-    output. `--` before the object argument is accepted by cat-file and
-    costs nothing (defense-in-depth, though this argument can never be
-    mistaken for an option — it is only ever called after _SHA_RE has
-    already confirmed it's pure lowercase hex)."""
-    try:
-        result = subprocess.run(
-            ["git", "cat-file", "-e", "--", f"{sha}^{{commit}}"],
-            cwd=REPO_ROOT, capture_output=True, timeout=_GIT_TIMEOUT_S,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        sys.stderr.write(f"[automation] git cat-file failed for {sha!r}: {type(exc).__name__}: {exc}\n")
-        return False
-    return result.returncode == 0
-
-
-def _validate_repo_path(rel_path: str) -> bool:
-    """§B.1.2's required path validation, exactly: reject absolute paths,
-    reject anything where Path(repo_root, path).resolve() does not remain
-    inside repo_root, reject a '..' component after normalization
-    (redundant with resolve() but cheap, per the doc). Any exception while
-    normalizing (e.g. an embedded null byte, which Python's own stdlib
-    raises ValueError on immediately — Security's required fix C2's
-    concern about a malformed candidate) is treated as an invalid path,
-    not allowed to propagate uncaught."""
-    try:
-        p = Path(rel_path)
-        if p.is_absolute():
-            return False
-        if any(part == ".." for part in p.parts):
-            return False
-        resolved = (REPO_ROOT / rel_path).resolve()
-        resolved.relative_to(REPO_ROOT.resolve())
-    except (ValueError, OSError):
-        return False
-    return True
+_commit_exists = review_transcripts._commit_exists
+_validate_repo_path = review_transcripts._validate_repo_path
 
 
 def _review_claimed_event(event_id: int, task_id: int) -> None:
@@ -436,128 +407,18 @@ def _review_claimed_event(event_id: int, task_id: int) -> None:
 
 
 # --------------------------------------------------------- transcript -----
-
-def _git_diff(base_sha: str, head_sha: str, paths: list[str]) -> str:
-    """Fixed argv, never a shell string (same injection-safety convention
-    agent_runtime.py's own Popen call already established). `--` separates
-    the two revision arguments from the pathspec arguments that follow
-    (Security's required fix C1)."""
-    cmd = ["git", "--no-pager", "diff", "--no-color", base_sha, head_sha, "--", *paths]
-    try:
-        result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, timeout=_GIT_TIMEOUT_S)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        sys.stderr.write(f"[automation] git diff failed: {type(exc).__name__}: {exc}\n")
-        return "(git diff could not be computed)"
-    if result.returncode != 0:
-        sys.stderr.write(f"[automation] git diff exited {result.returncode}: "
-                          f"{_truncate_for_log(result.stderr.decode('utf-8', errors='replace'))}\n")
-        return "(git diff could not be computed)"
-    return result.stdout.decode("utf-8", errors="replace")
-
-
-def _git_show_file(head_sha: str, path: str) -> str | None:
-    """Correction (Security's Phase 3A threat-model review, R1): retrieves
-    the file's committed content from git's OWN OBJECT DATABASE
-    (`git show <sha>:<path>`), never a live filesystem read of the working
-    tree (Path(...).read_text()) — closes a working-tree symlink/TOCTOU
-    exposure more robustly than path validation alone: git never touches a
-    filesystem symlink at this path when resolving a tree object.
-
-    Deliberately NOT given a `--` separator before the combined
-    `<sha>:<path>` object argument — verified empirically that `git show
-    -- <sha>:<path>` silently treats the whole string as a PATHSPEC
-    instead of an object reference (no revision precedes `--`, so `git
-    show` defaults to HEAD and then filters by a pathspec that never
-    matches, returning an empty result with exit code 0 — a silent,
-    wrong-content failure, not a loud one). This form is safe without `--`
-    regardless: the argument always begins with `head_sha`, which
-    `_SHA_RE`/`_commit_exists()` have already confirmed is pure lowercase
-    hex — it can never be misread as a `-`-prefixed option."""
-    cmd = ["git", "--no-pager", "show", f"{head_sha}:{path}"]
-    try:
-        result = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, timeout=_GIT_TIMEOUT_S)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        sys.stderr.write(f"[automation] git show failed for {path!r}: {type(exc).__name__}: {exc}\n")
-        return None
-    if result.returncode != 0:
-        return None
-    return result.stdout.decode("utf-8", errors="replace")
-
-
-def _read_coding_standards() -> str:
-    try:
-        return CODING_STANDARDS_PATH.read_text()
-    except OSError as exc:
-        sys.stderr.write(f"[automation] could not read CODING_STANDARDS.md: {type(exc).__name__}: {exc}\n")
-        return "(CODING_STANDARDS.md could not be read)"
-
+# TASK-017: _git_diff/_git_show_file/_read_coding_standards moved to
+# review_transcripts.py unchanged (§5, "a pure move — no behavior
+# change"); _assemble_transcript's body now lives there as
+# assemble_diff_review_transcript(), parameterized by `kind` so the SAME
+# implementation serves both this poller ('automated') and the new
+# synchronous reviewer routes ('synchronous') — see that module's
+# build_instructions_block().
 
 def _assemble_transcript(task_row: sqlite3.Row, handoff_row: sqlite3.Row, base_sha: str, head_sha: str,
                           paths: list[str]) -> tuple[str, bool]:
-    """§B.1's bullet list, assembled by deterministic Python — never real
-    tool grants for the (unsupervised) invocation this feeds. Graceful,
-    disclosed truncation at MAX_REVIEW_TRANSCRIPT_CHARS if exceeded — the
-    instructions block (including the truncation notice, when present) is
-    appended AFTER truncation, so the model always receives the real
-    VERDICT: instruction regardless of how much content had to be cut."""
-    parts: list[str] = []
-    parts.append(f"TASK-{task_row['id']:03d}: {task_row['title']}")
-    if task_row["business_goal"]:
-        parts.append(f"Business goal: {task_row['business_goal']}")
-    if task_row["acceptance_criteria"]:
-        parts.append(f"Acceptance criteria: {task_row['acceptance_criteria']}")
-    if task_row["architecture_notes"]:
-        parts.append(f"Architecture notes: {task_row['architecture_notes']}")
-    if task_row["tests_required"]:
-        parts.append(f"Tests required: {task_row['tests_required']}")
-
-    parts.append("")
-    parts.append("Developer's handoff record:")
-    if handoff_row["work_completed"]:
-        parts.append(f"Work completed: {handoff_row['work_completed']}")
-    parts.append(f"Files changed: {handoff_row['files_changed']}")
-    if handoff_row["tests_added"]:
-        parts.append(f"Tests added: {handoff_row['tests_added']}")
-    if handoff_row["expected_behavior"]:
-        parts.append(f"Expected behavior: {handoff_row['expected_behavior']}")
-    if handoff_row["known_limitations"]:
-        parts.append(f"Known limitations: {handoff_row['known_limitations']}")
-
-    parts.append("")
-    parts.append(f"git diff {base_sha}..{head_sha} (scoped to files_changed):")
-    parts.append(_git_diff(base_sha, head_sha, paths))
-
-    parts.append("")
-    parts.append("Full final content of every changed/added file "
-                  "(retrieved via `git show <head_sha>:<path>` — the committed object, never a working-tree read):")
-    for path in paths:
-        content = _git_show_file(head_sha, path)
-        parts.append(f"--- {path} ---")
-        parts.append(content if content is not None else "(could not retrieve this file's content from the commit)")
-
-    parts.append("")
-    parts.append("CODING_STANDARDS.md (verbatim):")
-    parts.append(_read_coding_standards())
-
-    content = "\n".join(parts)
-    truncated = len(content) > MAX_REVIEW_TRANSCRIPT_CHARS
-    if truncated:
-        content = content[:MAX_REVIEW_TRANSCRIPT_CHARS] + "\n\n[content truncated at 60,000 characters]"
-
-    truncation_note = (
-        "\n\nNOTE: the content above was truncated to fit this automated review's size limit — you do "
-        "not have the complete picture. Per your role doc's automated-invocation note, a truncated "
-        "transcript must not receive VERDICT: PASS.\n"
-        if truncated else ""
-    )
-    instructions = (
-        "\n\nYou are reviewing this in AUTOMATED mode — a narrower context than a human-supervised "
-        "session (see your role doc's automated-invocation note for exactly what this means and what "
-        "it structurally cannot catch). Give your real findings, then end your entire reply with, as "
-        "the STRICTLY LAST non-blank line, exactly one of:\nVERDICT: PASS\nVERDICT: REJECT"
-        f"{truncation_note}"
-    )
-    return content + instructions, truncated
+    return review_transcripts.assemble_diff_review_transcript(
+        task_row, handoff_row, base_sha, head_sha, paths, kind="automated")
 
 
 # ---------------------------------------------------------- invocation ----
@@ -610,7 +471,7 @@ def _invoke_and_record(event_id: int, task_id: int, transcript: str, truncated: 
         conn.close()
 
     result = agent_runtime.invoke_agent("code-review", transcript,
-                                         timeout_s=agent_runtime.AUTOMATED_REVIEW_TIMEOUT_S)
+                                         timeout_s=agent_runtime.REVIEW_TIMEOUT_S)
 
     if not result.ok:
         sys.stderr.write(

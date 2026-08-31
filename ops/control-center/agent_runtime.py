@@ -109,10 +109,32 @@ CHIEF_OF_STAFF_ACTIVITY_LIKE = "Chief of Staff:%"
 AUTOMATED_REVIEW_ALLOWLIST = ("code-review",)
 AUTOMATED_CODE_REVIEW_ACTIVITY_LABEL = "Automated Code Review: reviewing a completed Developer handoff"
 AUTOMATED_CODE_REVIEW_ACTIVITY_LIKE = "Automated Code Review:%"
-# §B.1.1: real code review plausibly needs longer than a short Ask-Agent
-# exchange; this only blocks automation.py's own background poll thread,
-# never a Founder-facing HTTP request.
-AUTOMATED_REVIEW_TIMEOUT_S = 120.0
+# §B.1.1 (Phase 3A): real code review plausibly needs longer than a short
+# Ask-Agent exchange. TASK-017 (risks.id=3 reduction milestone) renames
+# this from AUTOMATED_REVIEW_TIMEOUT_S — it is no longer only the
+# poller's own timeout: the three new synchronous reviewer routes
+# (reviewer_sync.py) need the identical "real review plausibly takes
+# longer" allowance, since a genuine review is genuine work regardless of
+# whether a background poller or a human's click triggered it. A
+# synchronous HTTP request blocking the handling thread for up to 120s is
+# the same disclosed tradeoff Ask-Agent's own DEFAULT_TIMEOUT_S design
+# already accepted, just a larger number for a genuinely longer real task
+# (ops/reviews/cto-risk3-milestone-architecture.md §1.3.2).
+REVIEW_TIMEOUT_S = 120.0
+
+# TASK-017 (risks.id=3 reduction milestone), §1: the three new
+# synchronous, zero-tool reviewer routes (POST /api/tasks/<id>/review/
+# {code,security,red-team}) — a fifth distinct invocation category, same
+# reasoning as CHIEF_OF_STAFF_ALLOWLIST/AUTOMATED_REVIEW_ALLOWLIST above.
+# `security`/`red-team`'s NORMAL configuration (.claude/agents/*.md)
+# includes Bash — this allowlist means a synchronous review invokes them
+# zero-tool regardless of that, the same restriction every other
+# allowlist here already applies. Distinct from AUTOMATED_REVIEW_ALLOWLIST
+# (poller-only, code-review-only) — a human-triggered invocation of any
+# of the three reviewer roles, not an unattended background process.
+REVIEWER_SYNC_ALLOWLIST = ("code-review", "security", "red-team")
+REVIEWER_SYNC_ACTIVITY_LABEL = "Synchronous review: reviewing a Founder-triggered gate review"
+REVIEWER_SYNC_ACTIVITY_LIKE = "Synchronous review:%"
 
 # Milestone 2B3B round 2 (TASK-011): request-perspective, follow-up, and
 # retry. ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL is Orchestrator's real,
@@ -235,7 +257,8 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
     if (agent_name not in ASK_AGENT_ALLOWLIST
             and agent_name not in MEETING_PARTICIPANT_ALLOWLIST
             and agent_name not in CHIEF_OF_STAFF_ALLOWLIST
-            and agent_name not in AUTOMATED_REVIEW_ALLOWLIST):
+            and agent_name not in AUTOMATED_REVIEW_ALLOWLIST
+            and agent_name not in REVIEWER_SYNC_ALLOWLIST):
         return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for agent invocation.",
                               error_kind="invalid_agent")
 

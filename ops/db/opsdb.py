@@ -1262,6 +1262,101 @@ def reconcile_stuck_automation_events(conn: sqlite3.Connection) -> int:
     return cur.rowcount
 
 
+# --------------------------------------------------------- TASK-017 -------
+# risks.id=3 reduction milestone: the audit record for the three new
+# synchronous, human-triggered reviewer routes (server.py's
+# POST /api/tasks/<id>/review/{code,security,red-team}, via
+# ops/control-center/reviewer_sync.py) and the Developer denylist hook's
+# own denial log (ops/control-center/hooks/developer_pretooluse.py). See
+# ops/reviews/cto-risk3-milestone-architecture.md §1.4/§2.4. None of
+# these three have a CLI wrapper — called only in-process, or (for
+# record_hook_denial) by the standalone hook script's own short-lived
+# connection, never through a human-typed opsdb.py command.
+
+_REVIEWER_INVOCATION_KINDS = ("code", "security", "red-team")
+
+
+def start_reviewer_invocation(conn: sqlite3.Connection, task_id: int, review_kind: str,
+                               reviewed_by_agent: str, triggered_by: str = "founder",
+                               base_commit_sha: str | None = None, head_commit_sha: str | None = None,
+                               artifact_paths: list[str] | None = None) -> int:
+    """§1.4: mirrors create_automation_event()'s shape, but a plain
+    INSERT, not a BEGIN IMMEDIATE claim — there is nothing to claim
+    against. A human clicking "run this review again" after a small fix
+    is a legitimate, repeatable action, not an idempotency violation the
+    way a re-processed poller trigger would be. Raises ValueError for an
+    invalid review_kind. Returns the new reviewer_invocations.id."""
+    if review_kind not in _REVIEWER_INVOCATION_KINDS:
+        raise ValueError(f"review_kind must be one of {_REVIEWER_INVOCATION_KINDS}, got {review_kind!r}")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO reviewer_invocations (task_id, review_kind, reviewed_by_agent, triggered_by, "
+            "status, base_commit_sha, head_commit_sha, artifact_paths) "
+            "VALUES (?, ?, ?, ?, 'running', ?, ?, ?)",
+            (task_id, review_kind, reviewed_by_agent, triggered_by, base_commit_sha, head_commit_sha,
+             json.dumps(artifact_paths) if artifact_paths is not None else None),
+        )
+    return cur.lastrowid
+
+
+_REVIEWER_INVOCATION_END_STATUSES = ("completed", "failed")
+
+
+def end_reviewer_invocation(conn: sqlite3.Connection, invocation_id: int, status: str,
+                             outcome: str | None = None, review_result_id: int | None = None,
+                             agent_run_id: int | None = None, cost_usd: float | None = None,
+                             truncated: bool = False, skip_reason: str | None = None) -> None:
+    """Terminal-state write for one reviewer_invocations row — mirrors
+    end_automation_event()'s shape exactly (same rowcount-guard,
+    one-time-only-terminal-write discipline). Conditional on
+    status='running' so a row already ended cannot be silently re-ended.
+    Raises ValueError if `status` is not one of the real terminal values,
+    LookupError if the row doesn't exist or is already ended."""
+    if status not in _REVIEWER_INVOCATION_END_STATUSES:
+        raise ValueError(f"status must be one of {_REVIEWER_INVOCATION_END_STATUSES}, got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE reviewer_invocations SET status = ?, outcome = ?, review_result_id = ?, "
+            "agent_run_id = ?, cost_usd = ?, truncated = ?, skip_reason = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE id = ? AND status = 'running'",
+            (status, outcome, review_result_id, agent_run_id, cost_usd, 1 if truncated else 0,
+             skip_reason, invocation_id),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT status FROM reviewer_invocations WHERE id = ?", (invocation_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"reviewer_invocations {invocation_id} does not exist")
+            raise ValueError(f"reviewer_invocations {invocation_id} is already '{row['status']}'")
+
+
+_HOOK_DENIAL_TOOL_NAMES = ("Bash", "Write", "Edit")
+_HOOK_DENIAL_SUMMARY_MAX_CHARS = 2_000
+
+
+def record_hook_denial(conn: sqlite3.Connection, role: str, tool_name: str, matched_rule: str,
+                        tool_input_summary: str, session_id: str | None = None,
+                        transcript_path: str | None = None) -> int:
+    """§2.4: a new, small, unconditional-INSERT function. Called by
+    developer_pretooluse.py itself via its own opsdb.connect() (the hook
+    script is a standalone subprocess the harness spawns per tool call; it
+    opens its own short-lived connection, the same pattern every other
+    one-shot script in this codebase already uses). `tool_name` is not
+    CHECK-constrained in the schema to the three named values (the hook's
+    own exception-handling fallback may log 'unknown' when it cannot tell
+    which tool was being inspected) — validated loosely here (logged best-
+    effort, not blocked) so a genuinely unexpected value never itself
+    prevents a real denial from being recorded."""
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO hook_denials (role, tool_name, matched_rule, tool_input_summary, "
+            "session_id, transcript_path) VALUES (?, ?, ?, ?, ?, ?)",
+            (role, tool_name, matched_rule, (tool_input_summary or "")[:_HOOK_DENIAL_SUMMARY_MAX_CHARS],
+             session_id, transcript_path),
+        )
+    return cur.lastrowid
+
+
 PURGE_CHECK_TABLES = [
     "qa_results", "review_results", "deployments", "handoffs",
     "messages", "agent_activity", "task_steps",

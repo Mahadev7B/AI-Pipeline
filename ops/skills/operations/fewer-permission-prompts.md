@@ -6,7 +6,7 @@ Inputs required: Recent session transcripts.
 Analysis/checklist: Identifies safe, repeated read-only calls.
 Expected output: An updated `.claude/settings.json` allowlist.
 Failure conditions: No recurring pattern found.
-Limitations: Read-only calls only — never widens write/destructive permissions.
+Limitations: Read-only calls only — never widens write/destructive permissions. Must NOT be used to add, remove, or modify any `hooks:` block in any `.claude/agents/*.md` file, any file under `ops/control-center/hooks/`, or the `hooks` key of any `.claude/settings*.json` — those are protected architecture artifacts (TASK-017, risks.id=3 reduction milestone), changed only via a CTO/Red-Team-reviewed decision-record.
 Which agents may use it: Release/DevOps Agent.
 Version: as installed in this environment, 2026-08-28.
 ```
