@@ -410,13 +410,39 @@ implied):
 
 - Deny if the command string contains, as a substring: `founder_credential`,
   `operations.sqlite3`, `import sqlite3`, `sqlite3.connect`, `ptrace`,
-  ` gdb`, ` strace`, `sudo `.
+  ` gdb`, ` strace`, `sudo `, `.claude/agents/developer.md`,
+  `developer_pretooluse.py`, `.claude/settings.json`,
+  `.claude/settings.local.json`.
+  **Correction (Security's TASK-017 milestone review §1.2, "one cheap
+  denylist addition") — the four self-protection paths added to this
+  substring list.** Originally, these four paths were covered only by
+  the narrower, command-anchored check below, not by the plain substring
+  list. Security correctly identified that this left the self-protection
+  entries weaker than the credential/DB entries, for a checkable reason:
+  the command-anchored check only recognizes these paths as an apparent
+  argument to a fixed list of commands (`cat >`, `sed -i`, `>`, `>>`,
+  `cp`, `mv`, `rm`); a command that references one of these four paths
+  through any other command name — `python3 -c "open(p).read()"`, for
+  example — is not "an apparent path argument" to any of those six
+  anchors, so it fell through undetected. Adding the four self-protection
+  paths to the plain substring list closes exactly the "just don't type
+  one of six specific command names" case, at negligible cost (four more
+  string literals in an existing list) and no scope expansion beyond the
+  Founder's authorization — it does not add a new protected path, only a
+  second, coarser check for paths already in scope, and it does not
+  require or imply any hook on CTO or DevOps. It remains, like every
+  other entry in this substring list, bypassable by base64/heredoc
+  indirection — see the corrected §2.3 below for exactly what this
+  addition does and does not close.
 - Deny if the command string, after a cheap `shlex`-based best-effort
   tokenization, references `.claude/agents/developer.md`,
   `ops/control-center/hooks/developer_pretooluse.py`, `.claude/settings.json`,
   or `.claude/settings.local.json` as an apparent path argument (e.g. to
   `cat >`, `sed -i`, `>`, `>>`, `cp`, `mv`, `rm`) — best-effort, not a
-  claim of completeness.
+  claim of completeness. Retained alongside the substring addition above
+  because it also catches variable/glob-expanded forms (e.g. `sed -i
+  ".claude/agents/"*".md"`) that a plain substring match on the literal
+  path would miss.
 - **Explicitly not attempted**: reliable detection of non-`127.0.0.1`
   network access via Bash string matching. CTO's Stage-1 design implied
   this was achievable; it is not, without a much larger allowlist-shaped
@@ -449,6 +475,67 @@ rules in §2.2. This closes the loop for Developer specifically, completely,
 not merely "until Developer finds a workaround this review didn't think
 of" — the self-referential structure is what makes it durable, not a
 one-time check.
+
+**Correction (Security's TASK-017 milestone review §1.2) — the framing
+above overclaims and is narrowed to what is actually proven.** The
+"completely" in the paragraph above is true for exactly one property —
+**registration timing**: independently re-verified by Security directly
+against the installed CLI source (no code path exists in which a tool
+call for a given invocation executes before that invocation's own
+`sessionHooks` entry is registered). It is not true for **bypass
+detection** of the four self-protection paths specifically, and this
+document should not have implied otherwise two paragraphs below its own
+§2.2 disclosure that the Bash check is bypassable.
+
+Security gave a concrete, checkable example, and this document confirms
+it works exactly as described against the denylist as originally
+specified (before the §2.2 correction above):
+
+```
+Bash(command="python3 -c \"p='.claude/agents/developer.md'; d=open(p).read(); open(p,'w').write(d.split('hooks:')[0]+'---\n'+d.split('---',2)[2])\"")
+```
+
+This is a plain `python3 -c` invocation using `open()`/`write()` — not
+`cat`, `sed`, `cp`, `mv`, or `rm` — that reads and rewrites
+`.claude/agents/developer.md` to strip its own `hooks:` block. Checked
+against the originally-specified denylist: the plain substring list did
+not contain `.claude/agents/developer.md` at all (only the credential/DB
+patterns), and the narrower command-anchored check only recognizes the
+path as "an apparent path argument" to `cat >`, `sed -i`, `>`, `>>`, `cp`,
+`mv`, or `rm` — none of which appear in this command. The bypass requires
+no base64/heredoc encoding at all (the encoding-indirection class this
+document already disclosed as open) — it only requires not typing one of
+six specific command names the path-token check is anchored to, which is
+a strictly cheaper bypass than the one already disclosed. Security is
+right that this is worse for the self-protection paths specifically than
+for the credential/DB entries: per §2.2's own asymmetry (Write/Edit's
+typed `file_path` is the strong check, Bash string-matching is the weak
+backstop), a rational adversarial Developer whose only goal is removing
+the constraint on itself would deliberately route through Bash, not
+Write/Edit, precisely because Bash is the weaker check — and the
+self-protection paths are exactly where that incentive concentrates.
+
+The §2.2 correction above (adding the four self-protection paths to the
+plain substring list) closes this specific `python3 -c` example, because
+`.claude/agents/developer.md` is now a plain substring match regardless
+of which command reads/writes it. It does **not** make detection
+"complete": the same base64/heredoc indirection already disclosed for
+every other entry in this hook (e.g. `python3 -c
+"$(echo <base64-encoded-python> | base64 -d)"`, or writing the path
+itself in a split/concatenated or hex-encoded form so no literal
+substring match fires) defeats the corrected substring list exactly as it
+defeats every other pattern in §2.2, and remains open, undiminished, for
+the self-protection paths along with everything else.
+
+**Restated precisely**: this hook proves continuous self-protection for
+*registration timing* — a real, harness-enforced, independently-verified
+property with no exceptions. It does not prove, and this document no
+longer claims, complete *bypass detection* for the self-protection paths
+— that remains exactly as bypassable via Bash-string-matching evasion as
+every other entry in this design, cheapened (before this correction) by
+the six-command-name anchoring gap Security identified, and closed for
+that specific gap (not for encoding indirection generally) by the §2.2
+correction above.
 
 ### 2.4 Audit — hook denials, a new small table
 
@@ -545,6 +632,54 @@ milestone that is explicitly not this one. This should be named
 explicitly in the disclosure text appended to `risks.id=3`'s mitigation
 (§4) rather than folded silently into "Developer and DevOps are both now
 excluded" language that would overclaim what actually shipped.
+
+**Correction (Security's TASK-017 milestone review,
+`ops/reviews/security-risk3-milestone-threat-model.md` §1.1) — CTO's own
+native `Write`/`Edit` grant belongs in this disclosure, not only DevOps's
+Bash grant.** The paragraphs above, as originally written, named only
+DevOps as a role with a residual, sanctioned-by-tool-grant path to edit
+the Developer denylist's own definition. That was incomplete. `CTO`'s own
+`.claude/agents/cto.md` frontmatter reads `tools: Read, Grep, Glob, Write,
+Edit, Bash, Skill` — native, unrestricted `Write`/`Edit`, today, and
+nothing in this milestone's file-by-file change list (§5) adds a hook to
+`.claude/agents/cto.md`'s own frontmatter or to any CTO-scoped invocation.
+Per §3's now-confirmed per-invocation `sessionHooks` scoping, a `cto`-typed
+subagent invocation gets no `sessionHooks` entry at all from this design —
+it is watched by nothing.
+
+Concretely, in an ordinary, unremarkable supervised session, a `cto`
+subagent invocation can `Edit(file_path=".claude/agents/developer.md",
+old_string="hooks:\n  PreToolUse:\n...", new_string="")` — removing
+Developer's own denylist entirely — or `Write` a modified
+`ops/control-center/hooks/developer_pretooluse.py` with the deny checks
+stripped out, using CTO's own **native, sanctioned tool grant**. This
+requires no Bash trickery, no encoding indirection, no shell-parsing
+evasion — it is strictly more direct than the DevOps vector disclosed
+above (which requires DevOps to route through Bash, since DevOps has no
+`Write`/`Edit` at all). This is the same finding Red Team's Stage 3 §3
+made in these exact words, quoted here in full rather than paraphrased
+down to only its DevOps half: *"Developer and CTO are two of the four
+roles Tier 2 is built to constrain, and both have a native, unrestricted
+tool grant capable of editing the file that constrains them."* This
+document's own earlier drafting credited that Red Team finding for the
+DevOps half only and, in doing so, silently dropped the CTO half — an
+incompleteness in *this document's disclosure*, not a new technical
+finding; Security's review independently re-verified `.claude/agents/cto.md`'s
+tool grant directly rather than take this document's word.
+
+Is this a scope violation? No — building a CTO-scoped hook is explicitly
+out of this milestone's authorized scope, exactly like DevOps's, and
+nothing above proposes one. Is it a disclosure gap? Yes, and this
+document should not minimize it just because the capability being
+disclosed belongs to CTO's own role: the Founder's authorization text
+(Appendix E, item 2) reads "read-only to Developer **and DevOps**" and
+this document, as originally drafted, treated that as the complete list
+of roles with a residual capability. It is not — a third role, CTO,
+retains an even more direct version of the identical S8 self-widening
+capability, and until this correction, that fact was invisible to anyone
+reading this document, `ops/SECURITY.md`, or the eventual `risks.id=3`
+mitigation text. The recommended `risks.id=3` mitigation text in §4 is
+corrected accordingly, below, to name CTO alongside DevOps.
 
 ---
 
@@ -679,12 +814,16 @@ goes through the review chain before the CLI call, not before it:
 > configuration files) is live and self-protecting against Developer
 > specifically — confirmed, not assumed, to be scoped to Developer's own
 > per-invocation session only (see `ops/reviews/cto-risk3-milestone-
-> architecture.md` §3). It is NOT technically closed against DevOps,
-> whose unrestricted Bash grant remains a sanctioned-by-capability (if no
-> longer sanctioned-by-documentation) path to the same files — a named,
-> disclosed scope conflict in this milestone's own authorization, not an
-> oversight (§2.5). (3) QA, CTO, and DevOps remain completely unscoped —
-> exactly as before this milestone. (4) The raw-`sqlite3`-bypasses-
+> architecture.md` §3). It is NOT technically closed against DevOps **or
+> CTO**, both of whose unrestricted native tool grants (Bash for DevOps,
+> Write/Edit for CTO) remain sanctioned-by-capability (if no longer
+> sanctioned-by-documentation, for DevOps) paths to the same files — a
+> named, disclosed scope conflict in this milestone's own authorization,
+> not an oversight (§2.5). CTO's own native `Write`/`Edit` grant is, if
+> anything, a more direct version of the same capability than DevOps's
+> Bash-routed one, since it requires no shell-parsing indirection at all.
+> (3) QA, CTO, and DevOps remain completely unscoped — exactly as before
+> this milestone. (4) The raw-`sqlite3`-bypasses-
 > `opsdb.py` vector is narrowed for Developer only, via string-pattern
 > denial, itself disclosed as bypassable by a deliberately adversarial
 > session (base64/heredoc indirection) — the deeper gap (Python-only
