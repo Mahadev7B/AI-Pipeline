@@ -511,12 +511,25 @@ string as a subprocess):
 - A second, distinct trap worth naming precisely because it could defeat
   a hastily-written fix that "emits JSON but isn't careful": `Es4(...)`
   parses the **entire** trimmed stdout as one JSON value, not just a JSON
-  substring within it. Any stray non-JSON text on stdout — a debug
-  `print()` before or after the JSON decision, for instance — causes the
-  JSON parse to fail, which itself is treated as `"non_blocking_error"`
-  (fail-open), the very outcome this correction exists to prevent. The
-  except-handler's stdout must contain **only** the JSON decision object,
-  nothing else.
+  substring within it. **Mechanism corrected per Red Team's TASK-017
+  second-pass review (§6.4), which traced `Es4(...)` and the harness's Zod
+  schema `Wj6` directly** — the original wording here ("stray text causes
+  a parse failure, which is fail-open") was imprecise: if the trimmed
+  stdout doesn't start with `{`, or `JSON.parse` throws outright (e.g.
+  from stray non-JSON text on stdout), `Es4(...)` returns `{plainText:
+  ...}` with no validation error set, and `iI()` falls through to plain
+  exit-code semantics — exit code `2` still correctly denies in that case,
+  so stray text alone is **not**, by itself, a fail-open mechanism. The
+  actual exit-code-**independent** fail-open trap is stdout that starts
+  with `{` and parses as syntactically **valid** JSON but fails the
+  harness's Zod schema validation (`Wj6` — e.g. a `permissionDecision`
+  value outside the `"allow"|"deny"|"ask"` enum, or content nested outside
+  `hookSpecificOutput`): `iI()`'s schema-validation branch fires and
+  treats the result as `"non_blocking_error"` **before exit code is even
+  checked**, overriding a correct exit code `2`. The practical requirement
+  is unchanged — the except-handler's stdout must contain **only** a
+  schema-valid JSON decision object, nothing else — but the risk is a
+  wrong-shape JSON *value*, not literally "stray text" defeating a parse.
 
 **Why this is a REQUIRED property, not optional hardening**: the entire
 self-immune Developer denylist this milestone exists to ship depends on
@@ -537,7 +550,15 @@ deferred hardening pass.
 
 **Required structure** (pseudocode — Development implements this against
 the real `opsdb`/`json`/`shlex` APIs; this sketch exists to pin down the
-shape, not to be copied verbatim):
+shape, not to be copied verbatim). **Corrected per Red Team's TASK-017
+second-pass re-verification (§6.3–§6.4)**: the success-path `sys.exit()`
+call was previously nested inside the guarded `try`/`except`; since
+`SystemExit` is itself a `BaseException`, the `except` clause would have
+caught the hook's own normal, successful exit too, denying every tool
+call unconditionally regardless of `_evaluate()`'s actual result. The
+guarded region below now covers decision *computation* only (stdin read,
+`json.loads`, `Path.resolve`, `shlex.split`, rule matching); emission and
+the exit call run after it, outside the guard:
 
 ```python
 import sys, json, shlex
@@ -550,12 +571,9 @@ def main():
                                                      # executes before this line
         payload = _parse_payload(raw_stdin)         # guarded individually, below
         decision, matched_rule = _evaluate(payload) # runs all of §2.2's checks
-        _emit_decision(decision, matched_rule)       # stdout: ONLY the JSON object
-        if decision == "deny":
-            _log_denial(payload, matched_rule)        # best-effort; must not raise
-        sys.exit(0 if decision == "allow" else 2)     # exit code as a redundant
-                                                        # second signal, never the
-                                                        # only one
+        # Red Team TASK-017 second-pass (§6.3): the guarded region ends
+        # here. Do NOT put the success-path sys.exit() (or _emit_decision/
+        # _log_denial) inside this try — see the note below the `except`.
     except BaseException as exc:
         # BaseException, not Exception: a stray sys.exit() anywhere in
         # _evaluate() (present or future — e.g. if a future edit reaches
@@ -563,9 +581,32 @@ def main():
         # raises SystemExit, which a narrower `except Exception:` would
         # NOT catch — silently reproducing the exact fail-open bug this
         # correction exists to close.
-        _emit_decision("deny", "hook_internal_error")   # stdout: ONLY this JSON
-        _best_effort_log_internal_error(raw_stdin, exc) # must not itself raise
+        try:
+            _emit_decision("deny", "hook_internal_error")   # stdout: ONLY this JSON
+            _best_effort_log_internal_error(raw_stdin, exc) # must not itself raise
+        except BaseException:
+            # Red Team TASK-017 second-pass (§6.4): the except handler's
+            # own calls aren't guaranteed not to raise either. If emitting
+            # the JSON or logging itself fails, fall back to the simplest
+            # possible hardcoded deny — no further logic that could fail.
+            sys.stdout.write(
+                '{"hookSpecificOutput": {"hookEventName": "PreToolUse", '
+                '"permissionDecision": "deny", '
+                '"permissionDecisionReason": "hook_internal_error"}}'
+            )
         sys.exit(2)
+        return  # unreachable — sys.exit() above already raised SystemExit
+
+    # Success path — reached only once decision computation above returned
+    # normally, i.e. nothing raised. Deliberately OUTSIDE the try/except:
+    # this sys.exit() also raises SystemExit and must never be caught by
+    # our own handler (Red Team TASK-017 second-pass, §6.3).
+    _emit_decision(decision, matched_rule)           # stdout: ONLY the JSON object
+    if decision == "deny":
+        _log_denial(payload, matched_rule)           # best-effort; must not raise
+    sys.exit(0 if decision == "allow" else 2)         # exit code as a redundant
+                                                        # second signal, never the
+                                                        # only one
 
 def _parse_payload(raw_stdin):
     try:
@@ -587,7 +628,7 @@ def _evaluate(payload):
     # ... §2.2's Bash substring + token-anchored checks ...
 ```
 
-Two properties this sketch is required to convey, not merely illustrate:
+Three properties this sketch is required to convey, not merely illustrate:
 
 1. **The outer handler catches `BaseException`, not `Exception`** — see
    the comment above. This is not hypothetical defensiveness: it is the
@@ -607,6 +648,15 @@ Two properties this sketch is required to convey, not merely illustrate:
    denied because the hook itself couldn't parse its own input" —
    collapsing both into one opaque catch-all defeats that distinction
    without adding any real robustness.
+3. **The legitimate exit calls (allow or deny) never run inside the scope
+   of the `except BaseException` handler** — added per Red Team's
+   TASK-017 second-pass review (§6.3). `sys.exit()` raises `SystemExit`,
+   itself a `BaseException`; a success-path exit nested inside the guarded
+   `try` would be caught by the very handler meant only for genuine
+   internal failures, forcing a hardcoded deny on every invocation,
+   allowed or denied alike. The except block's own `sys.exit(2)` is
+   exempt from this concern — it runs *inside* the `except` clause, whose
+   scope no longer wraps it in another `try`, so nothing re-catches it.
 
 **Output mechanism, empirically resolved from the source above, not left
 ambiguous**: for every deny decision — including the exception-handling
@@ -627,9 +677,14 @@ residual** (matching this document's own disclosure discipline rather
 than silently folding it in as if fixed): a hook process that hangs past
 its timeout is killed and surfaces as `"cancelled"`, not `"blocking"` — a
 third fail-open mode, distinct from the exception/exit-code question
-above, that this correction does not attempt to close. This is named here
-only so Development doesn't have to rediscover it, not as a new required
-fix — the denylist's checks (§2.2) are all cheap, synchronous, stdlib-only
+above, that this correction does not attempt to close. **The same class of
+gap also covers OS-level signal termination** — added per Red Team's
+TASK-017 second-pass review (§6.4): a `SIGKILL` from an OOM-killer, or an
+unhandled `SIGTERM`, means no Python code runs at all, so `except
+BaseException` cannot help either, for the identical reason it cannot help
+against a timeout kill. This is named here only so Development doesn't
+have to rediscover it, not as a new required fix — the denylist's checks
+(§2.2) are all cheap, synchronous, stdlib-only
 operations (`shlex`, `json`, `pathlib`) with no plausible unbounded-time
 path (no network calls, no subprocesses of the hook's own per §2.2's
 "no subprocess calls of its own" design choice), so this residual is far
