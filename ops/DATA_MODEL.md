@@ -155,6 +155,24 @@ Mirrors `/ops/templates/handoff.md`: `id, task_id, from_agent, to_agent,
 work_completed, files_changed (json), tests_added, expected_behavior,
 known_limitations, receiving_agent_checklist, created_at`
 
+**`base_commit_sha`, `head_commit_sha` (nullable TEXT — Phase 3A Part B,
+TASK-015).** A plain, additive `ALTER TABLE ADD COLUMN` pair (no `CHECK`
+constraint changed, so this did not need the rebuild-and-copy technique
+Milestone 2B2's `agent_runs.status` widening required) — applied
+idempotently by `opsdb.py`'s `cmd_init()` (checked via `PRAGMA
+table_info()` first, since `ALTER TABLE ADD COLUMN` has no `IF NOT
+EXISTS` form and a raw statement in `schema.sql` would break `init`'s own
+documented idempotency on a second run). Populated by Developer at
+handoff time (`opsdb.py handoff --base-commit-sha <sha>
+--head-commit-sha <sha>`, `git rev-parse HEAD` before/after the task's own
+work) — nullable for backward compatibility with every pre-Phase-3A
+handoff row, and for non-code handoffs where the concept doesn't apply.
+This is what lets the automation poller (`ops/control-center/automation.py`)
+assemble a real `git diff`/file-content transcript between two explicit
+commits, rather than a timestamp heuristic — a wrong base commit would
+feed a *misleading*, not merely incomplete, transcript to an automated
+reviewer. See `ops/reviews/cto-phase3a-architecture.md` §B.13.
+
 ### decisions
 Mirrors `DECISIONS.md`'s format: `id, title, date, problem,
 options_considered (json), decision, reason, tradeoffs,
@@ -187,6 +205,48 @@ created_at`
 ### deployments
 `id, task_id, version, environment, release_notes, rollback_plan,
 deployed_by_agent, founder_authorized (bool), deployed_at`
+
+### automation_events *(new — Phase 3A Part B, TASK-015)*
+`id, task_id, trigger_status_history_id (unique fk → task_status_history),
+status (running/completed/failed/skipped), outcome
+(pass/reject/error/interrupted/capped, nullable), review_result_id
+(nullable fk → review_results), agent_run_id (nullable fk → agent_runs),
+cost_usd (nullable), truncated (bool), skip_reason (nullable), started_at,
+ended_at (nullable)`
+
+The single automatic-audit record for `ops/control-center/automation.py`'s
+poller. `trigger_status_history_id UNIQUE` is the load-bearing,
+database-enforced idempotency mechanism: the specific
+`task_status_history` row recording "this task entered `CODE_REVIEW`" can
+be claimed by exactly one `automation_events` row, ever — the claim
+(`INSERT`, `status='running'`) happens before any real invocation, inside
+its own transaction (`opsdb.create_automation_event()`), as the very
+first step for any eligible-looking trigger row — strictly before every
+eligibility check (a missing handoff, an invalid SHA, an invalid file
+path), not only before the real model invocation. This is deliberate:
+every eligibility/cap failure still produces exactly one permanent,
+claimed, `status='skipped'` row, so the same trigger event is never
+re-evaluated on a later poll cycle. A `review_results` row referenced by
+some `automation_events.review_result_id` is automated; every other
+`review_results` row is human-supervised — no new column on that shared
+table. `outcome='capped'` is used for the two genuine per-task-lifetime
+and daily-spend/count cap scenarios specifically (not the per-cycle batch
+cap, which never claims a row at all — a candidate beyond the per-cycle
+limit is simply picked up on a later cycle). See
+`ops/reviews/cto-phase3a-architecture.md` §B.3/§B.7/§B.10.
+
+### automation_state *(new — Phase 3A Part B, TASK-015)*
+`id (=1, exactly one row, ever), enabled (bool, default 0), changed_by
+(default 'system'), reason (nullable), changed_at`
+
+The single-row kill switch. Seeded `enabled=0` (disabled) at schema-apply
+time via `INSERT OR IGNORE` — automation does not run until the Founder
+deliberately turns it on once, the same fail-closed-by-default discipline
+`founder_auth.py`'s "setup required" 503 already established. The only
+function permitted to write this table is `opsdb.set_automation_enabled()`,
+called only by the two new CSRF+session-gated routes (`POST
+/api/automation/stop`/`start`) — never by the poller itself, never by any
+agent invocation. See `ops/reviews/cto-phase3a-architecture.md` §B.4/§B.5.
 
 ### meetings
 `id, topic, initiated_by (founder/agent), participating_agents (json),

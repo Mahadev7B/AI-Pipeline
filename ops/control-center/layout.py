@@ -45,6 +45,7 @@ NAV_LINKS = [
     ("inbox.html", "Inbox"),
     ("reviews.html", "Reviews"),
     ("releases.html", "Releases"),
+    ("automation.html", "Automation"),
 ]
 
 

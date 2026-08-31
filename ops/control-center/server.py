@@ -168,6 +168,7 @@ import dbutil  # noqa: E402
 import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2)
 import meeting_orchestrator  # noqa: E402 — Executive Meeting orchestration (Milestone 2B3B)
 import chief_of_staff  # noqa: E402 — Chief of Staff Founder interface (Phase 3A Part A, TASK-015)
+import automation  # noqa: E402 — the automation poller (Phase 3A Part B, TASK-015)
 import founder_auth  # noqa: E402 — Founder credential load/verify (Milestone 2B4)
 import generate_overview  # noqa: E402
 import generate_pipeline  # noqa: E402
@@ -177,6 +178,7 @@ import generate_meetings  # noqa: E402
 import generate_inbox  # noqa: E402
 import generate_reviews  # noqa: E402
 import generate_releases  # noqa: E402
+import generate_automation  # noqa: E402 — Phase 3A Part B (TASK-015)
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -199,6 +201,10 @@ MEETING_RETRY_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/retry$")
 # ASK_AGENT_ALLOWLIST so there is exactly one way to talk to the Chief of
 # Staff, not two. See ops/reviews/cto-phase3a-architecture.md §A.1.
 CHIEF_OF_STAFF_ASK_PATH = "/api/chief-of-staff/ask"
+# Phase 3A Part B (TASK-015): the kill-switch routes. Same CSRF+session
+# gate as every other write route — no new authorization boundary.
+AUTOMATION_STOP_PATH = "/api/automation/stop"
+AUTOMATION_START_PATH = "/api/automation/start"
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -460,6 +466,9 @@ class Handler(BaseHTTPRequestHandler):
                 finally:
                     conn.close()
                 return
+            if path == "/automation.html":
+                self._send_html(200, generate_automation.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
             self._send_html(404, _error_page(404, "Not found", "No such page."))
         except SystemExit as exc:
             # dbutil.connect() raises SystemExit if the DB file is missing — surface it as a page, not a crash.
@@ -497,7 +506,9 @@ class Handler(BaseHTTPRequestHandler):
         m_meeting_retry = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup) else MEETING_RETRY_PATH_RE.match(path)
         is_chief_of_staff_ask = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == CHIEF_OF_STAFF_ASK_PATH
         is_meeting_create = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask) and path == MEETING_CREATE_PATH
-        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create):
+        is_automation_stop = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create) and path == AUTOMATION_STOP_PATH
+        is_automation_start = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop) and path == AUTOMATION_START_PATH
+        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create or is_automation_stop or is_automation_start):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
@@ -554,6 +565,10 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_meeting_retry(int(m_meeting_retry.group(1)), fields)
         elif is_chief_of_staff_ask:
             self._handle_chief_of_staff_ask(fields)
+        elif is_automation_stop:
+            self._handle_automation_toggle(False, fields)
+        elif is_automation_start:
+            self._handle_automation_toggle(True, fields)
         else:
             self._handle_meeting_create(fields)
 
@@ -1095,6 +1110,41 @@ class Handler(BaseHTTPRequestHandler):
 
         self._redirect(redirect_to)
 
+    # ---- Phase 3A Part B (TASK-015): the kill switch ----
+
+    def _handle_automation_toggle(self, enabled: bool, fields: dict) -> None:
+        """POST /api/automation/stop or /start. Same CSRF+session gate as
+        every other write route (do_POST()'s existing dispatch already
+        applied both before this is ever called) — the only function
+        permitted to write automation_state is
+        opsdb.set_automation_enabled(), called only from here. §B.5:
+        stopping prevents any NEW automatic action from starting on the
+        poller's next check of the flag; it does not forcibly kill an
+        already-in-flight invocation — disclosed on /automation.html
+        itself, not just here."""
+        reason = fields.get("reason", [""])[0].strip() or None
+
+        try:
+            conn = opsdb.connect()
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] could not open database for write: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Database unavailable", "Could not open the operational database. See the server's terminal output for detail."))
+            return
+        try:
+            opsdb.set_automation_enabled(conn, enabled, reason=reason, by="founder")
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention toggling automation: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001
+            sys.stderr.write(f"[control-center] unhandled error toggling automation: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong changing the automation kill switch. See the server's terminal output for detail."))
+            return
+        finally:
+            conn.close()
+
+        self._redirect("/automation.html")
+
 
 def _reconcile_orphaned_runs() -> None:
     """Startup reconciliation (Red Team's Milestone 2B2 review, condition
@@ -1149,18 +1199,49 @@ def _reconcile_orphaned_runs() -> None:
             conn, agent_runtime.CHIEF_OF_STAFF_ACTIVITY_LIKE, status="failed")
         if chief_of_staff_count:
             print(f"reconciled {chief_of_staff_count} orphaned Chief of Staff exchange(s) from a prior server process.")
+        # Phase 3A Part B (TASK-015), §B.11: a fifth run type, an automated
+        # Code Review invocation ("Automated Code Review:%") — same generic
+        # opsdb.reconcile_orphaned_runs() call, distinct LIKE pattern from
+        # every existing one so a crash mid-review isn't mislabeled as an
+        # orphaned human-supervised code-review-agent run (or vice versa),
+        # even though both are attributed to the same agents.name =
+        # "code-review" row.
+        automated_review_count = opsdb.reconcile_orphaned_runs(
+            conn, agent_runtime.AUTOMATED_CODE_REVIEW_ACTIVITY_LIKE, status="failed")
+        if automated_review_count:
+            print(f"reconciled {automated_review_count} orphaned automated Code Review run(s) from a prior server process.")
+        # §B.11: the new automation_events table's own crash-recovery
+        # counterpart — any status='running' row here means the prior
+        # process crashed mid-cycle; marked failed/interrupted once, never
+        # silently resumed or marked complete, and (per the UNIQUE
+        # constraint) its trigger event is never automatically retried.
+        stuck_events_count = opsdb.reconcile_stuck_automation_events(conn)
+        if stuck_events_count:
+            print(f"reconciled {stuck_events_count} stuck automation_events row(s) from a prior server process.")
     finally:
         conn.close()
 
 
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_PORT
-    _reconcile_orphaned_runs()
+    _reconcile_orphaned_runs()  # includes reconcile_stuck_automation_events() — must run before the poller starts
     _prime_credential_mtime_baseline()  # Milestone 2B4: anchor the tamper-detection baseline at startup, not only at the first request (Red Team's Milestone 2B4 review, non-blocking note)
     httpd = ThreadingHTTPServer((HOST, port), Handler)
     httpd.daemon_threads = True  # explicit — a lingering in-flight request thread must
                                  # never block process exit (default is True in this
                                  # Python version, but stated here rather than relied on)
+
+    # Phase 3A Part B (TASK-015), §B.2: the automation poller — a
+    # threading.Thread(daemon=True) inside this same process, started
+    # right after startup reconciliation, before serve_forever(). Stopped
+    # via automation._stop_event.set() below, with a short join() so the
+    # process doesn't exit mid-cycle in the common case — belt-and-
+    # suspenders on top of daemon_threads=True/thread daemon=True, which
+    # already guarantee this thread can't block process exit even if not
+    # joined.
+    automation_thread = threading.Thread(target=automation.run_poll_loop, name="automation-poller", daemon=True)
+    automation_thread.start()
+
     if founder_auth.credential_exists():
         print(f"Control Center running at http://{HOST}:{port}/ (loopback only, up to "
               f"{agent_runtime.MAX_CONCURRENT_INVOCATIONS} concurrent agent invocation(s)). "
@@ -1173,6 +1254,8 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\nstopping.")
     finally:
+        automation._stop_event.set()
+        automation_thread.join(timeout=5.0)
         httpd.server_close()
 
 

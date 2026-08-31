@@ -35,7 +35,15 @@ Responsibilities:
 - Keep changes small; avoid unrelated refactoring.
 - Add tests; handle failure cases.
 - Document any deviation from the approved plan.
-- Hand off to Code Review using `/ops/templates/handoff.md`.
+- Hand off to Code Review using `/ops/templates/handoff.md`, recording the
+  real `base_commit_sha`/`head_commit_sha` (`git rev-parse HEAD` before
+  and after this task's own work) via `opsdb.py handoff
+  --base-commit-sha <sha> --head-commit-sha <sha>` (Phase 3A Part B,
+  TASK-015, §B.13) — a small, concrete addition to this already-existing
+  step, not a new workflow concept. This is what lets the automated Code
+  Review poller assemble a real `git diff`/file-content transcript for
+  this handoff; without both real SHAs recorded, that automation fails
+  closed and skips the task rather than guessing at a diff.
 
 Must NOT:
 - Approve its own work.

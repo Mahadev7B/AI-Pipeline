@@ -224,6 +224,17 @@ CREATE TABLE IF NOT EXISTS handoffs (
   known_limitations         TEXT,
   receiving_agent_checklist TEXT,
   created_at                TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  -- Phase 3A Part B (TASK-015), §B.13: base_commit_sha/head_commit_sha
+  -- (nullable TEXT, no CHECK constraint) are added by
+  -- ops/db/opsdb.py's cmd_init()/_apply_additive_column_migrations(),
+  -- not as a raw ALTER TABLE statement here. SQLite's ALTER TABLE ADD
+  -- COLUMN has no "IF NOT EXISTS" form, so a plain ALTER TABLE statement
+  -- in this executescript'd file would fail the second time `init` runs
+  -- against an already-migrated database, breaking this command's own
+  -- documented idempotency. opsdb.py checks PRAGMA table_info(handoffs)
+  -- first and only ALTERs if the column is genuinely missing -- same
+  -- additive, no-rebuild-and-copy migration the architecture doc calls
+  -- for, just applied idempotently. See ops/DATA_MODEL.md.
 );
 CREATE INDEX IF NOT EXISTS idx_handoffs_task ON handoffs(task_id);
 
@@ -266,3 +277,53 @@ CREATE TABLE IF NOT EXISTS deployments (
   deployed_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   CHECK (founder_authorized = 1)
 );
+
+-- Phase 3A Part B (TASK-015): the automation poller's single automatic-
+-- audit record. See ops/reviews/cto-phase3a-architecture.md §B.3
+-- (corrected per Red Team's NB5: idx_automation_events_status and
+-- idx_automation_events_started, added alongside the original
+-- idx_automation_events_task -- both automation.py's own caps/spend-guard
+-- queries and /automation.html's "what is running right now" query filter
+-- on status/started_at; not a real performance concern at this project's
+-- actual scale, added for cheap completeness/consistency).
+-- `trigger_status_history_id UNIQUE` is the load-bearing, DB-enforced
+-- idempotency guarantee (Founder's control #5) -- the specific
+-- task_status_history row recording "this task entered CODE_REVIEW" can
+-- be claimed by exactly one automation_events row, ever.
+CREATE TABLE IF NOT EXISTS automation_events (
+  id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id                   INTEGER NOT NULL REFERENCES tasks(id),
+  trigger_status_history_id INTEGER NOT NULL UNIQUE
+                             REFERENCES task_status_history(id),
+  status        TEXT NOT NULL DEFAULT 'running'
+                CHECK (status IN ('running','completed','failed','skipped')),
+  outcome       TEXT CHECK (outcome IN ('pass','reject','error','interrupted','capped',NULL)),
+  review_result_id INTEGER REFERENCES review_results(id),
+  agent_run_id      INTEGER REFERENCES agent_runs(id),
+  cost_usd          REAL,
+  truncated         INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0,1)),
+  skip_reason       TEXT,
+  started_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  ended_at          TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_automation_events_task ON automation_events(task_id);
+CREATE INDEX IF NOT EXISTS idx_automation_events_status ON automation_events(status);
+CREATE INDEX IF NOT EXISTS idx_automation_events_started ON automation_events(started_at);
+
+-- Phase 3A Part B (TASK-015): single-row kill-switch state. §B.4.
+-- enabled=0 by default, seeded here at schema-apply time -- automation
+-- does not run until the Founder deliberately turns it on once (the same
+-- fail-closed-by-default discipline founder_auth.py's "setup required"
+-- 503 already established). The only function permitted to write this
+-- table is opsdb.set_automation_enabled(), called only by the two new
+-- CSRF+session-gated routes (POST /api/automation/stop, /start) -- never
+-- by the poller itself, never by any agent invocation.
+CREATE TABLE IF NOT EXISTS automation_state (
+  id           INTEGER PRIMARY KEY CHECK (id = 1),   -- exactly one row, ever
+  enabled      INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1)),
+  changed_by   TEXT NOT NULL DEFAULT 'system',
+  reason       TEXT,
+  changed_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+INSERT OR IGNORE INTO automation_state (id, enabled, changed_by, reason)
+  VALUES (1, 0, 'system', 'Phase 3A shipped disabled by default — Founder must explicitly enable it.');

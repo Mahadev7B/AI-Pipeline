@@ -24,11 +24,15 @@ which still runs `_run_claude()` with unconditional `--tools ""` /
 `--strict-mcp-config` — nothing in this module can, or tries to, change
 that.
 
-PART B NOTE (not built here — see the Phase 3A architecture doc's Part
-A/Part B split, Red Team's NB3): this module deliberately does not read
-or write automation_events/automation_state (those tables don't exist
-yet) and does not touch derived_state.automation_status_digest() (not
-implemented yet, same reason).
+PART B (TASK-015, second Development pass, per Red Team's NB3): this
+module's state-digest assembly now includes
+derived_state.automation_status_digest() — the same shared query
+/automation.html reads (§B.12: "the SAME query, not two hand-typed
+copies"), so the Chief of Staff's "what is running right now"/"why did
+this start"/"how much has this used"/"what happens next" answers are
+traceable to the exact same real automation_events/automation_state rows
+that page shows. This module still never writes either table — reads
+only, through derived_state.py, same as every other digest section.
 """
 from __future__ import annotations
 
@@ -218,6 +222,30 @@ def _build_state_digest(conn) -> str:
             )
     else:
         lines.append("- none")
+
+    lines.append("")
+    lines.append("Automated Code Review (Phase 3A Part B) status:")
+    automation = derived_state.automation_status_digest(conn)
+    lines.append(f"- kill switch: {'ON — automation may run' if automation['enabled'] else 'OFF — automation will not run'}"
+                 + (f" (changed by {automation['changed_by']}, {automation['changed_at']}"
+                    + (f': "{automation["reason"]}"' if automation["reason"] else "") + ")"
+                    if automation["changed_at"] else ""))
+    lines.append(f"- spend today: ${automation['spend_today_usd']:.2f}")
+    if automation["running"]:
+        for r in automation["running"]:
+            lines.append(f"- running now: TASK-{r['task_id']:03d} ({r['task_title']}), started {r['started_at']}")
+    else:
+        lines.append("- running now: none")
+    if automation["recent_terminal"]:
+        for r in automation["recent_terminal"]:
+            outcome = f"/{r['outcome']}" if r["outcome"] else ""
+            reason = f" — {r['skip_reason']}" if r["skip_reason"] else ""
+            lines.append(
+                f"- recent: TASK-{r['task_id']:03d} ({r['task_title']}) {r['status']}{outcome}{reason} "
+                f"({r['ended_at'] or r['started_at']})"
+            )
+    else:
+        lines.append("- recent: none")
 
     digest = "\n".join(lines)
     if len(digest) > MAX_STATE_DIGEST_CHARS:

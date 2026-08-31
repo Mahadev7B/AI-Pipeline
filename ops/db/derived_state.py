@@ -133,10 +133,9 @@ def stage_and_substate(status: str) -> tuple[str, str] | None:
 # ops/reviews/cto-phase3a-architecture.md §A.2. Same DRY rule as every
 # other function in this module: the single, shared implementation, not a
 # second hand-typed copy of company-state logic living inside
-# chief_of_staff.py itself. NOTE: automation_status_digest() (Part B, the
-# automation poller/automation_events/automation_state tables) is
-# deliberately NOT implemented here yet — those tables don't exist until
-# Phase 3A Part B ships; adding it now would read tables that don't exist.
+# chief_of_staff.py itself. automation_status_digest() (Part B, the
+# automation poller/automation_events/automation_state tables) is defined
+# further down, once Part A's own state-digest helpers end.
 
 
 def open_risks_digest(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
@@ -241,6 +240,82 @@ def recent_deployments_digest(conn: sqlite3.Connection, limit: int = 5) -> list[
         """,
         (limit,),
     ).fetchall()
+
+
+# ---- Phase 3A Part B (TASK-015): automation status digest ----
+# §B.12: "/automation.html and the Chief of Staff's state digest read the
+# SAME query" — this is that one, shared query. Not implemented until Part
+# B ships (Part A's own version of this file explicitly left this out,
+# since automation_events/automation_state didn't exist yet).
+
+AUTOMATION_RECENT_TERMINAL_LIMIT = 10
+
+
+def automation_status_digest(conn: sqlite3.Connection) -> dict:
+    """Reads automation_state (the kill-switch) + every automation_events
+    row currently status='running' + the most recent N terminal
+    (completed/failed/skipped) ones, joined to tasks for display. Returns
+    a plain dict — {"enabled": bool, "changed_by": str|None,
+    "reason": str|None, "changed_at": str|None, "running": [rows],
+    "recent_terminal": [rows], "spend_today_usd": float,
+    "spend_ceiling_usd": float} — so both /automation.html
+    (generate_automation.py) and the Chief of Staff's own digest render
+    from one shared computation, never two hand-typed copies of the same
+    fact (ops/ARCHITECTURE.md, "Derived UI state must be deterministic").
+
+    `spend_today_usd` mirrors automation.py's own §B.6 spend-guard query
+    exactly (SUM(cost_usd) for rows started today) — the same number the
+    guard itself enforces, not a second, possibly-inconsistent estimate;
+    this module does not import automation.py's own
+    MAX_AUTOMATION_SPEND_USD_PER_DAY constant (avoiding a
+    control-center -> db import direction this project's layering doesn't
+    otherwise have), so the ceiling is passed back as a plain float
+    literal here and callers that need the live constant read it from
+    automation.py directly."""
+    state_row = conn.execute(
+        "SELECT enabled, changed_by, reason, changed_at FROM automation_state WHERE id = 1"
+    ).fetchone()
+
+    running = conn.execute(
+        """
+        SELECT ae.id, ae.task_id, ae.started_at, ae.trigger_status_history_id,
+               t.title AS task_title
+        FROM automation_events ae
+        JOIN tasks t ON t.id = ae.task_id
+        WHERE ae.status = 'running'
+        ORDER BY ae.started_at
+        """
+    ).fetchall()
+
+    recent_terminal = conn.execute(
+        """
+        SELECT ae.id, ae.task_id, ae.status, ae.outcome, ae.skip_reason, ae.cost_usd,
+               ae.truncated, ae.started_at, ae.ended_at, ae.review_result_id,
+               t.title AS task_title
+        FROM automation_events ae
+        JOIN tasks t ON t.id = ae.task_id
+        WHERE ae.status != 'running'
+        ORDER BY ae.started_at DESC, ae.id DESC
+        LIMIT ?
+        """,
+        (AUTOMATION_RECENT_TERMINAL_LIMIT,),
+    ).fetchall()
+
+    today = conn.execute("SELECT strftime('%Y-%m-%d', 'now')").fetchone()[0]
+    spend_today = conn.execute(
+        "SELECT COALESCE(SUM(cost_usd), 0) FROM automation_events WHERE started_at LIKE ?",
+        (today + "%",),
+    ).fetchone()[0]
+
+    return {
+        "enabled": bool(state_row["enabled"]) if state_row else False,
+        "changed_by": state_row["changed_by"] if state_row else None,
+        "reason": state_row["reason"] if state_row else None,
+        "changed_at": state_row["changed_at"] if state_row else None,
+        "running": running,
+        "recent_terminal": recent_terminal,
+        "spend_today_usd": float(spend_today),
+    }
 
 
 def release_readiness_gap(conn: sqlite3.Connection) -> list[sqlite3.Row]:

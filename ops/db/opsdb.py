@@ -90,10 +90,34 @@ def cmd_project_create(args: argparse.Namespace) -> None:
     print(f"project created: id={cur.lastrowid} — {args.name}")
 
 
+def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
+    """Plain nullable ADD COLUMN migrations that can't be expressed as
+    idempotent raw SQL inside schema.sql's own executescript the way
+    `CREATE TABLE IF NOT EXISTS` can — SQLite's `ALTER TABLE ADD COLUMN`
+    has no `IF NOT EXISTS` form, so a bare ALTER TABLE statement in
+    schema.sql would fail the second time `init` runs against an
+    already-migrated database, breaking this command's own documented
+    ("idempotent") contract. Checked via PRAGMA table_info() first, so
+    this applies cleanly whether the target database is brand new or
+    already has these columns.
+
+    Phase 3A Part B (TASK-015), §B.13: handoffs.base_commit_sha/
+    head_commit_sha — nullable TEXT, no CHECK constraint, a plain
+    additive column exactly as the architecture doc specifies; only the
+    *application* of it is made idempotent here, not the migration's own
+    shape. See ops/DATA_MODEL.md."""
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(handoffs)").fetchall()}
+    if "base_commit_sha" not in cols:
+        conn.execute("ALTER TABLE handoffs ADD COLUMN base_commit_sha TEXT")
+    if "head_commit_sha" not in cols:
+        conn.execute("ALTER TABLE handoffs ADD COLUMN head_commit_sha TEXT")
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     conn = connect(require_exists=False)
     with conn:
         conn.executescript(SCHEMA_PATH.read_text())
+        _apply_additive_column_migrations(conn)
     DB_PATH.chmod(0o600)  # defense in depth — nothing sensitive is stored, but no reason for group/other read
     print(f"initialized {DB_PATH}")
 
@@ -164,25 +188,50 @@ def cmd_task_create(args: argparse.Namespace) -> None:
     print(f"task created: TASK-{task_id:03d}")
 
 
-def cmd_task_status(args: argparse.Namespace) -> None:
-    if args.to not in VALID_STATUSES:
-        raise SystemExit(f"error: invalid status '{args.to}' — must be one of {VALID_STATUSES}")
-    conn = connect()
+def record_task_status(conn: sqlite3.Connection, task_id: int, to_status: str,
+                        changed_by_agent: str, note: str | None = None,
+                        owner: str | None = None) -> str:
+    """Plain, directly-callable form of task-status — refactored out of
+    cmd_task_status (Correction, Red Team's Phase 3A review, RT1: this
+    document's original claim that `cmd_review_result` was "the one write
+    path" in this file not yet following the plain-function shape was
+    independently verified false — `cmd_task_status` had the identical
+    problem, and §B.8's automated-REJECT path already depends on a plain
+    function backing it). Same shape as every other refactored write
+    function here (record_review_result() below, decide_approval(),
+    end_run()): a caller-side contract violation raises a clear, typed
+    ValueError, never only a SystemExit only the CLI wrapper could
+    produce. automation.py (Phase 3A Part B) calls this in-process, never
+    through the CLI, for the automated REJECT -> IN_DEVELOPMENT rollback
+    (§B.8) — a pure bookkeeping status transition, never a new Developer
+    invocation. Returns the task's previous status (for the CLI wrapper's
+    own unchanged print message)."""
+    if to_status not in VALID_STATUSES:
+        raise ValueError(f"invalid status '{to_status}' — must be one of {VALID_STATUSES}")
     with conn:
-        row = conn.execute("SELECT status FROM tasks WHERE id = ?", (args.task_id,)).fetchone()
+        row = conn.execute("SELECT status FROM tasks WHERE id = ?", (task_id,)).fetchone()
         if row is None:
-            raise SystemExit(f"error: no such task TASK-{args.task_id:03d}")
+            raise ValueError(f"no such task TASK-{task_id:03d}")
         conn.execute(
             "UPDATE tasks SET status = ?, current_owner = COALESCE(?, current_owner), "
             "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
-            (args.to, args.owner, args.task_id),
+            (to_status, owner, task_id),
         )
         conn.execute(
             "INSERT INTO task_status_history (task_id, from_status, to_status, "
             "changed_by_agent, note) VALUES (?, ?, ?, ?, ?)",
-            (args.task_id, row["status"], args.to, args.by, args.note),
+            (task_id, row["status"], to_status, changed_by_agent, note),
         )
-    print(f"TASK-{args.task_id:03d}: {row['status']} -> {args.to}")
+    return row["status"]
+
+
+def cmd_task_status(args: argparse.Namespace) -> None:
+    conn = connect()
+    try:
+        from_status = record_task_status(conn, args.task_id, args.to, args.by, args.note, args.owner)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
+    print(f"TASK-{args.task_id:03d}: {from_status} -> {args.to}")
 
 
 TASK_UPDATE_FIELDS = [
@@ -872,17 +921,45 @@ def cmd_qa_result(args: argparse.Namespace) -> None:
     print(f"QA result recorded: {args.result}")
 
 
-def cmd_review_result(args: argparse.Namespace) -> None:
-    if args.result == "reject" and not args.returned_to:
-        raise SystemExit("error: a reject result must set --returned-to")
-    conn = connect()
+def record_review_result(conn: sqlite3.Connection, task_id: int, review_type: str, by: str,
+                          result: str, findings: list | None = None,
+                          returned_to: str | None = None) -> int:
+    """Plain, directly-callable form of review-result — refactored out of
+    cmd_review_result (Security's Phase 3A threat-model review, required
+    fix C4), same shape as every other write function in this file.
+    automation.py (Phase 3A Part B) calls this in-process, never through
+    the CLI, for both the automated PASS and REJECT paths (§B.8) — the
+    reject-requires-`returned_to` invariant therefore MUST live here, not
+    only in cmd_review_result's own --returned-to check below, or an
+    in-process caller could bypass it entirely and rely on the schema's
+    own CHECK constraint alone (still fail-safe either way, but
+    inconsistent with this file's established convention of a clear,
+    typed ValueError for a caller-side contract violation — see
+    record_task_status()/decide_approval()/end_run() above). Raises
+    ValueError for an invalid review_type/result, or a reject with no
+    returned_to. Returns the new review_results.id."""
+    if review_type not in ("code", "security"):
+        raise ValueError(f"review_type must be 'code' or 'security', got {review_type!r}")
+    if result not in ("pass", "reject"):
+        raise ValueError(f"result must be 'pass' or 'reject', got {result!r}")
+    if result == "reject" and not returned_to:
+        raise ValueError("a reject result must set returned_to")
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO review_results (task_id, review_type, reviewed_by_agent, result, "
             "findings, returned_to_agent) VALUES (?, ?, ?, ?, ?, ?)",
-            (args.task_id, args.type, args.by, args.result,
-             json.dumps(args.findings or []), args.returned_to),
+            (task_id, review_type, by, result, json.dumps(findings or []), returned_to),
         )
+    return cur.lastrowid
+
+
+def cmd_review_result(args: argparse.Namespace) -> None:
+    conn = connect()
+    try:
+        record_review_result(conn, args.task_id, args.type, args.by, args.result,
+                              args.findings, args.returned_to)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
     print(f"{args.type} review recorded: {args.result}")
 
 
@@ -892,10 +969,11 @@ def cmd_handoff(args: argparse.Namespace) -> None:
         conn.execute(
             "INSERT INTO handoffs (task_id, from_agent, to_agent, work_completed, "
             "files_changed, tests_added, expected_behavior, known_limitations, "
-            "receiving_agent_checklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "receiving_agent_checklist, base_commit_sha, head_commit_sha) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (args.task_id, args.from_agent, args.to_agent, args.work_completed,
              json.dumps(args.files or []), args.tests_added, args.expected_behavior,
-             args.known_limitations, args.checklist),
+             args.known_limitations, args.checklist, args.base_commit_sha, args.head_commit_sha),
         )
     print(f"handoff recorded: {args.from_agent} -> {args.to_agent}")
 
@@ -1044,6 +1122,144 @@ def cmd_deployment_record(args: argparse.Namespace) -> None:
              args.rollback_plan, args.by),
         )
     print(f"deployment recorded: id={cur.lastrowid} version={args.version}")
+
+
+# --------------------------------------------------- Phase 3A Part B ------
+# Automation poller support (ops/control-center/automation.py). See
+# ops/reviews/cto-phase3a-architecture.md §B.3/§B.4/§B.11. None of these
+# have a CLI wrapper — every one is called only in-process, by
+# automation.py (create_automation_event/end_automation_event) or
+# server.py's write routes (set_automation_enabled) or startup
+# reconciliation (reconcile_stuck_automation_events), never through a
+# human-typed opsdb.py command.
+
+def set_automation_enabled(conn: sqlite3.Connection, enabled: bool, reason: str | None = None,
+                            by: str = "founder") -> None:
+    """The only function permitted to write automation_state (§B.4) —
+    called only by the two new CSRF+session-gated routes (POST
+    /api/automation/stop, /start), never by the poller itself, never by
+    any agent invocation. automation_state has exactly one row (id=1,
+    CHECK-enforced, seeded by schema.sql's own INSERT OR IGNORE at
+    schema-apply time) — this is always an UPDATE, never an INSERT."""
+    with conn:
+        conn.execute(
+            "UPDATE automation_state SET enabled = ?, changed_by = ?, reason = ?, "
+            "changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1",
+            (1 if enabled else 0, by, reason),
+        )
+
+
+def create_automation_event(conn: sqlite3.Connection, task_id: int,
+                             trigger_status_history_id: int) -> int | None:
+    """The atomic claim (§B.3/§B.10 scenario 4; Correction, Red Team's
+    Phase 3A review, RT3 — this is the VERY FIRST step automation.py takes
+    for any eligible-looking trigger row, strictly BEFORE the
+    handoff-existence check, the SHA validity checks, and the file-path
+    validation, not only before the real invocation — see automation.py's
+    own module docstring for why this ordering is load-bearing: without
+    it, a task manually moved to CODE_REVIEW with no handoff, a typo'd
+    SHA, or any other eligibility failure would be re-evaluated by the
+    candidate-finding query on every subsequent poll cycle, forever).
+
+    Two things happen atomically, inside one BEGIN IMMEDIATE transaction:
+    (1) re-checks tasks.status is STILL 'CODE_REVIEW' (§B.10 scenario 4 —
+    a human may have acted on the task between the poller's candidate-list
+    read and this claim attempt); (2) the real claim — an INSERT whose
+    trigger_status_history_id UNIQUE constraint (schema.sql) is the
+    actual, DB-enforced idempotency guarantee (Founder's control #5), not
+    merely this function's own pre-check.
+
+    Returns the new automation_events.id, or None if no NEW claim could be
+    made — either this trigger_status_history_id is already claimed (any
+    status — the idempotency case, §B.10 scenario 1), or tasks.status no
+    longer matches CODE_REVIEW (§B.10 scenario 4). The caller cannot
+    distinguish which from the return value alone and, per RT3, must not
+    need to: either way there is nothing new to record. Raises
+    sqlite3.OperationalError on genuine lock contention (BEGIN IMMEDIATE
+    itself, deliberately outside the try/except below — same non-masking
+    discipline as start_ask_agent_run()/add_meeting_participant())."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        existing = conn.execute(
+            "SELECT id FROM automation_events WHERE trigger_status_history_id = ?",
+            (trigger_status_history_id,),
+        ).fetchone()
+        if existing is not None:
+            conn.execute("ROLLBACK")
+            return None
+        task_row = conn.execute("SELECT status FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if task_row is None or task_row["status"] != "CODE_REVIEW":
+            conn.execute("ROLLBACK")
+            return None
+        try:
+            cur = conn.execute(
+                "INSERT INTO automation_events (task_id, trigger_status_history_id, status) "
+                "VALUES (?, ?, 'running')",
+                (task_id, trigger_status_history_id),
+            )
+        except sqlite3.IntegrityError:
+            # A second, truly concurrent claim attempt for the same
+            # trigger row (§B.6's R2 disclosure: race-free only under the
+            # single-poller-process assumption; the per-event UNIQUE
+            # constraint itself is genuinely DB-enforced regardless) —
+            # the same "nothing new to record" outcome as the pre-check
+            # above, just caught one step later.
+            conn.execute("ROLLBACK")
+            return None
+        conn.execute("COMMIT")
+        return cur.lastrowid
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
+_AUTOMATION_EVENT_END_STATUSES = ("completed", "failed", "skipped")
+
+
+def end_automation_event(conn: sqlite3.Connection, event_id: int, status: str,
+                          outcome: str | None = None, review_result_id: int | None = None,
+                          cost_usd: float | None = None, truncated: bool = False,
+                          skip_reason: str | None = None) -> None:
+    """Terminal-state write for one automation_events row — 'completed'
+    (outcome pass/reject), 'failed' (outcome error/interrupted), or
+    'skipped' (a §B.10 fail-closed scenario, or a §B.7 cap — outcome
+    'capped' for the two genuine cap scenarios per Red Team's Phase 3A
+    review, NB1). Conditional on status='running' so a row already ended
+    cannot be silently re-ended (same one-time-only discipline as
+    end_run()/decide_approval()). Raises ValueError if `status` is not one
+    of the real terminal values, LookupError if the row doesn't exist or
+    is already ended."""
+    if status not in _AUTOMATION_EVENT_END_STATUSES:
+        raise ValueError(f"status must be one of {_AUTOMATION_EVENT_END_STATUSES}, got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE automation_events SET status = ?, outcome = ?, review_result_id = ?, "
+            "cost_usd = ?, truncated = ?, skip_reason = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE id = ? AND status = 'running'",
+            (status, outcome, review_result_id, cost_usd, 1 if truncated else 0, skip_reason, event_id),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT status FROM automation_events WHERE id = ?", (event_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"automation_events {event_id} does not exist")
+            raise ValueError(f"automation_events {event_id} is already '{row['status']}'")
+
+
+def reconcile_stuck_automation_events(conn: sqlite3.Connection) -> int:
+    """Startup counterpart to reconcile_orphaned_runs() for the new table
+    (§B.11) — an automation_events row found status='running' at server
+    startup means the prior process crashed mid-cycle. Never silently
+    marked complete or resumed: marked 'failed'/'interrupted' once, and
+    (per the UNIQUE constraint) its trigger event is never automatically
+    retried afterward — the same Founder-visible "needs a look" state as
+    any other failure. Returns the number of rows updated."""
+    with conn:
+        cur = conn.execute(
+            "UPDATE automation_events SET status='failed', outcome='interrupted', "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE status='running'"
+        )
+    return cur.rowcount
 
 
 PURGE_CHECK_TABLES = [
@@ -1271,6 +1487,12 @@ def main() -> None:
     ho.add_argument("--expected-behavior", dest="expected_behavior")
     ho.add_argument("--known-limitations", dest="known_limitations")
     ho.add_argument("--checklist")
+    ho.add_argument("--base-commit-sha", dest="base_commit_sha",
+                     help="Phase 3A Part B (TASK-015): git rev-parse HEAD before this task's work "
+                          "began — required for the automated Code Review poller to assemble a real "
+                          "diff (§B.13); nullable, non-code handoffs may omit it")
+    ho.add_argument("--head-commit-sha", dest="head_commit_sha",
+                     help="Phase 3A Part B (TASK-015): git rev-parse HEAD at handoff time")
     ho.set_defaults(func=cmd_handoff)
 
     ac = sub.add_parser("approval-create", help="raise a Founder approval request")

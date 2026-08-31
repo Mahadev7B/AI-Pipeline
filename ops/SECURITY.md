@@ -417,20 +417,20 @@ OS-user detection signal that costs nothing on the request path.
   this milestone, and now more concretely the load-bearing boundary this
   entire feature's own limits trace back to (see above).
 
-## Chief of Staff Founder Interface (Phase 3A Part A, TASK-015)
+## Chief of Staff Interface + Limited Automated Orchestration (Phase 3A, TASK-015)
 
-Full design in `ops/reviews/cto-phase3a-architecture.md` §A.1-A.5;
-independently reviewed in `ops/reviews/security-phase3a-threat-model.md`
-(REJECT/CONDITIONS at the architecture stage — four required fixes,
-folded into the shipped design) and
-`ops/reviews/red-team-phase3a-architecture.md` (REJECT/CONDITIONS — three
-more required fixes, also folded in). This section covers Part A only —
-the Chief of Staff Founder conversational interface. Part B (the
-`automation.py` poller, `automation_events`/`automation_state`, automated
-Code Review) is a separate, later implementation pass per Red Team's
-Phase 3A review (NB3) and is not built yet; whoever implements it will
-extend this section to cover both parts rather than writing a second,
-disconnected one.
+Full design in `ops/reviews/cto-phase3a-architecture.md`; independently
+reviewed in `ops/reviews/security-phase3a-threat-model.md` (REJECT/
+CONDITIONS at the architecture stage — four required fixes, folded into
+the shipped design) and `ops/reviews/red-team-phase3a-architecture.md`
+(REJECT/CONDITIONS — three more required fixes, also folded in). Built in
+two sequential Development passes per Red Team's Phase 3A review (NB3):
+Part A (the Chief of Staff Founder conversational interface) and Part B
+(the `automation.py` poller, `automation_events`/`automation_state`,
+automated Code Review). Both are covered together below, in one section,
+rather than two disconnected ones.
+
+### Part A — Chief of Staff Founder Interface
 
 **The Chief of Staff (`POST /api/chief-of-staff/ask`) is the first real
 `claude --agent orchestrator` invocation in this system's history.**
@@ -517,11 +517,117 @@ execute a write even if a prompt-injected instruction convinced it to
 try.
 
 **`risks.id=3`** — unchanged, `open`. Not resolved, narrowed, or claimed
-reduced by anything in this section. Whoever implements Phase 3A Part B
-will append that pass's own additive consequence-increase mechanisms (an
-unattended background actor; a same-OS-user-controlled filesystem/
-subprocess surface) to this risk's `description`, per
-`ops/reviews/cto-phase3a-architecture.md`/`ops/reviews/security-phase3a-threat-model.md`
-— Part A alone introduces no new autonomous actor and touches no
-filesystem/subprocess surface beyond the existing, already-reviewed
-`claude` CLI invocation pattern every other agent identity already uses.
+reduced by anything in this Part A section. Part A alone introduces no new
+autonomous actor and touches no filesystem/subprocess surface beyond the
+existing, already-reviewed `claude` CLI invocation pattern every other
+agent identity already uses — Part B, below, is what actually changes
+`risks.id=3`'s practical consequence.
+
+### Part B — Limited Automated Orchestration
+
+**This is the first milestone in this system's history to introduce a
+background actor that acts without any HTTP request triggering it.**
+`automation.py`'s poll loop (a `threading.Thread(daemon=True)` inside
+`server.py`'s existing process, `POLL_INTERVAL_S=20`) is the first
+scheduler/poller of any kind this codebase has ever had. This changes the
+practical consequence of `risks.id=3` ("Bash permissions cannot be scoped
+below the tool-category level") in two independent, additive ways,
+neither of which this milestone resolves, narrows, or claims progress on:
+
+1. A same-OS-user actor no longer needs to forge an authenticated HTTP
+   request to get a real, costed model invocation to run — writing a
+   plausible `CODE_REVIEW`-transition and `handoffs` row via `opsdb.py`
+   directly (already possible before this milestone, under the same
+   already-open risk) is now sufficient; the poller acts on its own,
+   unattended, on a 20-second cycle.
+2. The Python code around that invocation, running as the same OS user,
+   now walks real filesystem paths and shells out to `git` based on
+   `handoffs.files_changed`/`base_commit_sha`/`head_commit_sha` — data the
+   same-OS-user actor already controls. Mitigated by path validation
+   (reject absolute paths, reject anything resolving outside `repo_root`,
+   reject a `..` component after normalization — redundant with but cheap
+   alongside the `resolve()`-based containment check), commit-SHA
+   format/existence validation, and a `--` separator between revision and
+   pathspec arguments in every `git` invocation that takes one (Security's
+   required fix; `git show <sha>:<path>` is a single combined object
+   argument, not a revision/pathspec pair, and is safe without `--`
+   because that argument always begins with an already-format-and-
+   existence-validated hex SHA — verified empirically that adding `--`
+   there actually breaks the command, misreading the whole `sha:path`
+   string as a pathspec instead of an object reference). The real,
+   unsupervised model invocation this triggers remains, and must remain,
+   zero-tool (`--tools ""`, `--strict-mcp-config`, unconditional in
+   `agent_runtime._run_claude()` regardless of caller) — the same
+   restriction applied to every invocation this system has ever made,
+   extended to two new allowlists (`CHIEF_OF_STAFF_ALLOWLIST`,
+   `AUTOMATED_REVIEW_ALLOWLIST`) that cannot, by construction, receive
+   more.
+
+**Kill switch** (`automation_state.enabled`, default `0`, seeded disabled
+at schema-apply time): the only function that can write this table is
+`opsdb.set_automation_enabled()`, called only by the two new
+CSRF+session-gated routes (`POST /api/automation/stop`/`start`) — traced
+every other code path in this design; nothing else, including the poller
+itself or the automated review invocation, can set it. Stopping prevents
+any **new** automatic action from starting on the poller's next flag
+check; it does **not** forcibly kill an already-in-flight `code-review`
+subprocess — the same disclosed, previously-reviewed and accepted
+limitation Ask-Agent's own Ctrl+C behavior has carried since Milestone
+2B3A, bounded here to at most one `$0.50`, 120-second-capped invocation.
+
+**Idempotency** (`automation_events.trigger_status_history_id UNIQUE`):
+a real, database-enforced guarantee, not an application-level check
+alone — the claim (`INSERT`) happens before any real invocation, inside
+its own transaction, as the very first step for any eligible-looking
+trigger row (strictly before every eligibility check, not only before the
+real invocation — the ordering itself is load-bearing: without it, an
+ineligible candidate would never be permanently claimed and would be
+re-evaluated on every subsequent poll cycle, forever, under entirely
+non-adversarial conditions). A second attempt to claim the same triggering
+event fails atomically at the SQLite layer, holding even across two
+independent server processes were that ever to happen. **The daily spend
+(`MAX_AUTOMATION_SPEND_USD_PER_DAY=$10.00`) and invocation-count
+ceilings, by contrast, are enforced by a read-then-decide check, not a
+database constraint** — correct and race-free only under this design's
+own single-poller-process assumption (the same implicit assumption
+`SESSION_TOKEN`'s in-memory, per-process design already relies on
+throughout this codebase). Running a second `server.py` process against
+the same database — nothing today technically prevents this — could
+allow the aggregate ceilings to be exceeded by up to one extra poll
+cycle's worth of invocations; the per-event duplicate-invocation
+guarantee above is unaffected either way.
+
+**Verdict parsing is a real, guarded surface, not a formality.** A model
+explaining a REJECT verdict has every natural, benign reason to mention
+`VERDICT: PASS` earlier in its own reasoning before landing on its actual
+conclusion — a whole-reply scan (the pattern `meeting_orchestrator.py`'s
+own synthesis parser already uses safely for narrative sections) would be
+a real false-PASS mechanism here. `automation.py._parse_verdict()` only
+ever parses the strictly-last non-blank line of the reply; a missing or
+misplaced `VERDICT:` token is a parse failure — routed identically to a
+genuine invocation failure (`automation_events status='failed',
+outcome='error'`) — never a guessed default.
+
+**Automated review is a distinct, narrower-context mode, honestly
+disclosed as such**, not "the same Code Review, automated." It cannot
+explore beyond the assembled bundle, run anything, or consult a file
+outside `files_changed` — this structurally misses cross-file consistency
+and duplication defects specifically (a helper reimplemented instead of
+reused, an invariant defined outside `files_changed` silently violated),
+the exact defect class this codebase's own development history has
+already produced once (the Milestone 2B2 scoping-predicate duplication).
+An automated PASS never advances a task past `CODE_REVIEW` automatically;
+an automated REJECT is a mechanical `CODE_REVIEW -> IN_DEVELOPMENT`
+status rollback only, never a new, automatic Developer model invocation.
+
+**`risks.id=3`** — unchanged, `open`. Not resolved, narrowed, or claimed
+reduced by anything in this section. Appended to its `description`, per
+Security's drafted language: "Phase 3A (TASK-015) introduced the first
+background actor in this system's history that acts without an HTTP
+request triggering it, and the first data-driven (attacker-writable,
+same-OS-user-controlled) filesystem/subprocess surface — both increase
+this risk's practical consequence without being resolved, narrowed, or
+mitigated by anything in this design; the invocation this actor triggers
+remains zero-tool, unconditionally, by construction. See
+`ops/reviews/cto-phase3a-architecture.md`,
+`ops/reviews/security-phase3a-threat-model.md`."
