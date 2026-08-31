@@ -1,7 +1,8 @@
 # ROADMAP.md
 
-Three phases are currently defined and gated (Phase 0-3 below; Phase 3
-itself ships as authorized sub-slices, not all at once). A possible Phase 4
+Four phases are currently defined and gated (Phase 0 through Phase 3
+below; Phase 3 itself ships as authorized sub-slices, not all at once).
+A possible Phase 4
 is proposed, not yet defined or approved, at the bottom of this file. Each
 phase requires a separate, explicit Founder go-ahead before the next one
 starts. No phase begins itself.
@@ -255,9 +256,10 @@ orchestration (remaining handoffs, rejection/rework loops, Founder
 approval boundaries), a Founder Work Progress capability (per-task gate
 visibility, sourced from the existing operational database, no second
 project-management system), a cost/token tracking architecture, and a
-concrete definition of "Founder Test Readiness" — see `ops/reviews/`
-for the resulting documents once complete, and the Founder-facing
-synthesis this produces.
+concrete definition of "Founder Test Readiness" — see
+`ops/reviews/cto-product-architecture-completion.md` for the resulting
+assessment (design/inventory only, nothing in it authorized or shipped)
+and the Founder-facing synthesis this produces.
 
 ## PROPOSED PHASE 4 — Human AI Team Experience (NOT STARTED, NOT APPROVED)
 
