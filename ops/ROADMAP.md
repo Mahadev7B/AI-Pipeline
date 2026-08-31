@@ -151,18 +151,64 @@ Every Phase-2-scoped capability named at the top of this section
 (project overview, pipeline visualization, agent panel + detail view,
 Ask-Agent conversation interface, Executive Meeting UI, Founder Inbox,
 activity feed, QA/review failures, decision history, project health,
-release information) has now shipped. No further milestone is currently
-authorized. Phase 3 is not authorized and does not begin until the
-Founder separately approves the Phase 3 transition (see PHASE 3, below,
-and the Rule at the bottom of this file) — Phase 2's own scope being
-built out does not itself authorize Phase 3.
+release information) has shipped as of Milestone 2B5. Phase 2's own
+scope being built out did not itself authorize Phase 3 — see PHASE 3,
+below, for what has and has not since been separately authorized.
 
-## PHASE 3 — Automated Orchestration *(after Phase 2 is complete)*
+## PHASE 3 — Automated Orchestration *(full automation not yet authorized; a first, limited slice — Phase 3A — is DONE)*
 
 Automate the handoffs already defined in the workflow (Developer complete →
 Code Review; Code Review PASS → QA / FAIL → Developer; QA PASS → Security /
 FAIL → Developer; Security PASS → Release prep). Production deployment stays
 gated behind explicit Founder approval — this is never automated.
+
+**Phase 3A — DONE (TASK-015):** the Founder authorized only a first,
+narrowly-scoped slice of this phase, not the full automation described
+above — see `DECISIONS.md` DEC-007. Two closely related capabilities
+shipped:
+- **Chief of Staff Founder conversational interface** — a real, plain-
+  English, recommendation-first `POST /api/chief-of-staff/ask` (the
+  first-ever real `claude --agent orchestrator` invocation in this
+  system's history, zero-tool like every invocation before it), grounded
+  in a bounded, freshly-assembled state digest every turn, able to
+  gather other agents' real perspectives via a reused Executive Meeting
+  mechanism (`run_consult_meeting()`) and synthesize a Founder-addressed
+  answer, never treating a chat instruction as an executable command.
+- **One automatic handoff, and only one**: Developer-complete → Code
+  Review, run by a new in-process background poller
+  (`ops/control-center/automation.py`), zero-tool exactly like every
+  other invocation, gated by a default-disabled kill switch only the
+  Founder can flip. PASS leaves the task at `CODE_REVIEW` for a human to
+  advance to `QA`; REJECT is a mechanical status rollback to
+  `IN_DEVELOPMENT`, never a new Developer invocation. No automatic
+  QA→Security, no automatic Security→Release, no automatic production
+  deployment, no automatic re-invocation of Developer, no autonomous
+  initiation of unrelated work, no chat-triggered writes — all
+  explicitly out of scope for Phase 3A and not built.
+
+See `ops/reviews/cto-phase3a-architecture.md`,
+`ops/reviews/security-phase3a-threat-model.md`,
+`ops/reviews/red-team-phase3a-architecture.md`,
+`ops/reviews/qa-phase3a.md` (the Founder's own 12-point acceptance test,
+demonstrated end-to-end with real model invocations),
+`ops/reviews/security-adversarial-phase3a.md`,
+`ops/reviews/cto-phase3a-conformance.md`.
+
+`risks.id=3` (Bash permissions cannot be scoped below the tool-category
+level) remains `open` — Phase 3A does not resolve, narrow, or claim
+progress on it. Its practical consequence genuinely increases under
+Phase 3A in two disclosed, independently additive ways (a background
+actor that can now act without any Founder-triggered request; a
+data-driven filesystem/subprocess surface) — see `ops/SECURITY.md` and
+`risks.id=3`'s own updated mitigation text for the full, undiluted
+disclosure.
+
+**The remainder of Phase 3** (automatic Code Review PASS → QA, QA →
+Security, Security → Release, and any form of automatic production
+deployment) **remains explicitly unauthorized** and does not begin
+until the Founder separately approves that specific expansion — Phase
+3A shipping does not itself authorize Phase 3B or any later slice, per
+the Rule at the bottom of this file.
 
 ## Rule
 

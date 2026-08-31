@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-31 01:21 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-31 13:15 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -18,6 +18,7 @@ Generated 2026-08-31 01:21 UTC by `ops/db/report.py` from the live database — 
 - TASK-012 — Chief of Staff rename
 - TASK-013 — Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions
 - TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History & Release Readiness Visibility
+- TASK-015 — Phase 3A: Chief of Staff Founder Interface + Limited Automated Orchestration
 
 ## In progress
 - none
@@ -26,7 +27,7 @@ Generated 2026-08-31 01:21 UTC by `ops/db/report.py` from the live database — 
 - none
 
 ## Waiting (Backlog)
-- TASK-015 — Phase 3A: Chief of Staff Founder Interface + Limited Automated Orchestration
+- none
 
 ## QA failures (unresolved)
 - none open
