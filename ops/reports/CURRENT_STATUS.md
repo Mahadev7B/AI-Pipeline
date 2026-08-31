@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-31 18:06 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-31 19:39 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -22,6 +22,7 @@ Generated 2026-08-31 18:06 UTC by `ops/db/report.py` from the live database — 
 
 ## In progress
 - TASK-016 — Risk id=3 architecture investigation: can agent access be scoped below the Bash tool-category level (FOUNDER_APPROVAL, owner: orchestrator, progress: not broken into steps)
+- TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist (ARCHITECTURE, owner: cto, progress: not broken into steps)
 
 ## Blocked
 - none
