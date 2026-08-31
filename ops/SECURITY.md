@@ -621,7 +621,7 @@ an automated REJECT is a mechanical `CODE_REVIEW -> IN_DEVELOPMENT`
 status rollback only, never a new, automatic Developer model invocation.
 
 **`risks.id=3`** — unchanged, `open`. Not resolved, narrowed, or claimed
-reduced by anything in this section. Appended to its `description`, per
+reduced by anything in this section. Appended to its `mitigation`, per
 Security's drafted language: "Phase 3A (TASK-015) introduced the first
 background actor in this system's history that acts without an HTTP
 request triggering it, and the first data-driven (attacker-writable,
