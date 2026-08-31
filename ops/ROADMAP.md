@@ -257,9 +257,68 @@ approval boundaries), a Founder Work Progress capability (per-task gate
 visibility, sourced from the existing operational database, no second
 project-management system), a cost/token tracking architecture, and a
 concrete definition of "Founder Test Readiness" — see
-`ops/reviews/cto-product-architecture-completion.md` for the resulting
-assessment (design/inventory only, nothing in it authorized or shipped)
-and the Founder-facing synthesis this produces.
+`ops/reviews/cto-product-architecture-completion.md` for the initial
+assessment and `ops/reviews/cto-product-architecture-completion-v2.md`
+for the corrected, authoritative one (design/inventory only; the plan
+below is what the Founder actually approved).
+
+### Founder UI Completeness — APPROVED (Founder directive "FOUNDER CORRECTION — FINALIZE UI COMPLETENESS PLAN", 2026-08-31)
+
+Authoritative UI audit (reconciled from `ops/reviews/cto-product-architecture-completion-v2.md`'s
+own per-item table, correcting that document's own inconsistent prose
+summary): **30 capabilities audited, 18 COMPLETE, 6 PARTIAL, 6
+MISSING.** See that document for the full item-by-item table with
+file/route citations.
+
+Four milestones make up the official plan. All four are required before
+the Founder-facing UI may be called **100% feature-complete**; the
+Founder was explicit that this definition is not to be narrowed after
+the fact:
+
+- **Milestone A** — Active Work dashboard (company-wide, at-a-glance) +
+  Task Detail page, shipped together (they share one computed progress
+  model; a dashboard linking to a nonexistent detail page would be a
+  broken experience).
+- **Milestone B** — Company-wide AI cost visibility (all four invocation
+  paths — Ask-Agent, Executive Meetings, Chief of Staff, automated Code
+  Review — persist the cost they already compute; today only the
+  automation poller does).
+- **Milestone C** — Company-wide Risks register (`risks.id=3` itself
+  currently has no Founder-facing page anywhere in the product).
+- **Milestone D** — Project / Phase Progress, built on a small new
+  structured representation (phase/milestone state exists today only as
+  prose in this file) — no invented percentages; real fractions where
+  genuinely queryable, otherwise an explicit status
+  (Complete/In Progress/Not Started/Paused).
+
+Build order: A → B → C → D, unless CTO finds a concrete dependency
+requiring otherwise.
+
+**Two distinct readiness states — kept separate everywhere this project
+reports status, per the Founder's explicit instruction:**
+
+- **Exploratory Founder Testing ready** = Milestones A + B + C complete.
+  The Founder may begin testing a real app idea through the company at
+  this point, if the Chief of Staff recommends it.
+- **Founder UI 100% feature-complete** = Milestones A + B + C + D
+  complete. A + B + C being done does **not** mean the UI is 100%
+  complete — that claim requires D as well.
+
+Security hardening (TASK-017/`risks.id=3`, see DEC-008) and the
+remaining Phase 3 orchestration automation (Code Review PASS → QA, QA →
+Security, Security → Release, automated Developer reinvocation,
+production deployment automation) are explicitly **not** bundled into
+this work and stay deferred exactly as before, unless a specific UI
+milestone is found to introduce a genuinely new material vulnerability.
+
+Gates per milestone: CTO architecture → Design review (where
+Founder-facing UX changes) → Red Team → Development → Code Review → QA
+→ focused Security review (scoped to newly introduced risk only) → CTO
+final conformance. Per the Founder's explicit instruction: only a
+concrete, blocking defect repeatedly stops progress through this
+sequence — lower-severity hardening, theoretical edge cases, and
+documentation nits are recorded as follow-up work, not grounds for an
+open-ended review loop.
 
 ## PROPOSED PHASE 4 — Human AI Team Experience (NOT STARTED, NOT APPROVED)
 

@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-08-31 22:25 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-08-31 22:48 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 1 task(s) blocked, 0 high-severity open risk(s)
@@ -28,7 +28,7 @@ Generated 2026-08-31 22:25 UTC by `ops/db/report.py` from the live database — 
 - TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist: no reason recorded
 
 ## Waiting (Backlog)
-- none
+- TASK-019 — Milestone A: Active Work dashboard + Task Detail page
 
 ## QA failures (unresolved)
 - none open
