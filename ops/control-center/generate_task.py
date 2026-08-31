@@ -60,10 +60,17 @@ _REVIEW_LABEL_OVERRIDE = {
 
 
 def _review_label(reviewed_by_agent: str, review_type: str) -> str:
+    """Returns a raw (unescaped) label — every call site escapes it once
+    at the point of rendering (render_gate_timeline's note_html,
+    render_findings' card). Do not call e() in here too: with the fixed
+    14-agent roster this was previously a no-op (nothing in
+    display_name()'s output needs escaping today), but double-escaping is
+    a latent bug the moment that roster ever contains a name with an
+    HTML-special character."""
     if reviewed_by_agent in _REVIEW_LABEL_OVERRIDE:
         return _REVIEW_LABEL_OVERRIDE[reviewed_by_agent]
     kind = "security" if review_type == "security" else "code"
-    return f"{e(ds.display_name(reviewed_by_agent))} {kind} review"
+    return f"{ds.display_name(reviewed_by_agent)} {kind} review"
 
 
 def _fetch_findings(conn: sqlite3.Connection, task_id: int) -> tuple[list[sqlite3.Row], list[sqlite3.Row]]:
@@ -147,10 +154,19 @@ def render_summary_panel(conn: sqlite3.Connection, row: dict) -> str:
         founder_html = '<span style="color:var(--text2);">No</span>'
     cost = row["cost"]
     cost_html = f'${cost["usd"]:.2f}' if cost["available"] else '<span style="color:var(--text3);">not available</span>'
+    # CTO architecture doc §3.2's first table field ("Project / Phase /
+    # Milestone"): tasks.project_id -> projects.name via
+    # task_progress_row()'s LEFT JOIN, or an honest "—" when project_id is
+    # NULL — this project has one implicit single project today, never a
+    # fabricated name. No "Phase"/"Milestone" concept exists in the schema
+    # until Milestone D ships (per the same architecture doc), so only the
+    # project name is rendered.
+    project_html = e(row["project_name"]) if row["project_name"] else '<span style="color:var(--text3);">&mdash;</span>'
 
     return f'''
 <div class="panel" style="margin-bottom:20px;">
-  <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;">{project_html}</div></div>
     <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">{owner}</div></div>
     <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">{elapsed_html}</div></div>
     <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; {"color:var(--red); font-weight:600;" if row["bounce_count"] else ""}">{row["bounce_count"]} <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>

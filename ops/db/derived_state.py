@@ -296,8 +296,23 @@ def task_is_stuck(conn: sqlite3.Connection, task_id: int, status: str,
     task_status_history, review_results, qa_results for this task_id (no
     row at all is itself stuck — a task with zero recorded activity ever
     since creation). is_stuck = (now - last_event_at) > threshold_days
-    days. Returns (is_stuck, last_event_at)."""
-    if status in ("BLOCKED", "FOUNDER_APPROVAL"):
+    days. Returns (is_stuck, last_event_at).
+
+    DONE is also excluded defensively: Active Work never calls this for a
+    DONE task (active_work_rows() filters status != 'DONE'), but a future
+    caller of task_progress_row() for a finished task should not see a
+    spurious 'stuck' flag on completed work.
+
+    BACKLOG is deliberately NOT excluded here — this is a disclosed,
+    unresolved ambiguity in the CTO architecture doc (ops/reviews/
+    cto-milestone-a-architecture.md §2.1's own text: 'not BLOCKED/
+    FOUNDER_APPROVAL, i.e. nominally "in progress"' only ever names those
+    two statuses), not a Development deviation: the doc's exclusion list
+    is literally BLOCKED/FOUNDER_APPROVAL only, so this matches it exactly
+    as written, even though a not-yet-started BACKLOG task arguably isn't
+    'nominally in progress' either. Currently latent (no active BACKLOG
+    task exists), flagged for CTO to resolve, not changed unilaterally."""
+    if status in ("BLOCKED", "FOUNDER_APPROVAL", "DONE"):
         return (False, None)
     row = conn.execute(
         """
@@ -398,6 +413,20 @@ def elapsed_since(conn: sqlite3.Connection, since_iso: str | None) -> str:
     if days is None or days < 0:
         return "—"
     return _format_duration_days(days)
+
+
+def elapsed_days_int(conn: sqlite3.Connection, since_iso: str | None) -> int | None:
+    """Whole days elapsed since since_iso, floored — the granularity the
+    stuck badge needs ('No activity in 4d'), distinct from elapsed_since()'s
+    human 'Xd Xh' format used elsewhere on these pages. None if since_iso
+    is falsy or in the future (clock-skew/data artifact, not a real
+    duration)."""
+    if not since_iso:
+        return None
+    days = conn.execute("SELECT julianday('now') - julianday(?)", (since_iso,)).fetchone()[0]
+    if days is None or days < 0:
+        return None
+    return int(days)
 
 
 def task_progress_row(conn: sqlite3.Connection, task_id: int) -> dict | None:

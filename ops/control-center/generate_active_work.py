@@ -61,19 +61,30 @@ def _founder_pill(founder_needed: bool) -> str:
     return '<span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder needed &middot; No</span>'
 
 
+def _project_label(row: dict) -> str:
+    """CTO architecture doc §3.2's first table field ('Project / Phase /
+    Milestone'): tasks.project_id -> projects.name via task_progress_row()'s
+    LEFT JOIN, or an honest '—' when project_id is NULL — this project has
+    one implicit single project today, never a fabricated name."""
+    return e(row["project_name"]) if row["project_name"] else "&mdash;"
+
+
 def _gate_line(conn: sqlite3.Connection, row: dict) -> str:
     owner = e(ds.display_name(row["current_owner"])) if row["current_owner"] else "unassigned"
+    project = _project_label(row)
     if row["effective_gate_status"] is None:
         return (
+            f'<span style="color:var(--text3);">Project: {project}</span> &middot; '
             f'<b style="color:var(--text);">Gate: &mdash;</b> &middot; '
             f'<span style="color:var(--text3);">&mdash; not yet on the gate ladder</span> &middot; Owner: {owner}'
         )
     label = e(ds.gate_display_label(row["effective_gate_status"]))
-    if row["status"] == "BLOCKED":
+    if row["status"] in ("BLOCKED", "FOUNDER_APPROVAL"):
         label += " (paused)"
     n_done = len(row["gates_completed"])
     n_remaining = len(row["gates_remaining"])
     return (
+        f'<span style="color:var(--text3);">Project: {project}</span> &middot; '
         f'<b style="color:var(--text);">{label}</b> &middot; '
         f'<b style="color:var(--text2); font-weight:600;">{n_done} done</b> &middot; '
         f'<b style="color:var(--text2); font-weight:600;">{n_remaining} to go</b> &middot; Owner: {owner}'
@@ -105,12 +116,21 @@ def _detail_line(conn: sqlite3.Connection, row: dict) -> str:
     )
 
 
-def _stuck_badge(row: dict) -> str:
+def _stuck_badge(conn: sqlite3.Connection, row: dict) -> str:
+    """Design-approved exact text ('No activity in 4d · threshold 3d',
+    ops/mockups/milestone-a/milestone-a-design-review.html) — the real
+    elapsed-days figure, not a hardcoded placeholder. Computed from
+    row['stuck_last_event_at'] (task_progress_row()'s own
+    task_is_stuck() result); falls back to created_at only for the
+    "zero activity ever" case where stuck_last_event_at is None."""
     if not row["is_stuck"]:
         return ""
+    since = row["stuck_last_event_at"] or row["created_at"]
+    days = ds.elapsed_days_int(conn, since)
+    days_label = f"{days}d" if days is not None else "an unknown duration"
     return (
         f'<span class="pill" style="background:var(--gray-soft); color:var(--text2); margin-left:6px;">'
-        f'No activity &middot; threshold {ds.STUCK_THRESHOLD_DAYS}d</span>'
+        f'No activity in {days_label} &middot; threshold {ds.STUCK_THRESHOLD_DAYS}d</span>'
     )
 
 
@@ -143,7 +163,7 @@ def render_card(conn: sqlite3.Connection, row: dict) -> str:
               <span class="mono" style="color:var(--text3); font-weight:400; font-size:11px;">TASK-{row["id"]:03d}</span>
               &nbsp;&mdash;&nbsp;{e(row["title"])}
             </div>
-            <div>{_founder_pill(row["founder_action_required"])}{_stuck_badge(row)}</div>
+            <div>{_founder_pill(row["founder_action_required"])}{_stuck_badge(conn, row)}</div>
           </div>
           {interrupt_note_html}
           <div style="font-size:11.5px; color:var(--text2); margin-top:2px;">{_gate_line(conn, row)}</div>
