@@ -121,6 +121,19 @@ mutate Phase 1 schema" bar — see
 Ask-Agent conversations use `thread_id = "agent-<name>-company"` with
 `scope='agent'`.
 
+Phase 3A Part A (TASK-015) puts a real model invocation behind
+`thread_id = "agent-orchestrator-company"` for the first time —
+previously, every `messages`/`agent_runs` row attributed to
+`orchestrator` was a deterministic Python step wearing that identity's
+name (e.g. meeting-participant validation), never a real `claude --agent
+orchestrator` subprocess. The Chief of Staff Founder interface (`POST
+/api/chief-of-staff/ask`) is exactly that first real invocation — no
+schema change was needed for this: it's the same `agent-<name>-company`
+formula Ask-Agent already established, applied to a new agent name the
+schema already supported. See `ops/reviews/cto-phase3a-architecture.md`
+§A.1-A.5 and `ops/SECURITY.md`, "Chief of Staff Founder Interface (Phase
+3A Part A, TASK-015)."
+
 ### approvals
 Mirrors `/ops/templates/founder-approval.md`: `id, task_id (nullable),
 request, requested_by_agent, why, recommendation, alternatives_considered,

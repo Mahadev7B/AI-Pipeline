@@ -124,6 +124,125 @@ def stage_and_substate(status: str) -> tuple[str, str] | None:
     return STAGE_MAP.get(status)
 
 
+# ---- Phase 3A Part A (TASK-015): Chief of Staff state-digest helpers ----
+# Read-only, each capped by its own `limit=` — deliberate, justified
+# content selection ("recent + open + actionable state," never "every row
+# ever written"), not an oversight. Composed by
+# ops/control-center/chief_of_staff.py into the bounded state digest
+# assembled fresh before every Founder message — see
+# ops/reviews/cto-phase3a-architecture.md §A.2. Same DRY rule as every
+# other function in this module: the single, shared implementation, not a
+# second hand-typed copy of company-state logic living inside
+# chief_of_staff.py itself. NOTE: automation_status_digest() (Part B, the
+# automation poller/automation_events/automation_state tables) is
+# deliberately NOT implemented here yet — those tables don't exist until
+# Phase 3A Part B ships; adding it now would read tables that don't exist.
+
+
+def open_risks_digest(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    """Open risks first, then most-recently-changed (mitigated/resolved)
+    ones — id/title/severity/status/mitigation. `resolved_at` is the only
+    "last changed" signal this table has (no updated_at column); for a
+    still-open risk that's always NULL, so COALESCE falls back to
+    created_at."""
+    return conn.execute(
+        """
+        SELECT id, title, severity, status, mitigation
+        FROM risks
+        ORDER BY (status = 'open') DESC, COALESCE(resolved_at, created_at) DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def active_tasks_digest(conn: sqlite3.Connection, limit: int = 15) -> list[sqlite3.Row]:
+    """Tasks not in DONE, most-recently-updated first — id/title/status/
+    current_owner/blockers."""
+    return conn.execute(
+        """
+        SELECT id, title, status, current_owner, blockers
+        FROM tasks
+        WHERE status != 'DONE'
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def pending_approvals_digest(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    """decision IN ('pending','discuss') — the real, not-yet-decided
+    Founder approval queue."""
+    return conn.execute(
+        """
+        SELECT id, task_id, request, requested_by_agent, decision, created_at
+        FROM approvals
+        WHERE decision IN ('pending', 'discuss')
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def recent_decisions_digest(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT id, title, decision, recommending_agent, created_at
+        FROM decisions
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def recent_status_transitions_digest(conn: sqlite3.Connection, limit: int = 20) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT id, task_id, from_status, to_status, changed_by_agent, changed_at, note
+        FROM task_status_history
+        ORDER BY changed_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def recent_review_qa_digest(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    """Code/security review results AND QA results, merged and ordered by
+    real recency together (a single UNION ALL query, `LIMIT` applied to
+    the combined result — not `limit` from each table separately, which
+    would silently double the intended cap)."""
+    return conn.execute(
+        """
+        SELECT 'review' AS kind, id, task_id, review_type AS subtype,
+               reviewed_by_agent AS by_agent, result, created_at
+        FROM review_results
+        UNION ALL
+        SELECT 'qa' AS kind, id, task_id, NULL AS subtype,
+               tested_by_agent AS by_agent, result, created_at
+        FROM qa_results
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
+def recent_deployments_digest(conn: sqlite3.Connection, limit: int = 5) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT id, task_id, version, environment, deployed_by_agent, deployed_at
+        FROM deployments
+        ORDER BY deployed_at DESC, id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+
+
 def release_readiness_gap(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Milestone 2B5 (TASK-014): tasks whose status is READY_TO_RELEASE,
     DEPLOYED, or DONE but that have no matching row in `deployments` at

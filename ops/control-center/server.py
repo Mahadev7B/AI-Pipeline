@@ -167,6 +167,7 @@ import opsdb  # noqa: E402 — the only writer; server.py runs its own read-only
 import dbutil  # noqa: E402
 import agent_runtime  # noqa: E402 — the Agent Runtime boundary (Milestone 2B2)
 import meeting_orchestrator  # noqa: E402 — Executive Meeting orchestration (Milestone 2B3B)
+import chief_of_staff  # noqa: E402 — Chief of Staff Founder interface (Phase 3A Part A, TASK-015)
 import founder_auth  # noqa: E402 — Founder credential load/verify (Milestone 2B4)
 import generate_overview  # noqa: E402
 import generate_pipeline  # noqa: E402
@@ -193,6 +194,11 @@ MEETING_DECIDE_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/decide$")
 MEETING_REQUEST_PERSPECTIVE_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/request-perspective$")
 MEETING_FOLLOWUP_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/followup$")
 MEETING_RETRY_PATH_RE = re.compile(r"^/api/meetings/(\d{1,15})/retry$")
+# Phase 3A Part A (TASK-015): a dedicated route, deliberately NOT a
+# generalization of ASK_AGENT_PATH_RE — orchestrator stays out of
+# ASK_AGENT_ALLOWLIST so there is exactly one way to talk to the Chief of
+# Staff, not two. See ops/reviews/cto-phase3a-architecture.md §A.1.
+CHIEF_OF_STAFF_ASK_PATH = "/api/chief-of-staff/ask"
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -489,8 +495,9 @@ class Handler(BaseHTTPRequestHandler):
         m_meeting_request = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide) else MEETING_REQUEST_PERSPECTIVE_PATH_RE.match(path)
         m_meeting_followup = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request) else MEETING_FOLLOWUP_PATH_RE.match(path)
         m_meeting_retry = None if (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup) else MEETING_RETRY_PATH_RE.match(path)
-        is_meeting_create = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == MEETING_CREATE_PATH
-        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_meeting_create):
+        is_chief_of_staff_ask = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry) and path == CHIEF_OF_STAFF_ASK_PATH
+        is_meeting_create = not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask) and path == MEETING_CREATE_PATH
+        if not (is_login or is_logout or m_decide or m_ask or m_meeting_decide or m_meeting_request or m_meeting_followup or m_meeting_retry or is_chief_of_staff_ask or is_meeting_create):
             self._send_html(404, _error_page(404, "Not found", "No such endpoint."))
             return
 
@@ -545,6 +552,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_meeting_followup(int(m_meeting_followup.group(1)), fields)
         elif m_meeting_retry:
             self._handle_meeting_retry(int(m_meeting_retry.group(1)), fields)
+        elif is_chief_of_staff_ask:
+            self._handle_chief_of_staff_ask(fields)
         else:
             self._handle_meeting_create(fields)
 
@@ -1033,6 +1042,59 @@ class Handler(BaseHTTPRequestHandler):
 
         self._redirect(redirect_to)
 
+    # ---- Phase 3A Part A (TASK-015): Chief of Staff Founder interface ----
+
+    def _handle_chief_of_staff_ask(self, fields: dict) -> None:
+        """POST /api/chief-of-staff/ask. Not a generalization of
+        /api/agents/<name>/ask — orchestrator deliberately stays out of
+        ASK_AGENT_ALLOWLIST (ops/reviews/cto-phase3a-architecture.md
+        §A.1): this is the one, dedicated route for talking to the Chief
+        of Staff. Mirrors _handle_meeting_create()'s own separation from
+        meeting_orchestrator.py — chief_of_staff.py owns the whole
+        exchange (state-digest assembly, CONSULT: parsing, consult-
+        meeting triggering, persistence); this handler only validates the
+        HTTP-facing input and maps outcomes to responses.
+
+        The message-length cap here is meeting_orchestrator.MAX_TOPIC_CHARS
+        (2,000), not the larger MAX_ASK_MESSAGE_CHARS (8,000) Ask-Agent
+        uses — deliberately: any Founder message to the Chief of Staff may
+        become a real Executive Meeting topic if it triggers a CONSULT:
+        line, and run_consult_meeting() enforces that same limit on
+        `topic`. Capping the Founder's own input here, up front, avoids a
+        confusing failure deep inside the consult flow for an otherwise
+        well-formed, merely-long message."""
+        redirect_to = "/agents/orchestrator.html"
+
+        message = fields.get("message", [""])[0].strip()
+        if not message:
+            self._send_html(400, _error_page(400, "Bad request", "Message must not be empty."))
+            return
+        if len(message) > meeting_orchestrator.MAX_TOPIC_CHARS:
+            self._send_html(400, _error_page(
+                400, "Bad request",
+                f"Message exceeds the {meeting_orchestrator.MAX_TOPIC_CHARS:,}-character limit — any message "
+                "to the Chief of Staff may become a real Executive Meeting topic, so the same limit applies here."))
+            return
+
+        try:
+            chief_of_staff.ask_chief_of_staff(message)
+        except LookupError as exc:
+            self._send_html(404, _error_page(404, "Not found", str(exc)))
+            return
+        except ValueError as exc:
+            self._send_html(409, _error_page(409, "Already in progress", str(exc)))
+            return
+        except sqlite3.OperationalError as exc:
+            sys.stderr.write(f"[control-center] lock contention starting a Chief of Staff exchange: {exc}\n")
+            self._send_html(503, _error_page(503, "Busy", "The database is busy right now — please try again in a moment."))
+            return
+        except Exception as exc:  # noqa: BLE001 — last resort: never let a bug leak a traceback to the client
+            sys.stderr.write(f"[control-center] unhandled Chief of Staff error: {type(exc).__name__}: {exc}\n")
+            self._send_html(500, _error_page(500, "Unexpected error", "Something went wrong processing this request. See the server's terminal output for detail."))
+            return
+
+        self._redirect(redirect_to)
+
 
 def _reconcile_orphaned_runs() -> None:
     """Startup reconciliation (Red Team's Milestone 2B2 review, condition
@@ -1076,6 +1138,17 @@ def _reconcile_orphaned_runs() -> None:
             conn, agent_runtime.ORCHESTRATOR_VALIDATION_ACTIVITY_LIKE, status="failed")
         if orchestrator_count:
             print(f"reconciled {orchestrator_count} orphaned orchestrator-validation run(s) from a prior server process.")
+        # Phase 3A Part A (TASK-015): a fourth run type, a real Chief of
+        # Staff invocation ("Chief of Staff:%") — same generic
+        # opsdb.reconcile_orphaned_runs() call, distinct LIKE pattern from
+        # ORCHESTRATOR_VALIDATION_ACTIVITY_LIKE above so a crash mid-
+        # exchange doesn't get mislabeled as an orphaned validation step
+        # (or vice versa) even though both are attributed to the same
+        # agents.name = "orchestrator" row.
+        chief_of_staff_count = opsdb.reconcile_orphaned_runs(
+            conn, agent_runtime.CHIEF_OF_STAFF_ACTIVITY_LIKE, status="failed")
+        if chief_of_staff_count:
+            print(f"reconciled {chief_of_staff_count} orphaned Chief of Staff exchange(s) from a prior server process.")
     finally:
         conn.close()
 

@@ -416,3 +416,112 @@ OS-user detection signal that costs nothing on the request path.
   tool-category level — **unchanged, untouched, explicitly out of scope**
   this milestone, and now more concretely the load-bearing boundary this
   entire feature's own limits trace back to (see above).
+
+## Chief of Staff Founder Interface (Phase 3A Part A, TASK-015)
+
+Full design in `ops/reviews/cto-phase3a-architecture.md` §A.1-A.5;
+independently reviewed in `ops/reviews/security-phase3a-threat-model.md`
+(REJECT/CONDITIONS at the architecture stage — four required fixes,
+folded into the shipped design) and
+`ops/reviews/red-team-phase3a-architecture.md` (REJECT/CONDITIONS — three
+more required fixes, also folded in). This section covers Part A only —
+the Chief of Staff Founder conversational interface. Part B (the
+`automation.py` poller, `automation_events`/`automation_state`, automated
+Code Review) is a separate, later implementation pass per Red Team's
+Phase 3A review (NB3) and is not built yet; whoever implements it will
+extend this section to cover both parts rather than writing a second,
+disconnected one.
+
+**The Chief of Staff (`POST /api/chief-of-staff/ask`) is the first real
+`claude --agent orchestrator` invocation in this system's history.**
+Every prior appearance of `orchestrator` in `agent_runs`/
+`task_status_history` (e.g. `ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL`) was
+a deterministic Python step wearing that identity's name for
+attribution, never a subprocess. This is a materially different thing —
+a real, costed model call — and it is confirmed genuinely zero-tool, the
+same as every other invocation this system has ever made: `agent_runtime._run_claude()`'s
+`--tools ""` / `--strict-mcp-config` flags are unconditional regardless
+of caller, and this milestone did not touch that function at all —
+`invoke_agent()`'s validity check was only widened to additionally accept
+the new `CHIEF_OF_STAFF_ALLOWLIST = ("orchestrator",)`, exactly the same
+pattern `ASK_AGENT_ALLOWLIST`/`MEETING_PARTICIPANT_ALLOWLIST` already use.
+`orchestrator` is deliberately NOT added to `ASK_AGENT_ALLOWLIST` —
+`/api/agents/orchestrator/ask` still 404s — so there is exactly one way
+to reach the Chief of Staff, not two. Same CSRF (`_require_csrf_token()`)
++ Founder-session (`_authenticated_session()`) gate, in the same order,
+as every other write route — no new authorization boundary.
+
+**State-digest assembly is deterministic and bounded, not "everything,
+always."** Before every Founder message, `chief_of_staff.py` composes new
+read-only `derived_state.py` helpers (open risks, active tasks, pending
+approvals, recent decisions/status-transitions/review-QA/deployments,
+each individually row-capped) into a single digest capped at
+`MAX_STATE_DIGEST_CHARS = 6,000` characters, prepended to the transcript
+fresh on every single call — never cached across turns. This is what
+makes "recognize when stored information is stale" achievable by
+construction rather than by asking the model to detect staleness in
+something it's never shown twice.
+
+**`CONSULT:` is a signal, never an instruction.** When the Founder asks
+the Chief of Staff to consult other agents, its reply may end with
+`CONSULT: <names>` — parsed by fixed, deterministic Python
+(`chief_of_staff._parse_consult()`), matched only against a fixed,
+pre-approved candidate tuple
+(`meeting_orchestrator.CONSULT_CANDIDATE_ROLES` —
+`agent_runtime.MEETING_PARTICIPANT_ALLOWLIST` with `"ceo"` removed:
+`product, cto, financial, marketing, qa, security, red-team`). The
+model's raw reply is never trusted as an instruction to execute; a
+`CONSULT: ceo` or `CONSULT: orchestrator` line, Founder-typed or
+adversarially prompt-injected, simply never matches this tuple and has no
+effect — identical in kind to the trust pattern CEO's own participant
+nomination (`_select_participants()`/`_parse_selection()`) already uses,
+and now sharing the exact same candidate tuple and the same
+dedup/cap helper (`meeting_orchestrator.cap_participants()`), not a
+second hand-typed copy of either. A triggered consult is a REAL Executive
+Meeting (`meeting_orchestrator.run_consult_meeting()`), reusing the
+existing, already-reviewed gather/synthesize machinery unchanged — it
+shows up on `/meetings.html` exactly like a Founder-initiated one.
+
+**Disclosed worst-case cost, once, closed-form, per this project's own
+convention**: one consult-triggering Founder message can cost up to 1
+(the Chief of Staff's first reply, which already contains the answer or
+the `CONSULT:` line) + up to 5 (gathered positions,
+`MAX_MEETING_PARTICIPANTS - 1`) + 1 (CEO's real synthesis call) + 1 (the
+Chief of Staff's second, narrated final answer) = **8 real,
+`$0.50`-capped invocations, ~$4.00 worst case**, on top of whatever a
+non-consulting message already costs (1 invocation, ~$0.50).
+
+**This is a new, lower-friction path to an already-accepted risk, not a
+new authorization gap** (R3, Security's Phase 3A threat-model review):
+`POST /api/chief-of-staff/ask` carries the identical CSRF+session gate as
+every other write route, but there is no rate limit on the chat messages
+themselves — only what happens downstream once a message triggers a
+consult is bounded (the caps above bound *one* meeting's cost, not how
+many meetings can be triggered per unit time). This is "more of the same
+disclosed risk" in the same sense the "Executive Meetings round 2"
+section above already frames `POST /api/meetings`/`/followup`'s own lack
+of a rate limit. What's new is the *amplification in convenience*: a
+single, ordinary-looking chat message ("what does CTO and Financial
+think?") can now trigger the same up-to-~$4 real spend a purpose-built
+meeting-creation form previously required a deliberate, separate action
+to reach — lowering the friction for the same already-accepted risk
+class, not creating a new one.
+
+**Persona is defense in depth, not the only safeguard.** The Chief of
+Staff's persona (`.claude/agents/orchestrator.md`/`ops/agents/orchestrator.md`)
+is instructed never to treat a chat message as an executable command and
+to route the Founder to the real, separately-gated action instead — but
+this is backed by a structural fact, not merely a request: this
+invocation has zero tools, so there is no mechanism by which it could
+execute a write even if a prompt-injected instruction convinced it to
+try.
+
+**`risks.id=3`** — unchanged, `open`. Not resolved, narrowed, or claimed
+reduced by anything in this section. Whoever implements Phase 3A Part B
+will append that pass's own additive consequence-increase mechanisms (an
+unattended background actor; a same-OS-user-controlled filesystem/
+subprocess surface) to this risk's `description`, per
+`ops/reviews/cto-phase3a-architecture.md`/`ops/reviews/security-phase3a-threat-model.md`
+— Part A alone introduces no new autonomous actor and touches no
+filesystem/subprocess surface beyond the existing, already-reviewed
+`claude` CLI invocation pattern every other agent identity already uses.

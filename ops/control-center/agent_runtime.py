@@ -80,6 +80,22 @@ MEETING_ACTIVITY_LABEL = "Meeting: contributing a position"
 MEETING_ACTIVITY_LIKE = "Meeting:%"
 MAX_MEETING_PARTICIPANTS = 6  # CEO + up to 5 others — see cto-milestone2b3b-architecture.md
 
+# Phase 3A Part A (TASK-015): the Chief of Staff Founder Interface. A
+# third, distinct invocation category — Founder-typed, not meeting-
+# selected, not Ask-Agent's five-role allowlist — for exactly one agent
+# identity. This is the first-ever real `claude --agent orchestrator`
+# invocation in this system's history: every prior appearance of
+# `orchestrator` in agent_runs/task_status_history (e.g.
+# ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL below) is a deterministic Python
+# step wearing that identity's name for attribution, never a subprocess.
+# `orchestrator` is deliberately NOT added to ASK_AGENT_ALLOWLIST — see
+# ops/reviews/cto-phase3a-architecture.md §A.1 for why this gets its own
+# route (POST /api/chief-of-staff/ask) and its own allowlist rather than
+# a silent special case bolted onto Ask-Agent's existing route.
+CHIEF_OF_STAFF_ALLOWLIST = ("orchestrator",)
+CHIEF_OF_STAFF_ACTIVITY_LABEL = "Chief of Staff: answering a Founder question"
+CHIEF_OF_STAFF_ACTIVITY_LIKE = "Chief of Staff:%"
+
 # Milestone 2B3B round 2 (TASK-011): request-perspective, follow-up, and
 # retry. ORCHESTRATOR_VALIDATION_ACTIVITY_LABEL is Orchestrator's real,
 # attributed agent_runs row for validating CEO's participant nomination
@@ -198,7 +214,9 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
     other wait in this function) instead of failing immediately — the
     semaphore's total capacity (MAX_CONCURRENT_INVOCATIONS) is not
     touched either way; this only changes what happens when it's full."""
-    if agent_name not in ASK_AGENT_ALLOWLIST and agent_name not in MEETING_PARTICIPANT_ALLOWLIST:
+    if (agent_name not in ASK_AGENT_ALLOWLIST
+            and agent_name not in MEETING_PARTICIPANT_ALLOWLIST
+            and agent_name not in CHIEF_OF_STAFF_ALLOWLIST):
         return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for agent invocation.",
                               error_kind="invalid_agent")
 

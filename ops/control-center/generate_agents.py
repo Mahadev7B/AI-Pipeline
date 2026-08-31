@@ -30,6 +30,7 @@ from derived_state import agent_status_rows, display_name, scope_label  # noqa: 
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 from agent_runtime import ASK_AGENT_ALLOWLIST, ASK_AGENT_ACTIVITY_LIKE  # noqa: E402 — Milestone 2B2
+from agent_runtime import CHIEF_OF_STAFF_ALLOWLIST, CHIEF_OF_STAFF_ACTIVITY_LIKE  # noqa: E402 — Phase 3A Part A
 
 OUT_PATH = out_path("agents.html", "OPSDB_AGENTS_PATH")
 AGENTS_SUBDIR = OUT_PATH.parent / "agents"
@@ -120,13 +121,26 @@ def render_list_field(label: str, items: list) -> str:
 
 
 def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | None) -> str:
-    """Ask Agent — Milestone 2B2. Reads only; the write itself always
-    goes through server.py's POST /api/agents/<name>/ask, which is the
-    only place ASK_AGENT_ALLOWLIST is authoritative — this function's
-    check is just what decides whether to render a working form at all,
-    never what grants the invocation. See
-    ops/reviews/cto-milestone2b2-architecture.md."""
-    if name not in ASK_AGENT_ALLOWLIST:
+    """Ask Agent (Milestone 2B2) / Chief of Staff (Phase 3A Part A,
+    TASK-015) — the SAME visual component, two different routes and
+    activity-tracking patterns (ops/reviews/cto-phase3a-architecture.md
+    §A.1: "no new visual pattern is invented"). Reads only; the write
+    itself always goes through server.py's POST route, which is the only
+    place either allowlist is authoritative — this function's check only
+    decides whether/how to render a working form, never what grants the
+    invocation. See ops/reviews/cto-milestone2b2-architecture.md,
+    ops/reviews/cto-phase3a-architecture.md."""
+    if name in CHIEF_OF_STAFF_ALLOWLIST:
+        action = "/api/chief-of-staff/ask"
+        activity_like = CHIEF_OF_STAFF_ACTIVITY_LIKE
+        panel_label = "Ask Chief of Staff"
+        max_chars = 2_000  # meeting_orchestrator.MAX_TOPIC_CHARS — any message may become a real meeting topic
+    elif name in ASK_AGENT_ALLOWLIST:
+        action = f"/api/agents/{name}/ask"
+        activity_like = ASK_AGENT_ACTIVITY_LIKE
+        panel_label = "Ask Agent"
+        max_chars = 8_000  # server.py's MAX_ASK_MESSAGE_CHARS
+    else:
         return f'''
         <div class="panel" style="margin-top:20px;">
           <div class="label" style="margin-bottom:8px;">Ask Agent</div>
@@ -144,13 +158,13 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
     open_run = conn.execute(
         "SELECT r.id FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
         "WHERE a.name = ? AND r.ended_at IS NULL AND r.current_activity LIKE ?",
-        (name, ASK_AGENT_ACTIVITY_LIKE),
+        (name, activity_like),
     ).fetchone()
     last_run = conn.execute(
         "SELECT r.status, r.ended_at FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
         "WHERE a.name = ? AND r.current_activity LIKE ? "
         "ORDER BY r.id DESC LIMIT 1",
-        (name, ASK_AGENT_ACTIVITY_LIKE),
+        (name, activity_like),
     ).fetchone()
 
     bubbles = []
@@ -178,9 +192,9 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
         else:
             status_html = '<span style="color:var(--text3);">No requests yet</span>'
         form_html = f'''
-        <form method="POST" action="/api/agents/{e(name)}/ask" style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
+        <form method="POST" action="{e(action)}" style="display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border2);">
           <input type="hidden" name="token" value="{e(token or "")}">
-          <input type="text" name="message" placeholder="Ask {e(display_name(name))} a question&hellip;" maxlength="8000" required
+          <input type="text" name="message" placeholder="Ask {e(display_name(name))} a question&hellip;" maxlength="{max_chars}" required
                  style="flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:12.5px;">
           <button type="submit" style="padding:6px 14px; border-radius:8px; background:var(--accent); border:none; font-size:11.5px; font-weight:600; color:#1a1206; cursor:pointer;">Send</button>
         </form>'''
@@ -188,7 +202,7 @@ def render_ask_agent_section(conn: sqlite3.Connection, name: str, token: str | N
     return f'''
     <div class="panel" style="margin-top:20px;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <div class="label">Ask Agent</div>
+        <div class="label">{e(panel_label)}</div>
         <div style="font-size:11px;">{status_html}</div>
       </div>
       {thread_html}

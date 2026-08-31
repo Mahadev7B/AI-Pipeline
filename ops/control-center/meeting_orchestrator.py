@@ -42,7 +42,16 @@ import agent_runtime  # noqa: E402
 MAX_TOPIC_CHARS = 2_000  # generous for a real cross-cutting question; matches the
                           # discipline of MAX_ASK_MESSAGE_CHARS in server.py
 
-_CANDIDATE_ROLES = tuple(r for r in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST if r != "ceo")
+# The fixed, pre-approved candidate role tuple shared by TWO trust
+# patterns in this codebase: CEO's own participant nomination (below,
+# _select_participants()/_parse_selection()) and, since Phase 3A Part A
+# (TASK-015), the Chief of Staff's CONSULT: parsing
+# (chief_of_staff.py — Security's Phase 3A threat-model review, required
+# fix C3: "agent_runtime.MEETING_PARTICIPANT_ALLOWLIST with 'ceo'
+# removed", stated exactly once, here, not duplicated as a second
+# hand-typed tuple in chief_of_staff.py). Public (no leading underscore)
+# specifically so chief_of_staff.py can import it directly.
+CONSULT_CANDIDATE_ROLES = tuple(r for r in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST if r != "ceo")
 
 
 def _parse_selection(response_text: str) -> list[str]:
@@ -56,7 +65,7 @@ def _parse_selection(response_text: str) -> list[str]:
         return []
     text = response_text.lower()
     selected = []
-    for role in _CANDIDATE_ROLES:
+    for role in CONSULT_CANDIDATE_ROLES:
         # word-boundary match so e.g. "ceo" doesn't accidentally match inside another word
         if re.search(rf"(?<![a-z0-9-]){re.escape(role)}(?![a-z0-9-])", text):
             selected.append(role)
@@ -79,7 +88,7 @@ def _select_participants(topic: str) -> list[str]:
         f"Founder: A cross-cutting question has been raised for an Executive Meeting: "
         f"\"{topic}\" From this list of candidate roles, which should participate because "
         f"they have real, relevant expertise for this specific question (do not include a "
-        f"role just because it exists): {', '.join(_CANDIDATE_ROLES)}. Respond with ONLY a "
+        f"role just because it exists): {', '.join(CONSULT_CANDIDATE_ROLES)}. Respond with ONLY a "
         f"comma-separated list of the role names you select from that exact list, nothing "
         f"else — no explanation, no punctuation besides commas."
     )
@@ -87,6 +96,30 @@ def _select_participants(topic: str) -> list[str]:
     if not result.ok:
         return []
     return _parse_selection(result.response_text)
+
+
+def cap_participants(candidates: list[str], cap: int) -> tuple[list[str], list[str]]:
+    """The "at most `cap` others, deduped" rule — extracted (Phase 3A
+    Part A, TASK-015; CTO's Phase 3A architecture doc, §A.3; Security's
+    Phase 3A threat-model review) so there is exactly ONE implementation
+    of this dedup/cap logic in the codebase, not two: _validate_selection()
+    below uses it for CEO's own participant nomination, and
+    chief_of_staff.py's CONSULT: parsing (Phase 3A Part A) uses it for the
+    Founder-requested consult list. Order-preserving (first occurrence
+    wins on a duplicate), drops a redundant self-nomination of "ceo" (CEO
+    is always added separately by every caller, never counted here) —
+    identical behavior to _validate_selection()'s original inline logic,
+    unchanged, just named and shared. Returns (capped, dropped) — a
+    caller that doesn't need the dropped list (chief_of_staff.py) simply
+    ignores the second element."""
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for name in candidates:
+        if name == "ceo" or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+    return deduped[:cap], deduped[cap:]
 
 
 def _validate_selection(candidates: list[str]) -> tuple[list[str], str]:
@@ -102,27 +135,25 @@ def _validate_selection(candidates: list[str]) -> tuple[list[str], str]:
     Returns (validated_names, a short human-readable explanation of what
     was admitted/dropped and why) — the explanation is what a meeting's
     detail page actually shows (see run_meeting() below), the real,
-    attributed record Design Conformance round 2 asked for."""
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for name in candidates:
-        if name == "ceo" or name in seen:
-            continue
-        seen.add(name)
-        deduped.append(name)
+    attributed record Design Conformance round 2 asked for.
 
+    Phase 3A Part A: the dedup/cap logic itself now lives in
+    cap_participants() above, shared with chief_of_staff.py's CONSULT:
+    parsing — this function's own remaining job is exactly the same as
+    before (no behavior change): call that shared helper, then build the
+    same human-readable explanation it always has."""
     cap = agent_runtime.MAX_MEETING_PARTICIPANTS - 1  # CEO takes the +1 slot, added by the caller
-    validated = deduped[:cap]
+    validated, dropped = cap_participants(candidates, cap)
+    deduped = validated + dropped  # == the original inline "deduped" list, in the same order
 
     if not deduped:
         explanation = "Validated CEO's nomination: none. CEO is the meeting's only participant."
-    elif len(validated) == len(deduped):
+    elif not dropped:
         explanation = (
             f"Validated CEO's nomination: {', '.join(deduped)}. "
             f"Admitted {len(validated)} of {len(deduped)} — within the {cap}-other cap."
         )
     else:
-        dropped = deduped[cap:]
         explanation = (
             f"Validated CEO's nomination: {', '.join(deduped)}. "
             f"Admitted {len(validated)} of {len(deduped)} — capped at {cap} others; "
@@ -224,6 +255,37 @@ def _parse_synthesis(text: str) -> tuple[str | None, str | None, str | None, str
     return (fields["AGREEMENTS"], fields["DISAGREEMENTS"], fields["UNRESOLVED"], fields["RECOMMENDATION"])
 
 
+def _gather_and_synthesize(meeting_id: int, participants: list[str], topic: str) -> None:
+    """Steps 3-4 of the meeting flow — "gather concurrently (bounded by
+    MAX_CONCURRENT_INVOCATIONS), then CEO synthesizes" — extracted
+    verbatim out of run_meeting() (Phase 3A Part A, TASK-015; CTO's Phase
+    3A architecture doc §A.3; Red Team's Phase 3A review, NB3/NB4). This
+    is a MECHANICAL extraction, not a rewrite: run_meeting() calls this
+    exact function, in the exact same place, with the exact same
+    `participants`/`topic` values it always computed — Red Team's NB4
+    named this Development's own explicit acceptance check (confirm the
+    already-shipped Founder-initiated meeting flow's participant-list
+    construction, concurrency bound, and persisted synthesis fields are
+    unchanged after this split). Shared with run_consult_meeting() below,
+    which needs the identical gather+synthesize machinery but skips
+    run_meeting()'s own CEO-selection/Orchestrator-validation steps
+    entirely."""
+    positions: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=agent_runtime.MAX_CONCURRENT_INVOCATIONS) as pool:
+        futures = [pool.submit(_gather_position, meeting_id, name, topic) for name in participants]
+        for future in as_completed(futures):
+            name, ok, text = future.result()
+            if ok:
+                positions[name] = text
+
+    agreements, disagreements, unresolved, recommendation = _synthesize(topic, positions)
+    conn = opsdb.connect()
+    try:
+        opsdb.finalize_meeting_synthesis(conn, meeting_id, agreements, disagreements, unresolved, recommendation)
+    finally:
+        conn.close()
+
+
 def run_meeting(topic: str) -> int:
     """The whole synchronous flow (Founder raises → CEO selects →
     Orchestrator validates → positions gathered concurrently, bounded →
@@ -283,21 +345,63 @@ def run_meeting(topic: str) -> int:
     finally:
         conn.close()
 
-    positions: dict[str, str] = {}
-    with ThreadPoolExecutor(max_workers=agent_runtime.MAX_CONCURRENT_INVOCATIONS) as pool:
-        futures = [pool.submit(_gather_position, meeting_id, name, topic) for name in participants]
-        for future in as_completed(futures):
-            name, ok, text = future.result()
-            if ok:
-                positions[name] = text
+    _gather_and_synthesize(meeting_id, participants, topic)
+    return meeting_id
 
-    agreements, disagreements, unresolved, recommendation = _synthesize(topic, positions)
+
+def run_consult_meeting(topic: str, participants: list[str], initiated_by: str = "founder") -> int:
+    """Phase 3A Part A (TASK-015), §A.3 — the Chief of Staff's CONSULT:
+    flow. `participants` has ALREADY been parsed out of the Chief of
+    Staff's own reply and capped by cap_participants() (chief_of_staff.py)
+    — this function deliberately does NOT run CEO's own "who should
+    attend" selection call the way run_meeting() does: the Founder, via
+    the Chief of Staff, already named the participants, so running a
+    second CEO selection call on top would waste a real invocation AND
+    could select DIFFERENT agents than the Founder explicitly asked for.
+    CEO is still always added as a participant (same rule run_meeting()
+    uses — never optional) and still performs this meeting's real
+    synthesis exactly as normal; only CEO's SELECTION role is skipped
+    here, not its synthesis role.
+
+    Everything downstream is the same, already-reviewed Executive Meeting
+    machinery run_meeting() uses — a real meetings row (via
+    opsdb.create_meeting(), same as run_meeting()), the same
+    MAX_MEETING_PARTICIPANTS/MAX_CONCURRENT_INVOCATIONS bounds, the same
+    $0.50-capped concurrent gathers and CEO synthesis call, via the SAME
+    _gather_and_synthesize() helper run_meeting() calls (this is exactly
+    why that extraction had to be a clean, behavior-preserving mechanical
+    split — see _gather_and_synthesize()'s docstring). Shows up on
+    /meetings.html exactly like a Founder-initiated meeting.
+    `initiated_by` defaults to "founder" — the existing convention
+    (DATA_MODEL.md) for a Founder-attributed write with no per-person
+    identity; Phase 3A Part A always passes the default.
+
+    Raises ValueError for a bad/oversized topic, same as run_meeting() —
+    callers must not pass a topic longer than MAX_TOPIC_CHARS (server.py
+    enforces this on the Founder's own chat message before it can ever
+    reach here, since any chat message may become a real meeting topic).
+    Never raises for a participant/synthesis failure — same "record
+    honestly, complete with whatever succeeded" discipline as
+    run_meeting()."""
+    topic = topic.strip()
+    if not topic:
+        raise ValueError("topic must not be empty")
+    if len(topic) > MAX_TOPIC_CHARS:
+        raise ValueError(f"topic exceeds the {MAX_TOPIC_CHARS:,}-character limit")
+
+    # CEO is always a participant, never optional — same rule run_meeting()
+    # uses. Dedup defensively (chief_of_staff.py's own CONSULT: candidate
+    # tuple already excludes "ceo", so this is belt-and-suspenders, not
+    # the primary guard).
+    all_participants = ["ceo"] + [p for p in participants if p != "ceo"]
+
     conn = opsdb.connect()
     try:
-        opsdb.finalize_meeting_synthesis(conn, meeting_id, agreements, disagreements, unresolved, recommendation)
+        meeting_id = opsdb.create_meeting(conn, topic, initiated_by, all_participants)
     finally:
         conn.close()
 
+    _gather_and_synthesize(meeting_id, all_participants, topic)
     return meeting_id
 
 
