@@ -72,7 +72,14 @@ information.
   authenticated; Bash not scoped below the tool-category level) are
   tracked as open risks (`risks` table, company-scoped) through Phase 2.
   Neither is hidden or silently marked resolved without a real technical
-  fix — see `DECISIONS.md` DEC-004.
+  fix — see `DECISIONS.md` DEC-004. The first was closed via Milestone
+  2B4 (`risks.id=2`, `mitigated`). The second (`risks.id=3`) was the
+  subject of a dedicated Founder-directed architecture investigation
+  (TASK-016, CTO → Security → Red Team → Chief of Staff, investigation
+  only — no implementation): see
+  `ops/reviews/chief-of-staff-risk3-synthesis.md` for the Founder-facing
+  synthesis and the smallest-first-step authorization proposed. `risks.id=3`
+  remains `open` pending that Founder decision.
 
 Phase 2 ships as a sequence of small, separately reviewed milestones
 (Architecture → Red Team → Development → Code Review → QA → Security
