@@ -1382,3 +1382,633 @@ Development's, alongside the above.
 
 This second addendum, like the first and like the original Correction, goes to
 Red Team as the required, non-skippable gate before Development resumes.
+
+---
+
+## Third addendum (QA's TASK-023 FAIL, `ops/reviews/qa-task023.md`) — the permission model (D1), the operational database inside every sandbox (D2), commit and handoff integrity (D3), and the runbook's own smoke command (D4)
+
+QA drove the real `claude` binary through the shipped wrapper against an
+upstream scripted to return `tool_use` turns, so the agent made **real tool
+calls inside the sandbox** for the first time in this milestone's seven review
+rounds. That single methodological step produced four blocking defects, two of
+which falsify claims *this document* makes. QA is right on all four, and right
+that §4.2 named D1 as "a required empirical verification item, not assumed
+either way" and it was never run. This addendum decides each one.
+
+**Two of QA's findings falsify my own text, and I am correcting the text, not
+softening it.** §3 point 1 and §6 bullet 6 said `operations.sqlite3` "is never
+present inside the sandbox." Under §4.4's own mandated per-task git worktree it
+was present, read-write, in every conformant sandbox, and QA forged a
+`review_results` row claiming a Red Team PASS and flipped `risks.id=3` to
+`resolved` through it. That is both halves of Red Team's original Finding 1,
+reached by routing around the broker rather than bypassing it, through the one
+path §4.4 *requires* to be bound. The claim was false from the day §4.4 was
+written.
+
+Nothing Red Team has blessed is reopened. The bwrap namespace shape, §1's
+containment results, the five-verb broker allowlist with its
+session-binding/identity-pinning, the `ai-developer` account, Developer-only
+scoping, addendum 1's default-no-network/one-brokered-egress posture, and
+addendum 2's credential-gateway contract (`red-team-task023-addendum2-review.md`
+§4, C1–C10 plus the spend ceiling and path allowlist) all stand unchanged —
+QA re-verified every one of them live and they all passed.
+
+### Method — everything below was run, not reasoned about
+
+Throwaway processes only. No `useradd`, no sudoers edit, no persistent
+privileged daemon. **No real credential material was read, copied, moved or
+exposed; every credential in every run is a fake literal and no request left
+this host** (every upstream was a local throwaway serving scripted Anthropic-
+shaped SSE). All git experiments ran in a **clone** of this repository under the
+session scratchpad, never against the live repo. The live
+`ops/db/operations.sqlite3` is byte-identical before and after
+(`5df1db1d10466274bf0df8c395b88dcb`); the broker experiments used a *copy*.
+`git status` is clean apart from this document, `git worktree list` shows only
+the main worktree, `/run/ai-pipeline` and `/etc/ai-pipeline` do not exist, and
+no daemon is left running.
+
+The rig: a throwaway SSE upstream serving scripted `tool_use` turns, the real
+`/opt/claude-code/bin/claude` 2.1.252, the **shipped** `egress_relay.py`, the
+**shipped** `opsdb_broker.py` against a copy of the database, a dumb Unix-socket
+byte-forwarder standing in for the gateway's socket end (the gateway's own
+contract is not what is under test here — QA verified it live), and a real
+`bwrap --unshare-all` sandbox whose bind set is the shipped wrapper's.
+
+### 0. The finding that reframes D1: the CLI's permission layer sits *inside* the untrusted boundary
+
+Before deciding what to grant, I had to know what a grant is worth. Three
+results, all run:
+
+1. **A partial grant is self-widening.** With `--allowedTools "Bash Edit Write"`,
+   the session wrote `.claude/settings.local.json` into its own worktree with an
+   ordinary interpreter one-liner
+   (`python3 -c "open(<char-encoded path>,'w').write('{}')"`), and a worktree
+   `.claude/settings.local.json` granting `Bash`/`Write` is honoured by the CLI
+   (verified separately: with **no** argv grant at all, that file alone made the
+   same denied calls succeed). The CLI does carry a dedicated `safetyCheck` that
+   refuses `Write`, `cp` and shell redirection to settings files — and that check
+   is a *string-pattern* layer, defeated by the interpreter indirection above.
+   This is precisely the bypass class §2.2 and §3 use to reject hook-based
+   options, reproduced against the CLI's own permission layer.
+2. **The floor is real, though.** At *zero* grant the session could not write
+   anywhere — `ls > inside.txt`, `touch inside2.txt`, `cp`, `printf >` and
+   `python3 -c` are all denied. So the shipped configuration is not
+   self-escapable; it is simply a configuration in which Developer can do
+   nothing. There is no "small safe grant": the reachable states are **useless**
+   or **complete**.
+3. **A deny in argv is not widenable by a worktree file.** With
+   `--settings '{"permissions":{"allow":["Write"],"deny":["Bash"]}}'` and a
+   worktree file allowing `Bash`, the tool came back "Bash is disabled for this
+   session, in subagents as well as here." Recorded as a fact for future use;
+   **not relied on**, because per (1) it is one layer of the same
+   pattern-matching kind this milestone exists to stop trusting.
+
+**Therefore: the CLI permission layer is capability *enablement*, not
+containment, and this document will not cite it as a layer anywhere.** The
+containment is the namespace, the two brokers, and the bind set — and QA
+already evaluated every one of those *with the permission layer entirely out of
+the loop* (their `insandbox.py` probes executed arbitrary code inside the shipped
+bind set with no CLI in the path). Everything in §6 that survived QA survived at
+"full tool permissions." Granting them therefore costs nothing against the
+threat model **once D2 and D4 are fixed** — and that conditional is the whole
+point: D2 is exactly a capability that a fully-permitted session inherits.
+
+### D1 — decision: an explicit, complete, argv-delivered grant, and a launcher that stops calling a denied session a success
+
+**The grant.** `launch_developer_sandboxed.sh` adds one fixed argv element:
+
+    --allowedTools "Bash Edit Write"
+
+alongside the existing `--tools "Read,Edit,Write,Bash,Grep,Glob,Skill"`.
+`Read`/`Grep`/`Glob` need no grant. Verified end to end: with this flag and
+nothing else changed, a real sandboxed session ran `python3 -c`, created a file
+in the worktree, and reached the broker (below). Without it, every one of those
+is `permission_denied`.
+
+**Why argv is the un-widenable delivery.** The wrapper is the fixed,
+root-owned, sudoers-named script; the sandboxed uid cannot edit it, and the
+grant is a command-line element, not a file the sandbox can reach. This is the
+same discipline as the egress allowlist (`/etc/ai-pipeline`, not bind-mounted):
+the policy lives where the untrusted principal cannot get at it. Per §0 the
+sandbox can still *widen itself* via a worktree settings file — which is
+survivable only because the grant is already complete, and which is contained
+by D3's guarded-path commit check (a `.claude/**` change never leaves the
+sandbox).
+
+**Why not `--permission-mode bypassPermissions`.** It works — I confirmed
+QA's incomplete observation in both directions: at euid 0 the CLI refuses
+outright (`--dangerously-skip-permissions cannot be used with root/sudo
+privileges`, exit 1), and at euid 65534 (an unprivileged stand-in for
+`ai-developer`) it is accepted and the same calls succeed. But it is
+uid-conditional, so the wrapper's behaviour would differ between the intended
+deployment and every posture this project can actually test — `known_limitations`
+#7 says the chain still cannot run as `ai-developer`, which would make the
+milestone's central flag structurally unverifiable here. `--allowedTools`
+behaves identically at both uids (verified at 0 and at 65534). It is also an
+*enumeration*: a tool this design never granted stays denied instead of being
+swept in by a blanket bypass. **Rejected in favour of the enumeration.**
+
+**Why not the other modes.** `acceptEdits` allows Write/Edit but leaves `Bash`
+denied — Developer cannot run a test. `dontAsk` denies everything with a
+politely-worded refusal. `auto` allows Write but routes every `Bash` command to a
+**model-side safety classifier**, which means an extra model call per command
+through the credential gateway (spend and latency the ceiling must absorb) and a
+fail-*closed*-on-unavailable behaviour I observed directly ("Classifier
+unavailable … so auto mode cannot determine the safety of Bash"). Not a
+containment layer for our threat model (the classifier judges intent, not
+capability) and a new dependency on an upstream we deliberately treat as the
+only permitted destination. **Rejected.**
+
+**Why not a `.claude/settings.local.json` seeded into the worktree.** It works
+(QA proved it), but it lives inside the bind-mounted, sandbox-writable worktree,
+so the untrusted side can rewrite the file that describes its own permissions,
+and — worse — a host-side commit would ship that rewrite into the repository.
+**Rejected.** This is also consistent with addendum B4's decision not to seed a
+trust flag: we do not place policy artifacts inside the sandbox to make a layer
+appear to work.
+
+**Consistency with B4.** B4 said the in-sandbox `PreToolUse` hook is not a
+layer. §0 now says the same about the CLI permission layer. Both are
+string-pattern mechanisms living inside the untrusted boundary; the honest
+posture is to stop counting them and keep the kernel-enforced ones.
+
+**Stopping a denied session from looking like a success.** A real session in
+which `Write`, `python3 -c` and every meaningful command were denied still ended
+`{"type":"result","subtype":"success","is_error":false}` with exit 0
+(reproduced). That is a reporting defect independent of the grant, and it must
+be fixed regardless, because it is what hid D1 for seven rounds.
+`launch_developer_session.py` currently pumps the child's stdout as raw bytes
+and never inspects it. It must **tee** the stream (still forwarding every byte
+live, per §4.1 step 4) and parse the NDJSON it already receives:
+
+- count `{"type":"system","subtype":"permission_denied"}` events (`tool_name`
+  recorded for each);
+- require exactly one terminal `{"type":"result",...}` event, with
+  `subtype == "success"` and `is_error == false`;
+- ask the broker, at `end_session`, how many verbs were served for this
+  session's token (a new counter in the reply — the broker is trusted and
+  already keeps the session record);
+- check host-side whether the worktree changed at all
+  (`git -C <worktree> status --porcelain -uall`).
+
+`ok` becomes: exit 0 **and** a terminal `result` event **and**
+`subtype == "success"` **and** `is_error == false` **and**
+`permission_denied == 0` **and** (broker verbs served > 0 **or** the worktree
+changed). Any failure is reported with its own message — a
+`permission_denied`-riddled run must say *"the sandboxed session was denied N
+tool permissions; the grant is misconfigured"* and return non-zero, never
+"success". The counts belong in the returned dict and on stderr, so a watching
+human sees them without reading the stream.
+
+### D2 — decision: the per-task worktree is materialised with the database excluded, and the sandbox never gets a git object store
+
+QA's defect is exact and its root cause is one line of §4.4 colliding with one
+line of `git ls-files`. The decision has three parts, and a fourth that QA could
+not have found because D2 was masking it.
+
+**(a) Materialisation: a sparse per-task worktree that never writes the file.**
+The launcher creates the worktree as
+
+    git worktree add --no-checkout -b <task-branch> <path> <base-sha>
+    git -C <path> sparse-checkout init --no-cone
+    printf '/*\n!/ops/db/operations.sqlite3\n' > <path>/.git-worktree-info/sparse-checkout   # per-worktree
+    git -C <path> checkout
+
+Verified on git 2.43.0 against a clone of this repository:
+
+- `ops/db/operations.sqlite3` **is never written to disk** in that worktree,
+  while `ops/db/opsdb.py`, `schema.sql` and the rest of `ops/db` are present and
+  intact — the sandbox needs those and keeps them.
+- The sparse configuration lives in the **per-worktree** config
+  (`config.worktree`, with `extensions.worktreeConfig=true` set on the
+  repository), so the main working tree is untouched: its own
+  `operations.sqlite3` was still present and unmodified throughout.
+- `git status` in the sparse worktree is **clean** — the excluded path carries
+  the `skip-worktree` bit (`git ls-files -v` → `S`), not a phantom deletion.
+- A host-side `git add -A && git commit` in that worktree **preserves the
+  database blob** at the new commit (921600 bytes, byte-identical) and does not
+  record a deletion. This was the failure mode I was most worried about and it
+  does not occur.
+- Git supplies a **second, independent** fail-closed behaviour: if the file
+  reappears at that path (a hostile or accidental write from inside the
+  sandbox), `git add` — *including `git add -f`* — refuses to stage it ("paths
+  … exist outside of your sparse-checkout definition … will not be updated in
+  the index") and the commit does not carry it. A doctored database cannot ride
+  out on the branch a human merges. Reproduced with a real forged SQLite file
+  written at that exact path.
+
+**(b) Enforcement: the wrapper refuses to launch, generically and fail-closed.**
+Sparse checkout is a *materialisation-time* decision, not a runtime control —
+if a worktree is ever created without it, nothing at runtime notices. So the
+sudoers-named wrapper (which is independently invocable, as QA demonstrated by
+calling it directly) gains a pre-launch guard that refuses, with a distinct exit
+code, when:
+
+1. the worktree contains this wrapper's own repository (i.e. it *is* the live
+   repo root — D4);
+2. `<worktree>/.git` is a **directory** rather than the linked-worktree *file*
+   (a full clone, or the repo root: the object store and `.git/hooks` must never
+   be inside the sandbox — see D3);
+3. **any file anywhere under the worktree begins with the 15-byte `SQLite
+   format 3` magic** — not a path match, so it also catches a renamed copy, a
+   hardlink, or a future tracked database this document never anticipated;
+4. credential material (`.founder_credential*`, `.credentials.json`) is present
+   under the worktree.
+
+Prototyped and measured on this host: **0.72 s** over the repository's 290
+tracked files. All five cases behave correctly — the live repo root refuses on
+(1); a conformant-but-non-sparse §4.4 worktree (exactly QA's D2 shape) refuses
+on (3) naming the file; the sparse worktree is accepted; a database copied in
+under an innocent name (`docs.dat`) refuses; a planted credential file refuses.
+The launcher performs the same check plus a positive assertion that
+`git ls-files -v ops/db/operations.sqlite3` reports `S`, so a broken
+materialisation is caught by the component that did the materialising as well as
+by the one that opens the sandbox.
+
+**(c) Why not the alternatives — each was considered against "what if it
+silently stops working".**
+
+- **Stop tracking the database in git.** Rejected as the primary. It does not
+  actually close the exposure it appears to: 178 commits in this repository's
+  history touch `ops/db/operations.sqlite3`, so every historical blob remains
+  reachable to anything holding the object store; closing it properly would mean
+  rewriting the history of a pushed GitHub repository. It also changes how this
+  project stores state (the database would no longer travel with a clone, and
+  restore-from-clone disappears) for a benefit the sparse worktree already
+  delivers. The git-readable mirror convention is unaffected either way —
+  `DECISIONS.md`/`CURRENT_STATUS.md` are the human-readable mirrors and they are
+  generated, tracked text. **If the Founder wants the database untracked for
+  other reasons (binary merge conflicts, repository hygiene), that is a separate
+  decision record, not a prerequisite of this milestone.** It *would* become a
+  prerequisite if this project ever wanted a working git inside the sandbox —
+  see D3.
+- **Post-materialisation removal (`rm` after a full checkout).** Works, and is
+  the fallback for a deployment whose git predates sparse-checkout (< 2.25), but
+  it writes the real database to a group-writable path first and then depends on
+  a cleanup step; it also loses git's own refusal-to-stage. Recorded as the
+  documented fallback, with the same wrapper guard on top.
+- **`skip-worktree` alone.** Weaker: the file is already on disk when the bit is
+  set, and I observed `git add -A` **clearing** the bit on a reappeared file.
+- **Shadowing the path inside the namespace with `--ro-bind /dev/null
+  <worktree>/ops/db/operations.sqlite3`.** This works — with the real database
+  present in the worktree, `sqlite3.connect` inside the sandbox failed "unable to
+  open database file" while `ops/db/opsdb.py` stayed readable. Rejected anyway:
+  when the exclusion *has* worked, bwrap creates the missing mount point, leaving
+  an empty `operations.sqlite3` in the worktree host-side and making
+  `os.path.exists` true inside the sandbox — reintroducing, as residue, the very
+  file whose absence is the property. And a mitigation that lets a
+  mis-provisioned worktree run is not fail-closed. Recorded as tested-and-
+  rejected so the next reader does not re-derive it.
+
+**(d) A new blocking defect this fix uncovers — `opsdb.py` cannot reach the
+broker when the database is genuinely absent.** `opsdb.py`'s `main()` runs
+
+    if args.command != "init" and not DB_PATH.exists():
+        raise SystemExit(f"error: {DB_PATH} does not exist — run `opsdb.py init` first")
+
+**before dispatch and without consulting `_broker_enabled()`.** So in the state
+§3 point 1 always described — the file absent from the sandbox — *every* broker
+verb dies before the broker is contacted. Verified directly: with `OPSDB_PATH`
+pointed at a non-existent file and `OPSDB_BROKER_SOCKET`/`OPSDB_BROKER_TOKEN`
+set, both `activity-log` and `handoff` exit 1 with the "does not exist" message.
+**The broker write path has only ever worked because of D2.** Fixing D2 without
+this would replace "the database is in the sandbox" with "Developer cannot
+record anything," and the next QA round would find it. Development must gate that
+check on `not _broker_enabled()`, and give the *excluded* verbs a broker-specific
+message ("`query` is not available in a sandboxed session") instead of a
+misleading instruction to run `opsdb.py init`.
+
+**(e) Proof that the whole shape works — one real end-to-end run.** Real
+`claude` 2.1.252, real `bwrap --unshare-all` with the shipped bind set, the
+sparse worktree, the shipped `egress_relay.py`, the shipped `opsdb_broker.py`
+against a copy of the database with a launcher-registered session token, and the
+D1 grant. Scripted tool calls, and what came back:
+
+| tool call from inside the sandbox | result |
+|---|---|
+| `ls -l ops/db/operations.sqlite3` | `No such file or directory` |
+| `os.path.exists('ops/db/operations.sqlite3')` | `False` |
+| `sqlite3.connect('file:…?mode=rw')` | `unable to open database file` |
+| `find / -xdev -name '*.sqlite3'` | **nothing, anywhere in the namespace** |
+| `Write PROBE_E2E.txt` | created, in the worktree |
+| `opsdb.py activity-log --task-id 23 …` | **`activity logged`** — landed host-side on task 23 as `developer` |
+| `opsdb.py query "SELECT id,title FROM decisions LIMIT 2"` | refused |
+| `git status --short` | `fatal: not a git repository` (D3) |
+
+§3 point 1 is now a true statement about a running system for the first time in
+this milestone, and it is true *while* the broker write path works.
+
+### D3 — decision: no git inside the sandbox; the launcher commits host-side, and the handoff SHAs come from the trusted side
+
+QA is right that "commit within the worktree" is structurally impossible as
+built. It should stay impossible. Two escalations I verified make the obvious
+fixes unacceptable:
+
+- **Binding the gitdir is host code execution.** A linked worktree's `.git`
+  file points at `<repo>/.git/worktrees/<name>`, whose `commondir` is the main
+  `.git` — so making git work inside the sandbox means binding the object store
+  *and* `.git/hooks`. I wrote a `pre-commit` hook into a repository's shared
+  `.git/hooks` and it executed on the next commit made **in a linked worktree**,
+  as the committing user (uid 0 in my test). A sandbox with a bound gitdir can
+  therefore run arbitrary code as the Founder the next time the Founder runs any
+  git command. **Disqualifying.**
+- **A sandbox-owned clone is host code execution too, on *read*.** The
+  "give the sandbox its own self-contained repository and fetch from it
+  host-side" option fails the same way: I set `diff.external` in a repository's
+  `.git/config` and a plain host-side `git -C <repo> diff HEAD~1 HEAD` executed
+  it. Any git command run against a gitdir the sandbox can write is arbitrary
+  execution — `diff.external`, `core.pager`, `core.fsmonitor`, `alias.*`.
+  **Disqualifying**, and it also cannot work at all unless the database is
+  untracked *and* the history rewritten (§D2(c)): a clone's object store
+  reconstitutes the database from HEAD in one command — I did it,
+  `git cat-file -p HEAD:ops/db/operations.sqlite3` yielded a working 22-table
+  database with all 81 `review_results` rows. **This is the fact that couples D2
+  and D3: excluding the file from the checkout is worth nothing if the sandbox
+  holds the objects.**
+
+**Chosen shape.**
+
+1. The sandbox has **no `.git` and no git**. The linked-worktree `.git` *file*
+   stays (harmless — it is a pointer to a path that does not exist in the
+   namespace), and `git` in the sandbox fails as it does today. The transcript
+   must say so plainly instead of instructing Developer to run `git rev-parse`.
+2. `launch_developer_session.py` records `base_commit_sha` **before** the
+   sandbox starts (it created the worktree at that commit), on a per-task
+   branch created by `git worktree add -b`.
+3. When the session ends, the launcher, host-side, as the Founder's user:
+   runs the **guarded-path check** — refuse to commit, loudly, if the session
+   touched `.claude/**`, `.ai-pipeline-session/**`, `ops/db/operations.sqlite3`
+   or `.gitignore` (prototyped; correctly flagged a planted
+   `.ai-pipeline-session/broker-token` in a real worktree) — then `git add -A`
+   and commits, and records `head_commit_sha`.
+4. **The handoff's commit SHAs stop being client-supplied.** The broker forces
+   `task_id` and `from_agent` already; `base_commit_sha`/`head_commit_sha` join
+   them as broker/launcher-supplied values (the broker stores the handoff with
+   them null; the launcher, which has ordinary direct database access because it
+   is *not* sandboxed, fills them in immediately after the commit). This is
+   strictly better than what the design asked for: the SHAs now come from the
+   trusted side rather than from a session that could report any value.
+   `assemble_developer_transcript()` must stop telling Developer to pass them.
+
+Verified end to end on a real sparse worktree with a real branch: base
+`8874fae…` → sandbox writes → guarded-path check → commit → head `3790a7d…`,
+`git diff --stat base head` shows exactly the two files the session wrote, the
+database blob is intact at the new commit, and the branch is visible from the
+main repository for a human to review and merge.
+
+**The cost, stated plainly.** Developer loses `git status`, `git diff` and
+incremental commits inside the sandbox. That is a real ergonomic loss on top of
+§4.2's, and it is the price of not handing a hostile-by-assumption principal a
+gitdir. Two mitigations, both cheap: the launcher passes the base SHA and the
+task branch name into the prompt so Developer knows where it stands, and the
+launcher can render the post-session `git diff` into the handoff transcript the
+Code Review poller already assembles. If in-sandbox git is ever judged
+necessary, the prerequisite is not a bind — it is untracking the database *and*
+rewriting history, and it is a new decision.
+
+### D4 — decision: the runbook is wrong and the wrapper must refuse the repo root
+
+`--worktree-path /home/user/AI-Pipeline` binds the live repository read-write
+and puts the live database and `.founder_credential.json` inside the sandbox.
+QA read the credential file's contents from inside. Both changes:
+
+- **The runbook's §7 smoke command is corrected** to create a real per-task
+  sparse worktree first and pass *that* path, with the ownership steps from
+  step 2 applied to it. No procedure in this project may instruct an operator to
+  bind the repository root.
+- **The wrapper refuses it**, via D2(b) guard clauses 1, 2 and 4 — verified: the
+  live repo root is refused in 4 ms on the "contains this wrapper's own
+  repository" test, before any scan.
+- **§6's claim that `.founder_credential.json` is "closed twice, independently"
+  is corrected.** Under the runbook's own command exactly one of the two layers
+  existed, and the one that existed (`0600` founder ownership) is the one §2.2
+  calls the *second*. With D4 fixed the claim becomes true again, and it now says
+  so conditionally: *closed twice given a conformant per-task worktree; the
+  wrapper refuses non-conformant ones so the namespace layer cannot be silently
+  absent.*
+
+### Dispositions for QA's nine non-blocking findings
+
+- **N1 — no broker rate/size ceiling (909 KB → 11.4 MB in 0.1 s): FIX NOW.**
+  Red Team made the gateway ceiling binding with the argument that "a compromised
+  session can currently spend the operator's account without limit, and the
+  gateway is the only place a limit can exist." The identical argument applies to
+  the broker and the host's disk, and the broker is the only place *that* limit
+  can exist. Required: per-session ceilings on rows written and cumulative
+  request bytes, plus a per-field length cap on the free-text fields
+  (`summary`/`detail`/`work_completed`/`known_limitations`), fail-closed with an
+  explicit "ceiling reached" error and a log line. Key them on the **session
+  token**, which — unlike the gateway's case — is un-mintable by the sandbox
+  because `register_session` is `SO_PEERCRED`-gated (this is why N5 must be fixed
+  in the same pass). Numbers are starting values needing the same sign-off as
+  `DEVELOPER_MAX_BUDGET_USD`.
+- **N2 — 7.9 GB RAM-backed sandbox tmpfs: FIX NOW.** One flag, verified:
+  `--size <bytes> --tmpfs /tmp` yields exactly the requested size (256 MiB in my
+  test) instead of half of host RAM. Ship it with a placeholder value (1 GiB
+  suggested) carrying the same "not a reviewed number" disclosure, and a QA
+  assertion that a real session fits inside it.
+- **N3 — unbounded broker hold-open DoS: disclosure FIX NOW, concurrency FIX
+  LATER.** QA is right that "can still serialize others up to the timeout"
+  understates "can deny the broker to every other caller indefinitely"; the
+  docstring, the B1 disposition text and `known_limitations` must say the
+  accurate thing. Mechanism: add a short first-byte deadline (≈2 s, distinct from
+  the existing whole-connection timeout) now, which bounds what one hostile
+  connection costs; real concurrency is deferred because the broker is
+  low-QPS and single-tenant today — but it must be revisited *before* two
+  concurrent sandboxes are ever supported, because at that point this becomes
+  cross-tenant denial rather than self-denial. Named in `known_limitations`.
+- **N4 — `.ai-pipeline-session/` not gitignored: FIX NOW.** One `.gitignore`
+  line, plus it is already covered by D3's guarded-path commit check, plus the
+  launcher's existing `rmtree` in `finally`. Three independent reasons the
+  capability token cannot reach a commit; the `.gitignore` line is the cheapest
+  and goes in.
+- **N5 — identity-pinning depends on the sandbox's uid differing, unchecked:
+  FIX NOW.** Adopt the cleaner inversion of QA's suggestion: the broker already
+  receives `peer_uid` in `handle_request`, so require `register_session`/
+  `end_session` from a peer **in** the trusted set and the five task verbs from a
+  peer **not** in it. A single-account deployment then fails loudly at the first
+  call instead of silently letting the sandbox mint tokens for any task. The
+  wrapper additionally refuses to launch when its own euid is in
+  `OPSDB_BROKER_TRUSTED_UIDS`. Note the testability cost honestly: this makes the
+  all-as-one-uid posture every review round has used unrunnable, and QA will need
+  two uids (`nobody` is available and sufficient, as QA's own two-uid gateway
+  proof shows).
+- **N6 — raw tracebacks on config-load failure: FIX NOW.** Catch
+  `ValueError`/`JSONDecodeError` in `main()` and print the (already well-written)
+  message alone. Trivial, and the 13 fail-closed refusals are worth presenting
+  properly.
+- **N7 — CONNECT reserve path not charged against the spend ceiling: FIX NOW.**
+  Moot today with `allow: []`, which is exactly why it should be fixed now: the
+  day a destination is added, that traffic would be both uncapped and
+  content-opaque, and nothing would announce it. One call to
+  `_session()`/`_charge()` in the CONNECT branch, plus a line next to the C9
+  discussion.
+- **N8 — two false statements in `developer.md`: FIX NOW**, as part of the
+  honesty corrections below. Note that D2 makes the first one true and D2(d)
+  makes the second one *wrong in a new way* if copied verbatim: the five broker
+  verbs must **not** fail with "does not exist."
+- **N9 — `known_limitations` #4 (endpoint set): CORRECT THE TEXT, DO NOT NARROW
+  THE ALLOWLIST.** QA enumerated 55 gateway requests across two real tool-using
+  agent loops and saw only `POST /v1/messages?beta=true` and
+  `CONNECT api.anthropic.com:443` (denied, harmlessly). The disclosure should
+  record that determination rather than continuing to say the set is unknown. The
+  configured `allowed_paths` stays a superset: a missing path is a hard `403`
+  that breaks a session, and QA's runs are evidence about *these* runs, not a
+  proof of completeness across compaction, telemetry and longer sessions.
+
+### Suite check 73 — QA is right, and here is what it must assert instead
+
+`test_egress_gateway.py` calls `_peer_session_key()` on the **client** end of an
+in-process socket, so `SO_PEERCRED` returns the proxy's own credentials and the
+assertion `key == ("uid", os.getuid())` is a tautology. QA's escalation of Code
+Review's note is correct: an implementation returning the daemon's *own* uid
+would pass check 73 and checks 69–72, because the fork/pid-namespace battery
+proves only that the key is not *resettable*, never that it is the *peer's*.
+
+The replacement must assert on the **server** side and must **discriminate**:
+
+1. Drive requests through the real accept path and read the key the daemon
+   actually recorded (`proxy._sessions`' key), not a key recomputed on a client
+   fd.
+2. Drive a second client from a **different** uid — a forked child that
+   `setuid`s to 65534 before connecting is enough and needs no account — and
+   assert there are now **two** buckets, `{("uid", u1), ("uid", u2)}`, with
+   independent ceilings.
+3. Assert explicitly that the key for the second peer is **not** the daemon's
+   own uid. That is the discrimination check 73 lacks, and it is the one that
+   fails against the mutant QA described.
+4. If the suite is not running with the privilege to change uid, the check must
+   **report itself as skipped**, loudly, never pass silently — the failure mode
+   this whole milestone keeps rediscovering.
+
+Runbook §6b also gains the one line Code Review and QA both asked for about the
+"table full of exhausted buckets → 429" path.
+
+### Honesty corrections — every statement QA showed to be false
+
+Development applies these as text changes in the same pass:
+
+1. **§3 point 1** ("`operations.sqlite3` is removed from the sandbox's visible
+   filesystem entirely … fails with 'no such file'") — was **false as built**
+   for every conformant §4.4 worktree. It becomes true only with D2(a)+(b), and
+   the sentence must now read as a property *enforced by* the sparse
+   materialisation and the wrapper's fail-closed guard, naming both, rather than
+   as an unexplained assertion.
+2. **§6 bullet 6** ("Raw `sqlite3`-CLI/file-level access … the file is never
+   present inside the sandbox") — same falsification, same correction. It must
+   also stop implying the `sqlite3` CLI's absence matters: QA confirmed the CLI is
+   not on `PATH`, and confirmed the Python module is — the module was the vector,
+   exactly as §3 predicted and §6's wording obscured.
+3. **§6 bullet 2** (`.founder_credential.json` "closed twice, independently") —
+   false under the runbook's own §7 command, where the namespace layer was
+   simply absent. Corrected per D4, conditioned on a conformant worktree that the
+   wrapper now enforces.
+4. **§4.4** — the bind-set bullet must state that the worktree is a *scrubbed,
+   sparse* worktree with the database excluded, that the gitdir is deliberately
+   **not** bound, and why (D3's two verified escalations).
+5. **§4.2** — its "the human, watching the stream, manually intervenes" fallback
+   is **not available** and must be deleted. QA established that interactive
+   "ask" does not exist in `-p` mode, the default is *deny* rather than ask, and
+   there is nothing to intervene in: the call fails and the model moves on. The
+   section must instead point at D1's explicit grant and at the launcher's new
+   denial accounting.
+6. **§7 item 7(a)** ("commit within the worktree") — structurally impossible and
+   deliberately staying so; replaced by D3's host-side commit and the
+   trusted-side SHAs.
+7. **`.claude/agents/developer.md`** — line 57's "`operations.sqlite3` is not
+   present in your filesystem at all" becomes true with D2 and stays. Line 63's
+   "every other `opsdb.py` command (including `query`) will fail with a clean
+   'does not exist' error" must be rewritten: with D2(d) fixed, the *five* broker
+   verbs work and everything else fails with an explicit
+   "not available in a sandboxed session" message. The persona note must also say
+   that `git` does not work inside the sandbox, that the launcher commits the
+   work host-side on a per-task branch, and that Developer must **not** try to
+   supply commit SHAs to `handoff`.
+8. **`opsdb_broker.py`'s docstring and addendum B1's text** — "a hostile client
+   can still serialize others up to the timeout" understates an unbounded denial
+   (N3). Say what is true.
+9. **`known_limitations`** — must stop being silent about the permission model
+   (it is not mentioned anywhere in the milestone), the broker's missing ceiling
+   (N1), the unbounded sandbox tmpfs (N2) and the uncharged CONNECT path (N7);
+   and must carry the new D3 ergonomic loss and the D2 materialisation dependency
+   ("a worktree created without the sparse exclusion is refused, not
+   silently accepted").
+10. **Red Team's two factual corrections** (addendum-2 review §3: the real CLI
+    *does* still issue CONNECTs; the recommended empty allowlist was
+    incompatible with `AllowlistConfig.load()`'s guard, resolved by C9) have been
+    living in runbook §7b only. They are hereby folded into this document, as
+    handoff `known_limitations` #9 asked.
+
+### What Development implements (after Red Team)
+
+1. **`launch_developer_sandboxed.sh`** — the `--allowedTools "Bash Edit Write"`
+   grant; `--size <bytes>` before `--tmpfs /tmp`; the pre-launch worktree guard
+   (repo-root, `.git`-directory, SQLite-magic scan, credential scan) with its own
+   exit code; refuse to launch when euid is in the broker's trusted set.
+2. **`launch_developer_session.py`** — sparse per-task worktree creation on a
+   per-task branch with the `skip-worktree` assertion; NDJSON tee and the
+   `permission_denied`/terminal-`result`/broker-verb-count/worktree-changed
+   success contract; guarded-path check; host-side commit; base/head SHA
+   recording onto the session's handoff row; transcript changes (no git, no
+   client-supplied SHAs, base SHA and branch name supplied).
+3. **`ops/db/opsdb.py`** — gate the `DB_PATH.exists()` guard on
+   `not _broker_enabled()` (D2(d)); broker-specific message for excluded verbs.
+4. **`ops/control-center/opsdb_broker.py`** — per-session row/byte/field
+   ceilings (N1); trusted-vs-sandbox peer-uid split on the verb set (N5);
+   first-byte deadline and corrected DoS wording (N3); verb-count in the
+   `end_session` reply.
+5. **`ops/control-center/egress_proxy.py`** — charge the CONNECT branch (N7);
+   catch config-load exceptions in `main()` (N6).
+6. **`ops/db/test_egress_gateway.py`** — the check-73 replacement above.
+7. **`.gitignore`** — `.ai-pipeline-session/` (N4).
+8. **`ops/reviews/task023-os-provisioning-runbook.md`** — the §7 smoke command
+   (D4); the per-task sparse-worktree creation recipe as a numbered step (it is
+   currently "a human or a follow-up DevOps change should wire this in", which is
+   how D2 happened); a minimum git version (2.25 for sparse checkout; 2.43.0 is
+   what was verified here) in the step-0 production-host checks; §6b's one line.
+9. **`.claude/agents/developer.md`** — the corrections in item 7 above.
+
+### QA charter additions for the next round
+
+(k) With the shipped argv, a scripted tool-using session **completes real
+work** — edit a file, run a test suite, and record both a `task-status` and a
+`handoff` through the broker — and **zero** `permission_denied` events appear in
+the stream. (l) `ops/db/operations.sqlite3` resolves `exists=False` inside the
+sandbox **and** `find / -xdev -name '*.sqlite3'` returns nothing, while
+`opsdb.py activity-log` still succeeds — the two must be asserted together, or
+D2(d) hides. (m) The wrapper **refuses** a non-sparse worktree, the repo root, a
+worktree containing a renamed database, and a worktree containing credential
+material — each with its own exit code, and the mutation must be shown to fail
+the assertion (the round-5 discipline). (n) A session that is denied a tool
+permission makes the launcher return non-zero with a message naming the denial
+count. (o) A forged database written at the excluded path inside the sandbox is
+**not** staged by the host-side commit. (p) `.claude/**` and
+`.ai-pipeline-session/**` changes made inside the sandbox block the commit
+loudly. (q) The broker's new per-session ceiling holds against the same
+adversarial shape QA used for N1 (20 × 500 KB rows), and the tmpfs is bounded.
+
+### Residual risk, unchanged or newly named
+
+- **Everything §6 already lists as not-closed remains not-closed**, including
+  truthful-but-wrong broker rows, namespace escape, Developer's own judgment
+  inside its allowed reach, the other six roles, and production-host parity.
+- **The permission grant is complete inside the sandbox, by decision.** A
+  compromised session has full `Bash`/`Write`/`Edit` within the bind set. That is
+  the same reach QA's own probes had when they verified §6's closed vectors, and
+  it is the reach the containment is designed for — but it must be stated in
+  those words rather than implied by a config file nobody documented.
+- **The sandbox can self-widen its own CLI permissions** (§0). Contained, not
+  closed: it changes nothing outside the session, and D3's guarded-path check
+  keeps it out of the repository.
+- **The exclusion is a materialisation-time property with a runtime guard, not a
+  kernel-enforced one.** If both the launcher's assertion and the wrapper's scan
+  were removed, the D2 exposure returns. That is why the scan is generic
+  (SQLite magic, any filename) rather than a single path comparison, and why the
+  mutation test in (m) is required rather than optional.
+- **Nothing here was run as `ai-developer`** — `known_limitations` #7 still
+  stands. The uid-sensitive results above were obtained with uid 65534 as the
+  unprivileged stand-in, which is what let me establish that the D1 grant is
+  uid-independent and that `bypassPermissions` is not.
+
+This third addendum, like the first two and like the original Correction, goes
+to Red Team as the required, non-skippable gate before Development resumes.
