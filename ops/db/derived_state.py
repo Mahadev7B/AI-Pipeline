@@ -187,43 +187,78 @@ def effective_gate_status(conn: sqlite3.Connection, task_id: int, current_status
 
 
 def gates_completed(conn: sqlite3.Connection, task_id: int) -> list[str]:
-    """DISTINCT to_status values (restricted to GATE_STATUS_ORDER) that
-    this task has both ENTERED and since EXITED FORWARD — i.e. a LATER
-    task_status_history row for this same task_id exists whose OWN
-    to_status is also a real ladder position (GATE_STATUS_ORDER). A gate
-    the task is currently sitting in — including one it's
-    BLOCKED/FOUNDER_APPROVAL on top of — is not yet "completed": moving
-    to an interrupt state is not a forward gate exit, only a pause on top
-    of the gate the task is still effectively at (see
-    effective_gate_status()). Never infers that an earlier ladder
-    position was visited just because a later one was.
+    """to_status values (restricted to GATE_STATUS_ORDER) the task has
+    GENUINELY MOVED PAST — evaluated from each gate's MOST RECENT entry,
+    never an earlier one. A gate counts as completed iff, after the last
+    task_status_history row that entered it (MAX(id) grouped by
+    to_status), a LATER row for this same task_id exists whose OWN
+    to_status is also a real ladder position (GATE_STATUS_ORDER). Two
+    things this rules out, both required to stay honest:
 
-    Correction to the architecture doc's literal SQL sketch (ops/reviews/
-    cto-milestone-a-architecture.md §1.4): that snippet's EXISTS subquery
-    checked only "does ANY later row exist," which — followed literally
-    — would have counted a task moving BLOCKED as having "completed" the
-    gate it was actually just paused on, directly contradicting the same
-    document's own §1.4 prose ("IN_DEVELOPMENT... does not [qualify] —
-    row 132 moves it to BLOCKED, an interrupt, not a forward gate exit")
-    and its Part 5 TASK-17 worked acceptance example. Reproduced live
-    against TASK-17's real history while implementing this milestone;
-    fixed here to require the later row's own to_status to be a real
-    ladder position, matching the documented intent and worked example
-    exactly. Returned in GATE_STATUS_ORDER order (stable rendering), not
+    1. A gate the task is currently sitting in — including one it's
+       BLOCKED/FOUNDER_APPROVAL on top of — is not "completed": moving
+       to an interrupt state is not a forward gate exit, only a pause on
+       top of the gate the task is still effectively at (see
+       effective_gate_status()). No later row with a ladder-position
+       to_status exists yet, so the EXISTS check correctly returns
+       false. This part was already correct as of Red Team's original
+       review.
+
+    2. A gate the task EXITED and later RE-ENTERED (a reject/resubmit
+       loop landing back in the identical gate — e.g. Code Review
+       REJECT -> IN_DEVELOPMENT -> resubmit -> Code Review again) is not
+       "completed" merely because some EARLIER visit to that gate was
+       once forward-exited. Grouping by MAX(id) per to_status before
+       running the EXISTS check means only the gate's LATEST entry is
+       ever evaluated — so if that latest entry is the task's current,
+       unexited position, the gate reports as not-completed regardless
+       of what an earlier round of the same gate did. This generalizes
+       to any number of bounces through the same gate (see TASK-017's
+       real three-round Code Review history) and to bouncing through two
+       different gates and returning to both — each gate is judged
+       solely by what happened after its own most recent entry.
+
+    Bug history on this exact function, in order:
+      - Architecture doc's original SQL sketch (ops/reviews/
+        cto-milestone-a-architecture.md §1.4) checked only "does ANY
+        later row exist" with no to_status restriction at all, which
+        would have counted a move to BLOCKED as a forward gate exit.
+        Fixed during initial Development by requiring the later row's
+        own to_status to be a real ladder position — reproduced live
+        against TASK-17's real history (case 3 in this module's test
+        script).
+      - That first fix still evaluated EVERY historical entry into a
+        gate (via DISTINCT h1.to_status over an unrestricted h1), so a
+        gate's FIRST entry could satisfy the EXISTS check via a row that
+        happened before a later re-entry into that same gate — wrongly
+        marking a task's own CURRENT gate as DONE the moment it had ever
+        been forward-exited even once in the past, including a case
+        where the gate was subsequently re-entered and is where the
+        task is live right now. QA reproduced this live on TASK-019's
+        own real Code Review reject-then-resubmit history (this task's
+        own second Code Review round) — see qa_results id=68. Fixed
+        here by evaluating only each gate's MOST RECENT entry, per the
+        MAX(id)-grouped query above.
+
+    Returned in GATE_STATUS_ORDER order (stable rendering), not
     insertion order."""
     rows = conn.execute(
         f"""
-        SELECT DISTINCT h1.to_status
-        FROM task_status_history h1
-        WHERE h1.task_id = ?
-          AND h1.to_status IN ({_GATE_PLACEHOLDERS})
-          AND EXISTS (
-            SELECT 1 FROM task_status_history h2
-            WHERE h2.task_id = h1.task_id AND h2.id > h1.id
-              AND h2.to_status IN ({_GATE_PLACEHOLDERS})
-          )
+        WITH last_entry AS (
+          SELECT to_status, MAX(id) AS last_id
+          FROM task_status_history
+          WHERE task_id = ? AND to_status IN ({_GATE_PLACEHOLDERS})
+          GROUP BY to_status
+        )
+        SELECT le.to_status
+        FROM last_entry le
+        WHERE EXISTS (
+          SELECT 1 FROM task_status_history h2
+          WHERE h2.task_id = ? AND h2.id > le.last_id
+            AND h2.to_status IN ({_GATE_PLACEHOLDERS})
+        )
         """,
-        (task_id, *GATE_STATUS_ORDER, *GATE_STATUS_ORDER),
+        (task_id, *GATE_STATUS_ORDER, task_id, *GATE_STATUS_ORDER),
     ).fetchall()
     completed_set = {r["to_status"] for r in rows}
     return [s for s in GATE_STATUS_ORDER if s in completed_set]

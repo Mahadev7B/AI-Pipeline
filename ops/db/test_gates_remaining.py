@@ -16,6 +16,23 @@ completed) filtering by the completed set) is applied. This is the
 "regression check (unit test or equivalent)" Red Team's §5, item 2
 requires before Code Review.
 
+Extended for the round-3 QA defect (qa_results id=68, see
+ops/db/derived_state.py's gates_completed() docstring, bug-history item
+2): gates_completed() previously judged EVERY historical entry into a
+gate, not just its most recent one, so a gate exited-then-RE-ENTERED
+(a reject/resubmit loop landing back in the identical gate — ordinary
+expected workflow, not a rare edge case) could be wrongly marked
+"completed" from a stale earlier visit while the task is actually
+sitting live in that same gate right now. Cases 4-6 below cover this:
+TASK-19's own real Code Review reject-then-resubmit history (the exact
+case QA reproduced), a synthetic three-round bounce through the same
+gate shaped after TASK-17's real three-round Red Team review history
+(review_results ids 49-51: reject, reject, pass — task_status_history
+itself never left RED_TEAM_REVIEW for those three rounds, so this case
+is a shaped reproduction, not a literal replay, consistent with how
+Case 3 below already treats TASK-17), and a task that bounces through
+two DIFFERENT gates and returns to both.
+
 Usage:
     OPSDB_PATH=/tmp/test-gates-remaining.sqlite3 python3 ops/db/test_gates_remaining.py
 
@@ -145,6 +162,95 @@ def main() -> int:
           {"ARCHITECTURE", "RED_TEAM_REVIEW"} <= set(completed17), str(completed17))
     check("TASK-17 repro: gates_completed() == 2 (matches CTO's own Part 5 worked example exactly)",
           completed17 == ["ARCHITECTURE", "RED_TEAM_REVIEW"], str(completed17))
+
+    # ---- Case 4: TASK-19's own real Code Review reject-then-resubmit
+    # history (qa_results id=68 -- the exact live reproduction QA found).
+    # Real task_status_history rows 135-141: ARCHITECTURE -> MOCKUP_REVIEW
+    # -> RED_TEAM_REVIEW -> IN_DEVELOPMENT -> CODE_REVIEW -> (reject)
+    # IN_DEVELOPMENT -> (resubmit) CODE_REVIEW. Task is CURRENTLY sitting
+    # in CODE_REVIEW for the second time -- it must show as CURRENT, never
+    # DONE, even though CODE_REVIEW was entered-and-exited once already. ----
+    t19b = make_task(conn, "TASK-19 repro: real Code Review reject-then-resubmit")
+    replay(conn, t19b, [
+        "ARCHITECTURE", "MOCKUP_REVIEW", "RED_TEAM_REVIEW", "IN_DEVELOPMENT",
+        "CODE_REVIEW", "IN_DEVELOPMENT", "CODE_REVIEW",
+    ])
+    status19b = conn.execute("SELECT status FROM tasks WHERE id = ?", (t19b,)).fetchone()["status"]
+    check("TASK-19 CR-reentry repro: tasks.status is CODE_REVIEW (post-resubmit)",
+          status19b == "CODE_REVIEW", status19b)
+    effective19b = ds.effective_gate_status(ds_conn, t19b, status19b)
+    completed19b = ds.gates_completed(ds_conn, t19b)
+    remaining19b = ds.gates_remaining(effective19b, completed19b)
+    check("TASK-19 CR-reentry repro: effective_gate_status == CODE_REVIEW",
+          effective19b == "CODE_REVIEW", str(effective19b))
+    check("TASK-19 CR-reentry repro: CODE_REVIEW is NOT in gates_completed() "
+          "(it's the task's live, current gate, not a stale earlier visit)",
+          "CODE_REVIEW" not in completed19b, str(completed19b))
+    check("TASK-19 CR-reentry repro: IN_DEVELOPMENT IS in gates_completed() "
+          "(genuinely forward-exited on its second, most recent entry)",
+          "IN_DEVELOPMENT" in completed19b, str(completed19b))
+    check("TASK-19 CR-reentry repro: ARCHITECTURE/MOCKUP_REVIEW/RED_TEAM_REVIEW "
+          "ARE in gates_completed()",
+          {"ARCHITECTURE", "MOCKUP_REVIEW", "RED_TEAM_REVIEW"} <= set(completed19b),
+          str(completed19b))
+    check("TASK-19 CR-reentry repro: zero overlap between completed and remaining",
+          not (set(completed19b) & set(remaining19b)),
+          f"completed={completed19b} remaining={remaining19b}")
+
+    # ---- Case 5: synthetic three-round bounce through the SAME gate,
+    # shaped after TASK-17's real three-round Red Team review history
+    # (review_results ids 49 reject, 50 reject, 51 pass -- task_status_history
+    # itself stayed in RED_TEAM_REVIEW for all three real rounds, so this
+    # case models what a three-round bounce looks like when the gate IS
+    # re-entered via task_status_history, generalizing case 4 beyond a
+    # single bounce). ----
+    t17b = make_task(conn, "TASK-17-shaped repro: three-round bounce through same gate")
+    replay(conn, t17b, [
+        "ARCHITECTURE", "RED_TEAM_REVIEW", "IN_DEVELOPMENT",
+        "RED_TEAM_REVIEW", "IN_DEVELOPMENT",
+        "RED_TEAM_REVIEW", "IN_DEVELOPMENT", "CODE_REVIEW",
+    ])
+    status17b = conn.execute("SELECT status FROM tasks WHERE id = ?", (t17b,)).fetchone()["status"]
+    check("Three-round repro: tasks.status is CODE_REVIEW", status17b == "CODE_REVIEW", status17b)
+    effective17b = ds.effective_gate_status(ds_conn, t17b, status17b)
+    completed17b = ds.gates_completed(ds_conn, t17b)
+    remaining17b = ds.gates_remaining(effective17b, completed17b)
+    check("Three-round repro: RED_TEAM_REVIEW IS in gates_completed() "
+          "(finally forward-exited on its third, most recent entry)",
+          "RED_TEAM_REVIEW" in completed17b, str(completed17b))
+    check("Three-round repro: IN_DEVELOPMENT IS in gates_completed() "
+          "(forward-exited on its third, most recent entry)",
+          "IN_DEVELOPMENT" in completed17b, str(completed17b))
+    check("Three-round repro: CODE_REVIEW (current) is NOT in gates_completed()",
+          "CODE_REVIEW" not in completed17b, str(completed17b))
+    check("Three-round repro: zero overlap between completed and remaining",
+          not (set(completed17b) & set(remaining17b)),
+          f"completed={completed17b} remaining={remaining17b}")
+
+    # ---- Case 6: bounces through TWO different gates and returns to both
+    # (Security REJECT sends the task back through Code Review AND QA a
+    # second time before finally clearing Security Review) -- the general
+    # form the fix must handle, not just a single-gate bounce. ----
+    t_double = make_task(conn, "Double-gate repro: bounces through CODE_REVIEW and QA twice each")
+    replay(conn, t_double, [
+        "ARCHITECTURE", "RED_TEAM_REVIEW", "READY_FOR_DEVELOPMENT", "IN_DEVELOPMENT",
+        "CODE_REVIEW", "QA", "SECURITY_REVIEW",
+        "CODE_REVIEW", "QA", "SECURITY_REVIEW",
+        "READY_TO_RELEASE",
+    ])
+    status_double = conn.execute("SELECT status FROM tasks WHERE id = ?", (t_double,)).fetchone()["status"]
+    check("Double-gate repro: tasks.status is READY_TO_RELEASE", status_double == "READY_TO_RELEASE", status_double)
+    effective_double = ds.effective_gate_status(ds_conn, t_double, status_double)
+    completed_double = ds.gates_completed(ds_conn, t_double)
+    remaining_double = ds.gates_remaining(effective_double, completed_double)
+    check("Double-gate repro: CODE_REVIEW, QA, SECURITY_REVIEW ARE all in gates_completed() "
+          "(each genuinely forward-exited on its own most recent entry)",
+          {"CODE_REVIEW", "QA", "SECURITY_REVIEW"} <= set(completed_double), str(completed_double))
+    check("Double-gate repro: READY_TO_RELEASE (current) is NOT in gates_completed()",
+          "READY_TO_RELEASE" not in completed_double, str(completed_double))
+    check("Double-gate repro: zero overlap between completed and remaining",
+          not (set(completed_double) & set(remaining_double)),
+          f"completed={completed_double} remaining={remaining_double}")
 
     conn.close()
 

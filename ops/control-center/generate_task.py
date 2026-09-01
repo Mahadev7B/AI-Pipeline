@@ -201,18 +201,24 @@ def render_gate_timeline(row: dict, history_asc: list[sqlite3.Row],
         if status == "DONE":
             continue
         findings = buckets.get(status, [])
-        if status in completed_set:
+        # CURRENT is checked BEFORE completed_set, not after: gates_completed()
+        # is now correct-by-construction and should never include the task's
+        # own effective_status, but this order is deliberate defense-in-depth
+        # per QA's own fix suggestion (qa_results id=68) rather than relying
+        # solely on the data layer never producing an overlap — the task's
+        # live, current gate must never render as a stale DONE checkmark.
+        if status == effective_status:
+            state = "CURRENT"
+            dot = '<div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); flex-shrink:0;"></div>'
+            pill = '<span class="pill" style="background:var(--accent-soft); color:var(--accent);">CURRENT</span>'
+            title_color = "var(--text)"
+        elif status in completed_set:
             state = "DONE"
             dot = ('<div style="width:16px; height:16px; border-radius:50%; background:var(--green); '
                    'display:flex; align-items:center; justify-content:center; flex-shrink:0;">'
                    '<svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" '
                    'stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>')
             pill = '<span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>'
-            title_color = "var(--text)"
-        elif status == effective_status:
-            state = "CURRENT"
-            dot = '<div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); flex-shrink:0;"></div>'
-            pill = '<span class="pill" style="background:var(--accent-soft); color:var(--accent);">CURRENT</span>'
             title_color = "var(--text)"
         else:
             state = "WAITING"
