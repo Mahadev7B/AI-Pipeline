@@ -1,0 +1,13 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1160, "h": 1500 },
+    { "file": "TwoZone.dc.html", "x": 1280, "y": 0, "w": 1160, "h": 1500 },
+    { "file": "Closeup.dc.html", "x": 2560, "y": 0, "w": 1080, "h": 1100 }
+  ],
+  "annotations": [
+    { "id": "note-main", "x": 0, "y": -110, "w": 480, "text": "Concept A — recommended. CTO's flat tree + a Design-added \"Right now\" panel above the fold." },
+    { "id": "note-twozone", "x": 1280, "y": -110, "w": 480, "text": "Concept B — alternate. Different IA: Live-now zone vs. compact History zone, not just a strip on top." },
+    { "id": "note-closeup", "x": 2560, "y": -110, "w": 420, "text": "Closeups: readiness-boolean treatment, paused-pill color, nesting depth." }
+  ],
+  "launch": { "view": "canvas" }
+}
