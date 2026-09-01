@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-09-01 01:26 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-09-01 01:34 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 1 task(s) blocked, 0 high-severity open risk(s)
@@ -37,6 +37,7 @@ Generated 2026-09-01 01:26 UTC by `ops/db/report.py` from the live database — 
 
 ## Current risks (open)
 - [medium] Bash permissions cannot be scoped below the tool-category level (company, owner: cto)
+- [low] reviewer_sync.py's live routes fail today -- reviewer_invocations table was never created (company, owner: cto)
 
 ## Founder decisions required
 - TASK-016 — Risk id=3 architecture investigation: can agent access be scoped below the Bash tool-category level is waiting at FOUNDER_APPROVAL
