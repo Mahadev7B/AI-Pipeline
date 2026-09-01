@@ -34,7 +34,7 @@ Generated 2026-09-01 19:42 UTC by `ops/db/report.py` from the live database — 
 - TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist: no reason recorded
 
 ## Waiting (Backlog)
-- none
+- TASK-025 — Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills
 
 ## QA failures (unresolved)
 - TASK-017 — Live, real-invocation test of the self-immune Developer PreToolUse denylist hook (fail-closed contract), plus full synchronous reviewer-route testing, in an isolated scratch clone/DB/credential/server (never live repo/DB).: CRITICAL: the shipped Developer denylist hook never runs at all under a real, reachable, non-adversarial condition, silently fail-OPEN, contradicting the exact property 3 review rounds were spent hardening. Live evidence: ran 'claude --agent developer --allowedTools Write -p ...' (a real, non-interactive session, in an isolated scratch clone of this repo -- distinct from Task-tool-delegated interactive usage) attempting Write('ops/db/operations.sqlite3','x'), one of the two PRIMARY named-protected paths. It SUCCEEDED -- permission_denials was empty, hook_denials table stayed empty, and the file was genuinely overwritten (verified: 'x', 1 byte, git diff confirmed on the scratch clone only). --debug hooks showed why: '[ERROR] Skipping frontmatter hooks for main-thread agent developer: the folder its definition file came from is not trusted (source: projectSettings)' -- Claude Code's workspace-trust dialog is skipped entirely in non-interactive/-p mode (confirmed in Usage: claude [options] [command] [prompt]
