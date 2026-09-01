@@ -52,15 +52,29 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 19:25 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 20:03 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (15 records) — structured, queryable state from the
+  This is the operational decision log (16 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" id="decision-16" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#16 — Save and Start are separated by fill, step count and label — not by a new colour</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> TASK-024 puts two adjacent Founder actions on the same feature: Save (writes a BACKLOG row, costs nothing, runs nothing) and Start (dispatches Product and the pipeline behind it, spends real money, has no stop button). They must be unmistakably different. The existing spend-triggering controls set a very low bar: Ask-Agent is an unmarked accent Send button with no cost disclosure at all, and the Meetings form&#x27;s strongest warning discloses time, not money.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Save keeps the filled-amber primary and one click. Start is a two-step action: an UNFILLED arming control ending in an ellipsis (which dispatches nothing), then a confirmation screen whose whole body is the consequence disclosure, carrying the only filled button in the flow, labelled &#x27;Yes — start Product on TASK-NNN and spend&#x27;. A SPENDS MONEY pill in the existing accent marks the Start panel. Start lives on Task Detail only — not on the intake confirmation, not on Active Work rows — so the compose surface has no expensive control on it at all.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The palette is closed and fully assigned (amber=active/primary, green=passed, red=danger/open risk, blue=agent waiting, violet=actor identity, gray=neutral). Red would misrepresent starting work as a hazard when it is the thing the Founder is supposed to do, and would train them to ignore red. A sixth colour is a new system for one button, against this project&#x27;s established practice of extending conventions rather than adding families. Separating by fill and step count instead makes accidental spend structurally impossible from the compose flow rather than merely discouraged.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Costs one extra navigation between having an idea and starting it. The filled amber button appears in both flows (Save, and Start&#x27;s confirm step) but never on the same screen, and the Start confirm button&#x27;s label names the agent and the spend. Concept B (Start offered on the save receipt) is shorter but puts the free and expensive buttons on one surface seconds apart; Concept C (Start per row on Active Work) grows the accidental-click surface with the backlog.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by design</div>
+            
+          </div>
+        </div>
         <div class="card" id="decision-15" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#15 — Finish the risks.id=3 security lock (TASK-023) before any Phase 3 automation work begins</div>
