@@ -443,8 +443,9 @@ def render_risks(conn: sqlite3.Connection, task_id: int) -> str:
         return ('<div style="font-size:12px; color:var(--text2); line-height:1.5;">'
                 'None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type='
                 '<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is '
-                'company-wide, not this task\'s own, and stays visible only via Agent Detail pages until a future '
-                'company-wide Risks register (Milestone C) ships. This is correct, disclosed behavior, not a gap.</div>')
+                'company-wide, not this task\'s own, and stays visible via the company-wide Risks register '
+                '(<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is '
+                'scoped to risks raised specifically against this task.</div>')
     sev_color = {"high": "var(--red)", "medium": "var(--accent)", "low": "var(--text2)"}
     cards = []
     for r in rows:

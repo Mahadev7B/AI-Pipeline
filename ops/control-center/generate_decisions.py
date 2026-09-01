@@ -42,7 +42,7 @@ def render_decisions(conn: sqlite3.Connection) -> str:
             else:
                 approval_note = '<span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>'
         items.append(f'''
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-{d["id"]}" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#{d["id"]} — {e(d["title"])}</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">{e(d["date"])}</div>

@@ -259,6 +259,11 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: 
         eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">Decision recommended by this agent — #{r["id"]} {e(r["title"])}: {e(r["decision"])}</div>')
     for r in risks_raised:
         eval_items.append(f'<div style="font-size:11.5px; color:var(--text2);">Risk raised by this agent — [{e(r["severity"])}] {e(r["title"])}</div>')
+    if risks_raised:
+        # Milestone C (TASK-021), architecture doc Part 5: one cross-link
+        # appended once per section (not once per row) into the company-wide
+        # Risks register.
+        eval_items.append('<div style="font-size:11.5px;"><a href="../risks.html" class="accentlink">&rarr; full Risks register</a></div>')
     eval_html = "".join(eval_items) if eval_items else '<div style="font-size:12px; color:var(--text2);">No evaluation or decision history recorded for this agent yet.</div>'
 
     activity_html = "".join(
@@ -271,6 +276,11 @@ def build_agent_detail(conn: sqlite3.Connection, agent_row: sqlite3.Row, token: 
         blockers_parts.append(e(run["blocked_reason"]))
     for r in risks_owned:
         blockers_parts.append(f'[{e(r["severity"])}] {e(r["title"])}')
+    if risks_owned:
+        # Milestone C (TASK-021), architecture doc Part 5: one cross-link
+        # appended once per section (not once per row) into the company-wide
+        # Risks register.
+        blockers_parts.append('<a href="../risks.html" class="accentlink">&rarr; full Risks register</a>')
     blockers_html = "<br>".join(blockers_parts) if blockers_parts else '<span style="color:var(--text3);">none</span>'
 
     header_badge = ('<span style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">AI ADVISOR — NOT THE FOUNDER</span>'

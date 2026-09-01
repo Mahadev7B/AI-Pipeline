@@ -946,6 +946,79 @@ def automation_status_digest(conn: sqlite3.Connection) -> dict:
     }
 
 
+# ---- Milestone C (TASK-021): company-wide Risks register ----
+# See ops/reviews/cto-milestone-c-architecture.md Part 2. Additive; no
+# existing function above is changed. open_risks_digest() (above) stays
+# exactly as-is for the Chief of Staff's bounded conversational digest —
+# it is not reused here, per the architecture doc's own reasoning.
+
+
+def risk_register_rows(conn: sqlite3.Connection) -> list[dict]:
+    """Every row in `risks`, grouped open-first/mitigated/resolved, newest
+    (by resolved_at, falling back to created_at) first within each group,
+    severity-descending within that. The single shared computation
+    /risks.html reads from. For scope_type='task' rows, resolves the real
+    task title via a LEFT JOIN so the register can render
+    'TASK-017 — <title>' without a second query per row; for
+    scope_type='project', resolves the real project name the same way
+    (display-only — no per-project detail page exists yet, see the
+    architecture doc Part 4.3). Returns one plain dict per risk:
+    {"id", "scope_type", "scope_id", "scope_task_title",
+     "scope_project_name", "raised_by_agent", "title", "description",
+     "severity", "status", "mitigation", "owner_agent", "created_at",
+     "resolved_at"}. No fabricated field — every key is a real column or
+     a real LEFT JOIN result, NULL rendered honestly by the caller."""
+    rows = conn.execute(
+        """
+        SELECT r.id, r.scope_type, r.scope_id, r.raised_by_agent, r.title,
+               r.description, r.severity, r.status, r.mitigation,
+               r.owner_agent, r.created_at, r.resolved_at,
+               t.title AS scope_task_title,
+               p.name  AS scope_project_name
+        FROM risks r
+        LEFT JOIN tasks t ON r.scope_type = 'task' AND t.id = r.scope_id
+        LEFT JOIN projects p ON r.scope_type = 'project' AND p.id = r.scope_id
+        ORDER BY
+          CASE r.status WHEN 'open' THEN 0 WHEN 'mitigated' THEN 1 ELSE 2 END,
+          CASE r.severity WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+          COALESCE(r.resolved_at, r.created_at) DESC,
+          r.id DESC
+        """
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def related_decisions_for_risk(conn: sqlite3.Connection, risk_id: int) -> list[dict]:
+    """Decisions whose recorded text literally names this risk, using the
+    literal-string convention this project has already, consistently
+    used in every relevant DECISIONS.md entry to date ('risks.id=3',
+    'risks.id=2', etc. appear verbatim in the `decisions` table rows —
+    real, already-established authorial practice, not a convention
+    invented for this milestone). A prefilter LIKE query keeps the
+    candidate set small and cheap; the exact match is then done in
+    Python with a word-boundary regex so 'risks.id=3' does not
+    false-match 'risks.id=30'. The regex tolerates optional whitespace
+    around the '=' (Red Team's non-blocking suggestion on this milestone's
+    review, review_results.id=65: loosen from the literal 'risks.id={id}'
+    to allow 'risks.id = 3'-style variants too, at zero cost) — still a
+    word-boundary match, so 'risks.id=30' still correctly does not match
+    risk_id=3. Returns [] (never fabricates a relation) when no decision
+    names this risk_id explicitly."""
+    import re
+    pattern = re.compile(rf"risks\.id\s*=\s*{risk_id}\b")
+    candidates = conn.execute(
+        "SELECT id, title, date, problem, decision, reason, tradeoffs "
+        "FROM decisions WHERE problem LIKE '%risks.id%' OR decision LIKE '%risks.id%' "
+        "OR reason LIKE '%risks.id%' OR tradeoffs LIKE '%risks.id%' ORDER BY id"
+    ).fetchall()
+    out = []
+    for d in candidates:
+        blob = " ".join(filter(None, (d["problem"], d["decision"], d["reason"], d["tradeoffs"])))
+        if pattern.search(blob):
+            out.append({"id": d["id"], "title": d["title"], "date": d["date"]})
+    return out
+
+
 def release_readiness_gap(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Milestone 2B5 (TASK-014): tasks whose status is READY_TO_RELEASE,
     DEPLOYED, or DONE but that have no matching row in `deployments` at

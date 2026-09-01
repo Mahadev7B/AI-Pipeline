@@ -49,6 +49,9 @@ NAV_LINKS = [
     ("pipeline.html", "Pipeline"),
     ("agents.html", "Agents"),
     ("decisions.html", "Decisions"),
+    ("risks.html", "Risks"),  # Milestone C (TASK-021) — placed right after Decisions: both
+                              # are company-governance, read-only registers of durable
+                              # record-keeping, a natural adjacent pair.
     ("meetings.html", "Meetings"),
     ("inbox.html", "Inbox"),
     ("reviews.html", "Reviews"),
