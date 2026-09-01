@@ -1,4 +1,4 @@
-# Founder Directive — TASK-024 Scope Correction v2 (Parts 1 and 3 of 3)
+# Founder Directive — TASK-024 Scope Correction v2 (Parts 1, 2 and 3 of 3)
 
 **Received 2026-09-01. Reproduced verbatim below, unedited.** Supersedes
 `founder-directive-task024-deciphering.md` (DEC-014) wherever the two differ —
@@ -7,10 +7,12 @@ most sharply: no brainstorming feature, no brainstorming skill dependency,
 threats, differentiation, definition of success), depth scales with the idea, and
 downstream agents MUST receive the Founder-approved brief rather than the raw idea.
 
-**Part 2 of 3 was not received** in the message carrying Parts 1 and 3. Parts 1
-and 3 are internally coherent and actionable on their own; Part 2 is to be
-appended here verbatim if and when the Founder sends it, and governs over any
-inference made in its absence.
+**Part 2 of 3 arrived in a separate message** shortly after Parts 1 and 3 and is
+inserted below in its natural position, verbatim. It is the output contract: the
+fifteen sections every deciphered idea produces, including the competitor
+data-freshness rule (VERIFIED / CURRENT · COMPANY INFERENCE · UNKNOWN, and
+"if research has not been performed, say so") and the closing COMPANY VIEW
+executive judgment.
 
 This file governs over DEC-015's summary of it wherever they differ.
 
@@ -238,7 +240,320 @@ One or two important questions is preferable to eight minor questions.
 
 ---
 
-[PART 2 OF 3 — NOT RECEIVED. To be appended verbatim when the Founder sends it.]
+TASK-024 FOUNDER SCOPE CORRECTION — PART 2 OF 3
+IDEA DECIPHERING OUTPUT CONTRACT
+
+Continue from Part 1.
+
+Every deciphered idea should produce ONE Founder-facing result containing the following sections where relevant.
+
+==================================================
+1. ORIGINAL IDEA
+==================================================
+
+Show the Founder's exact original words.
+
+This is historical truth and must remain preserved.
+
+==================================================
+2. WHAT WE THINK YOU MEAN
+==================================================
+
+Give a concise plain-English interpretation.
+
+This should answer:
+
+"Did the factory actually understand me?"
+
+Do not merely paraphrase sentence-by-sentence.
+
+==================================================
+3. WHAT YOU ARE REALLY TRYING TO ACHIEVE
+==================================================
+
+Explain the deeper desired outcome.
+
+Do not simply repeat requested features.
+
+Example:
+
+Instead of:
+
+"You want a progress dashboard."
+
+Prefer:
+
+"You want to open the AI Factory and understand within seconds how each child product is progressing without reading internal task records."
+
+==================================================
+4. WHY THIS IDEA MAY BE VALUABLE
+==================================================
+
+Explain the genuine merits of the idea.
+
+Consider where relevant:
+
+- clear user problem
+- convenience
+- speed
+- simplicity
+- automation
+- cost reduction
+- underserved users
+- improved experience
+- strategic value
+- new technical capability
+
+Do NOT praise the idea merely because the Founder proposed it.
+
+If the merits are weak, say so.
+
+==================================================
+5. KNOWN COMPETITORS / ALTERNATIVES
+==================================================
+
+When relevant, identify existing competitors, substitute products, or other ways users already solve the problem.
+
+Prefer 3–5 genuinely relevant examples rather than a giant list.
+
+For each important competitor or substitute summarize:
+
+- what they offer
+- how they overlap with our idea
+- where they appear stronger
+- where our idea could potentially differentiate
+
+Competitors are not limited to products identical to ours.
+
+Also consider substitutes that solve the same user problem differently.
+
+==================================================
+6. COMPETITOR DATA FRESHNESS
+==================================================
+
+Competitor information changes.
+
+When current competitor information materially affects the decision:
+
+- use available public research capabilities
+- do not rely only on stale model memory
+- distinguish verified current information from inference
+- preserve useful evidence/sources where possible
+- do not invent pricing, customer counts, revenue, funding, market share, or features
+
+Clearly distinguish:
+
+VERIFIED / CURRENT
+
+COMPANY INFERENCE
+
+UNKNOWN
+
+If research has not been performed, say so.
+
+==================================================
+7. COMPETITIVE ADVANTAGES / MERITS
+==================================================
+
+Identify what could make the idea stronger than existing alternatives.
+
+Possible advantages include:
+
+- better UX
+- lower cost
+- faster workflow
+- stronger automation
+- unique integration
+- different audience
+- personalization
+- privacy
+- distribution
+- simplicity
+- technical capability
+- business-model advantage
+
+Do NOT claim differentiation unless it is real.
+
+If there is no clear differentiation yet, say:
+
+"We do not yet see a strong differentiation."
+
+That is useful information.
+
+==================================================
+8. THREATS / WEAKNESSES
+==================================================
+
+Identify meaningful reasons the idea might struggle or fail.
+
+Consider:
+
+COMPETITIVE THREATS
+- established competitors
+- large platforms copying the feature
+- commoditization
+- low switching costs
+- strong incumbent distribution
+
+MARKET THREATS
+- unclear demand
+- low willingness to pay
+- small market
+- difficult customer acquisition
+- strong existing user habits
+
+TECHNICAL THREATS
+- unreliable technology
+- external API dependency
+- latency
+- scaling difficulty
+- high model/API cost
+- platform restrictions
+- missing data
+
+BUSINESS THREATS
+- poor margins
+- difficult monetization
+- expensive distribution
+- dependency on one provider
+
+REGULATORY / PRIVACY THREATS
+Only where materially relevant.
+
+EXECUTION THREATS
+- idea too broad
+- excessive V1 scope
+- major unknowns
+- difficult integrations
+- dependencies that do not yet exist
+
+Do not turn this into a giant risk register.
+
+Show only threats that could materially affect whether or how the company should build it.
+
+==================================================
+9. OUR RECOMMENDED DIRECTION
+==================================================
+
+The company must give ONE clear recommendation.
+
+State:
+
+- what we recommend
+- why
+- what we would build first
+- what we would intentionally postpone
+
+Do not merely give the Founder five options.
+
+If the company believes the idea should change significantly, say so.
+
+If a simpler version has a better chance of success, recommend it.
+
+If the company believes the idea is weak, say so.
+
+==================================================
+10. INITIAL SCOPE
+==================================================
+
+Clearly show:
+
+IN SCOPE NOW
+
+and
+
+NOT IN THE FIRST VERSION
+
+Define the smallest useful first version.
+
+Prevent a small idea from automatically becoming a massive project.
+
+==================================================
+11. IMPORTANT ASSUMPTIONS
+==================================================
+
+Show assumptions the company had to make because the Founder did not explicitly specify them.
+
+Only include assumptions that could materially change the result.
+
+Do not clutter this section with trivial details.
+
+==================================================
+12. ALTERNATIVES WORTH CONSIDERING
+==================================================
+
+Show only genuinely meaningful alternatives.
+
+Usually 0–3.
+
+Examples:
+
+- solve the same problem in a simpler way
+- target a different user group
+- integrate with an existing platform
+- build a feature rather than a standalone product
+
+Do not invent alternatives merely to appear thorough.
+
+==================================================
+13. WHAT WE NEED FROM YOU
+==================================================
+
+Show only genuine Founder decisions.
+
+Zero questions is allowed.
+
+==================================================
+14. DEFINITION OF SUCCESS
+==================================================
+
+State how the factory will know it built what the Founder intended.
+
+Make success criteria concrete enough to help downstream:
+
+- Product
+- Design
+- Development
+- Code Review
+- QA
+
+understand what "done" means.
+
+==================================================
+15. COMPANY VIEW
+==================================================
+
+End with a concise executive judgment.
+
+Use:
+
+OPPORTUNITY:
+High / Medium / Low / Unclear
+
+WHY:
+2–4 sentences.
+
+BIGGEST MERIT:
+...
+
+BIGGEST THREAT:
+...
+
+BEST DIFFERENTIATION:
+...
+
+RECOMMENDATION:
+Proceed
+or
+Proceed with narrowed scope
+or
+Investigate first
+or
+Reconsider
+
+These are executive judgments, not mathematical scores.
+
+Do not pretend false precision.
 
 ---
 
