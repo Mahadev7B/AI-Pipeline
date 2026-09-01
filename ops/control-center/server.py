@@ -185,6 +185,7 @@ import generate_task  # noqa: E402 — Milestone A (TASK-019)
 import generate_costs  # noqa: E402 — Milestone B (TASK-020)
 import generate_risks  # noqa: E402 — Milestone C (TASK-021)
 import generate_progress  # noqa: E402 — Milestone D (TASK-022)
+import generate_ideas_preview  # noqa: E402 — TASK-024 Founder-review UI shell (no DB access at all)
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -224,6 +225,10 @@ TASK_REVIEW_PATH_RE = re.compile(r"^/api/tasks/(\d{1,15})/review/(code|security|
 # architecture.md §4.1). Read-only GET route, not a write path — no
 # relation to TASK_REVIEW_PATH_RE above.
 TASK_DETAIL_ID_RE = re.compile(r"^\d{1,15}$")
+# TASK-024 (Founder-review UI shell): /ideas-preview/<slug>.html. No regex —
+# the slug is checked for exact membership in generate_ideas_preview.BUILDERS,
+# a fixed dict of the twelve page names that module defines.
+IDEAS_PREVIEW_PREFIX = "/ideas-preview/"
 
 # Generated fresh every process start. In-memory only — see module docstring.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -486,6 +491,30 @@ class Handler(BaseHTTPRequestHandler):
                 # no new write route or auth mechanism. `phases` itself is
                 # written only via opsdb.py's CLI commands, never via HTTP.
                 self._send_html(200, generate_progress.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path.startswith(IDEAS_PREVIEW_PREFIX) and path.endswith(".html"):
+                # TASK-024 Founder-review UI shell. GET-only and read-only in
+                # the strongest available sense: generate_ideas_preview does
+                # not import dbutil.connect() at all, so this route opens no
+                # database connection, dispatches no agent and invokes no
+                # model — the page is assembled entirely from constants
+                # translated from Design's approved artboards. Same Founder
+                # session gate as every other route (the do_GET-level check
+                # above); no new write route, no new auth mechanism.
+                slug = path[len(IDEAS_PREVIEW_PREFIX):-len(".html")]
+                if slug not in generate_ideas_preview.BUILDERS:
+                    # Exact membership in a fixed dict of known slugs — a
+                    # request can never name a page this module did not
+                    # define, so there is nothing here to traverse.
+                    self._send_html(404, _error_page(404, "Not found", "No such preview page."))
+                    return
+                query = self.path.split("?", 1)[1] if "?" in self.path else ""
+                # {name: first value}. build_page() falls back to each page's
+                # default state for any unrecognised value, so no query
+                # string can produce an error.
+                params = {k: v[0] for k, v in parse_qs(query).items() if v}
+                self._send_html(200, generate_ideas_preview.build_page(
+                    slug, params, token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/reviews.html":
                 self._send_html(200, generate_reviews.build_html(token=SESSION_TOKEN).encode("utf-8"))

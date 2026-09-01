@@ -40,6 +40,17 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 # (href, label) for every top-level screen — same six links everywhere.
 NAV_LINKS = [
     ("overview.html", "Overview"),
+    ("ideas-preview/stage-1.html", "Ideas (preview)"),
+    # TASK-024 Founder-review UI shell (generate_ideas_preview.py) — placed
+    # second, exactly where Design put "Ideas" on the approved artboard
+    # (ops/mockups/task024/Main.dc.html): an idea enters the company before
+    # it becomes Active Work. The label says "(preview)" on purpose — these
+    # pages are a drawn shell of the ten-stage journey for the Founder's
+    # DEC-015 approval gate, with no backend behind any control, and the
+    # nav entry must not be mistakable for a shipped feature. Unlike every
+    # other entry this href points one directory down (the /tasks/,
+    # /agents/, /meetings/ subdirectory precedent), which the "../" * depth
+    # prefix below already handles from both depths.
     ("active-work.html", "Active Work"),  # Milestone A (TASK-019) — placed right after
                                            # Overview: the natural next click from the
                                            # broad company-health snapshot to "what needs
