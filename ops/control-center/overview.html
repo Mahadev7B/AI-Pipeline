@@ -52,7 +52,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 02:35 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 02:43 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Overview <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="panel" style="margin-bottom:14px;">
@@ -94,12 +94,15 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="width:170px; font-size:12px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">TASK-021 — Milestone C: Company-wide Risks register</div>
           <div style="flex:1; height:6px; border-radius:3px; background:var(--border2); overflow:hidden;"><div style="width:0%; height:100%; background:var(--accent);"></div></div>
           <div style="width:70px; font-size:11px; color:var(--text2); text-align:right;">not broken into steps</div>
-          <div style="width:110px; font-size:11px; color:var(--text3);">MOCKUP_REVIEW</div>
+          <div style="width:110px; font-size:11px; color:var(--text3);">RED_TEAM_REVIEW</div>
         </div></div>
   </div>
   <div class="panel" style="grid-column:1 / -1;">
     <div class="label" style="margin-bottom:10px;">Just Happened</div>
     <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; gap:8px;">
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">design</b> — Design review complete for Milestone C (/risks.html) -- ready for Development with 3 refinements</div>
+        </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">design</b> — Design review of CTO&#x27;s Milestone B cost-visibility architecture -- 4 real mockups built and published (2 concepts each for /costs.html and Meeting Detail&#x27;s new cost section).</div>
         </div>
@@ -120,9 +123,6 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
         </div>
         <div style="display:flex; gap:8px;">
           <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Implemented Milestone 2B4 Founder Identity Verification (founder_auth.py + server.py session/lockout + login/logout routes + layout.py logout UI + SECURITY.md); C1 concurrency race fix verified live</div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">developer</b> — Fixed Code Review REJECT: agent_status_rows() now sorts by display_name(row[&#x27;name&#x27;]).lower() in Python (not raw &#x27;ORDER BY a.name&#x27; SQL), so &#x27;Chief of Staff&#x27; sorts between &#x27;ceo&#x27; and &#x27;code-review&#x27; as required. Also wrapped requested_by_agent/requested_by in display_name() at ops/db/report.py:151 and generate_meetings.py&#x27;s render_position_card() per non-blocking findings 2/3. Regenerated agents.html, agent detail pages, overview.html, meetings.html, CURRENT_STATUS.md. Verified live: &#x27;Chief of Staff&#x27; now sits between ceo and code-review in both agents.html and CURRENT_STATUS.md.</div>
         </div></div>
   </div>
 </div>

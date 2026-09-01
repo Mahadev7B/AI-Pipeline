@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Risks &mdash; Command Center</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</helmet>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</span><span style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Risks</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+        </div>
+      </div>
+    </div>
+<div style="padding:26px; max-width:1500px;">
+
+<div class="sub" style="margin-top:-6px;">Mockup for TASK-021 Design review (Concept A &mdash; recommended) &middot; content = the real, live <span class="mono">risks</span> table as of 2026-09-01, not placeholder data.</div>
+
+<h1>Risks <span style="font-size:11px; color:var(--text3); font-weight:400;">&mdash; read-only</span></h1>
+<div class="sub" style="margin-top:-14px; max-width:820px;">
+  1 open (0 high-severity) &middot; 2 mitigated &middot; 1 resolved
+</div>
+
+
+<div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:11px;
+     background:var(--accent-soft); border:1px solid oklch(78% 0.14 75 / 0.35); margin-bottom:16px;">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;">
+    <path d="M12 9v4M12 17h.01M10.3 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+     stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+    <div class="label" style="color:var(--accent);">Needs attention &mdash; 1 open, medium/high severity</div>
+    <a href="#risk-3" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:var(--panel2);"><span class="pill" style="background:var(--accent)22; color:var(--accent); flex-shrink:0;">medium</span><span style="flex:1; font-size:12px;"><b>Risk #3</b> &mdash; Bash permissions cannot be scoped below the tool-category level</span><span style="font-size:10.5px; color:var(--accent); font-weight:600; flex-shrink:0;">Jump to card &rarr;</span></a>
+  </div>
+</div>
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;"><a href="#open" class="pill" style="background:var(--panel2); color:var(--red); border:1px solid var(--border2);">Open (1)</a><a href="#mitigated" class="pill" style="background:var(--panel2); color:var(--accent); border:1px solid var(--border2);">Mitigated (2)</a><a href="#resolved" class="pill" style="background:var(--panel2); color:var(--green); border:1px solid var(--border2);">Resolved (1)</a></div>
+
+<div class="panel" style="margin-bottom:18px; border-color:var(--border2);">
+  <div style="display:flex; gap:10px; align-items:flex-start;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:1px;">
+      <circle cx="12" cy="12" r="9" stroke="var(--text3)" stroke-width="1.6"/>
+      <path d="M12 8v5M12 16h.01" stroke="var(--text3)" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">
+      <b style="color:var(--text);">Mitigation text reflects only the current state of each risk.</b>
+      This table stores no history &mdash; a prior <span class="mono">mitigation</span> string is overwritten,
+      not preserved, whenever <span class="mono">risk-resolve --mitigation</span> runs (confirmed: risks.id=3&rsquo;s
+      current text below is at least the third distinct version on record). <span class="mono">ops/DECISIONS.md</span>
+      and each risk&rsquo;s linked decisions, where shown, carry the documented prior states.
+    </div>
+  </div>
+</div>
+
+<div id="open" style="margin-bottom:22px;">
+  <div class="label" style="margin-bottom:8px; color:var(--red);">Open (1)</div>
+  
+    <div class="card" id="risk-3" style="margin-bottom:10px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; font-weight:600;">Risk #3 &mdash; Bash permissions cannot be scoped below the tool-category level</div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <span class="pill" style="background:var(--accent)22; color:var(--accent);">medium</span>
+          <span class="pill" style="background:var(--red)22; color:var(--red);">open</span>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); margin-top:6px; line-height:1.5;">Every subagent&#x27;s Bash tool grant is not scoped below the tool category - a subagent&#x27;s role doc may say &#x27;no implementation tools&#x27; but it technically still has shell access beyond opsdb.py. Environment-level limitation, not fixable by Phase 1/2 code alone. See DECISIONS.md DEC-004, ops/reviews/security-phase1.md.</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text3);">
+        <div>Scope: <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Company-wide</span></div>
+        <div>Owner: <span class="mono" style="color:var(--text2);">cto</span></div>
+        <div>Raised by: <span class="mono" style="color:var(--text2);">cto</span></div>
+        <div class="mono">2026-08-28T20:25:37.744Z</div>
+      </div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:5px;">Mitigation</div><div style="font-size:11.5px; color:var(--text2); line-height:1.6; white-space:pre-wrap; max-width:760px;">CTO investigation of QA&#x27;s TASK-017 live-reproduced finding (qa_results.id=70) complete: ops/reviews/cto-risk3-hook-invocation-investigation.md. Confirmed directly against the installed Claude Code CLI binary (v2.1.252): PreToolUse hooks registered in a subagent&#x27;s own frontmatter (.claude/agents/developer.md) are silently skipped by the harness whenever the folder is not marked &quot;trusted&quot; -- confirmed true for this live repo&#x27;s own persisted trust state, in every non-interactive invocation this project&#x27;s actual deployment pattern uses. A REAL non-interactive fix exists (harness-native, found directly in CLI source): set projects[&quot;&lt;repo-path&gt;&quot;].hasTrustDialogAccepted: true in the global config file ($CLAUDE_CONFIG_DIR/.claude.json or ~/.claude.json) as a one-time deployment step before any agent session runs -- not a publicly documented CLI flag, but a real mechanism the harness&#x27;s own error text names. HOWEVER this fix does NOT hold up adversarially: that trust flag lives in a file entirely outside the repo, writable by the same OS user every agent (including Developer) runs as, with zero coverage in the hook&#x27;s own denylist -- a Developer-role Bash command can silently revert it in one unobfuscated line, with zero audit trail, disabling the entire hook mechanism for every future session at once (a stronger, more complete self-undo than any single previously-disclosed bypass). This means the Chief of Staff synthesis&#x27;s &quot;reduced, not closed&quot; verdict was premature specifically for the Developer-denylist half of the reduction: it delivers zero protection today, and even after the invocation-context fix ships, it would only ever be a soft, non-adversarial-scope speed bump, self-revertible by the very role it targets -- not the &quot;harness-enforced narrowing Developer itself cannot quietly undo&quot; the synthesis claimed. The reviewer zero-tool rollout (Code Review/Security/Red Team&#x27;s synchronous routes) is unaffected by any of this -- it uses --tools &quot;&quot; unconditionally, independent of workspace trust/hooks entirely -- and remains the one durable, delivered reduction from this milestone, confirmed working by QA. Two secondary hook bugs (leading-space substring boundary bug on &quot; gdb&quot;/&quot; strace&quot;; shlex.split() quadratic-time hang-to-fail-open near the harness&#x27;s 600s hook timeout) are real, cheap, and recommended for fixing regardless, as defense in depth. risks.id=3 stays open, not &quot;mitigated&quot; -- whether to accept the Developer-denylist&#x27;s narrowed (non-adversarial-only) scope explicitly, or revisit OS-level/sandboxing separation (previously rejected as disproportionate, before this ceiling was known), is a Founder-level tradeoff this investigation surfaces but does not resolve. Recommendation now goes to Security/Red Team before Development resumes, per the Founder&#x27;s standing gate sequence.</div></div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:6px;">Related decisions (5)</div><div style="display:flex; flex-wrap:wrap; gap:6px;"><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Milestone 2B4: Founder authentication mechanism selection">#9 &mdash; Milestone 2B4: Founder authentication mechanism selection</a><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Phase 3A: automated Code Review invoked zero-tool with Python-assembled diff context, and automation runs as an in-process background poller">#10 &mdash; Phase 3A: automated Code Review invoked zero-tool with Python-assembled diff context, and automation runs as an in-process background poller</a><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Pause TASK-017 security hardening mid-Development; prioritize product architecture completion">#11 &mdash; Pause TASK-017 security hardening mid-Development; prioritize product architecture completion</a><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Founder UI Completeness: four-milestone plan (A-D), two distinct readiness definitions">#12 &mdash; Founder UI Completeness: four-milestone plan (A-D), two distinct readiness definitions</a><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Sequencing: resume TASK-017 security hardening before building full Phase 3 automation">#13 &mdash; Sequencing: resume TASK-017 security hardening before building full Phase 3 automation</a></div></div>
+      
+    </div>
+</div>
+
+<div id="mitigated" style="margin-bottom:22px;">
+  <div class="label" style="margin-bottom:8px; color:var(--accent);">Mitigated (2)</div>
+  
+    <div class="card" id="risk-2" style="margin-bottom:10px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; font-weight:600;">Risk #2 &mdash; Founder approval is not identity-authenticated</div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <span class="pill" style="background:var(--accent)22; color:var(--accent);">medium</span>
+          <span class="pill" style="background:var(--accent)22; color:var(--accent);">mitigated</span>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); margin-top:6px; line-height:1.5;">approval-decide requires --confirm-founder-decision, but that is a deliberate speed bump, not real authentication - anything running the CLI can pass the flag. Real enforcement needs an identity layer (Phase 2/3 Control Center scope). See DECISIONS.md DEC-004, ops/reviews/security-phase1.md.</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text3);">
+        <div>Scope: <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Company-wide</span></div>
+        <div>Owner: <span class="mono" style="color:var(--text2);">security</span></div>
+        <div>Raised by: <span class="mono" style="color:var(--text2);">security</span></div>
+        <div class="mono">2026-08-28T20:25:37.705Z</div>
+      </div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:5px;">Mitigation</div><div style="font-size:11.5px; color:var(--text2); line-height:1.6; white-space:pre-wrap; max-width:760px;">Founder-facing actions -- all 9 write/auth routes (/api/login, /api/logout, and the 7 pre-existing write routes) and every GET read -- require a locally authenticated Founder session: a 16+ character passphrase known only to the Founder, verified via a salted hashlib.scrypt hash (N=2**17, r=8, p=1) stored outside git (ops/control-center/.founder_credential.json, 0600, atomic writes, never touching operations.sqlite3, logs, or generated HTML), gated by a server-side session cookie (HttpOnly, SameSite=Strict, 30-minute idle / 12-hour absolute timeout, in-memory only, wiped on restart), and rate-limited against brute force via fully serialized login verification (closes both the stated 5-attempt cap and a concurrent-scrypt memory-exhaustion DoS -- independently verified under a 60-simultaneous and a 45,820-request sustained flood). This closes the gap for any local actor that does not already share the Founder&#x27;s own OS-user filesystem/process principal -- a real, previously-open gap, now shipped and independently verified three times (Code Review, QA, Security post-implementation adversarial pass, all PASS). It does NOT close the case where an agent runs with Bash tool access under the Founder&#x27;s own OS user (risk id=3): such an agent can read or overwrite the credential file directly, run founder_auth.py itself, or PTRACE_ATTACH the running server process and read session state out of memory -- exactly as it could already read a served page&#x27;s CSRF token before this milestone. Also disclosed and unresolved: the shared, non-identity-scoped lockout can be flooded by an actor already inside this design&#x27;s own threat class to deny the Founder&#x27;s own genuine logins (Red Team&#x27;s Milestone 2B4 finding F1) -- no cheap in-scope fix exists without touching risk id=3. Closing either gap requires resolving risk id=3 first, or a different class of infrastructure this milestone&#x27;s scope deliberately excludes. See ops/reviews/cto-milestone2b4-architecture.md, ops/reviews/security-milestone2b4-threat-model.md, ops/reviews/red-team-milestone2b4-architecture.md, ops/reviews/code-review-milestone2b4.md, ops/reviews/qa-milestone2b4.md, ops/reviews/security-adversarial-milestone2b4.md, ops/reviews/cto-milestone2b4-conformance.md.</div></div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:6px;">Related decisions (1)</div><div style="display:flex; flex-wrap:wrap; gap:6px;"><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Milestone 2B4: Founder authentication mechanism selection">#9 &mdash; Milestone 2B4: Founder authentication mechanism selection</a></div></div>
+      
+    </div>
+    <div class="card" id="risk-1" style="margin-bottom:10px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; font-weight:600;">Risk #1 &mdash; Toggle state not persisted across reload</div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <span class="pill" style="background:var(--accent)22; color:var(--accent);">medium</span>
+          <span class="pill" style="background:var(--accent)22; color:var(--accent);">mitigated</span>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); margin-top:6px; line-height:1.5;">The pause/resume toggle resets on page reload since it&#x27;s local component state only, per the approved architecture.</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text3);">
+        <div>Scope: <a href="#" class="pill" style="background:var(--blue-soft); color:var(--blue); border:1px solid oklch(72% 0.12 250 / 0.35);">TASK-001 &mdash; Verify Agent Pipeline</a></div>
+        <div>Owner: <span class="mono" style="color:var(--text2);">cto</span></div>
+        <div>Raised by: <span class="mono" style="color:var(--text2);">developer</span></div>
+        <div class="mono">2026-08-28T19:43:54.038Z</div>
+      </div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:5px;">Mitigation</div><div style="font-size:11.5px; color:var(--text2); line-height:1.6; white-space:pre-wrap; max-width:760px;">Accepted as a known limitation for this fake demo task; not a real product concern</div></div>
+      
+      
+    </div>
+</div>
+
+<div id="resolved" style="margin-bottom:12px;">
+  <div class="label" style="margin-bottom:8px; color:var(--green);">Resolved (1)</div>
+  
+    <div class="card" id="risk-4" style="margin-bottom:10px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:13px; font-weight:600;">Risk #4 &mdash; reviewer_sync.py&#x27;s live routes fail today -- reviewer_invocations table was never created</div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <span class="pill" style="background:var(--text2)22; color:var(--text2);">low</span>
+          <span class="pill" style="background:var(--green)22; color:var(--green);">resolved</span>
+        </div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); margin-top:6px; line-height:1.5;">Discovered during TASK-020 (Milestone B) Red Team review, unrelated to Milestone B itself. TASK-017&#x27;s paused Development commit (fdaf253) merged reviewer_sync.py&#x27;s three POST routes and a live, clickable button on /reviews.html (generate_reviews.py:91) -- these are fully reachable in the live product today. But reviewer_invocations, the table those routes write to, is only specified in ops/db/schema.sql (lines 344-364); opsdb.py init (the only thing that applies CREATE TABLE IF NOT EXISTS) was never re-run against the live database after that commit. Clicking the live button today creates an agent_runs row, then fails when it tries to write to the missing table -- caught gracefully (no crash, no data corruption), but the feature does not work. Not fixed as part of TASK-020 -- correctly out of scope, since TASK-017/risks.id=3 remain paused by Founder direction (DEC-008). Flagged here so it is not silently lost before the TASK-017 resume checkpoint. Also revealed a process gap: this project&#x27;s additive-migration documentation does not explicitly state that opsdb.py init must be re-run after a schema change merges -- recommended as a QA checklist item for future schema-touching milestones (see TASK-020&#x27;s Red Team review).</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:10.5px; color:var(--text3);">
+        <div>Scope: <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Company-wide</span></div>
+        <div>Owner: <span class="mono" style="color:var(--text2);">cto</span></div>
+        <div>Raised by: <span class="mono" style="color:var(--text2);">red-team</span></div>
+        <div class="mono">2026-09-01T01:34:05.902Z</div>
+      </div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:5px;">Mitigation</div><div style="font-size:11.5px; color:var(--text2); line-height:1.6; white-space:pre-wrap; max-width:760px;">Coincidentally resolved, not by this milestone&#x27;s own process: Milestone B&#x27;s commit 88542d2 re-ran &#x27;opsdb.py init&#x27; for an unrelated migration (agent_runs.cost_usd), and init idempotently applies schema.sql&#x27;s entire table set as a side effect -- this created reviewer_invocations/hook_denials, which did not exist when this risk was logged. TASK-017&#x27;s Code Review (resumed per DEC-010) live-verified both tables now work correctly with a real INSERT/UPDATE round-trip against a copy of the live database. The underlying process gap this risk also flagged -- that reviewer_sync.py&#x27;s live-DB behavior was only ever verified against a scratch DB at Development handoff time, not the real live schema -- is addressed going forward by this project&#x27;s now-explicit QA checklist item (re-verify opsdb.py init was actually applied) recommended in Milestone B&#x27;s Red Team review.</div></div>
+      <div style="margin-top:10px;"><div class="label" style="margin-bottom:6px;">Related decisions (1)</div><div style="display:flex; flex-wrap:wrap; gap:6px;"><a href="#" class="mono" style="display:inline-block; max-width:230px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10.5px; padding:3px 9px; border-radius:100px; background:var(--panel); border:1px solid var(--border2); color:var(--text2);" title="Sequencing: resume TASK-017 security hardening before building full Phase 3 automation">#13 &mdash; Sequencing: resume TASK-017 security hardening before building full Phase 3 automation</a></div></div>
+      <div style="margin-top:8px; font-size:11px; color:var(--text3);">Resolved <span class="mono">2026-09-01T01:58:23.332Z</span></div>
+    </div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
