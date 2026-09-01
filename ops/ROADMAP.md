@@ -305,8 +305,22 @@ the fact:
   `ops/reviews/design-review-milestone-b.md`,
   `ops/reviews/red-team-milestone-b-review.md`,
   `ops/reviews/cto-milestone-b-conformance.md`.
-- **Milestone C** — Company-wide Risks register (`risks.id=3` itself
-  currently has no Founder-facing page anywhere in the product).
+- **Milestone C — DONE (TASK-021):** Company-wide Risks register
+  (`/risks.html`), making `risks.id=3` finally visible in the product —
+  three status-grouped sections, a "Needs attention" strip, and
+  related-decision links. Cleanest of the three shipped milestones: no
+  rejection rounds across CTO architecture, Design review, Red Team,
+  Development, Code Review, QA, focused Security review, and CTO final
+  conformance (CONFORMS) — see
+  `ops/reviews/cto-milestone-c-architecture.md`,
+  `ops/reviews/design-review-milestone-c.md`,
+  `ops/reviews/cto-milestone-c-conformance.md` (Red Team's review was
+  recorded via `review_results` in the operational database, task_id=21,
+  no separate document). Also disclosed, not
+  fixed (future work): risk mitigation text is destructively
+  overwritten on update, with no history table — already lost three
+  times for `risks.id=3` itself; the register page carries this
+  disclosure honestly rather than hiding the gap.
 - **Milestone D** — Project / Phase Progress, built on a small new
   structured representation (phase/milestone state exists today only as
   prose in this file) — no invented percentages; real fractions where
