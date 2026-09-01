@@ -13,28 +13,41 @@ credential material is read, copied or sent anywhere, and nothing leaves
 this host: the "upstream model API" is a local TLS server, and the
 "attacker host" is a local TCP listener that must never be connected to.
 
-  C1  (destination is trusted-side only)  checks 1-5, 33-35
+  C1  (destination is trusted-side only)  checks 1-5, 49-51
   C2  (both request forms; else 400)      checks 1-4, 22-23
   C3  (per-request injection, no tunnel)  checks 8-10, 14-16
-  C4  (real streamed SSE framing)         checks 11-13, 26-27
-  C5  (framing ambiguity fails closed)    checks 17-21, 24-25, 28-30
-  C6  (no redirect follow, no echo)       checks 31-32
-  C7  (no cross-client upstream reuse)    check 36
-  C8  (metadata-only logging)             checks 37-38
-  C9  (empty-allowlist guard reconciled)  checks 39-44
-  C10 (TLS verification mandatory)        checks 45-47
-  spend ceiling (required, not optional)  checks 48-49
+  C4  (real streamed SSE framing)         checks 11-13, 42-43
+  C5  (framing ambiguity fails closed)    checks 17-21, 24-25, 44-46
+  C6  (no redirect follow, no echo)       checks 47-48
+  C7  (no cross-client upstream reuse)    check 52
+  C8  (metadata-only logging)             checks 53-54
+  C9  (empty-allowlist guard reconciled)  checks 55-60
+  C10 (TLS verification mandatory)        checks 64-66
+  spend ceiling (required, not optional)  checks 67-68
+  spend ceiling vs a FORKING client (D2)  checks 69-74
+  header-injection safety (D1)            checks 26-40
   path allowlist (required)               checks 6-7
-  CONNECT reserve stays live + denied     checks 50-53
+  CONNECT reserve stays live + denied     checks 75-78
+  round-4 non-blocking items              checks 41, 61-63
 
-Emits 53 checks — an exact number, verified by running it, not an estimate.
+Emits 78 checks — an exact number, verified by running it, not an estimate.
+
+The D1 and D2 batteries exist because a status-only assertion cannot see
+either defect: both smuggling attacks returned `200` to the sandbox, and the
+forking budget reset returned `200` twelve times. They assert on the bytes
+`_build_upstream_head()` emits, on the request list a bare-LF-tolerant
+upstream actually PARSED, and on statuses observed from twelve genuinely
+forked processes.
+
 Usage: python3 ops/db/test_egress_gateway.py
 """
 from __future__ import annotations
 
+import atexit
 import io
 import json
 import os
+import shutil
 import socket
 import ssl
 import subprocess
@@ -194,6 +207,96 @@ class UpstreamStub:
             return out
 
 
+class BareLfUpstreamStub:
+    """A TLS upstream that treats a BARE LF as a line terminator — which RFC
+    9112 §2.2 explicitly permits a recipient to do, and which many real
+    servers and proxies do.
+
+    This is the rig Code Review round 4 built to reproduce finding D1, and it
+    is here because a strict CRLF-only stub CANNOT see the bug: both smuggling
+    attacks returned `200` to the sandbox, so a status-only assertion passes
+    while a second request is being smuggled onto the credentialed upstream
+    connection. What this stub records is what it actually PARSED — the list
+    of request lines and the list of `x-api-key` header lines — which is the
+    only assertion that catches a smuggled request or an attacker-chosen
+    credential header."""
+
+    _METHODS = ("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+
+    def __init__(self, certfile: str, keyfile: str):
+        self.request_lines: list[str] = []
+        self.api_key_lines: list[str] = []
+        self._lock = threading.Lock()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(certfile, keyfile)
+        raw = socket.socket()
+        raw.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        raw.bind(("127.0.0.1", 0))
+        raw.listen(16)
+        self.port = raw.getsockname()[1]
+        self._srv = ctx.wrap_socket(raw, server_side=True)
+        threading.Thread(target=self._accept_loop, daemon=True).start()
+
+    def _accept_loop(self) -> None:
+        while True:
+            try:
+                conn, _ = self._srv.accept()
+            except (OSError, ssl.SSLError):
+                continue
+            threading.Thread(target=self._serve, args=(conn,), daemon=True).start()
+
+    def _serve(self, conn: ssl.SSLSocket) -> None:
+        buf = b""
+        try:
+            while True:
+                while b"\r\n\r\n" not in buf:
+                    chunk = conn.recv(65536)
+                    if not chunk:
+                        return
+                    buf += chunk
+                head, _, buf = buf.partition(b"\r\n\r\n")
+                length = 0
+                # The bare-LF tolerance: split on LF, not CRLF, so a value
+                # carrying a bare LF becomes two lines here exactly as it
+                # would on a tolerant server.
+                for line in head.decode("latin-1").split("\n"):
+                    line = line.rstrip("\r")
+                    parts = line.split(" ")
+                    if len(parts) == 3 and parts[0] in self._METHODS \
+                            and parts[2].startswith("HTTP/1."):
+                        with self._lock:
+                            self.request_lines.append(line)
+                    lowered = line.lower()
+                    if lowered.startswith("x-api-key:"):
+                        with self._lock:
+                            self.api_key_lines.append(line)
+                    if lowered.startswith("content-length:"):
+                        try:
+                            length = int(line.split(":", 1)[1].strip())
+                        except ValueError:
+                            length = 0
+                while len(buf) < length:
+                    chunk = conn.recv(65536)
+                    if not chunk:
+                        return
+                    buf += chunk
+                buf = buf[length:]
+                body = b'{"ok":true}'
+                conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+                             + f"Content-Length: {len(body)}\r\n\r\n".encode("ascii") + body)
+        except (OSError, ssl.SSLError, ValueError):
+            pass
+        finally:
+            try:
+                conn.close()
+            except OSError:
+                pass
+
+    def snapshot(self) -> tuple[list[str], list[str]]:
+        with self._lock:
+            return (list(self.request_lines), list(self.api_key_lines))
+
+
 class AttackerStub:
     """The host an attacker-controlled authority would point at. It exists
     only so the tests can assert it is NEVER connected to."""
@@ -327,6 +430,11 @@ def _post(path_or_uri: str, host_header: str, body: str = '{"stream":true}') -> 
 
 def main() -> int:  # noqa: C901 — a linear, readable sequence of contract checks
     tmp = Path(tempfile.mkdtemp(prefix="egress-gateway-test-"))
+    # Leave no residue: certs, fake-credential files and socket files all
+    # live under here and are removed when the process exits (the daemons
+    # holding those sockets die with it). Registered rather than placed at
+    # the end of `main()` so an early return or an exception still cleans up.
+    atexit.register(shutil.rmtree, tmp, True)
     certfile, keyfile = _mint_tls_cert(tmp)
     upstream = UpstreamStub(certfile, keyfile)
     attacker = AttackerStub()
@@ -453,6 +561,144 @@ def main() -> int:  # noqa: C901 — a linear, readable sequence of contract che
         check(label, b"400" in status, str(status))
     check("C5 none of the fail-closed request shapes reached the upstream",
           len(upstream.requests) == before, f"{len(upstream.requests)} vs {before}")
+
+    # ---- D1 (Code Review round 4): header VALUES were never checked for a
+    # bare CR/LF, so a bare LF survived `value.strip()` and was written
+    # verbatim into the upstream request. Two consequences, both reproduced
+    # live from inside a real sandbox: a SECOND request smuggled past the
+    # request-path allowlist onto the already-credentialed TLS connection,
+    # and an attacker-chosen credential header ahead of the injected one.
+    # Both returned `200`, so EVERY assertion below is on bytes or on what
+    # the upstream PARSED — never on the client-visible status alone.
+
+    SMUGGLE = "junk\nGET /steal HTTP/1.1\nHost: evil"
+    CRED_INJECT = "junk\nx-api-key: ATTACKER-CHOSEN"
+
+    def _head(header_line: bytes) -> bytes:
+        return (b"POST /v1/messages HTTP/1.1\r\nHost: h\r\n" + header_line
+                + b"\r\nContent-Length: 0\r\n\r\n")
+
+    def _parses(raw: bytes) -> tuple[bool, str]:
+        try:
+            egress_proxy.parse_request_head(raw)
+            return (True, "")
+        except egress_proxy.RequestParseError as exc:
+            return (False, f"{exc.status!r} {exc.detail}")
+
+    # (a) byte-level, with no server at all: the shipped parser must refuse
+    # each shape, so `_build_upstream_head()` can never be reached with it.
+    for label, value in [
+        ("bare LF (the smuggling shape)", SMUGGLE.encode("ascii")),
+        ("bare LF (the credential-header shape)", CRED_INJECT.encode("ascii")),
+        ("bare CR", b"junk\rGET /steal HTTP/1.1"),
+        ("NUL", b"ju\x00nk"),
+        ("bare LF alone at the end of a value", b"junk\n"),
+    ]:
+        accepted, detail = _parses(_head(b"X-Foo: " + value))
+        check(f"D1 header value containing {label} -> fail-closed 400, never emitted",
+              not accepted and "400" in detail, detail or "ACCEPTED")
+    accepted, detail = _parses(_head(b"X-B\x00ad: v"))
+    check("D1 header NAME containing a NUL -> 400 (the old isspace() check let it through)",
+          not accepted and "400" in detail, detail or "ACCEPTED")
+
+    # A REAL CRLF in the same position is not smuggling — it is simply two
+    # header lines — and must still be handled the C3 way: the client's
+    # `x-api-key` is dropped and replaced, never joined.
+    crlf_head = egress_proxy.parse_request_head(
+        _head(b"X-Foo: junk\r\nx-api-key: ATTACKER-CHOSEN"))
+    emitted = proxy._build_upstream_head(gateway, crlf_head)
+    check("D1 CRLF-in-value (two real headers): emitted head carries exactly ONE x-api-key",
+          emitted.lower().count(b"x-api-key") == 1
+          and b"ATTACKER-CHOSEN" not in emitted
+          and FAKE_CREDENTIAL.encode() in emitted, repr(emitted))
+    body_lines = emitted.split(b"\r\n")
+    check("D1 every line of the emitted upstream head is free of bare CR/LF/NUL",
+          all(not egress_proxy.breaks_header_framing(line.decode("latin-1"))
+              for line in body_lines), repr(emitted))
+
+    # (b) live, through the shipped gateway, over real TLS, against an
+    # upstream that ACCEPTS bare LF as a line terminator.
+    lf_upstream = BareLfUpstreamStub(certfile, keyfile)
+    lf_gateway = egress_proxy.GatewayConfig(
+        upstream_host="localhost", upstream_port=lf_upstream.port,
+        credential=FAKE_CREDENTIAL, ca_file=certfile,
+        allowed_paths=frozenset({"/v1/messages"}),
+    )
+    lf_proxy, lf_sock = _start_proxy(
+        egress_proxy.AllowlistConfig(allow=set(), upstream_proxy=None, gateway=lf_gateway),
+        tmp, name="barelf")
+
+    # The rig proves itself first: fed the EXACT bytes the pre-fix
+    # `_build_upstream_head()` emitted (quoted from the round-4 review), this
+    # upstream parses TWO requests and TWO x-api-key lines. Without this
+    # control the tests below would pass against a stub that simply cannot
+    # see the attack.
+    ctx = ssl.create_default_context(cafile=certfile)
+    direct = ctx.wrap_socket(socket.create_connection(("localhost", lf_upstream.port), timeout=10),
+                             server_hostname="localhost")
+    direct.sendall(b"POST /v1/messages HTTP/1.1\r\nHost: localhost\r\n"
+                   b"X-Foo: junk\nGET /steal HTTP/1.1\nHost: evil\r\n"
+                   b"X-Bar: junk\nx-api-key: ATTACKER-CHOSEN\r\n"
+                   b"x-api-key: " + FAKE_CREDENTIAL.encode("ascii") + b"\r\n"
+                   b"Content-Length: 0\r\n\r\n")
+    time.sleep(0.3)
+    direct.close()
+    parsed, keys = lf_upstream.snapshot()
+    check("D1 CONTROL: the bare-LF upstream really does parse the pre-fix bytes as TWO "
+          "requests and TWO credentials (so these assertions can fail)",
+          "GET /steal HTTP/1.1" in parsed
+          and any("ATTACKER-CHOSEN" in line for line in keys),
+          f"parsed={parsed} keys={keys}")
+
+    baseline_requests = len(lf_upstream.request_lines)
+    statuses = []
+    for value in (SMUGGLE, CRED_INJECT):
+        statuses.append(_one_shot(lf_sock, _head(f"X-Foo: {value}".encode("ascii"))))
+    time.sleep(0.3)
+    parsed, keys = lf_upstream.snapshot()
+    check("D1 live: both smuggling requests are refused 400 at the gateway",
+          all(b"400" in s for s in statuses), str(statuses))
+    check("D1 live: the bare-LF upstream parsed ZERO further requests (nothing smuggled)",
+          len(parsed) == baseline_requests, f"{len(parsed) - baseline_requests} new: {parsed}")
+    check("D1 live: `GET /steal` never reached the upstream, on the credentialed "
+          "connection or any other",
+          parsed.count("GET /steal HTTP/1.1") == 1,  # only the CONTROL's own
+          str(parsed))
+    check("D1 live: no attacker-chosen x-api-key line ever reached the upstream from "
+          "the gateway",
+          len([line for line in keys if "ATTACKER-CHOSEN" in line]) == 1,  # the CONTROL's
+          str(keys))
+
+    # And the gateway still works normally against that same upstream, so the
+    # new check is not a blanket refusal.
+    status = _one_shot(lf_sock, _post("/v1/messages", "h"))
+    parsed, keys = lf_upstream.snapshot()
+    check("D1 a legitimate request through the same gateway still succeeds, credentialed",
+          b"200" in status
+          and parsed[-1] == "POST /v1/messages HTTP/1.1"
+          and keys[-1] == f"x-api-key: {FAKE_CREDENTIAL}",
+          f"{status!r} parsed={parsed[-1:]} keys={keys[-1:]}")
+
+    # (c) the shared helper itself: one primitive, used on both the untrusted
+    # request path and the operator-written credential strings.
+    check("D1 is_header_value() is strictly stronger than breaks_header_framing()",
+          all(not egress_proxy.is_header_value(bad)
+              for bad in ("a\rb", "a\nb", "a\x00b", "a\x0bb", "a\x7fb"))
+          and egress_proxy.is_header_value("Bearer ")
+          and egress_proxy.is_header_value("NOT-A-KEY-JUST-A-CHARSET-PROBE_-.~")
+          and not egress_proxy.is_header_name("X Bad")
+          and not egress_proxy.is_header_name("X\x00Bad")
+          and egress_proxy.is_header_name("x-api-key"))
+
+    # ---- Code Review round-4 non-blocking item: a bare-LF request head used
+    # to hold a thread until the 30s idle timeout with no log line, because it
+    # never satisfies the CRLFCRLF search. It is a head this parser can never
+    # accept, so it must fail fast and audibly.
+    started_at = time.time()
+    status = _one_shot(lf_sock, b"POST /v1/messages HTTP/1.1\nHost: h\n\n")
+    elapsed = time.time() - started_at
+    check("non-blocking: an LF-only request head is rejected 400 immediately, not hung",
+          b"400" in status and elapsed < 5.0, f"{status!r} after {elapsed:.1f}s")
 
     # ---- C4/C5 regression, found by reproducing it rather than reading it:
     # the FIRST request's head and a large body routinely arrive in ONE read
@@ -624,6 +870,39 @@ def main() -> int:  # noqa: C901 — a linear, readable sequence of contract che
     check("C9 a credential file holding the SENTINEL -> refuses to start (never forwards it)",
           not ok and "sentinel" in err, err)
 
+    # ---- D1, config side: the ONE header-safety primitive now guards the
+    # operator-written strings AND the sandbox-supplied ones. Before D1 the
+    # credential_prefix check was the only one in the file.
+    ok_prefix, err_prefix = _loads({"allow": [], "gateway": dict(
+        gw_payload, credential_prefix="Bearer \nx-api-key: ATTACKER")})
+    ctl_cred = tmp / "control-char-cred"
+    ctl_cred.write_text("FAKE\x0bCREDENTIAL")
+    ctl_cred.chmod(0o600)
+    ok_cred, err_cred = _loads({"allow": [], "gateway": dict(
+        gw_payload, credential_file=str(ctl_cred))})
+    check("D1 config side: a header-unsafe credential_prefix and a control-character "
+          "credential both refuse to start",
+          not ok_prefix and "header-safe" in err_prefix
+          and not ok_cred and "header-safe" in err_cred,
+          f"{err_prefix} | {err_cred}")
+    ok_host, err_host = _loads({"allow": [], "gateway": dict(
+        gw_payload, upstream="local\x00host:443")})
+    check("D1 config side: a NUL in gateway.upstream's host is refused (it becomes the "
+          "emitted Host: header)",
+          not ok_host and "upstream" in err_host, err_host)
+
+    # ---- Code Review round-4 non-blocking item: an unknown `gateway.*` key
+    # used to be ignored, so a typo in a ceiling silently reverted it to the
+    # default. A mis-provisioned control must be loud.
+    ok_typo, err_typo = _loads({"allow": [], "gateway": dict(
+        gw_payload, max_requests_per_sesion=5)})
+    ok_known, err_known = _loads({"allow": [], "gateway": dict(
+        gw_payload, max_requests_per_session=5)})
+    check("non-blocking: a mis-typed gateway.* key refuses to start instead of silently "
+          "reverting the ceiling to its default",
+          not ok_typo and "max_requests_per_sesion" in err_typo and ok_known,
+          f"typo={err_typo} correct={err_known}")
+
     # ---- C10: TLS verification is real and cannot be turned off.
     ctx = gateway.ssl_context()
     check("C10 the gateway's TLS context verifies hostname and requires a certificate",
@@ -681,6 +960,96 @@ def main() -> int:  # noqa: C901 — a linear, readable sequence of contract che
     status = _one_shot(byte_sock, _post("/v1/messages", "h", big))
     check("spend ceiling: the per-session BYTE ceiling fails closed with 429",
           b"429" in status, str(status))
+
+    # ---- D2 (Code Review round 4): the ADVERSARIAL-CLIENT budget case the
+    # tests above could not see, because they all ran from one process. The
+    # budget used to be keyed on the peer's SO_PEERCRED pid, so a `fork()`
+    # per request minted a fresh budget: 12 forked requests against a ceiling
+    # of 5 were all forwarded upstream CREDENTIALED. A ceiling that binds only
+    # a cooperative client is exactly what Red Team rejected
+    # `--max-budget-usd` for, so the regression test must fork.
+    forkable = egress_proxy.GatewayConfig(
+        upstream_host="localhost", upstream_port=upstream.port,
+        credential=FAKE_CREDENTIAL, ca_file=certfile,
+        allowed_paths=frozenset({"/v1/messages"}),
+        max_requests_per_session=5,
+    )
+    fork_proxy, fork_sock = _start_proxy(
+        egress_proxy.AllowlistConfig(allow=set(), upstream_proxy=None, gateway=forkable),
+        tmp, name="forkbudget")
+
+    upstream_before = len(upstream.requests)
+    read_fd, write_fd = os.pipe()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    children = []
+    for _ in range(12):
+        pid = os.fork()
+        if pid == 0:
+            # CHILD: a brand-new process — new pid, new /proc start-time —
+            # doing exactly what an attacker's three lines would do. It must
+            # touch nothing else and leave via os._exit so no inherited
+            # buffer is flushed twice.
+            code = b"ERR"
+            try:
+                sock = _connect(fork_sock)
+                sock.sendall(_post("/v1/messages", "h"))
+                head, _ = _read_response(sock)
+                sock.close()
+                code = head.split(b"\r\n", 1)[0].split(b" ")[1][:3]
+            except Exception:
+                pass
+            try:
+                os.write(write_fd, code.ljust(3, b" ")[:3] + b"%06d" % os.getpid())
+            except OSError:
+                pass
+            os._exit(0)
+        children.append(pid)
+        os.waitpid(pid, 0)          # strictly serial, so the order is exact
+    os.close(write_fd)
+    raw_results = b""
+    while True:
+        chunk = os.read(read_fd, 4096)
+        if not chunk:
+            break
+        raw_results += chunk
+    os.close(read_fd)
+    records = [raw_results[i:i + 9] for i in range(0, len(raw_results), 9)]
+    codes = [rec[:3].decode("ascii").strip() for rec in records]
+    child_pids = {rec[3:].decode("ascii") for rec in records}
+    forwarded = len(upstream.requests) - upstream_before
+
+    check("D2 the forking probe really did use 12 DISTINCT processes (the attack the "
+          "old pid-keyed budget reset)",
+          len(records) == 12 and len(child_pids) == 12,
+          f"{len(records)} records, {len(child_pids)} distinct pids")
+    check("D2 a fork() per request can NO LONGER reset the spend ceiling: 5 x 200 then "
+          "7 x 429",
+          codes[:5] == ["200"] * 5 and codes[5:] == ["429"] * 7, str(codes))
+    check("D2 only the 5 permitted requests reached the upstream credentialed",
+          forwarded == 5, f"{forwarded} requests forwarded upstream")
+    check("D2 all 12 forked processes shared ONE budget bucket",
+          len(fork_proxy._sessions) == 1, str(list(fork_proxy._sessions)))
+
+    # The key itself: unforgeable, and containing nothing a sandbox can change.
+    probe = _connect(fork_sock)
+    key = egress_proxy._peer_session_key(probe)
+    probe.close()
+    check("D2 the budget key is the peer uid and nothing else (no pid, no start-time, "
+          "no namespace id — all three are mintable inside the sandbox)",
+          key == ("uid", os.getuid()), str(key))
+
+    # And the bounded session table can no longer be used to reset a budget:
+    # when every tracked bucket is exhausted, a new key is REFUSED rather than
+    # granted by evicting one.
+    filler = egress_proxy.EgressProxy(socket_path=str(tmp / "unused.sock"))
+    for i in range(egress_proxy._MAX_TRACKED_SESSIONS):
+        bucket = filler._session(("uid", 100000 + i))
+        bucket.exhausted = True
+    check("D2 a full session table of EXHAUSTED buckets refuses a new one rather than "
+          "evicting (an eviction would be a budget reset)",
+          filler._session(("uid", 999999)) is None,
+          f"tracked={len(filler._sessions)}")
 
     # ---- the CONNECT reserve path stays live and actively denies, with the
     # gateway configured on the same socket (Red Team §3(a)).

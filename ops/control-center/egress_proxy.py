@@ -116,7 +116,12 @@ hold this file to them):
       this gateway deliberately does not implement) → `400` + close,
       never "best effort". Bodies are STREAMED with a ceiling, never
       buffered whole, so the untrusted side cannot declare a huge
-      `Content-Length` and OOM this trusted daemon.
+      `Content-Length` and OOM this trusted daemon. A header NAME or
+      VALUE carrying a bare CR, a bare LF or a NUL is the same class and
+      is refused the same way (round-4 finding D1): a bare LF in a value
+      let a request smuggle a SECOND request — `GET /steal` — past the
+      path allowlist on the already-credentialed upstream connection.
+      See `is_header_name()` / `is_header_value()`.
   C6. NO CREDENTIAL CAN COME BACK. Redirects are never followed — a 3xx
       is relayed to the client verbatim and no request is ever re-issued
       with the injected header. No error/diagnostic response, header or
@@ -153,13 +158,19 @@ hold this file to them):
   SPEND (Red Team moved this from "named, not built" to REQUIRED). The
       CLI's own `--max-budget-usd` is enforced by the untrusted side and
       is worth nothing against this threat model. A hard, gateway-side
-      per-session ceiling on request COUNT and cumulative request BYTES
-      is enforced here, fail-closed with a `429` and a log line. The
-      session key is the client's `SO_PEERCRED` (pid, /proc starttime,
-      uid) — the in-sandbox relay process, one per live sandbox — so two
-      concurrent sandboxes get independent budgets without adding a
-      session token to this socket (which would be an architecture
-      change, not Development's to make).
+      ceiling on request COUNT and cumulative request BYTES is enforced
+      here, fail-closed with a `429` and a log line. The budget key is the
+      client's `SO_PEERCRED` **uid** and nothing else, so the ceiling is
+      PER-ACCOUNT: every process and every concurrent sandbox running as
+      that account share ONE budget. That is deliberately coarse. The
+      earlier pid-based key was per-process and Code Review reset it with
+      a `fork()` per request (round-4 finding D2) — a ceiling that binds
+      only a cooperative client is exactly the defect Red Team rejected
+      `--max-budget-usd` for. The uid is kernel-supplied, translated into
+      THIS process's user namespace, and unforgeable by a sandbox that is
+      root only inside its own; sharing a bucket fails CLOSED. See
+      `_peer_session_key()` for the full reasoning, including why a
+      per-session token would not raise this floor.
   PATH ALLOWLIST (Red Team, "also required"). The credential is attached
       only to an explicitly allowlisted request PATH. Otherwise the
       sandbox could use the operator's credential for anything that
@@ -230,6 +241,16 @@ _STRIPPED_REQUEST_HEADERS = frozenset({
 # addendum) — but constrained to these two, fail-closed.
 _ALLOWED_CREDENTIAL_HEADERS = frozenset({"x-api-key", "authorization"})
 
+# Every key `GatewayConfig.load()` understands. Anything else in the
+# `gateway` object is a fail-closed startup refusal rather than a silent
+# ignore — see the check in `load()`.
+_GATEWAY_CONFIG_KEYS = frozenset({
+    "upstream", "credential_file", "credential_header", "credential_prefix",
+    "allowed_paths", "ca_file", "upstream_proxy",
+    "max_requests_per_session", "max_request_bytes_per_session",
+    "max_request_body_bytes",
+})
+
 
 # --------------------------------------------------------------- logging --
 
@@ -267,6 +288,85 @@ def _log(event: str, **fields: object) -> None:
 
 _ASCII_DIGITS = frozenset("0123456789")
 
+# ---- header safety (Code Review round-4 finding D1) -----------------------
+# The gateway builds an upstream request line-by-line out of header names and
+# values that came from the UNTRUSTED side. A CR, an LF or a NUL inside either
+# of those is not a cosmetic problem: it is the request-smuggling primitive.
+# Code Review reproduced both shapes from inside a real sandbox against a
+# bare-LF-tolerant upstream (RFC 9112 §2.2 explicitly permits a recipient to
+# treat a bare LF as a line terminator):
+#
+#   X-Foo: junk\nGET /steal HTTP/1.1\nHost: evil   -> the upstream parsed TWO
+#       requests and the second one walked straight past the request-path
+#       allowlist that correctly 403s `/steal` through the front door, on the
+#       already-credentialed TLS connection.
+#   X-Foo: junk\nx-api-key: ATTACKER-CHOSEN        -> the upstream saw an
+#       attacker-chosen credential header ahead of the injected one.
+#
+# Both returned `200`, so a status-only assertion never sees them; the tests
+# for this assert on the bytes `_build_upstream_head()` emits and on the
+# request list the upstream actually parsed.
+#
+# ONE primitive, used everywhere a string becomes part of a header line — the
+# untrusted request path, the relayed response path, and the operator-written
+# `credential_prefix`/credential (which had the only such check in this file
+# before D1: the trusted string was validated and the hostile one was not).
+_FRAMING_CHARS = ("\r", "\n", "\x00")
+
+# RFC 9110 §5.6.2 tchar: the ONLY octets a field NAME may contain.
+_HEADER_NAME_CHARS = frozenset(
+    "!#$%&'*+-.^_`|~"
+    "0123456789"
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
+
+
+def breaks_header_framing(text: str) -> bool:
+    """True if `text` contains any octet that can END A HEADER LINE or a
+    header block early — CR, LF or NUL. This is the minimum, framing-only
+    check, and it is the one applied to RELAYED RESPONSE header lines, where
+    being stricter would risk rejecting the deprecated-but-legal obs-text
+    (0x80-0xFF) a real server may still emit in a field value."""
+    if not isinstance(text, str):
+        return True
+    return any(ch in text for ch in _FRAMING_CHARS)
+
+
+def is_header_name(name: str) -> bool:
+    """True for a non-empty RFC 9110 tchar-only field name. Strictly stronger
+    than `breaks_header_framing()` (CR, LF, NUL and whitespace are all
+    non-tchar), and stronger than the pre-D1 `any(ch.isspace())` check, which
+    accepted a NUL in a header name."""
+    if not isinstance(name, str) or not name:
+        return False
+    return all(ch in _HEADER_NAME_CHARS for ch in name)
+
+
+def is_header_value(value: str) -> bool:
+    """True for a value made only of octets RFC 9110 §5.5 permits in a field
+    value: SP, HTAB and VCHAR (0x21-0x7E). Strictly stronger than
+    `breaks_header_framing()` — it also rejects every other C0 control and
+    DEL, none of which any legitimate client sends and any of which a
+    downstream parser may treat idiosyncratically.
+
+    Applied to REQUEST header values (which this module has already decoded
+    as ASCII, so obs-text cannot reach here anyway) and to the operator's
+    `credential_prefix` and credential."""
+    if not isinstance(value, str):
+        return False
+    for ch in value:
+        if ch in (" ", "\t"):
+            continue
+        if not ("\x21" <= ch <= "\x7e"):
+            return False
+    return True
+
+
+_HOSTNAME_CHARS = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._"
+)
+
 
 def _split_host_port(target: str) -> tuple[str | None, int | None]:
     """Strict `host:port` split. Returns (host, port) only for an
@@ -284,6 +384,13 @@ def _split_host_port(target: str) -> tuple[str | None, int | None]:
         return (None, None)
     host, _, port_str = target.partition(":")
     if not host:
+        return (None, None)
+    # Conservative hostname charset. Whitespace was already refused above, but
+    # NOT a NUL or a control character — and `gateway.upstream`'s host is
+    # emitted into the upstream `Host:` header, so the same header-safety
+    # reasoning as D1 applies to it (defence in depth: this string is
+    # operator-written, not sandbox-supplied).
+    if any(ch not in _HOSTNAME_CHARS for ch in host):
         return (None, None)
     if not port_str or any(ch not in _ASCII_DIGITS for ch in port_str):
         return (None, None)
@@ -458,10 +565,20 @@ def parse_request_head(raw: bytes) -> RequestHead:
         if ":" not in line:
             raise RequestParseError(b"400 Bad Request", "header line without a colon")
         name, _, value = line.partition(":")
-        if not name or any(ch.isspace() for ch in name):
-            # `Foo : bar` / `Foo\t: bar` — another smuggling primitive.
+        if not is_header_name(name):
+            # `Foo : bar` / `Foo\t: bar` / a NUL in the name — all smuggling
+            # primitives; only RFC 9110 tchar octets are accepted (D1).
             raise RequestParseError(b"400 Bad Request", "malformed header name")
-        value = value.strip()
+        # D1 — the value is checked BEFORE any stripping, so a trailing bare
+        # CR/LF is a rejection rather than something `strip()` silently
+        # repairs, and then again after OWS removal for the stricter
+        # field-value octet set. `strip(" \t")` is OWS exactly (RFC 9110
+        # §5.6.3), not Python's wider whitespace class.
+        if breaks_header_framing(value):
+            raise RequestParseError(b"400 Bad Request", "CR, LF or NUL in header value")
+        value = value.strip(" \t")
+        if not is_header_value(value):
+            raise RequestParseError(b"400 Bad Request", "non-field-value octet in header value")
         lowered = name.lower()
         if lowered == "content-length":
             content_lengths.append(value)
@@ -501,14 +618,22 @@ class _SocketReader:
     losing or duplicating a byte (C3/C4 — a lost boundary is what lets an
     unrewritten request through)."""
 
-    __slots__ = ("_sock", "_buf")
+    __slots__ = ("_sock", "_buf", "_head_error")
 
     def __init__(self, sock: socket.socket, initial: bytes = b""):
         self._sock = sock
         self._buf = bytearray(initial)
+        self._head_error: str | None = None
 
     def buffered(self) -> bytes:
         return bytes(self._buf)
+
+    def head_error(self) -> str | None:
+        """Why the last `read_header_block()` returned None: None means a
+        clean EOF (the peer simply finished — not an error), and a short
+        METADATA-ONLY string means a real protocol fault the caller should
+        reject and LOG rather than close silently."""
+        return self._head_error
 
     def _fill(self) -> bool:
         try:
@@ -523,17 +648,40 @@ class _SocketReader:
     def read_header_block(self) -> bytes | None:
         """Bytes up to and INCLUDING the first CRLFCRLF, leaving anything
         after it buffered. None if the peer closed first (ambiguous — fail
-        closed) or the block exceeds `_MAX_HEADER_BYTES`."""
-        while b"\r\n\r\n" not in self._buf:
+        closed), if the block exceeds `_MAX_HEADER_BYTES`, or if the head
+        uses bare-LF line endings; `head_error()` distinguishes those from
+        a clean EOF.
+
+        The bare-LF case is a Code Review round-4 non-blocking item: a head
+        terminated `\\n\\n` never satisfies the CRLFCRLF search, so it used
+        to hold a thread until the 30 s idle timeout with no log line. It is
+        a head this parser can never accept (`parse_request_head()` requires
+        CRLFCRLF), so failing it fast is both cheaper and audible. An
+        `\\n\\n` that appears AFTER a complete CRLFCRLF is ordinary body
+        content — an SSE stream is full of them — so the two positions are
+        compared rather than the buffer merely searched."""
+        self._head_error = None
+        while True:
+            crlf = self._buf.find(b"\r\n\r\n")
+            bare = self._buf.find(b"\n\n")
+            if crlf >= 0 and (bare < 0 or crlf <= bare):
+                break
+            if bare >= 0:
+                self._head_error = "bare-LF line endings in header block"
+                return None
             if len(self._buf) > _MAX_HEADER_BYTES:
+                self._head_error = "header block exceeds the header ceiling"
                 return None
             if not self._fill():
+                if self._buf:
+                    self._head_error = "connection closed mid-header-block"
                 return None
-        if self._buf.index(b"\r\n\r\n") + 4 > _MAX_HEADER_BYTES:
+        if crlf + 4 > _MAX_HEADER_BYTES:
+            self._head_error = "header block exceeds the header ceiling"
             return None
-        head, _, rest = bytes(self._buf).partition(b"\r\n\r\n")
-        self._buf = bytearray(rest)
-        return head + b"\r\n\r\n"
+        head = bytes(self._buf[:crlf + 4])
+        del self._buf[:crlf + 4]
+        return head
 
     def read_line(self, limit: int = _MAX_HEADER_BYTES) -> bytes | None:
         """One CRLF-terminated line, terminator included. Used for chunked
@@ -615,6 +763,16 @@ class GatewayConfig:
         the sentinel upstream, is never an option."""
         if not isinstance(raw, dict):
             raise ValueError("'gateway' must be a JSON object")
+        # Unknown keys are a REFUSAL, not something to ignore (Code Review
+        # round-4 non-blocking item): a typo in `max_requests_per_session`
+        # used to revert the spend ceiling silently to the 500 default, which
+        # is precisely the "mis-provisioned control that looks provisioned"
+        # shape this milestone exists to avoid. Loud at startup beats
+        # invisible at runtime.
+        unknown = sorted(k for k in raw if k not in _GATEWAY_CONFIG_KEYS)
+        if unknown:
+            raise ValueError(f"unknown gateway config key(s): {unknown} — refusing to start "
+                             "rather than silently ignore a mis-typed setting")
 
         upstream = raw.get("upstream")
         host, port = _split_host_port(upstream) if isinstance(upstream, str) else (None, None)
@@ -636,7 +794,11 @@ class GatewayConfig:
             raise ValueError("gateway.credential_header must be 'x-api-key' or 'authorization'")
         header = header.lower()
         prefix = raw.get("credential_prefix", "Bearer " if header == "authorization" else "")
-        if not isinstance(prefix, str) or "\r" in prefix or "\n" in prefix:
+        if not is_header_value(prefix):
+            # Same shared primitive the untrusted request path now uses (D1) —
+            # this used to be the ONLY header-safety check in the file, and it
+            # guarded the operator-written string while the sandbox-supplied
+            # one went unchecked.
             raise ValueError("gateway.credential_prefix must be a header-safe string")
 
         raw_paths = raw.get("allowed_paths", ["/v1/messages", "/api/hello"])
@@ -706,7 +868,7 @@ def _read_credential_file(path: str) -> str:
         raise ValueError("gateway.credential_file is empty")
     if credential == SENTINEL_API_KEY:
         raise ValueError("gateway.credential_file contains the sandbox sentinel, not a credential")
-    if "\r" in credential or "\n" in credential:
+    if not is_header_value(credential):
         raise ValueError("gateway.credential_file must contain a single header-safe value")
     return credential
 
@@ -785,13 +947,18 @@ class AllowlistConfig:
 class _SessionBudget:
     """The gateway-side spend ceiling Red Team moved from 'named, not built'
     to REQUIRED. Counts REQUESTS and cumulative REQUEST BYTES for one
-    sandbox session and refuses (429) once either ceiling is passed.
+    budget key and refuses (429) once either ceiling is passed.
 
     Why this is the only place a limit can exist: `--max-budget-usd` is
     enforced by the sandboxed CLI — the untrusted side — so a compromised
     session simply does not enforce it. This is a crude request/byte cap,
     not token-accurate cost accounting; its job is to convert 'unbounded'
-    into 'bounded and alarming'."""
+    into 'bounded and alarming'.
+
+    The budget key is the peer's uid, so this bucket is PER-ACCOUNT, not
+    per-sandbox — see `_peer_session_key()` for why that is the only key a
+    forking sandbox cannot reset. Once exhausted it stays exhausted for the
+    daemon's lifetime; nothing the untrusted side can do clears it."""
 
     __slots__ = ("requests", "request_bytes", "exhausted", "first_seen")
 
@@ -806,30 +973,62 @@ _MAX_TRACKED_SESSIONS = 256
 
 
 def _peer_session_key(conn: socket.socket) -> tuple:
-    """Identify the sandbox session behind a client connection, WITHOUT
-    trusting anything the client sends: SO_PEERCRED is filled in by the
-    kernel. The peer is the in-sandbox `egress_relay.py` process — one per
-    live sandbox — so its (pid, start-time, uid) is a stable per-session
-    identity for as long as that sandbox runs.
+    """The budget key: the peer's `SO_PEERCRED` **uid**, and nothing else.
 
-    The /proc start-time is included specifically so that a recycled PID
-    cannot inherit (or reset) another session's budget. If /proc is
-    unreadable the key degrades to (pid, uid) with an empty start-time,
-    which is still per-connection-peer and never shared with a different
-    uid; it never degrades to a single global bucket that one session could
-    exhaust for another."""
+    STATE THE PROPERTY HONESTLY, because a security comment that overclaims
+    is worse than none. This is a PER-ACCOUNT ceiling, not a per-sandbox one.
+    Every connection from every process under one uid — every concurrent
+    sandbox that account runs, and every process inside each of them — shares
+    ONE budget. That is coarser than "one budget per live sandbox", and it is
+    the right trade: it is the only key in reach that a hostile sandbox
+    cannot RESET.
+
+    Why not the pid (what this function used to key on, and Code Review
+    round-4 finding D2). The docstring claimed the peer was "the in-sandbox
+    relay process — one per live sandbox". Nothing enforces that. The sandbox
+    is assumed hostile under this milestone's own threat model, it is not
+    obliged to route through the relay, and it may create as many processes
+    as it likes. Code Review proved the consequence from inside a real
+    sandbox against `max_requests_per_session: 5`: 12 requests from one
+    process were refused 12 times, and 12 requests each from a fresh `fork()`
+    were all forwarded upstream credentialed. Three lines of attacker code
+    restored unbounded spend, which is precisely the defect Red Team cited
+    when it rejected `--max-budget-usd` as untrusted-side enforcement.
+    Neither the /proc start-time nor a pid-namespace id repairs that: the
+    start-time is a property of the attacker's freshly-forked process, and
+    Code Review verified that `unshare --pid --fork` SUCCEEDS inside the
+    shipped bind set, so a namespace-derived key is mintable too.
+
+    Why the uid cannot be reset. `SO_PEERCRED` is filled in by the kernel at
+    connect() time and translated into THIS process's user namespace, not the
+    peer's. The sandbox is root only inside its OWN user namespace, and
+    `launch_developer_sandboxed.sh` maps exactly one host uid into it, so no
+    process in the sandbox can present any other uid here, with or without
+    forks, namespaces or privilege games inside.
+
+    Why not a per-session token (the `OPSDB_BROKER_TOKEN` precedent Code
+    Review pointed at). A token handed to the sandbox lives INSIDE the
+    hostile boundary, so the sandbox chooses which token to present. Even
+    with a trusted-side registry of issued tokens the worst case is
+    unchanged — a hostile session presents whichever of its own tokens has
+    budget left — so the token would add a second, weaker bucket and new
+    secret-distribution surface without raising the floor this uid key
+    already sets. The one design that would give genuine per-sandbox
+    granularity WITHOUT a secret is a per-session SOCKET (one bind-mounted
+    socket per sandbox, keyed by which listener accepted the connection);
+    that is a launcher/provisioning change, so it is recorded as a future
+    refinement rather than made here.
+
+    If SO_PEERCRED is unavailable the key degrades to a single shared bucket
+    for all such peers — the fail-CLOSED direction (a shared ceiling can only
+    ever refuse more, never less), unlike the old `(pid, uid)` fallback,
+    which degraded towards the weaker, resettable key."""
     try:
         raw = conn.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize("3i"))
-        pid, uid, _gid = struct.unpack("3i", raw)
+        _pid, uid, _gid = struct.unpack("3i", raw)
     except OSError:
-        return ("nopeer",)
-    starttime = ""
-    try:
-        stat = Path(f"/proc/{pid}/stat").read_text()
-        starttime = stat.rsplit(")", 1)[1].split()[19]
-    except (OSError, IndexError):
-        pass
-    return (pid, starttime, uid)
+        return ("unidentified-peer",)
+    return ("uid", uid)
 
 
 # --------------------------------------------------------------- the proxy --
@@ -850,21 +1049,31 @@ class EgressProxy:
             self._conn_seq += 1
             return self._conn_seq
 
-    def _session(self, key: tuple) -> _SessionBudget:
+    def _session(self, key: tuple) -> _SessionBudget | None:
+        """The budget bucket for `key`, or None if the table is full of
+        EXHAUSTED buckets — in which case the caller refuses the request
+        (429) rather than evict one, because evicting an exhausted bucket
+        would be a budget reset and would hand back exactly the unbounded
+        spend D2 was about.
+
+        With the uid key this table holds at most one entry per local
+        account that can reach the socket, so the bound is unreachable in
+        this design's shape; it exists so memory stays bounded whatever a
+        future key change does."""
         with self._sessions_lock:
             budget = self._sessions.get(key)
-            if budget is None:
-                if len(self._sessions) >= _MAX_TRACKED_SESSIONS:
-                    # Bounded memory: drop the oldest entry. A dropped entry
-                    # is a budget RESET, so the ceiling is only as strong as
-                    # this table is large — 256 concurrent sandbox sessions
-                    # on one host is far outside this design's shape, and
-                    # the eviction is logged so it can never be silent.
-                    oldest = min(self._sessions, key=lambda k: self._sessions[k].first_seen)
-                    del self._sessions[oldest]
-                    _log("session_table_evicted", tracked=len(self._sessions))
-                budget = _SessionBudget()
-                self._sessions[key] = budget
+            if budget is not None:
+                return budget
+            if len(self._sessions) >= _MAX_TRACKED_SESSIONS:
+                live = [k for k, b in self._sessions.items() if not b.exhausted]
+                if not live:
+                    _log("session_table_full", tracked=len(self._sessions))
+                    return None
+                oldest = min(live, key=lambda k: self._sessions[k].first_seen)
+                del self._sessions[oldest]
+                _log("session_table_evicted", tracked=len(self._sessions))
+            budget = _SessionBudget()
+            self._sessions[key] = budget
             return budget
 
     def _dial(self, config: AllowlistConfig, host: str, port: int) -> tuple[socket.socket, bytes]:
@@ -920,7 +1129,8 @@ class EgressProxy:
         reader = _SocketReader(conn)
         header = reader.read_header_block()
         if header is None:
-            _reject(conn, b"400 Bad Request", "no complete request header received")
+            _reject(conn, b"400 Bad Request",
+                    reader.head_error() or "no complete request header received")
             return
         client_early = reader.buffered()
         if peek_method(header) != "CONNECT":
@@ -1015,23 +1225,31 @@ class EgressProxy:
         tls.settimeout(_GATEWAY_IO_TIMEOUT_S)
         return tls
 
-    def _charge(self, budget: _SessionBudget, cfg: GatewayConfig, request_bytes: int) -> str | None:
-        """Gateway-side spend ceiling. Returns None if the request may
-        proceed, or a short METADATA-ONLY reason string if it must be
-        refused (429). Once a session trips a ceiling it stays exhausted —
-        fail closed, not a per-request retry window."""
+    def _charge(self, budget: _SessionBudget, cfg: GatewayConfig,
+                request_bytes: int) -> tuple[str | None, int, int]:
+        """Gateway-side spend ceiling. Returns `(denial, requests, bytes)`:
+        `denial` is None if the request may proceed or a short
+        METADATA-ONLY reason string if it must be refused (429), and the two
+        counters are read UNDER THE LOCK so a caller logging them cannot
+        observe another thread's increment (Code Review round-4 non-blocking
+        item: two concurrent connections both logged `session_requests=2`).
+        Once a bucket trips a ceiling it stays exhausted — fail closed, not
+        a per-request retry window."""
         with self._sessions_lock:
             if budget.exhausted:
-                return "session budget already exhausted"
+                return ("session budget already exhausted",
+                        budget.requests, budget.request_bytes)
             if budget.requests + 1 > cfg.max_requests_per_session:
                 budget.exhausted = True
-                return "per-session request ceiling reached"
+                return ("per-session request ceiling reached",
+                        budget.requests, budget.request_bytes)
             if budget.request_bytes + request_bytes > cfg.max_request_bytes_per_session:
                 budget.exhausted = True
-                return "per-session request-byte ceiling reached"
+                return ("per-session request-byte ceiling reached",
+                        budget.requests, budget.request_bytes)
             budget.requests += 1
             budget.request_bytes += request_bytes
-            return None
+            return (None, budget.requests, budget.request_bytes)
 
     def _build_upstream_head(self, cfg: GatewayConfig, head: RequestHead) -> bytes:
         """**C1/C2/C3.** Emit an origin-form request for the CONFIGURED
@@ -1068,6 +1286,17 @@ class EgressProxy:
                 return None
             text = head_bytes.decode("latin-1")
             lines = text[:-4].split("\r\n")
+            # D1, the response direction. This head is relayed to the client
+            # VERBATIM below, so a bare CR/LF/NUL surviving the `\r\n` split
+            # would let the upstream split one response into two toward the
+            # sandbox. The upstream is the trusted end (verified TLS to the
+            # configured host), so this is hygiene rather than the same
+            # severity as the request direction — but the framing-only check
+            # is free and symmetric. Deliberately `breaks_header_framing()`
+            # and not the stricter `is_header_value()`: a real server may
+            # legally emit obs-text in a field value.
+            if any(breaks_header_framing(line) for line in lines):
+                return None
             status_parts = lines[0].split(" ")
             if len(status_parts) < 2 or not status_parts[1].isdigit():
                 return None
@@ -1088,6 +1317,15 @@ class EgressProxy:
                     close_requested = True
             if content_lengths and chunked:
                 return None  # C5: framing ambiguity fails closed, both directions
+            # Deliberate asymmetry with the REQUEST path, which rejects a
+            # duplicate `Content-Length` even when the two values agree
+            # (`len(...) > 1`). Here two IDENTICAL values are tolerated and
+            # only conflicting ones fail closed, because the upstream is the
+            # trusted end of this hop (a verified-TLS connection to the one
+            # configured host) while the request side is the hostile one, and
+            # because a needless teardown of a real model response costs the
+            # Founder's work. Being stricter on the untrusted side than on
+            # the trusted side is the safe direction to be asymmetric in.
             if len(set(content_lengths)) > 1:
                 return None
             conn.sendall(head_bytes)
@@ -1170,6 +1408,11 @@ class EgressProxy:
         conn.settimeout(_GATEWAY_IO_TIMEOUT_S)
         conn_id = self._next_conn_id()
         budget = self._session(_peer_session_key(conn))
+        if budget is None:
+            # Every tracked bucket is exhausted and the table is full: refuse
+            # rather than evict, because an eviction is a budget reset (D2).
+            _reject(conn, b"429 Too Many Requests", "session budget table is full")
+            return
         head_bytes = first_head
         upstream: ssl.SSLSocket | None = None
         up_reader: _SocketReader | None = None
@@ -1198,11 +1441,12 @@ class EgressProxy:
                     return
 
                 request_bytes = len(head_bytes) + head.content_length
-                denial = self._charge(budget, cfg, request_bytes)
+                denial, charged_requests, charged_bytes = self._charge(
+                    budget, cfg, request_bytes)
                 if denial is not None:
                     _log("gateway_budget_exceeded", conn=conn_id, path=path_only,
-                         reason=denial, requests=budget.requests,
-                         request_bytes=budget.request_bytes)
+                         reason=denial, requests=charged_requests,
+                         request_bytes=charged_bytes)
                     _reject(conn, b"429 Too Many Requests", denial)
                     return
 
@@ -1242,12 +1486,18 @@ class EgressProxy:
                      status=status, request_bytes=request_bytes, response_bytes=body_bytes,
                      sentinel_seen=head.sentinel_seen, swapped=True,
                      duration_ms=int((time.monotonic() - started) * 1000),
-                     session_requests=budget.requests)
+                     session_requests=charged_requests)
                 if not keep_alive:
                     return
                 nxt = reader.read_header_block()
                 if nxt is None:
-                    return  # client finished (or over-long head) — normal end
+                    reason = reader.head_error()
+                    if reason is not None:
+                        # A malformed follow-up head on a keep-alive
+                        # connection is a 400 with a log line, not a silent
+                        # close (round-4 non-blocking item).
+                        _reject(conn, b"400 Bad Request", reason)
+                    return  # else: the client simply finished — normal end
                 head_bytes = nxt
         finally:
             if upstream is not None:
@@ -1354,9 +1604,19 @@ def _reject(conn: socket.socket, status: bytes, detail: str) -> None:
     """Fail-closed rejection: a bare status, zero-length body, connection
     closed. C6 — the response carries NO diagnostic body, so nothing this
     daemon knows (least of all the injected credential) can be reflected
-    back to the untrusted side; `detail` goes to the local log only, and is
-    always a fixed metadata string chosen by this module, never client
-    content."""
+    back to the untrusted side.
+
+    `detail` goes to the LOCAL LOG ONLY and never onto the wire. It is a
+    fixed metadata string chosen by this module, into which a few call sites
+    deliberately interpolate a small client-derived token — the rejected
+    method (`parse_request_head`) and the rejected CONNECT `host:port` — so
+    an operator reading the journal can tell WHICH request was refused.
+    That is safe because `_log()` coerces, truncates to 200 characters and
+    CR/LF-escapes every value it is handed, and because none of it is ever
+    a body or a header value. (The docstring previously claimed "never
+    client content", which was untrue of those two call sites — Code Review
+    round-4 non-blocking item; the behaviour was and is correct, the claim
+    was not.)"""
     try:
         conn.sendall(b"HTTP/1.1 " + status + b"\r\nContent-Length: 0\r\n"
                      b"Connection: close\r\n\r\n")

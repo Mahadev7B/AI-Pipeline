@@ -445,6 +445,26 @@ sudo chmod 0644 /etc/ai-pipeline/egress-allowlist.json
   not token-accurate cost accounting; their job is to turn "unbounded"
   into "bounded and alarming" (`429` + a `gateway_budget_exceeded` log
   line). Size them for a real Developer task on this deployment.
+  **Read `_per_session` as PER ACCOUNT.** The budget is keyed on the peer's
+  `SO_PEERCRED` uid, so every sandbox and every process running as
+  `ai-developer` shares ONE bucket, and once that bucket is exhausted it
+  stays exhausted for the daemon's lifetime (restart the daemon to reset
+  it). That is deliberate: the earlier per-process key was reset by a
+  `fork()` per request (Code Review round-4 finding D2), and a ceiling only
+  a cooperative client respects is exactly what Red Team rejected
+  `--max-budget-usd` for. Practical consequences for provisioning: size the
+  numbers for the TOTAL work that account does between daemon restarts, not
+  for one task; and if you ever run two Developer sandboxes concurrently
+  under the same account, they contend for the same budget — the failure is
+  a `429` for whichever hits it, never a silent widening. If per-sandbox
+  granularity is wanted later, the reviewed way to get it is one
+  bind-mounted egress socket per session (keyed by which listener accepted),
+  not a token the sandbox holds.
+- **Unknown `gateway.*` keys are a startup refusal, not a warning.** A typo
+  such as `max_requests_per_sesion` used to be ignored and silently reverted
+  the ceiling to its 500 default; the daemon now refuses to start and names
+  the offending key. If you add a key, add it to `_GATEWAY_CONFIG_KEYS` in
+  `egress_proxy.py` with review — do not delete the check.
 - `gateway.ca_file` (optional): set it only if this host's outbound path
   re-terminates TLS with a private CA. On THIS container the ambient agent
   proxy's bundle is `/root/.ccr/ca-bundle.crt` under a `0700 /root` — which
@@ -566,7 +586,7 @@ Handed forward for the live QA charter (§7 sequencing item 7 of the
 architecture doc). These are the addendum-2 items (g)–(j) plus the specific
 assertions Red Team's binding contract requires. Development has proved
 each of them at the unit/integration level
-(`ops/db/test_egress_gateway.py`, 50 checks) and, where marked *[live]*,
+(`ops/db/test_egress_gateway.py`, 78 checks) and, where marked *[live]*,
 against the real binary in a real sandbox during this pass — QA re-runs
 them against the provisioned, real-account deployment.
 
@@ -608,12 +628,28 @@ them against the provisioned, real-account deployment.
 - **Framing.** `Content-Length` + `Transfer-Encoding`, duplicate/non-decimal
   `Content-Length`, chunked requests, obs-fold headers and oversized header
   blocks must all be `400` + close.
+- **Header-injection safety (round-4 finding D1).** A header VALUE carrying
+  a bare LF, a bare CR or a NUL must be `400` + close. Assert on what the
+  UPSTREAM PARSED, not on the client-visible status: against a bare-LF-
+  tolerant server `X-Foo: junk\nGET /steal HTTP/1.1\nHost: evil` and
+  `X-Foo: junk\nx-api-key: ATTACKER-CHOSEN` both returned `200` while
+  smuggling a second request past the path allowlist and an attacker-chosen
+  credential header onto the credentialed connection. *[live, from inside a
+  real sandbox against the host-side gateway: both `400`; the bare-LF
+  upstream parsed zero extra requests and saw no attacker `x-api-key`.]*
 - **TLS.** An untrusted/bad upstream certificate must fail closed (`502`)
   with no credential sent, and there must be no configuration that disables
   verification.
-- **Spend ceiling.** Exceeding `max_requests_per_session` or
-  `max_request_bytes_per_session` must produce a `429` and a
-  `gateway_budget_exceeded` log line.
+- **Spend ceiling, against an ADVERSARIAL client (round-4 finding D2).**
+  Exceeding `max_requests_per_session` or `max_request_bytes_per_session`
+  must produce a `429` and a `gateway_budget_exceeded` log line — and the
+  ceiling must still hold when each request comes from a FRESH `fork()`,
+  which is how the earlier pid-keyed budget was reset. QA must run the
+  forking shape, not just the cooperative one. *[live, from inside a real
+  sandbox against a ceiling of 5: 12 forked requests → 5 × `200` then
+  7 × `429`, 12 distinct pids, exactly 5 requests forwarded upstream, and a
+  single `("uid", …)` bucket host-side.]* Note the ceiling is per ACCOUNT
+  and does not reset until the daemon restarts — see §6b.
 
 **Two factual corrections Red Team recorded against the architecture
 document's own addendum-2 text**, repeated here so a reader of this runbook
