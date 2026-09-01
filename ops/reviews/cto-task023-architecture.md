@@ -721,3 +721,321 @@ independent adversarial review of the design itself, particularly the new,
 genuinely security-relevant `opsdb_broker.py` daemon and the sudoers/UID
 boundary, both of which are new attack surface this document is
 introducing, not merely narrowing.
+
+---
+
+## Addendum (Code Review's TASK-023 review, `ops/reviews/code-review-task023.md`, REJECT) — the model-API network carve-out (finding B3, the architecture decision), and the intended shape for B1/B2/B4
+
+Development built this milestone code-only and Code Review REJECTed. One
+finding (B3) is an architecture decision reserved for CTO + Red Team; three
+(B1/B2/B4) are Development's to fix but need an unambiguous target stated
+here. Nothing Red Team already blessed is reopened: the bwrap namespace
+shape, the filesystem/PID containment results (§1 + the first Correction),
+the five-verb broker allowlist and its session-binding/identity-pinning, the
+`ai-developer` account, Developer-only scoping, and the invocation-model
+change are all unchanged. This addendum changes exactly one previously-stated
+property — §2.3's "no network by default, full stop" — narrowing it to "no
+network *except one narrowly-brokered path to the model API*," and corrects
+one overclaim in §5 point 1 / §6 about the in-sandbox hook layer. Both
+changes are routed through Red Team as the required gate, not asserted as
+settled.
+
+### B3 (architecture decision) — the sandboxed `claude` CLI must reach the model API, and `--unshare-all` gives it no path
+
+Code Review is correct and the gap is real: §1's feasibility spike only ever
+exec'd `/bin/echo`, `/bin/sh`, and `curl` inside the sandbox, so it validated
+that `--unshare-all` (which includes `--unshare-net`) blocks egress — a
+verified *containment* property, and the direct closure of `risks.id=3`'s
+exfiltration vector — but it never exec'd the real `claude` CLI, which must
+reach the Anthropic model API to do any work at all. Under `--unshare-net` as
+built, the sandbox has no interface, no route, and no reachable proxy, so the
+first model call dies and every real sandboxed Developer session does zero
+work. The letter of the architecture was implemented faithfully; the
+architecture itself was incomplete. This addendum completes it.
+
+**Chosen shape: keep `--unshare-all` exactly as designed — do NOT drop
+`--unshare-net` — and add exactly one egress path: a single bind-mounted
+Unix-domain socket served by a host-side, allowlisting forward/CONNECT proxy
+that runs as a trusted account the sandboxed Developer cannot influence, and
+that permits only the model-API host and denies everything else.**
+
+Concretely:
+
+- **The sandbox keeps zero network-namespace connectivity.** `--unshare-net`
+  stays. The sandbox gets no veth, no route, no DNS, no reachable TCP
+  destination. This preserves the exact containment §1 verified: general
+  outbound egress is *structurally* impossible, not firewalled-and-widenable.
+- **The one permitted egress is a Unix-domain socket, bind-mounted into the
+  sandbox** (e.g. `--bind /run/ai-pipeline/egress.sock
+  /run/ai-pipeline/egress.sock`, the exact same mechanism §3/§4.4 already use
+  for the opsdb broker socket). Unix sockets traverse the *filesystem*
+  namespace, not the *network* namespace, so this grants a single, named,
+  auditable channel without granting any network interface at all — the same
+  structural discipline as the filesystem bind-allowlist. A path not bound is
+  not reachable, full stop.
+- **A host-side allowlisting proxy owns the socket and enforces the
+  allowlist.** It runs as the broker's trusted account (or a dedicated
+  `ai-pipeline-egress` system account) — **never as `ai-developer`** — with
+  the socket `chmod 660`, group `ai-pipeline-db` (or a dedicated group),
+  exactly as the opsdb socket is. Its allowlist is a fixed config file owned
+  by the trusted account, `0644 root`-owned / not writable by `ai-developer`
+  and not bind-mounted into the sandbox — so the sandboxed Developer, even as
+  root *inside its own user namespace*, cannot read or widen it. The proxy
+  permits CONNECT to exactly the model-API host(s): `api.anthropic.com:443`
+  in a normal deployment, and — in *this* hosting environment specifically —
+  the configured agent egress proxy the environment already routes all
+  outbound HTTPS through (`HTTPS_PROXY`, `/root/.ccr/README.md`), to which the
+  host-side proxy chains as its own upstream. Everything else is denied.
+- **What it does NOT permit, stated as precisely as §6 requires:** no general
+  outbound egress; no package registries — `registry.npmjs.org`, `pypi.org`,
+  `files.pythonhosted.org` et al. are **denied**, deliberately narrower than
+  the ambient environment's own `NO_PROXY` list, so §2.3's "no ad-hoc
+  `pip install` / unreviewed dependency" property is *preserved*, not
+  reopened; no arbitrary C2 host; no DNS to arbitrary names. The carve-out is
+  one destination class (the model API), not "the network."
+- **Bridging the unmodified Node `claude` CLI to the socket.** The CLI honours
+  `HTTPS_PROXY` as a `host:port` TCP endpoint, not a Unix socket. Two options,
+  in preference order: (a) if the installed CLI's HTTP stack accepts a
+  Unix-socket proxy directly, point `HTTPS_PROXY` at it and skip the bridge —
+  a Development/Red Team verification item against the *real binary*, same
+  discipline §1 used, not assumed; (b) otherwise, a tiny **fixed** relay
+  started inside the sandbox binds `127.0.0.1:<port>` (the sandbox's own
+  loopback, which bwrap brings up inside the new netns — verified below) and
+  forwards to the bind-mounted Unix socket, with `HTTPS_PROXY=http://127.0.0.1:<port>`
+  set for `claude`. The relay is inside the sandbox and therefore
+  *untrusted*, but that is fine and by design: it can only forward to the one
+  Unix socket, and the allowlist is enforced entirely host-side, in the
+  trusted proxy, which the relay cannot bypass or widen. If the relay is used,
+  it must be a fixed command (a small dedicated script or `claude` launched
+  via a fixed `-- /bin/sh -c 'relay & exec claude …'` where **no task content
+  enters shell syntax** — the wrapper's existing "content is data, never
+  shell" discipline, §4.1 step 3, is preserved).
+
+**Why not the alternatives (evaluated honestly):**
+
+- *slirp4netns / user-mode networking:* gives the sandbox a real (NATed)
+  network interface, then relies on an in-netns firewall to restrict it. But
+  the sandboxed process is root *within its own user namespace* and holds
+  `CAP_NET_ADMIN` for its own netns — it can flush or rewrite any nft/iptables
+  rules placed *inside* that netns. An in-sandbox firewall is therefore
+  widenable by exactly the principal it must constrain: disqualifying. Rejected.
+- *nftables egress allowlist, whether in-netns or by dropping `--unshare-net`
+  and filtering in the host netns:* the in-netns variant fails for the same
+  `CAP_NET_ADMIN` reason. The host-netns variant (drop `--unshare-net`, share
+  the host's network, restrict by destination IP on the host side) is not
+  widenable by the sandbox, but it is strictly *weaker* than keeping the
+  namespace: it is IP/port-based, so it is brittle against the API's IPs
+  changing and against a shared-CDN IP also fronting non-API hosts, and it
+  hands the sandbox a live interface with real routes as its default state,
+  making any allowlist gap a general-egress hole rather than a no-op. Keeping
+  `--unshare-net` and adding one Unix socket makes the *default* "no network"
+  and the *exception* a single explicit channel — fail-closed, not
+  fail-to-filtering. Rejected as the weaker posture.
+- *A host-side proxy on host `127.0.0.1`, pointed at directly:* the sandbox's
+  loopback is a *separate* netns loopback; the host's `127.0.0.1:<port>` is
+  unreachable from inside (verified below — this is why the bridge/socket is
+  required, and also a nice property: the host's own ambient agent proxy is
+  not incidentally reachable from the sandbox either).
+
+**Tested directly in this environment (bwrap 0.9.0, the §1 discipline — a
+proposal verified, not asserted).** I built a throwaway host-side allowlisting
+proxy on a Unix socket and a client run inside a real `bwrap --unshare-all`
+sandbox with *only* that socket bind-mounted (no `useradd`, no persistent
+daemon — throwaway processes only, per the hard constraint):
+
+1. **General egress is structurally blocked.** From inside the sandbox, a raw
+   TCP connect to an external `93.184.216.34:443` failed with `OSError`
+   (network unreachable — no route in the netns). Confirms §1's containment
+   still holds with the carve-out present.
+2. **The host's own ambient proxy is unreachable.** A connect to the host's
+   `127.0.0.1:43409` (this environment's agent proxy) from inside the sandbox
+   failed with `ConnectionRefusedError` — the sandbox netns has its *own*
+   loopback; the host proxy is not incidentally exposed. (That this is a
+   *refused*, not *unreachable*, error also confirms loopback is *up inside*
+   the sandbox — the fact option (b)'s in-sandbox relay depends on.)
+3. **The one bound Unix socket is reachable and the host-side allowlist
+   enforces.** Through the bind-mounted socket, a request naming
+   `api.anthropic.com` got `200`; a request naming `evil.example.com` got
+   `403` — the allow/deny decision is made in the host-side proxy, outside the
+   sandbox's control.
+4. **Structural absence when the socket is not bound.** Re-running the identical
+   client with the socket *not* bind-mounted, the socket path did not exist
+   inside the sandbox at all (`FileNotFoundError`) — the same "the path simply
+   does not exist in that namespace" property §1 demonstrated for filesystem
+   containment, not a denial-with-audit-trail.
+5. **End-to-end CONNECT tunnel works, and the deny is enforced end-to-end.**
+   With a host-side proxy that actually *tunnels* TCP to an allowlisted
+   destination and an in-sandbox loopback relay bridging `127.0.0.1:8888` →
+   the Unix socket (loopback bind/listen inside the sandbox succeeded, on an
+   ephemeral port — confirming (b) is implementable): a CONNECT to the
+   allowlisted destination tunnelled and round-tripped payload
+   (`API-REPLY:hello`); a CONNECT to a non-allowlisted `8.8.8.8:53` was
+   rejected `403 Forbidden` by the host-side proxy. This is the real shape the
+   `claude` CLI will use, exercised with the CLI's own `HTTPS_PROXY`/CONNECT
+   semantics (simulated), not just the raw socket.
+
+**How a reviewer / QA tests this for real (add to the §7 QA charter):** inside
+a live sandbox, (a) a real `claude` model call succeeds; (b) `curl
+https://example.com`, a raw socket to `8.8.8.8:53`, and a connect to any
+non-API host all fail with no route; (c) a CONNECT to a non-allowlisted host
+*through* the egress proxy is `403`-ed at the host-side proxy; (d) a direct
+connect to the host's own proxy address is unreachable; (e) the allowlist
+config file is owned by the trusted account and not writable or readable by
+`ai-developer`, and is not present in the sandbox mount namespace; (f)
+`registry.npmjs.org`/`pypi.org` are denied (no ad-hoc package install).
+
+**Residual risk, stated plainly (§6 discipline).** The single permitted path
+*is itself a data channel*: a compromised or mistaken Developer session can
+encode repository content or secrets it can read into the prompts it sends to
+the model API. This cannot be closed while the CLI must reach the API at all —
+it is inherent to the milestone's own goal of running a real model-backed
+Developer under containment. It is, however, a *strictly smaller* channel than
+the general egress `--unshare-net` closes: exactly one destination, no
+arbitrary C2 host, no package-registry or paste-site exfil, and — because all
+model traffic now funnels through one host-side proxy owned by a trusted
+account — a single, auditable, loggable chokepoint where per-session volume
+can be observed if that is later wanted. That observability is a follow-up
+option, not part of this addendum's required scope; naming it here so it is
+not mistaken for already-built. The exfil-via-API residual is the honest cost
+of letting the CLI function, and the Founder should accept it explicitly at
+Red Team review alongside the §4.2 ergonomics tradeoff, not have it minimized.
+
+**Files this changes (guidance for Development, after Red Team blesses the
+shape):** `launch_developer_sandboxed.sh` adds the one `--bind` for the egress
+socket, the `HTTPS_PROXY` `--setenv`, and (if option (b)) the fixed relay
+launch; a new host-side egress-proxy artifact (small, allowlisting, trusted
+account) joins the §7 file list and goes through the same Code Review/QA/
+Security gates as `opsdb_broker.py` — it is new, security-relevant network
+surface and must not be waved through; the runbook (`task023-os-provisioning-runbook.md`)
+gains the egress-proxy account/socket/allowlist provisioning steps and the
+production-host equivalent of `api.anthropic.com`. This modifies §2.3's "no
+network by default" bullet and §6's "outbound network / exfiltration / C2 …
+closed by `--unshare-net`" bullet — both now read "closed except one
+host-brokered, allowlisted, single-destination path to the model API," subject
+to Red Team.
+
+### B1 (broker robustness) — intended behavior; Development implements
+
+The broker is the load-bearing security artifact and must survive anything its
+untrusted client sends. Intended shape:
+
+- **No exception escapes the accept loop.** Wrap `_handle_connection`'s body in
+  `try/except OSError` (covers `BrokenPipeError`/`ConnectionResetError` on both
+  `recv` and `sendall`) so one bad connection costs exactly one connection,
+  never the daemon. Keep the accept loop's `try/finally conn.close()` and add
+  the same catch-all there as a backstop. `_handle_connection` must never
+  propagate.
+- **Broaden the handler catch and validate before the DB.** In
+  `handle_request`, add `sqlite3.Error` (the parent of `IntegrityError`/
+  `OperationalError`/`InterfaceError`) to the caught set, returning `_err(...)`
+  — never propagating. Additionally, validate required arg presence and type
+  (e.g. `summary` is a non-empty `str`) *before* the DB call and return `_err`
+  on failure, so schema-invalid content is a clean rejection, not a caught
+  exception, and the DB is never needlessly touched.
+- **Socket timeout.** `conn.settimeout(N)` (≈5–10s) immediately after `accept`,
+  before `recv`, so a client that connects and holds cannot wedge the
+  single-threaded loop indefinitely. Single-threadedness may remain (document
+  it: a hostile client can still serialize others up to the timeout —
+  acceptable for this trusted, low-QPS broker), but an idle/slow client must
+  cost at most one timeout, never the daemon.
+- **Session state on restart — decision: acceptable to lose, and must be
+  in-memory, fail-closed.** Do **not** persist `_sessions` to disk. Persisting
+  live capability tokens enlarges the attack surface (a stolen persisted token
+  would outlive its session), and sessions are inherently ephemeral (one per
+  live sandbox). Correct behavior: on broker restart, outstanding tokens become
+  invalid — a token whose broker died should *not* keep working (fail closed).
+  The launcher (`launch_developer_session.py`) is the live source of truth for
+  the `token → task_id/agent` binding for as long as its sandbox runs, so it
+  must treat an "invalid or unknown session token" reply as a signal to
+  re-register (make `register_session` idempotent for the same token) or tear
+  the sandbox down — not something the sandboxed process can recover on its
+  own. And note: once B1's catch-all lands, the daemon no longer crashes on
+  client input, so `Restart=on-failure` fires only on genuine faults — the fix
+  is to stop the crashes, not to lean on restart. Fail-closed on a lost session
+  is the intended security posture, not a bug to paper over with persistence.
+
+### B2 (launch path) — intended mechanisms; Development implements
+
+All four are fixable in code/config now, no provisioning needed to get them
+right:
+
+1. **Broker env survives `sudo`.** Preferred: pass the *token* as data via a
+   file, not an env var — write it to a `0640` file owned by the launcher,
+   group `ai-pipeline-dev`, and have the wrapper read it (same "content as
+   data" discipline as the prompt file). This also keeps the token out of the
+   process table and `/proc/<pid>/environ`. The non-secret socket *path* may
+   stay an env var, but then the sudoers line needs a `SETENV:` tag and the
+   `sudo` call `--preserve-env=OPSDB_BROKER_SOCKET` (named var only, never a
+   blanket passthrough). The wrapper still `--setenv`s both into the sandbox,
+   which is fine (sandbox-internal).
+2. **Prompt file readable by `ai-developer`.** Do not rely on
+   `tempfile.mkdtemp()`'s `0700`. Write the prompt file into the per-task
+   worktree, which is already bind-mounted and group-shared via
+   `ai-pipeline-dev` (§4.4), with the file `0640 <founder>:ai-pipeline-dev`; or,
+   if a separate scratch dir is used, `chmod 0710` + `chgrp ai-pipeline-dev` the
+   dir so `ai-developer` (a group member) can traverse and read. Prefer the
+   worktree — it already carries the correct group and mode.
+3. **Broker does not run as root.** Set `User=`/`Group=` in
+   `opsdb-broker.service` (the founder's account or `ai-pipeline-broker`, group
+   `ai-pipeline-db`), and set `OPSDB_BROKER_TRUSTED_UIDS` to the launcher's
+   (Founder's) UID so `SO_PEERCRED`-gated `register_session` accepts it. The
+   unit currently defaults to root, which both violates least-privilege and, via
+   `_default_trusted_uids() == {0}`, breaks registration. Runbook must state the
+   matching trusted-UID value.
+4. **Timeout kill works across UIDs.** The launcher (Founder UID) cannot
+   `killpg` a group of root-owned `sudo` and `ai-developer`-owned `bwrap`/
+   `claude` — `os.killpg` raises `PermissionError`. Primary mechanism: enforce
+   the wall-clock limit *inside* the sandbox, where the killer already has
+   permission — `bwrap … -- /usr/bin/timeout --signal=KILL <N> claude …` — so
+   expiry is enforced by `ai-developer` against `ai-developer`'s own process,
+   and `--die-with-parent` reaps the rest of the tree. Backstop: add a
+   `PermissionError` handler to `agent_runtime._kill_process_group()` so the
+   launcher's outer timer degrades gracefully (close the stream, record
+   `timed_out`) instead of throwing in the timer thread; if a hard outer kill of
+   the privileged tree is ever required, do it via a narrowly-scoped
+   `sudo -u ai-developer kill` (an `ai-developer`-owned signal to its own group),
+   never a blanket sudoers grant. Recommend primary = inner `timeout` +
+   `--die-with-parent`; the outer timer is only a backstop.
+
+### B4 (trust-flag) — the honest disposition: redundant inside the sandbox, do not claim it as a live layer
+
+Code Review is right on the mechanism: with `CLAUDE_CONFIG_DIR=/tmp/claude-config`
+on an empty tmpfs that resets every session, `hasTrustDialogAccepted` can never
+be true inside the sandbox, so `developer_pretooluse.py`'s `PreToolUse` hook —
+already skipped in `-p`/print mode when the workspace is untrusted, per the
+hook-invocation investigation — never fires inside the sandbox. §5 point 1
+called shipping the trust-flag write "load-bearing … or the hook layer is
+inert." The honest disposition, given everything else this milestone now is:
+
+**The in-sandbox hook layer is genuinely redundant, and we should stop
+claiming it as defense-in-depth inside the sandbox — not seed a trust flag to
+force it to fire.** The whole reason this milestone moved to namespaces (§2.2)
+is that string-pattern `PreToolUse` hooks are defeatable by subprocess
+indirection, symlinks, and encoding. Inside the sandbox those bypasses are
+*moot* — containment is now structural and kernel-enforced (filesystem/network/
+PID namespaces + the broker), which is strictly stronger than anything a
+denylist hook could add. A redundant weaker layer that also *cannot fire* is
+not defense-in-depth; claiming it would be exactly the "overclaim a layer that
+can't actually fire" the review warns against. So:
+
+- **Do not add a trust-seed step for the sandbox.** We are not relying on the
+  hook inside the sandbox, so there is nothing to make fire. (Separately: the
+  hook-invocation investigation established the trust dialog is *skipped* in
+  non-interactive `-p` mode, so `claude` runs inside the sandbox without a
+  seeded trust flag; if `CLAUDE_CONFIG_DIR` needs seeding for unrelated runtime
+  reasons, that is a functional detail for Development, not a containment layer.)
+- **Correct §5 point 1 and the `developer.md` persona note.** §5 point 1's
+  "must ship in the same pass or the hook layer is inert" is superseded: inside
+  the sandbox the hook layer is *intentionally* superseded by the namespace
+  containment, not broken-and-fixable. The persona note's "both are real" claim
+  must be corrected so it does not present the in-sandbox hook as a second live
+  layer — it is not.
+- **The trust-flag concern remains real only for the non-sandboxed roles**
+  (`qa`/`cto`/`devops`), which stay on native in-process invocation and still
+  share the global trust file — exactly what the generalized `trust_flag_monitor`
+  (§5 point 4, already shipped and tested) covers. That layer is correct and
+  stays. This is the truthful "it can't fire inside the sandbox, and it doesn't
+  need to" answer, not a papered-over gap.
+
+This addendum, like the first Correction, goes to Red Team as the required,
+non-skippable gate before Development resumes.
