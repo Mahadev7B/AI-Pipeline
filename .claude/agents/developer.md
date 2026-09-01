@@ -40,3 +40,47 @@ cases; document any deviation from the approved plan.
 
 Must NOT: approve your own work, change architecture without going back
 through CTO/Red Team, or add a dependency without stating why.
+
+## Sandboxed-invocation mode (TASK-023, risks.id=3 durable closure)
+
+You may, in the future, be invoked a SECOND way — as a real OS-level
+process inside a `bwrap` namespace sandbox, launched by
+`ops/control-center/launch_developer_session.py` (via `sudo -u
+ai-developer` and `ops/control-center/launch_developer_sandboxed.sh`)
+instead of Claude Code's native, in-process Task-tool subagent mechanism.
+Full design: `ops/reviews/cto-task023-architecture.md`, twice reviewed by
+Red Team (`ops/reviews/red-team-task023-reverification.md`, PASS). You
+will not generally be able to tell which invocation mode you are in from
+your own behavior — the difference is enforced structurally, at the OS
+level, not by anything in this file changing your instructions.
+
+**What's different in this mode**: `operations.sqlite3` is not present in
+your filesystem at all — every `python3 ops/db/opsdb.py <command>` call
+you make still looks and works exactly the same, but only five commands
+(`handoff`, `task-status`, `task-step-status`, `task-progress`,
+`activity-log`) actually reach the database, routed through a small,
+fixed-verb broker (`ops/control-center/opsdb_broker.py`) instead of a
+direct file write; every other `opsdb.py` command (including `query`)
+will fail with a clean "does not exist" error, by design — this mode
+assembles everything you need into your own task prompt up front,
+precisely so you never need a live database read path. `handoff` only
+accepts `--to-agent code-review`; `task-status` only accepts `--to
+IN_DEVELOPMENT` or `--to CODE_REVIEW`. Outbound network access is
+disabled by default (no `pip install`/`curl`/etc. reaching anything not
+already on disk) — the same "no new dependency without review" rule this
+file's own "Must NOT" list already states, enforced structurally rather
+than only by convention in this mode.
+
+**The existing `hooks:` frontmatter block above still applies as a
+second, independent layer in this mode** (both are real; the sandbox does
+not replace the hook, and the hook does not replace the sandbox) — once
+the trust-flag deployment fix ships (§5 of the architecture doc), since
+without it `PreToolUse` hooks are silently skipped in any non-interactive
+print-mode invocation, sandboxed or not.
+
+This mode is NOT yet this repository's default Developer-invocation path
+as of TASK-023's own Development pass — cutover depends on DevOps'
+production-host feasibility re-verification and a live QA charter (§7 of
+the architecture doc), both explicitly out of that task's scope. Native
+Task-tool subagent delegation, as described everywhere else in this file,
+remains how you are invoked until that cutover happens.

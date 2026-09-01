@@ -1,0 +1,40 @@
+[Unit]
+Description=ai-pipeline opsdb broker (TASK-023) — the only process besides a human/CLI that opens operations.sqlite3 on behalf of a sandboxed Developer session
+Documentation=file:///home/user/AI-Pipeline/ops/reviews/cto-task023-architecture.md file:///home/user/AI-Pipeline/ops/reviews/task023-os-provisioning-runbook.md
+After=network.target
+
+[Service]
+Type=simple
+# Runs as the Founder's own account by default, per the architecture doc
+# (ops/reviews/cto-task023-architecture.md §3 point 2: "the Founder's own
+# user, or a dedicated trusted ai-pipeline-broker system account — never
+# as ai-developer"). Uncomment and adjust the User=/Group= lines below if
+# provisioning a separate ai-pipeline-broker account instead — see the
+# runbook's "Option B" for the matching OPSDB_BROKER_TRUSTED_UIDS value
+# that keeps the launcher (running as the Founder's own user) able to
+# register sessions.
+#
+# User=ai-pipeline-broker
+# Group=ai-pipeline-db
+WorkingDirectory=/home/user/AI-Pipeline
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/opsdb_broker.py
+Restart=on-failure
+RestartSec=5
+# The socket directory (/run/ai-pipeline) must exist and be group-owned
+# by ai-pipeline-db before this unit starts — see the runbook, step 5.
+RuntimeDirectory=ai-pipeline
+RuntimeDirectoryMode=0770
+
+# Defense in depth beyond the application-level controls already in
+# opsdb_broker.py itself (the 5-verb allowlist, session-token binding,
+# SO_PEERCRED-gated registration) — standard systemd sandboxing for a
+# process that, unlike ai-developer's own bwrap sandbox, DOES need real
+# read/write access to operations.sqlite3.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/user/AI-Pipeline/ops/db /run/ai-pipeline
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
