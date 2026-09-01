@@ -275,10 +275,22 @@ the Founder-facing UI may be called **100% feature-complete**; the
 Founder was explicit that this definition is not to be narrowed after
 the fact:
 
-- **Milestone A** — Active Work dashboard (company-wide, at-a-glance) +
-  Task Detail page, shipped together (they share one computed progress
-  model; a dashboard linking to a nonexistent detail page would be a
-  broken experience).
+- **Milestone A — DONE (TASK-019):** Active Work dashboard
+  (`/active-work.html`) + Task Detail page (`/tasks/<id>.html`), shipped
+  together (they share one computed progress model). Cleared CTO
+  architecture, Design review, Red Team, Development (two fix rounds),
+  Code Review (three rounds), QA (two rounds), a focused Security review,
+  and CTO final conformance (CONFORMS, no drift) — see
+  `ops/reviews/cto-milestone-a-architecture.md`,
+  `ops/reviews/design-review-milestone-a.md`,
+  `ops/reviews/red-team-milestone-a-review.md`,
+  `ops/reviews/cto-milestone-a-conformance.md`. Two real defects were
+  caught and fixed along the way: `gates_remaining()`/`gates_completed()`
+  both needed correction for backward transitions and gate re-entry
+  (ordinary parts of this system's own reject/rework loop, not edge
+  cases) — both are now regression-tested (`ops/db/test_gates_remaining.py`,
+  34 checks). Every dead `pipeline.html#task-{id}` anchor across the
+  product now links to a real Task Detail page.
 - **Milestone B** — Company-wide AI cost visibility (all four invocation
   paths — Ask-Agent, Executive Meetings, Chief of Staff, automated Code
   Review — persist the cost they already compute; today only the
