@@ -194,11 +194,15 @@ class EgressProxy:
         self.config_path = config_path
         self._config = config  # injectable for tests; else loaded at serve_forever()
 
-    def _dial(self, config: AllowlistConfig, host: str, port: int) -> socket.socket:
+    def _dial(self, config: AllowlistConfig, host: str, port: int) -> tuple[socket.socket, bytes]:
         """Open a socket to the (already-allowlisted) destination. Chains
         through the configured upstream proxy if set, else connects
         directly — resolving `host` host-side in this trusted process
-        either way (clause 3)."""
+        either way (clause 3).
+
+        Returns `(sock, early_bytes)`, where `early_bytes` is any payload the
+        upstream proxy coalesced after its own `200` response header block
+        and which therefore still owes delivery to the client."""
         if config.upstream_proxy is not None:
             up_host, up_port = config.upstream_proxy
             sock = socket.create_connection((up_host, up_port), timeout=_IO_TIMEOUT_S)
@@ -206,16 +210,19 @@ class EgressProxy:
                 sock.sendall(
                     f"CONNECT {host}:{port} HTTP/1.1\r\nHost: {host}:{port}\r\n\r\n".encode("ascii")
                 )
-                resp = _read_header_block(sock)
-                status_line = resp.split(b"\r\n", 1)[0] if resp else b""
+                read = _read_header_block(sock)
+                if read is None:
+                    raise OSError("upstream proxy closed before a complete CONNECT response")
+                resp, early = read
+                status_line = resp.split(b"\r\n", 1)[0]
                 if b" 200 " not in status_line and not status_line.endswith(b" 200"):
                     raise OSError(f"upstream proxy refused CONNECT: {status_line!r}")
-                return sock
+                return (sock, early)
             except OSError:
                 sock.close()
                 raise
         # Direct: create_connection resolves the hostname host-side.
-        return socket.create_connection((host, port), timeout=_IO_TIMEOUT_S)
+        return (socket.create_connection((host, port), timeout=_IO_TIMEOUT_S), b"")
 
     def handle_connection(self, conn: socket.socket, config: AllowlistConfig) -> None:
         """The full per-connection logic, factored out of the accept loop
@@ -223,10 +230,11 @@ class EgressProxy:
         also guards it, but a single bad connection must cost exactly one
         connection, never the daemon."""
         conn.settimeout(_IO_TIMEOUT_S)
-        header = _read_header_block(conn)
-        if header is None:
+        read = _read_header_block(conn)
+        if read is None:
             _reject(conn, b"400 Bad Request", "no complete request header received")
             return
+        header, client_early = read
         target = parse_connect_target(header)
         if target is None:
             _reject(conn, b"400 Bad Request", "malformed or non-CONNECT request")
@@ -241,12 +249,20 @@ class EgressProxy:
             _reject(conn, b"403 Forbidden", f"{host}:{port} is not in the egress allowlist")
             return
         try:
-            upstream = self._dial(config, host, port)
+            upstream, upstream_early = self._dial(config, host, port)
         except OSError as exc:
             _reject(conn, b"502 Bad Gateway", f"could not reach allowlisted destination: {exc}")
             return
         try:
             conn.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+            # Hand over anything that arrived early on either side BEFORE the
+            # pump starts, in the right direction, so no byte is ever lost:
+            # a pipelined client request body goes upstream, and payload the
+            # upstream proxy coalesced with its 200 goes to the client.
+            if client_early:
+                upstream.sendall(client_early)
+            if upstream_early:
+                conn.sendall(upstream_early)
             _tunnel(conn, upstream)
         finally:
             upstream.close()
@@ -288,13 +304,20 @@ class EgressProxy:
 
 # ------------------------------------------------------------------- I/O --
 
-def _read_header_block(sock: socket.socket) -> bytes | None:
-    """Read until the CRLFCRLF end-of-headers terminator. Returns the bytes
-    up to and including the first terminator, or None if the peer closed
-    first (ambiguous — fail closed) or the header block exceeds the ceiling.
-    Any bytes after the terminator are TLS/tunnel payload and are handled by
-    the tunnel pump; a well-behaved CONNECT client waits for the 200 before
-    sending them, so there are normally none."""
+def _read_header_block(sock: socket.socket) -> tuple[bytes, bytes] | None:
+    """Read until the CRLFCRLF end-of-headers terminator. Returns
+    `(header, leftover)` — the bytes up to and including the first
+    terminator, plus anything that arrived AFTER it in the same read — or
+    None if the peer closed first (ambiguous — fail closed) or the header
+    block exceeds the ceiling.
+
+    The leftover is real tunnel payload and the caller MUST forward it after
+    dialling (Code Review non-blocking item): a well-behaved CONNECT client
+    waits for the `200` before sending anything, so there is normally none,
+    but a client that pipelines (or a TLS ClientHello coalesced into the same
+    TCP segment) previously had those bytes silently DROPPED here — which
+    would surface as a TLS handshake that stalls until the 30s idle timeout
+    with no diagnostic. Never discard them."""
     buf = bytearray()
     while b"\r\n\r\n" not in buf:
         try:
@@ -306,7 +329,8 @@ def _read_header_block(sock: socket.socket) -> bytes | None:
         buf.extend(chunk)
         if len(buf) > _MAX_HEADER_BYTES:
             return None
-    return bytes(buf)
+    header, _, leftover = bytes(buf).partition(b"\r\n\r\n")
+    return (header + b"\r\n\r\n", leftover)
 
 
 def _reject(conn: socket.socket, status: bytes, detail: str) -> None:

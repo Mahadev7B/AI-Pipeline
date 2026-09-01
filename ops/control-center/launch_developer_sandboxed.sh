@@ -140,11 +140,58 @@ fi
 # environment's install layout.
 CLAUDE_INSTALL_DIR="/opt/claude-code"
 CLAUDE_BIN="${CLAUDE_INSTALL_DIR}/bin/claude"
+if [ ! -x "$CLAUDE_BIN" ]; then
+  echo "error: the claude CLI was not found at $CLAUDE_BIN" >&2
+  echo "(this wrapper binds only $CLAUDE_INSTALL_DIR — a different install layout" >&2
+  echo "needs a reviewed change to the bind set, not an ad-hoc widening)" >&2
+  exit 1
+fi
 
-# Coreutils absolute paths — the sandbox has /usr bound but no guaranteed
-# PATH; name them absolutely so the exec below never depends on $PATH.
-TIMEOUT_BIN="/usr/bin/timeout"
-PYTHON_BIN="/usr/bin/python3"
+# bwrap itself — absolute, like every other binary in this exec chain, so
+# the launch never depends on sudo's `secure_path` (Code Review non-blocking
+# item: bwrap was the one non-absolute name in an otherwise fully-absolute
+# chain).
+BWRAP_BIN="/usr/bin/bwrap"
+if [ ! -x "$BWRAP_BIN" ]; then
+  echo "error: bubblewrap not found at $BWRAP_BIN — install it (apt-get install -y bubblewrap)" >&2
+  echo "see ops/reviews/task023-os-provisioning-runbook.md step 4" >&2
+  exit 1
+fi
+
+# Coreutils/interpreter absolute paths — the sandbox has /usr bound but no
+# guaranteed PATH; name them absolutely so the exec below never depends on
+# $PATH.
+#
+# CODE REVIEW R1 (reproduced live): these must be REAL paths, resolved
+# HOST-SIDE, so that this wrapper's own exec chain does not depend on any
+# /etc indirection being visible inside the namespace. On this host
+# `/usr/bin/python3` is a symlink to `/etc/alternatives/python3` ->
+# `/usr/bin/python3.11`; with `/etc` unbound, exec'ing the unresolved path
+# fails with `failed to run command '/usr/bin/python3': No such file or
+# directory`. `readlink -f` runs out here, on the host, where the whole of
+# /etc is readable. (A narrow read-only /etc/alternatives bind IS added
+# below, but only so Developer's own `python3 ...` commands work inside the
+# sandbox — the launch itself must not depend on it, and does not.)
+TIMEOUT_BIN="$(readlink -f /usr/bin/timeout 2>/dev/null || true)"
+PYTHON_BIN="$(readlink -f /usr/bin/python3 2>/dev/null || true)"
+for resolved in "$TIMEOUT_BIN" "$PYTHON_BIN"; do
+  if [ -z "$resolved" ] || [ ! -x "$resolved" ]; then
+    echo "error: could not resolve a required interpreter/binary to a real path" >&2
+    echo "(timeout='$TIMEOUT_BIN' python3='$PYTHON_BIN')" >&2
+    exit 1
+  fi
+  # Every exec'd binary must live under a path this script actually binds
+  # read-only into the namespace. /usr is the only such tree for these two;
+  # anything else means the host layout changed and this wrapper must be
+  # re-reviewed rather than silently widened to make it work.
+  case "$resolved" in
+    /usr/*) ;;
+    *)
+      echo "error: $resolved resolves outside /usr, which is the only system tree this" >&2
+      echo "wrapper binds — refusing to widen the bind set implicitly. Re-review §4.4." >&2
+      exit 1 ;;
+  esac
+done
 
 # Fixed loopback endpoint the in-sandbox relay binds and claude is pointed
 # at via HTTPS_PROXY (the relay sets HTTPS_PROXY itself, in-process, before
@@ -155,12 +202,28 @@ EGRESS_RELAY_PORT="8889"
 BWRAP_ARGS=(
   --unshare-all
   --die-with-parent
-  --ro-bind /usr /usr
-  --ro-bind "$CLAUDE_INSTALL_DIR" "$CLAUDE_INSTALL_DIR"
-  --ro-bind "$RELAY_SCRIPT" "$RELAY_SCRIPT"
+  # Code Review non-blocking item: start from an EMPTY environment rather
+  # than whatever sudo's env_keep happens to let through, then re-assert
+  # only the variables named below. This also neutralizes any ambient
+  # http_proxy/https_proxy/no_proxy on the host — an inherited NO_PROXY
+  # entry could otherwise make `claude` bypass the in-sandbox relay for
+  # that host and fail with an unexplained no-route error. Must come FIRST:
+  # bwrap applies these arguments in order, so a --setenv before
+  # --clearenv would be wiped.
+  --clearenv
+  # ORDER MATTERS, and bwrap applies these in sequence: the pseudo/virtual
+  # filesystems go FIRST so that a later, more specific bind can never be
+  # silently shadowed by one of them. (Observed for real while verifying
+  # R1: with `--tmpfs /tmp` emitted after a `--ro-bind` of a path that
+  # happened to live under /tmp, the tmpfs hid the bind and the exec failed
+  # with a bare "No such file or directory". A deployment whose worktree or
+  # scratch paths live under /tmp would have hit exactly that.)
   --proc /proc
   --dev /dev
   --tmpfs /tmp
+  --ro-bind /usr /usr
+  --ro-bind "$CLAUDE_INSTALL_DIR" "$CLAUDE_INSTALL_DIR"
+  --ro-bind "$RELAY_SCRIPT" "$RELAY_SCRIPT"
   --bind "$WORKTREE_PATH" "$WORKTREE_PATH"
   --bind "$OPSDB_BROKER_SOCKET" "$OPSDB_BROKER_SOCKET"
   # B3: the ONE permitted egress path — a single bind-mounted Unix socket to
@@ -185,16 +248,83 @@ BWRAP_ARGS=(
   # disposition; do NOT seed a trust flag to force an inert, redundant hook.
   --setenv CLAUDE_CONFIG_DIR /tmp/claude-config
   --setenv HOME /tmp
+  # --clearenv above means NOTHING is inherited, so the basics have to be
+  # re-asserted explicitly here or the sandboxed process gets no PATH at all.
+  --setenv PATH /usr/local/bin:/usr/bin:/bin
+  --setenv LANG C.UTF-8
+  --setenv TERM dumb
   --chdir "$WORKTREE_PATH"
 )
 
-# /bin, /lib, /lib64 are symlinks into /usr on this host (confirmed during
-# Development: `readlink /bin` -> usr/bin) — already reachable via the /usr
-# bind above. Left as a conditional for portability to a host where they
-# are real, separate directories (§4.4's "symlinks or real binds").
-for real_dir in /bin /lib /lib64; do
-  if [ -d "$real_dir" ] && [ ! -L "$real_dir" ]; then
-    BWRAP_ARGS+=(--ro-bind "$real_dir" "$real_dir")
+# CODE REVIEW R1 (reproduced live by the reviewer AND re-reproduced here):
+# bwrap starts from an EMPTY root and creates only the paths it is told to.
+# It does NOT recreate this host's `/lib64 -> usr/lib64` symlink just
+# because /usr is bound. Every dynamically-linked binary here asks the
+# kernel for interpreter `/lib64/ld-linux-x86-64.so.2`, so with nothing
+# emitted for /bin, /lib, /lib64 the sandbox cannot exec ANYTHING:
+#
+#   bwrap ... --ro-bind /usr /usr ... -- /usr/bin/timeout ... /usr/bin/echo hello
+#   -> bwrap: execvp /usr/bin/timeout: No such file or directory   (exit 1)
+#
+# Re-creating the symlinks with --symlink makes the identical command print
+# `hello`, exit 0. The previous version of this loop emitted NOTHING in the
+# symlink case, with a comment claiming /usr covered it; it does not.
+for sys_path in /bin /sbin /lib /lib32 /lib64 /libx32; do
+  if [ -L "$sys_path" ]; then
+    # Re-create the host's own symlink INSIDE the namespace (e.g.
+    # `usr/bin` for /bin). --symlink takes the link target first.
+    link_target="$(readlink "$sys_path")"
+    if [ -n "$link_target" ]; then
+      BWRAP_ARGS+=(--symlink "$link_target" "$sys_path")
+    fi
+  elif [ -d "$sys_path" ]; then
+    # A host where these are real, separate directories (§4.4's "symlinks
+    # or real binds") — bind them read-only instead.
+    BWRAP_ARGS+=(--ro-bind "$sys_path" "$sys_path")
+  fi
+done
+
+# /etc: NARROW, ENUMERATED binds only — never a blanket `--ro-bind /etc
+# /etc`. The egress allowlist config lives at
+# /etc/ai-pipeline/egress-allowlist.json and MUST stay invisible inside the
+# sandbox (architecture doc Addendum B3: "not bind-mounted into the
+# sandbox"; Red Team verified property #5: the sandboxed Developer, even as
+# root in its own user namespace, cannot read or widen it). A whole-/etc
+# bind would hand it straight to the sandbox.
+#
+# What is actually needed, derived by exec'ing inside the sandbox rather
+# than by reasoning about it:
+#   * /etc/alternatives, read-only. NOT needed for this wrapper's own exec
+#     chain — TIMEOUT_BIN/PYTHON_BIN are resolved to real paths host-side
+#     above, so the launch works even without it — but a plain `python3` (or
+#     `editor`, `awk`, ...) PATH lookup inside the sandbox goes through
+#     /usr/bin/python3 -> /etc/alternatives/python3, and Developer's own
+#     legitimate work runs `python3` constantly. Verified inside a real
+#     sandbox: without this bind, `python3 -c ...` fails "No such file or
+#     directory"; with it, it runs. It contains only symlinks — no secret,
+#     and NOT the allowlist config, which is what the guard below enforces.
+#   * /etc/ssl (+ /etc/pki on RH-family hosts) for the system CA bundle, so
+#     TLS from the sandboxed CLI to the model API can verify a chain.
+#   * /etc/passwd + /etc/group, read-only, so getpwuid()/getgrgid() resolve
+#     the sandbox's own uid (Node's os.userInfo() and git both call them).
+#     Both are world-readable on the host and carry no secret.
+# Deliberately NOT bound: /etc itself, /etc/shadow, /etc/sudoers*,
+# /etc/ai-pipeline (the egress allowlist).
+# Mirrors egress_proxy.DEFAULT_CONFIG_PATH's directory and the runbook's §6b
+# location. If a deployment moves the config, move this with it — the guard
+# below is only as good as this value.
+EGRESS_ALLOWLIST_DIR="/etc/ai-pipeline"   # host-only — must NEVER be reachable inside
+for etc_path in /etc/alternatives /etc/ssl /etc/pki /etc/passwd /etc/group; do
+  # Fail closed if this list ever grows into something that would expose the
+  # allowlist config (e.g. a well-meaning future "/etc" entry).
+  case "$EGRESS_ALLOWLIST_DIR/" in
+    "$etc_path"/*)
+      echo "error: refusing to bind $etc_path — it would expose $EGRESS_ALLOWLIST_DIR" >&2
+      echo "inside the sandbox, breaking the B3 allowlist trust boundary." >&2
+      exit 1 ;;
+  esac
+  if [ -e "$etc_path" ]; then
+    BWRAP_ARGS+=(--ro-bind "$etc_path" "$etc_path")
   fi
 done
 
@@ -223,7 +353,7 @@ DEVELOPER_MAX_BUDGET_USD="5.00"
 # loopback, then forks+execs claude with the argv below passed through
 # unchanged (no shell re-interpretation of $PROMPT_TEXT — it is a single
 # argv element handed to os.execv). See egress_relay.py's own docstring.
-exec bwrap "${BWRAP_ARGS[@]}" -- \
+exec "$BWRAP_BIN" "${BWRAP_ARGS[@]}" -- \
   "$TIMEOUT_BIN" --signal=KILL "$WALLCLOCK_S" \
   "$PYTHON_BIN" "$RELAY_SCRIPT" \
   "$CLAUDE_BIN" \

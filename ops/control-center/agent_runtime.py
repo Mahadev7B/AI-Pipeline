@@ -42,6 +42,7 @@ import json
 import os
 import signal
 import subprocess
+import sys
 import threading
 from dataclasses import dataclass
 
@@ -369,11 +370,19 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
     )
 
 
-def _kill_process_group(proc: subprocess.Popen) -> None:
+def _kill_process_group(proc: subprocess.Popen) -> bool:
+    """SIGKILL the child's whole process group. Returns True if the group is
+    gone (killed, or already dead), False if this process was NOT PERMITTED
+    to signal it — a real outcome the caller must handle, not swallow.
+
+    Existing callers may ignore the return value (nothing changes for them);
+    launch_developer_session.py's timeout backstop uses it.
+    """
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        return True
     except ProcessLookupError:
-        pass
+        return True  # already gone — the desired end state either way
     except PermissionError:
         # TASK-023 B2.4 backstop: when this function is reused by
         # launch_developer_session.py, the process group can contain
@@ -384,8 +393,29 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
         # `timeout --signal=KILL` running as `ai-developer` against its own
         # process (launch_developer_sandboxed.sh), plus bwrap
         # `--die-with-parent`; this outer kill is only a backstop, so a
-        # cross-UID permission failure must degrade gracefully (the caller
-        # records `timed_out` and closes the stream) rather than throw in a
-        # timer thread and be lost. See launch_developer_session.py's own
-        # kill path for where this is relied on.
-        pass
+        # cross-UID permission failure must degrade gracefully rather than
+        # throw in a timer thread and be lost.
+        #
+        # CODE REVIEW R3: "degrade gracefully" must not mean "silently".
+        # This is exactly the case the branch exists for, so it is LOUD —
+        # it says what failed and what the caller must now do about it. The
+        # caller (see launch_developer_session.py's `_on_timeout` /
+        # `_stream_process_output`) is responsible for not blocking forever
+        # on a stream belonging to a process nobody could kill.
+        sys.stderr.write(
+            f"[agent_runtime] WARNING: not permitted to SIGKILL process group "
+            f"{_safe_pgid(proc)} (pid {proc.pid}) — a cross-UID kill was refused. "
+            "The outer timeout backstop could NOT enforce the wall clock; the "
+            "sandbox's own inner `timeout --signal=KILL` and bwrap "
+            "--die-with-parent are now the only enforcement.\n"
+        )
+        sys.stderr.flush()
+        return False
+
+
+def _safe_pgid(proc: subprocess.Popen) -> object:
+    """Process-group id for a log line, never raising in an error path."""
+    try:
+        return os.getpgid(proc.pid)
+    except OSError:
+        return "unknown"

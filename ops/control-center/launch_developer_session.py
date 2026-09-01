@@ -36,9 +36,13 @@ Founder's own user (never as `ai-developer`). Concretely:
      <wallclock>` inside the sandbox (B2.4 — run as ai-developer against
      its own tree, where the killer has permission, plus bwrap
      `--die-with-parent`). This launcher keeps only a BACKSTOP outer timer
-     reusing agent_runtime._kill_process_group() — now hardened to swallow
-     the PermissionError a Founder-UID `killpg` of the root/ai-developer
-     process group would otherwise raise in the timer thread.
+     reusing agent_runtime._kill_process_group() — hardened so the
+     PermissionError a Founder-UID `killpg` of the root/ai-developer
+     process group raises is reported (a loud stderr warning) and returned
+     as `False` rather than thrown away in the timer thread. When that
+     happens the launcher stops draining the child's stdout, returns
+     `abandoned=True`/`ok=False` with an explicit error, and never blocks
+     forever on a process nobody was permitted to kill (Code Review R3).
   6. Calls `end_session` on the broker when the sandboxed process exits
      (success, failure, or timeout alike) so a stale token cannot be
      reused for anything ever again.
@@ -66,10 +70,12 @@ from __future__ import annotations
 import argparse
 import os
 import secrets
+import select
 import shutil
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -98,6 +104,13 @@ _SESSION_SCRATCH_DIRNAME = ".ai-pipeline-session"
 # launcher's own outer timer is only a BACKSTOP, so it is given extra grace
 # beyond the inner ceiling — the inner timeout should always fire first.
 _OUTER_TIMER_GRACE_S = 60.0
+
+# CODE REVIEW R3 knobs. The output reader polls rather than blocking, so the
+# timeout backstop can always make progress even when the kill was refused.
+_STREAM_POLL_S = 0.5        # how long a single select() on the child's stdout waits
+_POST_TIMEOUT_DRAIN_S = 5.0  # after the timeout fires, keep draining this long, then give up
+_ABANDON_WAIT_S = 5.0        # bounded final wait() on an abandoned (unkillable) child
+_READ_CHUNK = 65_536
 
 # PLACEHOLDER VALUE — see the identical disclosure in
 # launch_developer_sandboxed.sh next to DEVELOPER_MAX_BUDGET_USD. This is
@@ -213,6 +226,11 @@ def _write_session_files(worktree_path: Path, transcript: str, token: str) -> tu
     and survives `sudo`'s env_reset (B2.1)."""
     session_dir = worktree_path / _SESSION_SCRATCH_DIRNAME
     session_dir.mkdir(mode=0o750, exist_ok=True)
+    # mkdir(mode=...) is masked by the process umask (umask 077 would yield
+    # 0700 and reproduce Code Review's original B2.2: ai-developer cannot
+    # even traverse it), and exist_ok=True does not repair a pre-existing
+    # wrong mode. chmod explicitly, exactly as the two files below do.
+    session_dir.chmod(0o750)
     prompt_file = session_dir / "prompt.txt"
     prompt_file.write_text(transcript)
     prompt_file.chmod(0o640)
@@ -220,6 +238,49 @@ def _write_session_files(worktree_path: Path, transcript: str, token: str) -> tu
     token_file.write_text(token)
     token_file.chmod(0o640)
     return session_dir, prompt_file, token_file
+
+
+def _stream_process_output(proc: subprocess.Popen, timed_out: threading.Event) -> bool:
+    """Stream the child's combined stdout/stderr to our own stdout as it is
+    produced, WITHOUT ever blocking indefinitely (Code Review R3).
+
+    Returns True if the stream reached EOF — the normal path, including a
+    timeout whose kill actually worked — and False if we gave up on a stream
+    that never closed, which is exactly the refused-cross-UID-kill case the
+    B2.4 backstop exists for. The caller must treat False as "abandoned",
+    not as a clean exit.
+
+    Why not `for line in proc.stdout` plus a `close()` from the timer
+    thread: closing a buffered stream while another thread is blocked
+    reading it does not reliably unblock that reader (the reader holds the
+    stream's lock, and the close raises `RuntimeError: reentrant call`
+    instead). Polling the raw fd with select() and os.read() has no such
+    interaction, so the timeout is always able to take effect.
+    """
+    fd = proc.stdout.fileno()
+    out = sys.stdout.buffer
+    give_up_at: float | None = None
+    while True:
+        if timed_out.is_set() and give_up_at is None:
+            # Drain whatever the (possibly dying) child still has to say,
+            # then stop — bounded, so a survivor cannot block us forever.
+            give_up_at = time.monotonic() + _POST_TIMEOUT_DRAIN_S
+        if give_up_at is not None and time.monotonic() >= give_up_at:
+            return False
+        try:
+            readable, _, _ = select.select([fd], [], [], _STREAM_POLL_S)
+        except (OSError, ValueError):
+            return False
+        if not readable:
+            continue
+        try:
+            chunk = os.read(fd, _READ_CHUNK)
+        except OSError:
+            return False
+        if not chunk:
+            return True  # EOF — every writer of this pipe is gone
+        out.write(chunk)
+        out.flush()
 
 
 def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
@@ -262,14 +323,17 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
     env["OPSDB_BROKER_SOCKET"] = socket_path
     env["OPSDB_EGRESS_SOCKET"] = egress_socket_path
 
-    result = {"ok": False, "returncode": None, "timed_out": False, "error": None}
+    result = {"ok": False, "returncode": None, "timed_out": False,
+              "kill_refused": False, "abandoned": False, "error": None}
     proc = None
     try:
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            # Bytes, not text: the stream is drained with os.read() on the raw
+            # fd (see _stream_process_output) so a timer thread can never be
+            # blocked behind a buffered text read that will not return.
             env=env,
             start_new_session=True,  # own process group — agent_runtime._kill_process_group() needs this
         )
@@ -280,36 +344,72 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
         return result
 
     timed_out = threading.Event()
+    kill_refused = threading.Event()
 
     def _on_timeout() -> None:
         # B2.4 BACKSTOP ONLY — the inner `timeout --signal=KILL` (running as
         # ai-developer) is the primary enforcement. This outer killpg fires
-        # `_OUTER_TIMER_GRACE_S` later and, crucially, no longer throws in
-        # this timer thread if the cross-UID kill is refused:
-        # agent_runtime._kill_process_group() now swallows PermissionError
-        # (the process group holds root-owned `sudo` and ai-developer-owned
-        # `bwrap`/`claude` this Founder-UID process cannot signal). We still
-        # record `timed_out` and close the stream so the outcome is honest
-        # even if the outer kill is a no-op.
+        # `_OUTER_TIMER_GRACE_S` later and cannot throw in this timer thread
+        # if the cross-UID kill is refused: agent_runtime._kill_process_group()
+        # handles PermissionError (the process group holds root-owned `sudo`
+        # and ai-developer-owned `bwrap`/`claude` this Founder-UID process
+        # cannot signal) and returns False instead.
+        #
+        # CODE REVIEW R3: a timeout that cannot be enforced must be LOUD and
+        # must not hang. Setting `timed_out` alone was not enough — the
+        # reader was blocked on a stream that a surviving process never
+        # closes. So: record the timeout, record whether the kill was
+        # actually refused, and let _stream_process_output() (which polls
+        # `timed_out` between reads rather than blocking indefinitely) stop
+        # draining and return. Nothing here touches proc.stdout directly:
+        # closing a buffered stream from a second thread while the reader
+        # holds its lock does not reliably unblock the reader.
         timed_out.set()
-        agent_runtime._kill_process_group(proc)
+        if not agent_runtime._kill_process_group(proc):
+            kill_refused.set()
+            sys.stderr.write(
+                f"[launch_developer_session] WARNING: the outer wall-clock backstop "
+                f"could not kill the sandboxed session (pid {proc.pid}); it may still "
+                "be running under ai-developer. The session is being ABANDONED, not "
+                "reported as a clean exit. Check for a surviving `bwrap`/`claude` "
+                "process and see ops/reviews/task023-os-provisioning-runbook.md.\n"
+            )
+            sys.stderr.flush()
 
     timer = threading.Timer(timeout_s + _OUTER_TIMER_GRACE_S, _on_timeout)
     timer.start()
     try:
-        for line in proc.stdout:
-            sys.stdout.write(line)
-            sys.stdout.flush()
-        proc.wait()
+        reached_eof = _stream_process_output(proc, timed_out)
+        if reached_eof:
+            proc.wait()
+        else:
+            # The stream never closed after the timeout — do NOT wait
+            # forever on a process nobody was permitted to kill.
+            try:
+                proc.wait(timeout=_ABANDON_WAIT_S)
+            except subprocess.TimeoutExpired:
+                pass
     finally:
         timer.cancel()
+        try:
+            proc.stdout.close()
+        except OSError:
+            pass
         end_session(socket_path, token)
         shutil.rmtree(session_dir, ignore_errors=True)
 
     result["timed_out"] = timed_out.is_set()
+    result["kill_refused"] = kill_refused.is_set()
+    result["abandoned"] = not reached_eof
     result["returncode"] = proc.returncode
-    result["ok"] = (proc.returncode == 0) and not result["timed_out"]
-    if result["timed_out"]:
+    result["ok"] = (proc.returncode == 0) and not result["timed_out"] and reached_eof
+    if result["abandoned"]:
+        result["error"] = (
+            f"sandboxed Developer session exceeded {timeout_s:g}s and could NOT be killed "
+            "by this launcher (cross-UID kill refused); its output stream was abandoned "
+            "and the process may still be running as ai-developer"
+        )
+    elif result["timed_out"]:
         result["error"] = f"sandboxed Developer session exceeded {timeout_s:g}s and was killed"
     elif proc.returncode != 0:
         result["error"] = f"sandboxed Developer session exited with code {proc.returncode}"

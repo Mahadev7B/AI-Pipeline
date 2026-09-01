@@ -80,11 +80,16 @@ never be true and the hook is skipped — and even if it fired, a
 string-pattern denylist hook is strictly weaker than, and structurally
 superseded by, the kernel-enforced filesystem/network/PID namespaces plus
 the two brokers. Do not read the frontmatter hook as a second live layer
-in this mode; it is not. (The hook remains real and active in the ordinary,
-non-sandboxed Task-tool invocation path, where the trust flag is set — this
-correction is about the sandboxed mode only. The trust-flag concern for the
-still-native `qa`/`cto`/`devops` roles is covered separately by
-`ops/control-center/trust_flag_monitor.py`.)
+in this mode; it is not. (Nor is it currently live in the ordinary,
+non-sandboxed Task-tool path on THIS host: `python3
+ops/control-center/trust_flag_monitor.py` reports `NOT TRUSTED —
+hasTrustDialogAccepted is false or absent`, and `~/.claude.json`'s
+`projects["/home/user/AI-Pipeline"].hasTrustDialogAccepted` is `false`, so
+the hook is skipped there too until the separate trust-flag deployment fix
+ships. Do not treat the hook as a live layer anywhere on the strength of
+this file. The same trust-flag concern for the still-native
+`qa`/`cto`/`devops` roles is what `ops/control-center/trust_flag_monitor.py`
+exists to keep visible.)
 
 This mode is NOT yet this repository's default Developer-invocation path
 as of TASK-023's own Development pass — cutover depends on DevOps'

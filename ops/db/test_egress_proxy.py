@@ -19,7 +19,15 @@ daemon, no real external network):
      request-line target only (a Host-spoof to an allowlisted name does not
      smuggle a denied request-line host through).
   6. Parse ambiguity fails CLOSED: non-CONNECT method, no port, multiple
-     colons, IPv6 bracket form — none get a 200.
+     colons, IPv6 bracket form, non-decimal port, trailing junk — none get
+     a 200 (6 cases).
+  7. Bytes PIPELINED after the CRLFCRLF terminator are forwarded to the
+     destination rather than silently dropped (Code Review non-blocking
+     item — a dropped TLS ClientHello would stall the handshake for 30s
+     with no diagnostic).
+
+Emits 13 checks in total (2+1+1+1+1+6+1) — the count is stated here, and
+in the handoff, as an exact number rather than an estimate.
 
 Usage: python3 ops/db/test_egress_proxy.py
 """
@@ -196,6 +204,27 @@ def main() -> int:
     for label, raw in ambiguous.items():
         status = _request_status(sock_path, raw)
         check(f"parse ambiguity fails closed: {label} (no 200)", b"200" not in status, str(status))
+
+    # (7) bytes pipelined after the CRLFCRLF terminator must reach the
+    # destination, not be discarded with the header block.
+    sock = _open(sock_path)
+    try:
+        sock.sendall(f"CONNECT localhost:{dest_port} HTTP/1.1\r\n\r\nPIPELINED"
+                     .encode("ascii"))
+        got = b""
+        deadline = time.time() + 5.0
+        while b"ECHO:PIPELINED" not in got and time.time() < deadline:
+            try:
+                chunk = sock.recv(4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            got += chunk
+        check("bytes pipelined after CRLFCRLF are forwarded, not dropped",
+              b"200" in got and b"ECHO:PIPELINED" in got, str(got))
+    finally:
+        sock.close()
 
     dest_srv.close()
 

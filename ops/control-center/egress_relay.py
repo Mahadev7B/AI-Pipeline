@@ -127,6 +127,15 @@ def main() -> int:
         os.environ["HTTP_PROXY"] = f"http://{host}:{port}"
         os.environ["https_proxy"] = f"http://{host}:{port}"
         os.environ["http_proxy"] = f"http://{host}:{port}"
+        # Code Review non-blocking item: an ambient NO_PROXY/no_proxy entry
+        # would make the CLI bypass this relay for that host — and, since
+        # the sandbox has no route at all, the connection would then fail
+        # with an unexplained no-route error rather than a clean deny. The
+        # wrapper already uses `--clearenv`, so normally there is nothing to
+        # clear; belt-and-braces here because this relay is also runnable
+        # standalone (and misconfiguring egress must never fail *open*).
+        for name in ("NO_PROXY", "no_proxy", "ALL_PROXY", "all_proxy"):
+            os.environ.pop(name, None)
         try:
             os.execv(claude_argv[0], claude_argv)
         except OSError as exc:

@@ -52,6 +52,23 @@ nohup sleep 120 >/dev/null 2>&1 & echo "host pid: $!"
 bwrap --ro-bind / / --proc /proc --dev /dev --unshare-all --die-with-parent \
   /bin/sh -c 'ps aux; echo ---; ls /proc | head'
 # expect: the host PID from the line above does NOT appear anywhere
+
+# 5. THE WRAPPER'S OWN BIND SET CAN ACTUALLY EXEC (Code Review R1 — this
+#    exact check is why R1 existed: tests 1-4 all use `--ro-bind / /`,
+#    which the real wrapper deliberately does NOT, so they never caught a
+#    bind set that could not exec anything at all).
+bwrap --unshare-all --die-with-parent --clearenv \
+  --proc /proc --dev /dev --tmpfs /tmp \
+  --ro-bind /usr /usr --ro-bind /opt/claude-code /opt/claude-code \
+  --symlink usr/bin /bin --symlink usr/sbin /sbin \
+  --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+  --ro-bind /etc/alternatives /etc/alternatives --ro-bind /etc/ssl /etc/ssl \
+  --ro-bind /etc/passwd /etc/passwd --ro-bind /etc/group /etc/group \
+  --setenv PATH /usr/local/bin:/usr/bin:/bin --setenv HOME /tmp \
+  -- /usr/bin/timeout --signal=KILL 30 /opt/claude-code/bin/claude --version
+# expect: the claude version string, exit 0. (Adjust the --symlink lines if
+# this host has REAL /bin,/lib,/lib64 directories instead of symlinks into
+# /usr — the wrapper detects that itself; this hand-run check does not.)
 ```
 
 If any of these differ from `ops/reviews/cto-task023-architecture.md` §1's
@@ -211,6 +228,18 @@ Note: `/run` is typically a tmpfs that's recreated on reboot — both the
 `RuntimeDirectory=ai-pipeline` and handle this automatically; if you start
 either proxy some other way, re-run this step after every reboot.
 
+**What systemd actually does to this directory, and why both units pin
+`Group=ai-pipeline-db`** (Code Review non-blocking item): on start, systemd
+creates `/run/ai-pipeline` and **chowns it to that unit's `User=`/`Group=`**,
+overriding the manual `chgrp`/`chmod` above. If either unit ran with, say,
+the Founder's own primary group, the directory would become `0770
+<founder>:<founder-group>` and `ai-developer` could not traverse it to reach
+*either* socket. Both shipped units therefore set `Group=ai-pipeline-db`
+(not a placeholder — only `User=` is), and both set
+`RuntimeDirectoryPreserve=yes`, without which stopping either unit deletes
+the shared directory out from under the other one, taking its socket with
+it. Do not "simplify" either setting away.
+
 ---
 
 ## 6. Start `opsdb_broker.py` as a real, persistent service
@@ -225,12 +254,15 @@ refuses to start it until you set them — it will NEVER silently run as root
 `opsdb_broker._default_trusted_uids()` would become `{0}` and refuse the
 Founder-UID launcher's `register_session`). Pick one:
 
-- **Option A (simplest):** set `User=`/`Group=` to the Founder's own
-  account and primary group — the same account `launch_developer_session.py`
-  runs as — and leave `OPSDB_BROKER_TRUSTED_UIDS` unset (it defaults to the
-  broker's own UID, which is then also the launcher's UID: registration
-  just works, no extra config).
-- **Option B (dedicated account):** set `User=ai-pipeline-broker`,
+- **Option A (simplest):** set `User=` to the Founder's own account — the
+  same account `launch_developer_session.py` runs as — and leave
+  `OPSDB_BROKER_TRUSTED_UIDS` unset (it defaults to the broker's own UID,
+  which is then also the launcher's UID: registration just works, no extra
+  config). Leave `Group=ai-pipeline-db` as shipped (see step 5 for why it is
+  pinned rather than set to the Founder's primary group); the Founder's
+  account still opens the database as its owner, and systemd grants the unit
+  all of that account's supplementary groups as usual.
+- **Option B (dedicated account):** set `User=ai-pipeline-broker`, keep
   `Group=ai-pipeline-db`, and uncomment
   `Environment=OPSDB_BROKER_TRUSTED_UIDS=<founder numeric UID>` (from `id -u
   <founder-user>`) so the launcher — a different UID than the broker — can
@@ -275,8 +307,19 @@ NEVER `ai-developer` — with a host-owned allowlist config file that is NOT
 bind-mounted into the sandbox.
 
 First, write the allowlist config (owned by the trusted account or root,
-`0644`, NOT writable or readable by `ai-developer`, NOT under any
-bind-mounted path):
+`0644` — i.e. root-writable only, and world-READABLE on the host like most
+of `/etc`; the security property that matters is that it is **not
+bind-mounted into the sandbox**, so it is neither readable nor widenable
+from *inside* the sandbox, which is what Red Team verified as property #5.
+`launch_developer_sandboxed.sh` binds only an enumerated handful of `/etc`
+paths — `/etc/alternatives`, `/etc/ssl`, `/etc/pki`, `/etc/passwd`,
+`/etc/group` — never `/etc` itself, and it refuses to start if that list is
+ever edited into something that would expose `/etc/ai-pipeline`. Verified
+live during Development: with this file present on the host, `ls
+/etc/ai-pipeline` from inside the real sandbox reports it does not exist.
+If you prefer it unreadable on the host as well, `chmod 0640` and `chgrp`
+it to the egress proxy's own account — the proxy is the only process that
+reads it):
 
 ```bash
 sudo mkdir -p /etc/ai-pipeline
@@ -300,9 +343,20 @@ sudo chmod 0644 /etc/ai-pipeline/egress-allowlist.json
   then issues its own CONNECT to that upstream for allowlisted destinations.
   Leave `null` for a host with direct outbound to the API.
 
-Then install the unit (same REQUIRED `User=`/`Group=` edit discipline as
-the broker — intentionally-invalid placeholders, fails loud, never root,
-never `ai-developer`):
+Then install the unit (same REQUIRED `User=` edit discipline as the broker —
+an intentionally-invalid placeholder, fails loud with `217/USER`, never
+root, never `ai-developer`; `Group=ai-pipeline-db` is already correct and
+should be left alone, see step 5).
+
+Note on the unit's own sandboxing: it sets `ProtectSystem=strict`
+(everything read-only except the explicit `ReadWritePaths=`) but
+`ProtectHome=false`, matching `opsdb-broker.service`. `ProtectHome=true`
+would replace `/home` with an empty tmpfs inside the unit's mount
+namespace, and since both `WorkingDirectory=` and `ExecStart=` live under
+`/home/user/AI-Pipeline`, systemd would fail the unit at `200/CHDIR` and
+python would not find the script (reproduced during Development). If you
+relocate the repo outside `/home`, `ProtectHome=true` becomes correct
+again — change both units together.
 
 ```bash
 sudo cp /home/user/AI-Pipeline/ops/control-center/egress-proxy.service \

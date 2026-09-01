@@ -30,7 +30,16 @@ Type=simple
 #   below with the Founder's numeric UID (`id -u <founder-user>`) so the
 #   launcher — a different UID than the broker — can still register.
 User=__REPLACE_WITH_FOUNDER_USER_OR_ai-pipeline-broker__
-Group=__REPLACE_WITH_ITS_GROUP_OR_ai-pipeline-db__
+# Group is NOT a placeholder, under EITHER option: it must be ai-pipeline-db,
+# because systemd chowns RuntimeDirectory= to this unit's User=/Group= on
+# start, overriding the runbook's manual chgrp. With the Founder's own
+# primary group here (Option A's naive reading), /run/ai-pipeline becomes
+# 0770 founder:foundergroup and ai-developer cannot traverse it to reach
+# either socket (Code Review non-blocking item). The Founder's account keeps
+# DB access as the file's OWNER, and systemd still grants it all of its
+# supplementary groups, so pinning the primary group here costs nothing.
+# The invalid User= above is what keeps this unit failing closed (217/USER).
+Group=ai-pipeline-db
 # Environment=OPSDB_BROKER_TRUSTED_UIDS=__FOUNDER_NUMERIC_UID__   # Option B only
 # ======================================================================
 WorkingDirectory=/home/user/AI-Pipeline
@@ -38,10 +47,14 @@ Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/opsdb_broker.py
 Restart=on-failure
 RestartSec=5
-# The socket directory (/run/ai-pipeline) must exist and be group-owned
-# by ai-pipeline-db before this unit starts — see the runbook, step 5.
+# The socket directory (/run/ai-pipeline) is created and chowned to
+# User=/Group= by systemd. It is SHARED with egress-proxy.service, so
+# RuntimeDirectoryPreserve=yes is required: without it, stopping either unit
+# deletes the directory out from under the other one, taking its socket with
+# it (Code Review non-blocking item). See the runbook, step 5.
 RuntimeDirectory=ai-pipeline
 RuntimeDirectoryMode=0770
+RuntimeDirectoryPreserve=yes
 
 # Defense in depth beyond the application-level controls already in
 # opsdb_broker.py itself (the 5-verb allowlist, session-token binding,
