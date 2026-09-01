@@ -291,10 +291,20 @@ the fact:
   cases) — both are now regression-tested (`ops/db/test_gates_remaining.py`,
   34 checks). Every dead `pipeline.html#task-{id}` anchor across the
   product now links to a real Task Detail page.
-- **Milestone B** — Company-wide AI cost visibility (all four invocation
+- **Milestone B — DONE (TASK-020):** Company-wide AI cost visibility
+  (`/costs.html` + Meeting Detail's Cost panel). All five real invocation
   paths — Ask-Agent, Executive Meetings, Chief of Staff, automated Code
-  Review — persist the cost they already compute; today only the
-  automation poller does).
+  Review, and Synchronous review (display-only pending TASK-017) — now
+  persist and surface the cost they compute; previously only the
+  automation poller did. Cleared CTO architecture, Design review, Red
+  Team, Development (three fix rounds — the same Founder-facing copy
+  bug caught twice more after an incomplete first fix), Code Review
+  (three rounds), QA (with a genuine live end-to-end invocation test),
+  a focused Security review, and CTO final conformance (CONFORMS) — see
+  `ops/reviews/cto-milestone-b-architecture.md`,
+  `ops/reviews/design-review-milestone-b.md`,
+  `ops/reviews/red-team-milestone-b-review.md`,
+  `ops/reviews/cto-milestone-b-conformance.md`.
 - **Milestone C** — Company-wide Risks register (`risks.id=3` itself
   currently has no Founder-facing page anywhere in the product).
 - **Milestone D** — Project / Phase Progress, built on a small new

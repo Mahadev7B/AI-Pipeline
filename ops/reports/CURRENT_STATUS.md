@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-09-01 02:25 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-09-01 02:27 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 0 task(s) blocked, 0 high-severity open risk(s)
@@ -20,12 +20,12 @@ Generated 2026-09-01 02:25 UTC by `ops/db/report.py` from the live database — 
 - TASK-014 — Phase 2 Milestone 2B5: Review/QA Failure History & Release Readiness Visibility
 - TASK-015 — Phase 3A: Chief of Staff Founder Interface + Limited Automated Orchestration
 - TASK-019 — Milestone A: Active Work dashboard + Task Detail page
+- TASK-020 — Milestone B: Company-wide AI cost visibility
 
 ## In progress
 - TASK-016 — Risk id=3 architecture investigation: can agent access be scoped below the Bash tool-category level (FOUNDER_APPROVAL, owner: orchestrator, progress: not broken into steps)
 - TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist (ARCHITECTURE, owner: cto, progress: not broken into steps)
 - TASK-018 — Product architecture completion review: remaining Phase 3, Founder Work Progress capability, Founder Test Readiness definition, ROADMAP correction (ARCHITECTURE, owner: cto, progress: not broken into steps)
-- TASK-020 — Milestone B: Company-wide AI cost visibility (READY_TO_RELEASE, owner: cto, progress: not broken into steps)
 
 ## Blocked
 - none
