@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:3px;">The central design problem</div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">Five voices, never confusable</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:880px;">
+    The whole feature exists so the Founder never loses track of which of these they are reading. Every panel in the journey carries exactly one voice, and carries it the same way every time &mdash; a colour, a rule in a fixed position, a kicker that names the speaker, and an attribution line. Four signals, so no single one is load-bearing.
+  </div>
+
+  <!-- THE LEGEND, AS IT APPEARS IN THE APP -->
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:13px 16px; margin-bottom:22px;">
+    <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Who is speaking</div>
+      <div style="display:flex; align-items:center; gap:7px;"><div style="width:3px; height:13px; background:oklch(58% 0.015 250); border-radius:2px;"></div><div style="font-size:11px; color:#9aa0a8;">you said</div></div>
+      <div style="display:flex; align-items:center; gap:7px;"><div style="width:3px; height:13px; background:oklch(72% 0.12 250); border-radius:2px;"></div><div style="font-size:11px; color:#9aa0a8;">we think you mean</div></div>
+      <div style="display:flex; align-items:center; gap:7px;"><div style="width:3px; height:13px; background:oklch(70% 0.12 300); border-radius:2px;"></div><div style="font-size:11px; color:#9aa0a8;">what we think of it</div></div>
+      <div style="display:flex; align-items:center; gap:7px;"><div style="width:3px; height:13px; background:oklch(78% 0.14 75); border-radius:2px;"></div><div style="font-size:11px; color:#9aa0a8;">what we recommend</div></div>
+      <div style="display:flex; align-items:center; gap:7px;"><div style="width:3px; height:13px; background:oklch(72% 0.15 150); border-radius:2px;"></div><div style="font-size:11px; color:#9aa0a8;">you approved</div></div>
+    </div>
+    <div style="font-size:10.5px; color:#4e545c; margin-top:9px; line-height:1.5;">Rendered once in the page chrome, on every screen of the journey. The Founder learns the grammar in one glance and then never has to think about it again.</div>
+  </div>
+
+  <!-- THE FIVE -->
+  <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+
+    <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:16px 18px; border-left:3px solid oklch(58% 0.015 250);">
+      <div style="display:grid; grid-template-columns:200px 1fr 1fr; gap:18px; align-items:start;">
+        <div>
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; margin-bottom:6px;">You said</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Recessed ground, gray rule, quotation marks, <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px;">pre-wrap</span>. The one voice with no company colour at all &mdash; it is not the company&rsquo;s claim.</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Appears on every screen of the journey</b>, in the same place, from intake to execution. Never collapsed, never behind a tab, never summarised.</div>
+        <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6;"><b>Must never:</b> be edited, by anyone, including the Founder. Be paraphrased or tidied. Be sent downstream as the specification.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(72% 0.12 250);">
+      <div style="display:grid; grid-template-columns:200px 1fr 1fr; gap:18px; align-items:start;">
+        <div>
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.12 250); text-transform:uppercase; margin-bottom:6px;">We think you mean</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Blue rule &mdash; already the colour of &ldquo;an agent produced this and it is waiting on you.&rdquo; Sits directly beside the gray, always, so the comparison is free.</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Concise questions 1 and 2.</b> Carries an attribution line naming the round and the version, because the reading changes between rounds and the Founder&rsquo;s words do not.</div>
+        <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6;"><b>Must never:</b> occupy the same panel as the raw idea, or be rendered in a way that could be mistaken for a quotation.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:grid; grid-template-columns:200px 1fr 1fr; gap:18px; align-items:start;">
+        <div>
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(70% 0.12 300); text-transform:uppercase; margin-bottom:6px;">What we think of it</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Violet rule. Judgment about the idea &mdash; merits, what exists, differentiation, threats &mdash; and the closing Company View.</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Concise questions 3, 4, 5, 6, 8.</b> This is opinion, and its panels say so. Threats inside it use red for the risk itself, never for the panel.</div>
+        <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6;"><b>Must never:</b> carry a score, a meter, a percentage or a star rating. Judgment stated as a number is false precision.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:12px; border:1px solid oklch(78% 0.14 75 / 0.5); background:oklch(78% 0.14 75 / 0.05); padding:16px 18px;">
+      <div style="display:grid; grid-template-columns:200px 1fr 1fr; gap:18px; align-items:start;">
+        <div>
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(78% 0.14 75); text-transform:uppercase; margin-bottom:6px;">We recommend</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">The only voice with a filled ground and a full border rather than a left rule. It is the one thing the Founder is being asked to accept or reject.</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Concise questions 7, 9 and 10</b> &mdash; the recommendation, what we need from you, and what &ldquo;done&rdquo; means. One recommendation, never five options.</div>
+        <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6;"><b>Must never:</b> appear more than once per version, or be softened into a menu of choices for the Founder to arbitrate.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:12px; border:2px solid oklch(72% 0.15 150 / 0.7); background:#14171c; padding:16px 18px;">
+      <div style="display:grid; grid-template-columns:200px 1fr 1fr; gap:18px; align-items:start;">
+        <div>
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.15 150); text-transform:uppercase; margin-bottom:6px;">You approved</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">A double border and a header bar &mdash; the only panel in the product built like a document rather than a card. It is an artifact, not a view.</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Stamped with the version, your name and the time.</b> Lines that came from you rather than the company are marked inside it, individually.</div>
+        <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6;"><b>Must never:</b> appear before an explicit click. There is no timeout and no default &mdash; silence is not consent, and no code path treats it as consent.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE WORKED EXAMPLE -->
+  <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:18px 20px; margin-bottom:20px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:4px;">The same subject, in all five voices</div>
+    <div style="font-size:11.5px; color:#666c74; line-height:1.55; margin-bottom:15px; max-width:840px;">This is the test the design has to pass: five statements about one idea, and it should be impossible to read any of them as one of the others &mdash; even out of context, even in grayscale, even for someone who has not read the legend.</div>
+
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="border-left:3px solid oklch(58% 0.015 250); background:#101317; padding:11px 14px; border-radius:0 8px 8px 0;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; margin-bottom:4px;">You said &middot; 20:03 UTC &middot; unedited</div>
+        <div style="font-size:12px; color:#eae8e3; line-height:1.6; white-space:pre-wrap;">&ldquo;&hellip;I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+      </div>
+      <div style="border-left:3px solid oklch(72% 0.12 250); background:#14171c; padding:11px 14px; border-radius:0 8px 8px 0;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.12 250); text-transform:uppercase; margin-bottom:4px;">We think you mean &middot; the company &middot; round 1</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.6;">The ellipse is your sketch of a form &mdash; the pipeline drawn as a loop with work moving round it &mdash; not a requirement that the shape be an ellipse.</div>
+      </div>
+      <div style="border-left:3px solid oklch(70% 0.12 300); background:#14171c; padding:11px 14px; border-radius:0 8px 8px 0;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(70% 0.12 300); text-transform:uppercase; margin-bottom:4px;">What we think of it &middot; the company &middot; round 1</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.6;">Drawing the loop before we know what moves on it is the main risk here. Nothing in the pipeline writes a run record today, so the ring could arrive empty.</div>
+      </div>
+      <div style="border:1px solid oklch(78% 0.14 75 / 0.5); background:oklch(78% 0.14 75 / 0.05); padding:11px 14px; border-radius:8px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(78% 0.14 75); text-transform:uppercase; margin-bottom:4px;">We recommend &middot; one recommendation</div>
+        <div style="font-size:12px; color:#d8dce2; line-height:1.6;">Build the one-glance screen; do not commit to the ellipse yet. Test forms during design and pick on evidence.</div>
+      </div>
+      <div style="border:2px solid oklch(72% 0.15 150 / 0.7); background:#14171c; padding:11px 14px; border-radius:8px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.15 150); text-transform:uppercase; margin-bottom:4px;">You approved &middot; v3 &middot; by you &middot; 20:41 UTC</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.6;">The ellipse geometry is not committed. Design tests forms and picks on evidence. <span style="color:#666c74;">(approved with the ellipse question still open &mdash; recorded)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REDUNDANCY -->
+  <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+    <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:16px 18px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:9px;">Why colour is not enough on its own</div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+        The palette here was closed before this feature existed &mdash; amber active, green passed, red risk, blue waiting, violet identity, gray neutral &mdash; and this design spends all five hues at once. So each voice carries three more signals that survive a screenshot, a grayscale print and colour-blindness: <b style="color:#c8ccd2;">the shape of the container</b> (left rule, filled panel, or bordered document), <b style="color:#c8ccd2;">a kicker naming the speaker in words</b>, and <b style="color:#c8ccd2;">an attribution line</b> saying who and when.
+      </div>
+      <div style="font-size:11px; color:#666c74; line-height:1.6; margin-top:10px;">
+        One honest note: violet already means <i>actor identity</i> elsewhere in this product and is asked here to also mean <i>the company&rsquo;s judgment</i>. That is a second meaning for one hue, and it is the weakest link in this system. It is written down rather than hidden.
+      </div>
+    </div>
+    <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:16px 18px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:9px;">The rule that generates all of this</div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+        A Founder should be able to point at any sentence in the product and answer, without scrolling and without remembering, <b style="color:#c8ccd2;">&ldquo;did I say that, or did the company?&rdquo;</b> and if the company, <b style="color:#c8ccd2;">&ldquo;is that a reading, an opinion, or an instruction?&rdquo;</b>
+      </div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65; margin-top:10px;">
+        Everything above is downstream of that one requirement. If a future screen makes it hard to answer, the screen is wrong &mdash; not the rule.
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

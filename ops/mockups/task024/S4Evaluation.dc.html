@@ -1,0 +1,351 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 4 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Idea evaluation</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">What we think of the idea, and what we recommend</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 16px; line-height:1.55; max-width:860px;">
+    The second half of the same page. Questions 4 to 10, then the company&rsquo;s closing judgment.
+  </div>
+
+  <!-- persistent raw idea strip -->
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; gap:14px;">
+    <div style="width:3px; align-self:stretch; background:oklch(58% 0.015 250); border-radius:2px; flex-shrink:0;"></div>
+    <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; flex-shrink:0;">You said</div>
+    <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:12px;">
+
+    <!-- Q4 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">04</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What already exists?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WHAT WE THINK OF IT</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        <b style="color:#eae8e3;">We don&rsquo;t know, and here is why.</b> This is our own operating console; nobody outside this company chooses between it and something else, so what else exists cannot change what we recommend &mdash; that is why the depth is Light and we did not look.
+        Two honest cautions rather than a comfortable answer: that is <b style="color:#eae8e3;">not</b> evidence that nothing comparable exists, and no agent in this company can browse the web, so we could not have checked even if it mattered.
+      </div>
+      <div onClick="{{t4}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l4}}</div>
+      <sc-if value="{{o4}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:12px;">Expanded &middot; sections 5 and 6</div>
+
+        <div style="border:1px dashed #323844; border-radius:9px; padding:13px 14px; margin-bottom:11px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+            <div style="font-size:10px; font-weight:700; color:#9aa0a8; letter-spacing:0.05em;">5 &middot; KNOWN COMPETITORS / ALTERNATIVES</div>
+            <div style="padding:2px 8px; border-radius:5px; background:#1a1e24; border:1px solid #3d434d; color:#9aa0a8; font-size:9.5px; font-weight:700; letter-spacing:0.04em;">NOT PRODUCED</div>
+          </div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+            <b style="color:#c8ccd2;">Why this section is empty:</b> depth for this idea is Light. Nobody outside this company chooses between this screen and an alternative &mdash; it is our own console &mdash; so competitor and substitute analysis could not change the recommendation, the scope or the definition of success. Producing it anyway would be research theatre.
+          </div>
+          <div style="font-size:11.5px; color:oklch(78% 0.14 75); line-height:1.6; margin-top:9px; padding-top:9px; border-top:1px solid #1e2229;">
+            This is not the claim that there are no competitors. We have not looked, and we cannot look.
+          </div>
+        </div>
+
+        <div style="border:1px dashed #323844; border-radius:9px; padding:13px 14px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+            <div style="font-size:10px; font-weight:700; color:#9aa0a8; letter-spacing:0.05em;">6 &middot; COMPETITOR DATA FRESHNESS</div>
+            <div style="padding:2px 8px; border-radius:5px; background:#1a1e24; border:1px solid #3d434d; color:#9aa0a8; font-size:9.5px; font-weight:700; letter-spacing:0.04em;">NOTHING TO LABEL</div>
+          </div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+            No claim about any third party appears above, so there is nothing to mark <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#c8ccd2;">VERIFIED / CURRENT</span>, <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#c8ccd2;">COMPANY INFERENCE</span> or <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#c8ccd2;">UNKNOWN</span>.
+          </div>
+          <div style="font-size:11.5px; color:#c8ccd2; line-height:1.6; margin-top:9px; padding:9px 11px; background:#14171c; border-radius:7px;">
+            <b>Standing disclosure:</b> research has not been performed. No agent in this company can browse the web. Wherever this section does have content, everything in it is company recollection &mdash; it may be out of date or wrong.
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q5 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">05</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What could make ours different?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WHAT WE THINK OF IT</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        <b style="color:#eae8e3;">We do not yet see a strong differentiation</b> &mdash; and at this depth we did not look for one, because there is no market to be different in. Inside the company there is one real difference worth naming: today&rsquo;s screens report status, and this one would show movement.
+      </div>
+      <div onClick="{{t5}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l5}}</div>
+      <sc-if value="{{o5}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; section 7 &middot; competitive advantages</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          At Light depth this section is <b style="color:#c8ccd2;">not produced as a market claim</b>, for the same reason section 5 is not: differentiation is a comparison, and there is nothing to compare against that anyone chooses between.
+          What we will say, because it is checkable inside this company: the advantage over what we run today is that a status is a claim and a movement is evidence. That is a real improvement and it is not a competitive advantage, and we are not going to dress it up as one.
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q6 -->
+    <div style="border-radius:12px; border:1px solid oklch(66% 0.17 25 / 0.35); background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">06</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What could make it fail?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WHAT WE THINK OF IT</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        <b style="color:#eae8e3;">The data.</b> <span style="font-family:ui-monospace,Menlo,monospace; font-size:11.5px;">task_steps</span> exists on 1 of 24 tasks, so there is no honest percentage;
+        <span style="font-family:ui-monospace,Menlo,monospace; font-size:11.5px;">project_id</span> is NULL on 20 of 24, so &ldquo;which app is this build for&rdquo; is unanswerable for most work; and no pipeline agent writes an
+        <span style="font-family:ui-monospace,Menlo,monospace; font-size:11.5px;">agent_runs</span> row, so there is no live signal to animate.
+        <b style="color:#eae8e3;">A loop with nothing moving on it is worse than the list it replaced.</b>
+        Second: committing to the ellipse now fixes the least certain part of the design before we know what there is to put on it.
+      </div>
+      <div onClick="{{t6}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l6}}</div>
+      <sc-if value="{{o6}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:11px;">Expanded &middot; section 8 &middot; threats, by category</div>
+        <div style="display:flex; flex-direction:column; gap:11px;">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:oklch(66% 0.17 25); letter-spacing:0.05em; margin-bottom:5px;">TECHNICAL</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">The records cannot support the picture. <i style="color:#c8ccd2;">Changes how we build it:</i> the first version has to render absent data as absent, not animate a placeholder over it.</div>
+          </div>
+          <div>
+            <div style="font-size:10px; font-weight:700; color:oklch(66% 0.17 25); letter-spacing:0.05em; margin-bottom:5px;">EXECUTION</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; margin-bottom:7px;">Form fixed before content is known. <i style="color:#c8ccd2;">Changes what we build first:</i> build the one-glance screen and decide the geometry once a real build has run through it.</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">Simplifying by deletion. The thing that started this was a page you could not find; replacing thirteen destinations with one can reproduce that failure in a new shape. <i style="color:#c8ccd2;">Changes scope:</i> the registers move, they do not go.</div>
+          </div>
+          <div style="padding-top:9px; border-top:1px solid #1e2229;">
+            <div style="font-size:10px; font-weight:700; color:#4e545c; letter-spacing:0.05em; margin-bottom:5px;">COMPETITIVE, MARKET, BUSINESS, REGULATORY &mdash; NOT PRODUCED</div>
+            <div style="font-size:11px; color:#666c74; line-height:1.6;">Depth is Light. None of these could change whether or how we build an internal console, and a threat that would not change the decision does not belong on this list. This section is deliberately short: it is not a risk register.</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q7 -->
+    <div style="border-radius:12px; border:1px solid oklch(78% 0.14 75 / 0.5); background:oklch(78% 0.14 75 / 0.05); padding:16px 18px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:oklch(78% 0.14 75 / 0.7);">07</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What does the company recommend?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WE RECOMMEND</div>
+      </div>
+      <div style="font-size:12.5px; color:#d8dce2; line-height:1.7;">
+        <b style="color:#eae8e3;">Proceed with narrowed scope: build the one-glance screen, and do not commit to the ellipse yet.</b>
+        First, one screen whose subject is the build &mdash; what the factory is making, which of the six gates it has passed, whose turn it is, what is stopping it &mdash; honest about what the records cannot support.
+        Postponed on purpose: motion, percentages, and the ring geometry itself, until one real build has run through and we know what actually moves.
+      </div>
+      <div onClick="{{t7}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l7}}</div>
+      <sc-if value="{{o7}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid oklch(78% 0.14 75 / 0.45); padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:12px;">Expanded &middot; sections 9, 10 and 12</div>
+
+        <div style="font-size:10px; font-weight:700; color:oklch(78% 0.14 75); letter-spacing:0.05em; margin-bottom:6px;">9 &middot; WHY THIS AND NOT SOMETHING ELSE</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; margin-bottom:14px;">
+          The outcome you named is &ldquo;understand within seconds&rdquo;. That is a legibility requirement, not a geometry requirement. Committing the shape in the brief would freeze the least certain decision at the moment we know least. One recommendation, not five options: build the screen, test the ring against alternatives during design, pick on evidence.
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:14px;">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:oklch(72% 0.15 150); letter-spacing:0.05em; margin-bottom:7px;">10 &middot; IN SCOPE NOW</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.75;">One Build screen &middot; the six-stage gate ladder instead of a percentage &middot; last event and how long ago &middot; whose turn it is &middot; what is stuck and why &middot; the never-run state as a designed state &middot; a Team page &middot; every existing register still reachable, Meetings in at most two clicks</div>
+          </div>
+          <div>
+            <div style="font-size:10px; font-weight:700; color:#666c74; letter-spacing:0.05em; margin-bottom:7px;">10 &middot; NOT IN THE FIRST VERSION</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.75;">The ellipse geometry as a commitment &middot; motion and live indicators (nothing writes them today) &middot; any percentage &middot; any dollar figure &middot; deleting any existing destination &middot; anything about the built app&rsquo;s own content, users or quality</div>
+          </div>
+        </div>
+
+        <div style="padding-top:12px; border-top:1px solid #1e2229;">
+          <div style="font-size:10px; font-weight:700; color:#9aa0a8; letter-spacing:0.05em; margin-bottom:7px;">12 &middot; ALTERNATIVES WORTH CONSIDERING &mdash; TWO</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; margin-bottom:8px;"><b style="color:#c8ccd2;">Fix the navigation instead of the screen.</b> What triggered this was not finding Meetings in a thirteen-item bar. A shorter bar and one grouped menu is a fraction of the work. We do not recommend it as the whole answer &mdash; it does not turn reading into looking &mdash; but it is worth doing either way, and it is cheap.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Wait for one real end-to-end build first.</b> The screen designs itself once something has actually run through it. Cost: delay. Benefit: no screen built around imagined activity.</div>
+          <div style="font-size:10.5px; color:#4e545c; line-height:1.5; margin-top:9px;">Two, not three. We are not adding a third to look thorough.</div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q8 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">08</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What assumptions did the company make?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WHAT WE THINK OF IT</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        Two that could change the answer. That <b style="color:#eae8e3;">&ldquo;as simple as a dashboard&rdquo; means fewer things on one screen, not fewer capabilities behind it</b> &mdash; so today&rsquo;s registers move behind one menu rather than being deleted. And that <b style="color:#eae8e3;">&ldquo;track flow&rdquo; means work moving through our own gates</b>, with a build as the unit on the screen, not an agent. Both are correctable in one click if we have them wrong.
+      </div>
+      <div onClick="{{t8}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l8}}</div>
+      <sc-if value="{{o8}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:11px;">Expanded &middot; section 11 &middot; important assumptions</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Simplify means consolidate, not delete.</b> If you meant delete, the scope shrinks and several records stop being reachable &mdash; a materially different brief.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">The unit on the screen is a build, not an agent.</b> If you want to watch agents rather than work, this is a different screen with different data behind it.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">You will keep using this yourself.</b> One user, one machine. No multi-user, no permissions, no sharing was designed for. If that is wrong, say so before we build.</div>
+          <div style="font-size:10.5px; color:#4e545c; line-height:1.5; padding-top:8px; border-top:1px solid #1e2229;">Three, and no more. Assumptions that could not change the result &mdash; font choice, page title, where the menu sits &mdash; are ours to make and are not listed here.</div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q9 -->
+    <div style="border-radius:12px; border:1px solid oklch(78% 0.14 75 / 0.5); background:#14171c; padding:16px 18px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:oklch(78% 0.14 75 / 0.7);">09</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What decisions do you need from me?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WE NEED FROM YOU</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7; margin-bottom:12px;">
+        Two. Both would produce a different brief depending on how you answer, which is the only reason either is here.
+        <b style="color:#eae8e3;">You can approve without answering them</b> &mdash; if you do, we proceed on the assumptions above and the brief will say so.
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="border-radius:10px; border:1px solid #323844; background:#1a1e24; padding:12px 14px;">
+          <div style="font-size:12.5px; font-weight:600; color:#eae8e3; margin-bottom:5px;">1 &mdash; Is the subject of this screen the factory, or the app the factory builds?</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">What changes:</b> the factory, and the screen shows stages, owners and stalls, and we can build it now. The app being built, and the screen has almost nothing to show &mdash; <span style="font-family:ui-monospace,Menlo,monospace; font-size:11px;">projects</span> holds one row, this ops system itself, so the factory has never built an app.</div>
+        </div>
+        <div style="border-radius:10px; border:1px solid #323844; background:#1a1e24; padding:12px 14px;">
+          <div style="font-size:12.5px; font-weight:600; color:#eae8e3; margin-bottom:5px;">2 &mdash; Is the ellipse a requirement, or your sketch of one?</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">What changes:</b> a sketch, and Design tests the ring against two or three other forms and picks on evidence. A requirement, and we build the ring first and accept that there may be very little to put on it.</div>
+        </div>
+      </div>
+      <div onClick="{{t9}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l9}}</div>
+      <sc-if value="{{o9}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; section 13 &middot; what we did not ask you</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          Five candidate questions were written and three were deleted, because two honest answers to them produce the same brief: which colours to use, whether the menu sits left or top, and whether the Team page ships in the same release. Those are ours to decide, and asking you would have been decoration.
+          A sixth &mdash; &ldquo;do you want the existing pages kept?&rdquo; &mdash; became assumption 1 instead, because we can state the likelier answer and let you correct it in one click. The cap is three questions; we are asking two.
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q10 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(78% 0.14 75);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">10</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">How will we know we succeeded?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WE RECOMMEND</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        You open one screen and, without clicking, can say what the factory is making, which of the six gates it has passed, whose turn it is, and what is stopping it. Nothing on the screen is a number the records cannot support. A factory that has never run renders as a designed state, not an empty grid. And Meetings &mdash; the page you could not find &mdash; is reachable in at most two clicks.
+      </div>
+      <div onClick="{{t10}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l10}}</div>
+      <sc-if value="{{o10}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; section 14 &middot; concrete enough for the people who build it</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.75;">
+          Each of these can be checked by looking at the screen against today&rsquo;s database, with no outside knowledge:
+          the four facts above are legible without a click &middot;
+          no percentage appears anywhere while <span style="font-family:ui-monospace,Menlo,monospace; font-size:11px;">task_steps</span> covers 1 of 24 tasks &middot;
+          no dollar figure appears while <span style="font-family:ui-monospace,Menlo,monospace; font-size:11px;">agent_runs</span> carries 0 costs &middot;
+          no live-agent indicator appears while nothing writes one &middot;
+          a passed gate with no handoff, review or QA record renders &ldquo;no record kept&rdquo; rather than a tick &middot;
+          the zero-apps-built state is a drawn state, not an empty container &middot;
+          Meetings is reachable in two clicks and renders &ldquo;no meetings have been held&rdquo; against 0 rows.
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <!-- ===== COMPANY VIEW ===== -->
+  <div style="margin-top:22px; border-radius:14px; border:1px solid oklch(70% 0.12 300 / 0.55); background:#14171c; padding:20px 22px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:oklch(70% 0.12 300); text-transform:uppercase;">Company view</div>
+      <div style="font-size:10.5px; color:#4e545c;">Executive judgment &middot; not a score &middot; always visible, never behind a disclosure</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:150px 1fr; gap:13px 20px; align-items:baseline;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; text-align:right;">Opportunity</div>
+      <div style="font-size:14px; font-weight:700; color:oklch(72% 0.15 150);">High</div>
+
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; text-align:right;">Why</div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">The problem is observed rather than assumed &mdash; you could not find a page that exists, and today&rsquo;s screens make you read to learn what happened. The factory is the product, so its own console is the demonstration rather than a report about it. What is uncertain is not whether to build it but what it can honestly show: the records behind it are thin in specific, checkable ways.</div>
+
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; text-align:right;">Biggest merit</div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">It replaces reading with looking, for the one person it is for, on the product that is the point.</div>
+
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(66% 0.17 25); text-transform:uppercase; text-align:right;">Biggest threat</div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">There may not be enough truthful data to fill it. A loop with nothing moving on it is worse than the list it replaced.</div>
+
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; text-align:right;">Best differentiation</div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">None we can see, and we did not look &mdash; there is no market here. The one difference that matters internally: today&rsquo;s screens report status, this one would show movement.</div>
+
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(78% 0.14 75); text-transform:uppercase; text-align:right;">Recommendation</div>
+      <div><span style="display:inline-block; padding:6px 16px; border-radius:8px; background:oklch(78% 0.14 75 / 0.16); border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-size:13px; font-weight:700;">Proceed with narrowed scope</span></div>
+    </div>
+
+    <div style="margin-top:16px; padding-top:13px; border-top:1px solid #242830; font-size:10.5px; color:#4e545c; line-height:1.6;">
+      Six fields, the same six every time. The other three recommendations this company can give are <b style="color:#666c74;">Proceed</b>, <b style="color:#666c74;">Investigate first</b> and <b style="color:#666c74;">Reconsider</b> &mdash; and Reconsider means we think the idea is weak. There is no number here on purpose: a score would be false precision dressed as rigour.
+    </div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <div onClick="{{go}}" style="padding:9px 18px; border-radius:8px; background:transparent; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12.5px; cursor:pointer; display:inline-block;">Now decide &mdash; your three options</div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":1000},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = { o4:false,o5:false,o6:false,o7:false,o8:false,o9:false,o10:false };
+  }
+  renderVals(){
+    var self = this;
+    var tog = function(k){ return function(){ var p={}; p[k]=!self.state[k]; self.setState(p); }; };
+    var lab = function(open, what){ return open ? ('−  Hide ' + what) : ('+  Show the working · ' + what); };
+    return {
+      o4:this.state.o4, o5:this.state.o5, o6:this.state.o6, o7:this.state.o7,
+      o8:this.state.o8, o9:this.state.o9, o10:this.state.o10,
+      t4:tog('o4'), t5:tog('o5'), t6:tog('o6'), t7:tog('o7'),
+      t8:tog('o8'), t9:tog('o9'), t10:tog('o10'),
+      l4: lab(this.state.o4, 'sections 5 and 6'),
+      l5: lab(this.state.o5, 'section 7'),
+      l6: lab(this.state.o6, 'section 8'),
+      l7: lab(this.state.o7, 'sections 9, 10 and 12'),
+      l8: lab(this.state.o8, 'section 11'),
+      l9: lab(this.state.o9, 'section 13'),
+      l10: lab(this.state.o10, 'section 14'),
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

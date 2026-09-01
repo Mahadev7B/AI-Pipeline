@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 5 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Founder review</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">Your call</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:860px;">
+    Round 1 &middot; version 1. Nothing is approved and nothing has started. <b style="color:#9aa0a8;">Walking away decides nothing, spends nothing and loses nothing</b> &mdash; the idea and this reading both stay where they are.
+  </div>
+
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; gap:14px;">
+    <div style="width:3px; align-self:stretch; background:oklch(58% 0.015 250); border-radius:2px; flex-shrink:0;"></div>
+    <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; flex-shrink:0;">You said</div>
+    <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+    <div style="font-size:10px; color:#4e545c; flex-shrink:0; margin-left:auto;">unedited &middot; on every screen</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:20px;">
+
+    <div onClick="{{pickEdit}}" style="border-radius:12px; border:1px solid {{editBd}}; background:{{editBg}}; padding:16px 18px; cursor:pointer;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;">
+        <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">Edit / Correct</div>
+        <div style="padding:2px 8px; border-radius:100px; background:oklch(72% 0.15 150 / 0.14); color:oklch(72% 0.15 150); font-size:9.5px; font-weight:700; letter-spacing:0.04em;">FREE</div>
+      </div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">You change the words yourself. No agent runs, nothing is spent. The result is a new version <b style="color:#c8ccd2;">authored by you</b>, and the record says so.</div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:9px; line-height:1.5;">Your original idea is not editable, by you or anyone. Only our reading of it is.</div>
+    </div>
+
+    <div onClick="{{pickRecon}}" style="border-radius:12px; border:1px solid {{reconBd}}; background:{{reconBg}}; padding:16px 18px; cursor:pointer;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;">
+        <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">Reconsider</div>
+        <div style="padding:2px 8px; border-radius:100px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; letter-spacing:0.04em;">COSTS AGAIN</div>
+      </div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">You tell us what we got wrong and the company re-evaluates &mdash; interpretation, assumptions, evaluation, recommendation or scope. <b style="color:#c8ccd2;">This runs a full new round and spends real money.</b></div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:9px; line-height:1.5;">It needs your feedback to be worth anything. Sending it back empty buys you round 2 saying round 1 again, at full price.</div>
+    </div>
+
+    <div onClick="{{pickApprove}}" style="border-radius:12px; border:1px solid {{apprBd}}; background:{{apprBg}}; padding:16px 18px; cursor:pointer;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;">
+        <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">Approve Brief</div>
+        <div style="padding:2px 8px; border-radius:100px; background:oklch(72% 0.15 150 / 0.14); color:oklch(72% 0.15 150); font-size:9.5px; font-weight:700; letter-spacing:0.04em;">FREE</div>
+      </div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">You accept this version as the brief. <b style="color:#c8ccd2;">It starts no work</b> and spends nothing. Starting work is a separate decision you can make now, later, or never.</div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:9px; line-height:1.5;">Approving is a complete outcome on its own. Nothing times out and nothing auto-approves &mdash; silence is not consent.</div>
+    </div>
+  </div>
+
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:14px 18px; margin-bottom:22px;">
+    <div style="font-size:12px; color:#9aa0a8; line-height:1.65;">
+      <b style="color:#eae8e3;">{{detail}}</b>
+    </div>
+  </div>
+
+  <!-- ===== THE QUESTIONS BLOCK, AND ITS HONEST ZERO ===== -->
+  <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:4px;">Design states &middot; the questions block</div>
+  <div style="font-size:11.5px; color:#666c74; margin-bottom:13px; line-height:1.55; max-width:860px;">Zero questions is a legitimate and common outcome, so it is a drawn state rather than an empty container. Both renderings are shown here; only one appears in the product at a time.</div>
+
+  <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+
+    <div style="border-radius:12px; border:1px solid oklch(78% 0.14 75 / 0.45); background:#14171c; padding:16px 18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;">
+        <div style="font-size:12.5px; font-weight:600;">When there are questions</div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; letter-spacing:0.05em;">WE NEED FROM YOU</div>
+      </div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; margin-bottom:11px;">Two here. Each one states, in a line, what changes depending on your answer &mdash; a question that cannot say that is decoration and gets deleted before you see it. Cap of three.</div>
+      <div style="border-radius:9px; border:1px solid #323844; background:#1a1e24; padding:11px 13px; margin-bottom:8px;">
+        <div style="font-size:11.5px; font-weight:600; color:#eae8e3;">Is the subject the factory, or the app it builds?</div>
+        <div style="font-size:10.5px; color:#9aa0a8; margin-top:4px; line-height:1.5;">Changes what we build first, and whether there is anything to show at all.</div>
+      </div>
+      <div style="border-radius:9px; border:1px solid #323844; background:#1a1e24; padding:11px 13px;">
+        <div style="font-size:11.5px; font-weight:600; color:#eae8e3;">Is the ellipse a requirement, or a sketch?</div>
+        <div style="font-size:10.5px; color:#9aa0a8; margin-top:4px; line-height:1.5;">Changes whether Design tests forms, or builds the one you drew.</div>
+      </div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:10px; line-height:1.5;">You can approve without answering either. The brief then records the assumption we proceeded on.</div>
+    </div>
+
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;">
+        <div style="font-size:12.5px; font-weight:600;">When there are none &mdash; the honest zero</div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(72% 0.15 150 / 0.14); color:oklch(72% 0.15 150); font-size:9.5px; font-weight:700; letter-spacing:0.05em;">NOTHING NEEDED</div>
+      </div>
+      <div style="border-radius:9px; border:1px dashed #323844; background:#0f1216; padding:16px 14px;">
+        <div style="font-size:12.5px; color:#eae8e3; line-height:1.6; margin-bottom:8px;">We have nothing to ask you.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">Everything we were unsure about, we could state as an assumption you can correct in one click &mdash; so we did that instead of making you answer questions. The assumptions are in answer 8.</div>
+      </div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:11px; line-height:1.55;">
+        This is a pass, not a gap. A round that manufactures a question to look thorough has failed. If we ever ask you eight things, the right response is to distrust the round.
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px; display:flex; align-items:center; gap:12px;">
+    <div onClick="{{go}}" style="padding:9px 18px; border-radius:8px; background:transparent; border:1px solid #323844; color:#9aa0a8; font-weight:600; font-size:12.5px; cursor:pointer;">Send it back with feedback &mdash; see what that does</div>
+    <div style="font-size:11px; color:#4e545c;">Next: correction and reconsideration.</div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":800},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { pick: 'none' }; }
+  renderVals(){
+    var self = this;
+    var p = this.state.pick;
+    var detail = 'Pick one above to see exactly what it does, what it costs and what it leaves behind.';
+    if (p === 'edit') detail = 'Edit / Correct — the brief opens for editing. You change any line of our reading. No model is invoked, no agent_runs row is written, nothing is spent. The result is version 2, authored by you, and every later screen says "edited by you" on the lines you touched. Your original idea is untouched: it is not editable by anyone, ever.';
+    if (p === 'recon') detail = 'Reconsider — a text box opens and asks what we got wrong. Your words are stored verbatim, attributed to you, and handed to round 2 as the thing to answer. This runs the full company round again and spends real money, which is why the cost warning sits on the control itself and not in a paragraph somewhere above it. Round 1 is kept and stays readable forever.';
+    if (p === 'approve') detail = 'Approve Brief — this version becomes the approved brief. Nothing is dispatched, nothing is spent, no status moves beyond the approval itself. Approving is a complete outcome: you can stop here and start work next week. What approval does mean is that from the moment work starts, every agent downstream reads this and not your original sentence.';
+    return {
+      editBd: p === 'edit' ? 'oklch(72% 0.15 150)' : '#242830',
+      editBg: p === 'edit' ? '#171b21' : '#14171c',
+      reconBd: p === 'recon' ? 'oklch(78% 0.14 75)' : '#242830',
+      reconBg: p === 'recon' ? '#171b21' : '#14171c',
+      apprBd: p === 'approve' ? 'oklch(72% 0.15 150)' : '#242830',
+      apprBg: p === 'approve' ? '#171b21' : '#14171c',
+      detail: detail,
+      pickEdit: function(){ self.setState({ pick: 'edit' }); },
+      pickRecon: function(){ self.setState({ pick: 'recon' }); },
+      pickApprove: function(){ self.setState({ pick: 'approve' }); },
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

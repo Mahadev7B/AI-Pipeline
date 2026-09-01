@@ -52,15 +52,29 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 22:20 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 23:12 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (19 records) — structured, queryable state from the
+  This is the operational decision log (20 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" id="decision-20" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#20 — Five-voice visual grammar for the Founder idea journey (TASK-024)</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> Part 3 s6 of the Founder directive requires the UI to make it easy to distinguish, at every point of the journey: what I said, what the factory thinks I meant, what the factory thinks about the idea, what the factory recommends, and what I approved. DEC-002&#x27;s palette was closed and fully assigned before this feature existed, and colour alone is not a sufficient signal.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Each of the five voices gets one existing palette colour plus three redundant non-colour signals: a fixed container shape (recessed ground with a left rule / panel with a left rule / filled ground with a full border / double border with a header bar), an uppercase kicker naming the speaker in words, and an attribution line naming who and when. Mapping: gray = YOU SAID, blue = WE THINK YOU MEAN, violet = WHAT WE THINK OF IT, amber = WE RECOMMEND (and WE NEED FROM YOU), green = YOU APPROVED. The Founder&#x27;s own words carry no company colour at all and are the only element rendered as a literal quotation. A legend sits in the page chrome on every screen of the journey, and the raw idea is rendered on all ten stages.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The palette was already closed and fully spoken for; inventing hues for one feature would create a second colour system. Colour-only distinction fails in grayscale, in a screenshot and for colour-blind readers, and this distinction is the whole point of the feature, so it cannot rest on a single channel. Separating the voices by page would break the directive&#x27;s requirement that the Founder can compare their own words with the company&#x27;s reading on the same screen.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Violet already means actor identity elsewhere in this product and is asked here to also mean the company&#x27;s judgment of the idea. That is a second meaning for one hue and it is the weakest link in the system; it is stated on the artboard rather than hidden. The design also spends all five hues plus gray at once, leaving no unassigned colour for a future sixth voice.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by design</div>
+            
+          </div>
+        </div>
         <div class="card" id="decision-19" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#19 — Idea deciphering v2: interpret AND evaluate, no brainstorming concept, approved brief is the downstream source of truth</div>

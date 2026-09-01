@@ -7,272 +7,130 @@
 <body>
 <x-dc>
 <helmet>
-  <title>Concept A &mdash; Save on Ideas, Start on the idea&rsquo;s own page</title>
   <style>
-:root{
-  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
-  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
-  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
-  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
-  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
-  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
-  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
-  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
-  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --disp: system-ui, sans-serif;
-}
-body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
-.mono{ font-family:var(--mono); letter-spacing:0.01em; }
-.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
-.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
-.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
-.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
-a{ color:inherit; text-decoration:none; }
-a.accentlink{ color:var(--accent); }
-a.accentlink:hover{ color:oklch(84% 0.14 75); }
-h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
-.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
-.help{ font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:5px; }
-.inp{ width:100%; box-sizing:border-box; padding:9px 10px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); color:var(--text); font-size:13px; font-family:var(--sans); }
-.ph{ color:var(--text3); }
-.statehdr{ font-family:var(--disp); font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent); margin:0 0 3px; }
-.statesub{ font-size:11px; color:var(--text2); margin:0 0 14px; line-height:1.55; max-width:900px; }
-.btn-save{ padding:9px 20px; border-radius:8px; background:var(--accent); color:#1a1206; font-weight:600; font-size:13px; }
-.btn-ghost{ padding:9px 18px; border-radius:8px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-weight:600; font-size:12.5px; }
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
   </style>
 </helmet>
 
-<div style="padding:26px; width:1108px; box-sizing:border-box; background:var(--bg);">
+<div style="width:1200px; box-sizing:border-box; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
 
-<!-- ============ STATE 1 : FIRST RUN ============ -->
-<div class="statehdr">Concept A &middot; State 1 &mdash; Ideas, first run</div>
-<div class="statesub">The page a Founder who has never saved an idea lands on. <b style="color:var(--text2);">There is no Start control anywhere on this screen</b> &mdash; the compose surface can never spend money. The ledger below the form is where saved ideas live; its empty state is the first-run state.</div>
-
-<div style="border:1px solid var(--border2); border-radius:16px; padding:22px; margin-bottom:34px;">
-
-  <h1>Ideas</h1>
-  <div class="sub" style="margin-top:-14px; max-width:800px; line-height:1.6;">
-    Write an idea down and save it. <b style="color:var(--text2);">Saving costs nothing and starts nothing</b> &mdash; it puts the idea
-    in the Backlog, where it waits. Starting the work is a separate, deliberate click on the idea&rsquo;s own page.
-  </div>
-
-  <div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:18px; align-items:start;">
-
-    <!-- FORM -->
-    <div class="panel">
-      <div class="label" style="margin-bottom:8px;">Title</div>
-      <div class="inp"><span class="ph">A short name for the idea &mdash; e.g. &ldquo;Weekly digest of what the company shipped&rdquo;</span></div>
-      <div class="help">This is the name you&rsquo;ll see on every other screen. Up to 160 characters.</div>
-
-      <div class="label" style="margin:16px 0 8px;">The idea &mdash; what do you want, and why does it matter?</div>
-      <div class="inp" style="height:132px;"><span class="ph">Say it the way you&rsquo;d say it out loud. A few sentences is plenty.</span></div>
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px;">
-        <div class="help" style="max-width:420px;">Product turns this into a written spec &mdash; the user story, requirements and acceptance criteria are its job, not yours.</div>
-        <div class="help mono" style="white-space:nowrap; padding-top:5px;">0 / 4,000</div>
-      </div>
-
-      <div class="label" style="margin:16px 0 8px;">Priority <span style="color:var(--text3); font-weight:600; letter-spacing:0;">(optional)</span></div>
-      <div style="display:flex; gap:6px;">
-        <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">High</div>
-        <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--accent); background:var(--accent-soft); font-size:12px; font-weight:600; color:var(--accent);">Medium</div>
-        <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">Low</div>
-      </div>
-      <div class="help">A hint for ordering later. Medium is fine &mdash; it does not change when the work starts.</div>
-
-      <div style="display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
-        <div class="btn-save">Save to Backlog</div>
-        <div style="font-size:11px; color:var(--text2); line-height:1.45;">Writes one task at status <span class="mono" style="color:var(--text);">BACKLOG</span>.<br><span style="color:var(--text3);">No agents run. Nothing is spent.</span></div>
-      </div>
+  <!-- ============ APP CHROME ============ -->
+  <div style="border-bottom:1px solid #242830; background:#101317; padding:0 40px;">
+    <div style="display:flex; align-items:center; gap:14px; padding:13px 0 11px;">
+      <div style="font-size:12.5px; font-weight:700; letter-spacing:0.02em;">AI Factory</div>
+      <div style="font-size:10.5px; color:#4e545c;">Control Center</div>
     </div>
-
-    <!-- TWO ACTIONS, EXPLAINED -->
-    <div class="panel" style="border-color:var(--border2);">
-      <div class="label" style="margin-bottom:12px;">Two separate actions</div>
-
-      <div style="display:flex; gap:11px; margin-bottom:15px;">
-        <div class="mono" style="width:18px; flex-shrink:0; color:var(--accent); font-size:11px; font-weight:700; padding-top:1px;">1</div>
-        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Save &mdash; here, on this page</div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">One task row at status <span class="mono">BACKLOG</span>, attributed to you. Free. Nothing runs. You can walk away and think.</div></div>
-      </div>
-
-      <div style="display:flex; gap:11px; margin-bottom:15px;">
-        <div class="mono" style="width:18px; flex-shrink:0; color:var(--text3); font-size:11px; font-weight:700; padding-top:1px;">2</div>
-        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">It waits &mdash; for as long as you like</div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Nothing reads it and nothing is charged. An idea can sit in the Backlog for a week and cost nothing.</div></div>
-      </div>
-
-      <div style="display:flex; gap:11px;">
-        <div class="mono" style="width:18px; flex-shrink:0; color:var(--accent); font-size:11px; font-weight:700; padding-top:1px;">3</div>
-        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;">Start &mdash; on the idea&rsquo;s own page <span class="pill" style="background:var(--accent-soft); color:var(--accent); font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span></div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Hands the idea to Product and begins the real pipeline. Deliberately not on this screen &mdash; you open the idea, read what starting does, and confirm.</div></div>
-      </div>
-
-      <div style="font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
-        Saving and starting are never one click, and never on the same screen. That is the whole point of the split.
-      </div>
+    <div style="display:flex; gap:2px; flex-wrap:wrap; padding-bottom:0;">
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Overview</div>
+      <div style="padding:7px 10px; font-size:11px; color:oklch(78% 0.14 75); font-weight:600; border-bottom:2px solid oklch(78% 0.14 75);">Ideas</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Active Work</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Pipeline</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Agents</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Decisions</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Progress</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Risks</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Meetings</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Inbox</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Reviews</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Releases</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Automation</div>
+      <div style="padding:7px 10px; font-size:11px; color:#666c74;">Costs</div>
     </div>
   </div>
 
-  <!-- LEDGER : EMPTY -->
-  <div style="margin-top:20px;">
-    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
-      <div style="font-family:var(--disp); font-size:13px; font-weight:600;">In Backlog</div>
-      <div style="font-size:11px; color:var(--text3);">saved, not started &mdash; 0</div>
+  <!-- ============ JOURNEY RAIL ============ -->
+  <div style="padding:16px 40px 0; background:#0d1014; border-bottom:1px solid #242830;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+      <div style="display:flex; align-items:baseline; gap:11px;">
+        <div style="font-size:13px; font-weight:600;">TASK-026</div>
+        <div style="font-size:11px; color:#666c74;">from a sentence you typed to agents at work &mdash; ten stages, all clickable</div>
+      </div>
+      <div style="display:flex; gap:7px;">
+        <div onClick="{{prev}}" style="padding:5px 12px; border-radius:7px; border:1px solid #242830; background:#14171c; color:#9aa0a8; font-size:11px; cursor:pointer;">&larr; Back</div>
+        <div onClick="{{next}}" style="padding:5px 12px; border-radius:7px; border:1px solid oklch(78% 0.14 75 / 0.55); background:#14171c; color:oklch(78% 0.14 75); font-size:11px; font-weight:600; cursor:pointer;">Next &rarr;</div>
+      </div>
     </div>
-    <div class="card" style="text-align:center; padding:26px 12px;">
-      <div style="font-size:12.5px; color:var(--text2);">No ideas saved yet.</div>
-      <div style="font-size:11px; color:var(--text3); margin-top:5px;">Anything you save above appears here and stays here until you start it.</div>
-    </div>
-  </div>
-</div>
 
-<!-- ============ STATE 2 : JUST SAVED ============ -->
-<div class="statehdr">Concept A &middot; State 2 &mdash; immediately after Save</div>
-<div class="statesub">Real content: this is the moment TASK-025 was created today. The confirmation names the task, states what did <i>not</i> happen, and offers the Start action only as a <b style="color:var(--text2);">link away to the idea&rsquo;s own page</b> &mdash; never as a button that could be clicked from muscle memory a second after Save.</div>
-
-<div style="border:1px solid var(--border2); border-radius:16px; padding:22px; margin-bottom:34px;">
-
-  <h1>Ideas</h1>
-  <div class="sub" style="margin-top:-14px; max-width:800px; line-height:1.6;">
-    Write an idea down and save it. <b style="color:var(--text2);">Saving costs nothing and starts nothing</b> &mdash; it puts the idea
-    in the Backlog, where it waits. Starting the work is a separate, deliberate click on the idea&rsquo;s own page.
-  </div>
-
-  <!-- CONFIRMATION -->
-  <div class="panel" style="border-color:var(--green); background:oklch(72% 0.15 150 / 0.06); margin-bottom:18px;">
-    <div style="display:flex; gap:12px; align-items:flex-start;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="9" stroke="var(--green)" stroke-width="1.7"/><path d="M8 12.4 L11 15.2 L16 9.2" stroke="var(--green)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <div style="flex:1; min-width:0;">
-        <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">Saved to Backlog &mdash; <span class="mono" style="color:var(--green);">TASK-025</span></div>
-        <div style="font-size:12px; color:var(--text2); line-height:1.55; max-width:740px;">
-          <b style="color:var(--text);">Nothing has started.</b> No agent was dispatched, no model was called, nothing was spent, and no
-          other task changed. Your idea is written down and it is sitting still &mdash; and it will keep sitting still until you open it
-          and start it yourself.
+    <div style="display:flex; gap:3px; align-items:stretch;">
+      <sc-for list="{{stages}}" as="st" hint-placeholder-count="10">
+        <div onClick="{{st.go}}" style="flex:1; min-width:0; border-radius:8px; padding:8px 7px 9px; cursor:pointer; box-sizing:border-box; background:{{st.bg}}; border:1px solid {{st.bd}}; color:{{st.fg}};">
+          <div style="height:2px; border-radius:2px; margin-bottom:6px; background:{{st.bar}};"></div>
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:9px; opacity:0.75; margin-bottom:2px;">{{st.num}}</div>
+          <div style="font-size:10px; font-weight:600; line-height:1.3;">{{st.name}}</div>
         </div>
-        <div style="display:flex; gap:16px; margin-top:10px; font-size:11.5px;">
-          <a class="accentlink" href="#">Open TASK-025 &mdash; read it back, or start the work &rarr;</a>
-        </div>
+      </sc-for>
+    </div>
+
+    <!-- five-voice legend -->
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:11px 0 12px;">
+      <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase;">Who is speaking</div>
+      <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:oklch(58% 0.015 250); border-radius:2px;"></div><div style="font-size:10.5px; color:#9aa0a8;">you said</div></div>
+      <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:oklch(72% 0.12 250); border-radius:2px;"></div><div style="font-size:10.5px; color:#9aa0a8;">we think you mean</div></div>
+      <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:oklch(70% 0.12 300); border-radius:2px;"></div><div style="font-size:10.5px; color:#9aa0a8;">what we think of it</div></div>
+      <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:oklch(78% 0.14 75); border-radius:2px;"></div><div style="font-size:10.5px; color:#9aa0a8;">what we recommend</div></div>
+      <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:oklch(72% 0.15 150); border-radius:2px;"></div><div style="font-size:10.5px; color:#9aa0a8;">you approved</div></div>
+    </div>
+  </div>
+
+  <!-- ============ THE ACTIVE STAGE ============ -->
+  <div style="padding:0 40px;">
+    <sc-if value="{{is1}}" hint-placeholder-val="{{ true }}"><dc-import name="S1RawIdea" advance="{{g2}}" hint-size="1120px,760px"></dc-import></sc-if>
+    <sc-if value="{{is2}}" hint-placeholder-val="{{ false }}"><dc-import name="S2Interpreting" advance="{{g3}}" hint-size="1120px,820px"></dc-import></sc-if>
+    <sc-if value="{{is3}}" hint-placeholder-val="{{ false }}"><dc-import name="S3Understanding" advance="{{g4}}" hint-size="1120px,1000px"></dc-import></sc-if>
+    <sc-if value="{{is4}}" hint-placeholder-val="{{ false }}"><dc-import name="S4Evaluation" advance="{{g5}}" hint-size="1120px,1400px"></dc-import></sc-if>
+    <sc-if value="{{is5}}" hint-placeholder-val="{{ false }}"><dc-import name="S5Review" advance="{{g6}}" hint-size="1120px,900px"></dc-import></sc-if>
+    <sc-if value="{{is6}}" hint-placeholder-val="{{ false }}"><dc-import name="S6Reconsider" advance="{{g7}}" hint-size="1120px,900px"></dc-import></sc-if>
+    <sc-if value="{{is7}}" hint-placeholder-val="{{ false }}"><dc-import name="S7Approval" advance="{{g8}}" hint-size="1120px,760px"></dc-import></sc-if>
+    <sc-if value="{{is8}}" hint-placeholder-val="{{ false }}"><dc-import name="S8ApprovedBrief" advance="{{g9}}" hint-size="1120px,1000px"></dc-import></sc-if>
+    <sc-if value="{{is9}}" hint-placeholder-val="{{ false }}"><dc-import name="S9StartWork" advance="{{g10}}" hint-size="1120px,1000px"></dc-import></sc-if>
+    <sc-if value="{{is10}}" hint-placeholder-val="{{ false }}"><dc-import name="S10Running" hint-size="1120px,900px"></dc-import></sc-if>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div style="padding:8px 40px 28px;">
+    <div style="border-radius:12px; border:1px dashed #242830; background:#0d1014; padding:14px 18px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:7px;">About this prototype</div>
+      <div style="font-size:11px; color:#666c74; line-height:1.65; max-width:920px;">
+        Working navigation, no backend. Every control here moves you between drawn states; nothing is dispatched, no model is invoked and no money is spent by clicking anything.
+        The idea it walks is real &mdash; the Founder&rsquo;s own words for TASK-026, stored in this database, together with the real feedback given later.
+        The database facts quoted throughout (0 of 13 agent runs carrying a cost, <span style="font-family:ui-monospace,Menlo,monospace;">task_steps</span> on 1 of 24 tasks, <span style="font-family:ui-monospace,Menlo,monospace;">project_id</span> NULL on 20 of 24, one row in <span style="font-family:ui-monospace,Menlo,monospace;">projects</span>) are real. Anything the product could not know honestly is drawn as a bracketed placeholder rather than filled in.
       </div>
     </div>
   </div>
-
-  <div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:18px; align-items:start; margin-bottom:20px;">
-    <div class="panel">
-      <div class="label" style="margin-bottom:8px;">Title</div>
-      <div class="inp"><span class="ph">A short name for the idea</span></div>
-      <div class="help">Cleared and ready for the next one. Nothing you already saved is affected.</div>
-      <div class="label" style="margin:16px 0 8px;">The idea &mdash; what do you want, and why does it matter?</div>
-      <div class="inp" style="height:80px;"><span class="ph">Say it the way you&rsquo;d say it out loud.</span></div>
-      <div style="display:flex; align-items:center; gap:14px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div class="btn-save">Save to Backlog</div>
-        <div style="font-size:11px; color:var(--text3);">Starts nothing.</div>
-      </div>
-    </div>
-
-    <div class="panel" style="border-color:var(--border2);">
-      <div class="label" style="margin-bottom:12px;">Two separate actions</div>
-      <div style="display:flex; gap:11px; margin-bottom:13px;"><div class="mono" style="width:18px; color:var(--green); font-size:11px; font-weight:700;">1</div><div style="font-size:12px;"><b>Saved</b> <span style="color:var(--green); font-size:11px;">&mdash; done, TASK-025</span></div></div>
-      <div style="display:flex; gap:11px; margin-bottom:13px;"><div class="mono" style="width:18px; color:var(--accent); font-size:11px; font-weight:700;">2</div><div><div style="font-size:12px; font-weight:600;">Waiting</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">TASK-025 is in the Backlog right now, doing nothing, costing nothing.</div></div></div>
-      <div style="display:flex; gap:11px;"><div class="mono" style="width:18px; color:var(--text3); font-size:11px; font-weight:700;">3</div><div><div style="font-size:12px; font-weight:600; color:var(--text2);">Not started</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">Start it from its own page, after reading what starting does.</div></div></div>
-    </div>
-  </div>
-
-  <!-- LEDGER : ONE REAL ROW -->
-  <div>
-    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
-      <div style="font-family:var(--disp); font-size:13px; font-weight:600;">In Backlog</div>
-      <div style="font-size:11px; color:var(--text3);">saved, not started &mdash; 1</div>
-    </div>
-
-    <div class="card" style="display:block; border-color:var(--border2);">
-      <div style="display:flex; align-items:flex-start; gap:12px;">
-        <div style="width:8px; height:8px; border-radius:50%; background:var(--gray); margin-top:5px; flex-shrink:0;"></div>
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <div style="font-size:13px; font-weight:600;">
-              <span class="mono" style="color:var(--text3); font-weight:400; font-size:11px;">TASK-025</span>
-              &nbsp;&mdash;&nbsp;Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills
-            </div>
-            <div style="display:flex; gap:6px;">
-              <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Medium</span>
-              <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Not started</span>
-            </div>
-          </div>
-          <div style="font-size:11.5px; color:var(--text2); margin-top:6px; line-height:1.55; max-width:820px;">
-            Today the pipeline runs idea &rarr; requirements &rarr; design with no divergent-thinking step: the first interpretation of a
-            Founder&rsquo;s idea becomes the spec. Design produces 2&ndash;3 concepts, but only about visuals, after the shape is already&hellip;
-          </div>
-          <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Saved 1 Sep 19:42 UTC by Founder &middot; in Backlog 0d &middot; nothing has run on it</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="font-size:10.5px; color:var(--text3); margin-top:9px; line-height:1.5; max-width:820px;">
-      This list is read-only. Nothing on it spends money &mdash; a row is a link to the idea&rsquo;s own page, where starting lives.
-    </div>
-  </div>
-</div>
-
-<!-- ============ STATE 3 : TASK DETAIL, START LIVES HERE ============ -->
-<div class="statehdr">Concept A &middot; State 3 &mdash; TASK-025&rsquo;s own page, where Start lives</div>
-<div class="statesub">Real row, real values (owner unassigned, no gate, no cost data). Two things are new to this page: the <b style="color:var(--text2);">&ldquo;The idea, as you wrote it&rdquo;</b> panel that AC-5 requires, and the <b style="color:var(--text2);">Start work</b> panel &mdash; the only place in the product where a click begins a pipeline. Its armed and confirmed states are on the <span class="mono" style="color:var(--text2);">StartFlow</span> artboard.</div>
-
-<div style="border:1px solid var(--border2); border-radius:16px; padding:22px;">
-
-  <h1>TASK-025 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills</span></h1>
-  <div class="sub" style="margin-top:-10px;">Status <span class="pill" style="background:var(--gray-soft); color:var(--text2);">BACKLOG</span> &middot; saved by Founder 1 Sep 19:42 UTC</div>
-
-  <div class="panel" style="margin-bottom:16px;">
-    <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
-      <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;">AI-Pipeline Ops Bootstrap</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px; color:var(--text2);">unassigned</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">0d since created</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px;">0</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; not started</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px; color:var(--text2);">No</div></div>
-      <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;">$0.00</div></div>
-    </div>
-  </div>
-
-  <!-- AC-5 : THE IDEA, READ BACK -->
-  <div class="panel" style="margin-bottom:16px;">
-    <div class="label" style="margin-bottom:9px;">The idea &mdash; as you wrote it</div>
-    <div style="font-size:12.5px; color:var(--text); line-height:1.65; white-space:pre-wrap; max-width:860px;">Today the pipeline runs idea -&gt; requirements -&gt; design with no divergent-thinking step: the first interpretation of a Founder's idea becomes the spec. Design produces 2-3 concepts, but only about visuals, after the shape is already fixed. Add a genuine brainstorming stage between a Founder idea landing and Product locking requirements, so alternative framings get generated and pressure-tested before convergence.</div>
-    <div style="font-size:10.5px; color:var(--text3); margin-top:10px; padding-top:9px; border-top:1px solid var(--border);">Stored exactly as typed and shown escaped &mdash; plain text only, no formatting is interpreted.</div>
-  </div>
-
-  <!-- START PANEL : RESTING STATE -->
-  <div class="panel" style="border-color:var(--accent);">
-    <div style="display:flex; align-items:center; gap:9px; margin-bottom:10px;">
-      <div class="label" style="margin:0; color:var(--accent);">Start work on this idea</div>
-      <span class="pill" style="background:var(--accent-soft); color:var(--accent); font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span>
-    </div>
-
-    <div style="font-size:12.5px; font-weight:600; margin-bottom:9px;">Nothing has run on this idea yet.</div>
-
-    <div style="display:grid; grid-template-columns:auto 1fr; gap:8px 12px; align-items:baseline; max-width:800px; margin-bottom:14px;">
-      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Starting hands TASK-025 to <b style="color:var(--text);">Product</b>, which writes the brief. Design, CTO, Developer, Code Review, Security and QA follow &mdash; the full pipeline, one stage at a time.</div>
-
-      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Every one of those stages is a <b style="color:var(--text);">real model invocation that costs real money</b>. This is not a simulation and it is not free.</div>
-
-      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;"><b style="color:var(--text);">How much?</b> This product cannot tell you yet &mdash; none of the 13 agent runs recorded so far carries a cost figure, so there is no honest estimate to show. Watch it on <a class="accentlink" href="#">Costs</a> as it runs.</div>
-
-      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">There is <b style="color:var(--text);">no stop button</b>. Once a stage is dispatched it runs to completion. You can pause the work between stages, but you cannot un-spend what a running stage costs.</div>
-    </div>
-
-    <div style="display:flex; align-items:center; gap:14px; padding-top:14px; border-top:1px solid var(--border);">
-      <div class="btn-ghost">Start work on TASK-025&hellip;</div>
-      <div style="font-size:11px; color:var(--text2); line-height:1.45;">You get one confirmation step before anything runs.<br><span style="color:var(--text3);">Not ready? Do nothing. This idea stays in the Backlog and keeps costing nothing.</span></div>
-    </div>
-  </div>
-</div>
 
 </div>
 </x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1200,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { stage: 1 }; }
+  renderVals(){
+    var self = this;
+    var s = this.state.stage;
+    var names = ['Raw idea','Interpreting','Understanding','Evaluation','Founder review','Correction','Approval','Approved brief','Start work','Executing'];
+    var go = function(n){ return function(){ self.setState({ stage: n }); }; };
+    var stages = [];
+    for (var i = 0; i < names.length; i++) {
+      var n = i + 1;
+      var cur = n === s, past = n < s;
+      var bg = cur ? 'oklch(78% 0.14 75 / 0.13)' : (past ? '#14171c' : '#101317');
+      var bd = cur ? 'oklch(78% 0.14 75)' : (past ? '#323844' : '#1e2229');
+      var fg = cur ? 'oklch(78% 0.14 75)' : (past ? '#9aa0a8' : '#4e545c');
+      var bar = cur ? 'oklch(78% 0.14 75)' : (past ? '#4e545c' : '#1e2229');
+      stages.push({ num: (n < 10 ? '0' + n : '10'), name: names[i], go: go(n), bg: bg, bd: bd, fg: fg, bar: bar });
+    }
+    return {
+      stages: stages,
+      is1:s===1, is2:s===2, is3:s===3, is4:s===4, is5:s===5,
+      is6:s===6, is7:s===7, is8:s===8, is9:s===9, is10:s===10,
+      g2:go(2), g3:go(3), g4:go(4), g5:go(5), g6:go(6),
+      g7:go(7), g8:go(8), g9:go(9), g10:go(10),
+      prev: go(s > 1 ? s - 1 : 1),
+      next: go(s < 10 ? s + 1 : 10)
+    };
+  }
+}
+</script>
 </body>
 </html>

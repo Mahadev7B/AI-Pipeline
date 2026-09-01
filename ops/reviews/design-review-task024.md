@@ -1,331 +1,371 @@
-# Design Review — TASK-024: Founder Idea Intake
+# Design Review — TASK-024: the Founder idea journey
 
-Author: Design agent · Date: 2026-09-01 · Status: for CTO
-Input: `ops/reviews/product-task024-brief.md` (approved), plus a **Founder scope
-correction issued mid-design** (§0).
+**Revision 2 — the DEC-015 revision.** Design · 2026-09-01 · **for the Founder.**
 
-Mockups: `ops/mockups/task024/` — `Main.dc.html` (Concept A, recommended),
-`StartFlow.dc.html` (the Start action, every state), `Receipt.dc.html`
-(Concept B), `Inline.dc.html` (Concept C), `Closeups.dc.html`.
-Published as one canvas: https://claude.ai/code/artifact/6eb8e58e-4ef8-4201-8f7c-e92aad45c612
+**This supersedes Revision 1 in full** (the Save/Start intake flow, Concepts A/B/C,
+and *Brainstorm More*). Revision 1's artboards are kept at
+`ops/mockups/task024/superseded/` rather than deleted — §9 records what survived,
+what was dropped, and why.
 
-All content is real, queried from the live database this session: TASK-025
-(the one genuine `BACKLOG` row, with its actual title, `business_goal` and
-19:42 UTC creation), TASK-023/024 on Active Work, the real `priority`
-distribution, and the real title/`business_goal` length statistics behind
-the caps in §6. Nothing here is invented data.
+**Governing input:** `ops/reviews/founder-directive-task024-deciphering-v2.md`
+(Parts 1, 2 and 3, verbatim — it governs over every summary of it), then Product's
+Revision 4 at `ops/reviews/product-task024-brief.md`, then DEC-015.
+
+**Canvas:** https://claude.ai/code/artifact/cb4151f6-1fa2-4d17-ab71-981e13d629de
+**Artboards:** `ops/mockups/task024/*.dc.html` · manifest `canvas.json`
+
+**Status: MOCKUP_REVIEW.** The Founder reviews this before Development begins —
+the Founder's own process order (Part 3 §11). Design cannot approve its own mockup.
 
 ---
 
-## 0. Scope correction — where the change came from
+## 0. What this is, plainly
 
-Product's brief scoped out any start-the-pipeline control (§6: "No start
-button… Status transitions stay exactly as they are today"), on the reasoning
-that a task leaves `BACKLOG` the way every other transition happens — on the
-command line, by the orchestrator.
+A **clickable prototype with working navigation and no backend.** Every control moves
+you between drawn states; nothing dispatches an agent, invokes a model or spends money.
 
-**The Founder reviewed that and rejected it**, mid-design: an intake form that
-can only save leaves them able to write an idea down and still unable to start
-anything from the app, which is the exact gap this milestone exists to close.
-A form that only saves is a suggestion box, not a front door.
+The journey is walked with the **Founder's own real idea**, TASK-026, quoted byte-for-byte
+from the record:
 
-The Founder's decision, in substance: **there must be a way for the Founder to
-start work on a saved idea, from the UI.** This was not Design's call and not
-Product's — recording it here so the paper trail shows its origin. Everything
-else in Product's brief stands unchanged, including the part of it this
-correction *does not* touch: **auto-start on submit remains out of scope.**
-Product's argument against auto-start was never "starting is bad," it was that
-submitting would silently become the first automatic dispatch of a new agent
-type, reopening a sequencing decision the Founder has frozen three times
-(DEC-008, DEC-010, DEC-012). A Founder clicking a start control is attended
-human action — the same kind as Ask-Agent and Meetings, which already spend
-money on a click. That distinction survives the correction intact and is the
-load-bearing constraint on everything below.
+> *"the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow"*
 
-The Save half of the design was already drafted against the narrower scope and
-was revised, not discarded.
+It was chosen for three reasons, not one. It is **real**. It is an **internal utility**, so
+its depth is honestly **Light** and sections 5–7 are honestly empty — the mockup demonstrates
+depth scaling without inventing a single competitor. And Part 2 §3's own worked example is
+literally this idea, so the interpretation in the mockup is the directive's own standard
+rather than Design's invention.
 
-## 1. The central problem, restated
+The Reconsider round uses the Founder's **real later feedback**, also verbatim
+(*"almost there, UI i'm talking about is UI of my factory to track the app progress…"*),
+so the send-back path shows a real correction producing a real change rather than a
+staged one.
 
-Two adjacent actions with wildly different consequences:
+**Every database fact quoted on the canvas is real and was queried this session:**
+0 of 13 `agent_runs` rows carry a cost; `task_steps` on 1 of 24 tasks; `project_id` NULL
+on 20 of 24; one row in `projects`; `design` absent from `MEETING_PARTICIPANT_ALLOWLIST`.
+Everything the product could not honestly know is drawn as a **bracketed placeholder**,
+never filled in. §8 lists what could not be drawn honestly at all.
 
-| | Save | Start |
-|---|---|---|
-| writes | one `tasks` row at `BACKLOG` + one history row | a status transition, and a dispatched agent |
-| runs | nothing | Product, then the whole pipeline behind it |
-| costs | $0.00 | real money, amount unknown (§4) |
-| reversible | walk away and think | no stop button |
+---
 
-The design's whole job is making those two unmistakably different, in a UI
-where **the existing spend-triggering controls are barely marked at all.** I
-checked, rather than assuming: Ask-Agent (`generate_agents.py`
-`render_ask_agent_section`) is a plain text input and an accent "Send" button
-with *no* mention of cost anywhere. The Meetings form
-(`generate_meetings.py`) gets closest with one 10.5px muted line — "this runs
-for real and can take up to ~2 minutes" — which discloses *time*, not money.
-So "at least as clear as the existing controls" is a very low bar, and Start
-should clear it by a wide margin: it starts an eight-stage pipeline, not one
-question.
+## 1. The central design problem, and how it is solved
 
-## 2. Recommendation
+The directive names it: the UI must make it easy to distinguish **what I said · what the
+factory thinks I meant · what the factory thinks about the idea · what the factory
+recommends · what I approved.** Everything else in this design is downstream of that.
 
-**Concept A (`Main.dc.html`) — Save on the Ideas page, Start on the idea's own
-Task Detail page.** Build it with `StartFlow.dc.html`'s two-step Start.
+**The solution is a fixed grammar of five voices, carried by four independent signals so
+that no single one is load-bearing.** It is drawn in full on `Distinctions.dc.html`.
 
-The reason is structural, not cosmetic: **the compose surface can never spend
-money, because the expensive control does not exist on it.** Not greyed out,
-not confirm-guarded — absent. A Founder who has just clicked a filled amber
-"Save to Backlog" button cannot, by a reflex second click a moment later, land
-on anything that dispatches an agent. Getting from "saved" to "started"
-requires a deliberate navigation, and the destination page spends its whole
-area telling you what starting does before offering to do it.
-
-Everything else follows from that separation:
-
-- **The Ideas page carries a standing ledger**, "In Backlog — saved, not
-  started," directly under the form. A one-shot confirmation banner is read
-  once and forgotten; a Founder wondering three days later why nothing is
-  happening needs a *place* that still says "not started," not a notification
-  they missed. The ledger is that place, and the list shrinking when a task
-  starts is itself a signal.
-- **The ledger doubles as the first-run empty state** — "No ideas saved yet.
-  Anything you save above appears here and stays here until you start it."
-- **`business_goal` renders back on Task Detail** (AC-5) in a panel titled
-  "The idea — as you wrote it," escaped, `white-space: pre-wrap`, no Markdown
-  or rich-text path anywhere (Product §8.3).
-
-The cost of Concept A is one extra navigation between having an idea and
-starting it. Given what that click buys — the impossibility of accidentally
-spending money from a text box — it is the cheapest insurance in this design.
-
-### Where Start lives, decided
-
-**Task Detail only, for this milestone.** Not on the intake confirmation
-(that is Concept B's error), not on Active Work rows (Concept C's), not in
-several places at once. One control, one page, one URL — which also gives
-Security and QA exactly one surface to reason about for the first route in
-this product that dispatches an agent on a Founder's click. If the Founder
-later finds the extra hop tiresome, adding a Start affordance to the Ideas
-ledger row is a small additive change; removing one that shipped everywhere
-is not.
-
-## 3. The Start action — the shape (`StartFlow.dc.html`)
-
-Four states, all server-rendered (this product runs no client JS and uses no
-browser `confirm()`):
-
-1. **Resting** — a panel on Task Detail, accent-bordered, headed "Start work
-   on this idea" with a `SPENDS MONEY` pill, stating in full what starting
-   does. Its control is **outlined, not filled**, and ends in an ellipsis:
-   `Start work on TASK-025…`. It arms; it dispatches nothing.
-2. **Confirm** — a screen whose entire body is the consequence, repeating the
-   idea's title and text back so "which idea am I about to spend on" is never
-   a question. The **filled** amber button appears here and only here, and its
-   label names the agent and the spend: *"Yes — start Product on TASK-025 and
-   spend."* Beside it: *"Cancel — leave it in the Backlog."*
-3. **Started** — the mirror of the save confirmation, and just as emphatic:
-   "Started — Product is working on TASK-025 now," the real transition
-   (`BACKLOG → PLANNING`, owner Product), the dispatch timestamp, and two
-   links that answer *where do I watch this* — Active Work, and Costs. **The
-   Start control is removed from the page entirely**, so a second dispatch is
-   impossible rather than merely discouraged — the same in-progress lock the
-   Ask-Agent panel already implements ("a request is already in progress"),
-   applied to a far more expensive action.
-4. **Failed** — "Not started. TASK-025 is still in the Backlog." No agent was
-   started, nothing was spent, the status is unchanged, try again. **The word
-   "started" never appears unless a status change was actually written.**
-   TASK-023 shipped a sandbox that reported success over a no-op and QA caught
-   it; the Start path is the same shape of risk and does not get to repeat it.
-
-### Design decision: Save and Start are separated by fill, step count and
-### label — not by colour
-
-The palette is closed and fully assigned: amber = active/primary, green =
-passed, red = danger & open risk, blue = agent waiting, violet = actor
-identity, gray = neutral. Two alternatives were considered and rejected in
-`StartFlow.dc.html` §1:
-
-- **Paint Start red** — rejected. Red means danger and open risk everywhere
-  else in this product. Starting work is the thing the Founder is *supposed*
-  to do; colouring it as a hazard misrepresents it and would train them to
-  ignore red.
-- **Invent a sixth colour for "expensive"** — rejected. Every prior design
-  review in this project extended an existing convention rather than adding a
-  family; a six-hue palette where the sixth means "costs money" is a new
-  system for one button.
-
-Instead: Save keeps the filled-amber primary (it is genuinely safe, and earns
-one click). Start's arming control is **unfilled**, which in this UI has never
-been the "go". The filled amber button appears exactly once in the Start flow,
-on a screen the Founder cannot reach without passing the disclosure, wearing a
-label that spells out what it does. Reinforced by a `SPENDS MONEY` pill —
-a marker, in an existing colour, that no other control in the product carries.
-
-## 4. The honest cost disclosure — a finding
-
-The Start disclosure should tell the Founder what this will cost. **It cannot,
-and it must say so.** Queried this session: `agent_runs` holds 13 rows and
-**0 of them carry a `cost_usd` value.** There is no historical figure to
-average, so any dollar estimate on that screen would be fabricated.
-
-So the disclosure reads: *"How much? This product cannot tell you yet — none
-of the 13 agent runs recorded so far carries a cost figure, so there is no
-honest estimate to show. Watch it on Costs as it runs."* That is worse news
-than a number and it is the only truthful thing available. It is also a
-standing argument for finishing task-scoped cost attribution — not this
-milestone's job, but worth CTO seeing stated plainly.
-
-The disclosure also names the thing nobody has asked about: **there is no stop
-button.** A dispatched stage runs to completion. The Founder should learn that
-before the first click, not after.
-
-## 5. The two alternates, honestly
-
-### Concept B — `Receipt.dc.html`: one surface, staged
-
-Save leads to a full-page receipt that *counts the things that did not
-happen*: 1 task row, 1 history entry, **0 agents dispatched, 0 model calls,
-$0.00 spent, 0 other tasks changed**. Then, on the same surface, it offers
-Start.
-
-**Its genuine strength**: that counted-nothings block is the single clearest
-moment in any of the three concepts, and the shortest path from idea to
-running work. I would like it to win.
-
-**Why it doesn't**: it puts the free button and the expensive button on one
-screen seconds apart. Save lands at the top of the page, and the Start arm
-sits a short scroll below in the same visual language — exactly where a
-reflex second click goes. And when the Founder navigates away, *nothing
-anywhere still says "this is parked"*: no ledger, no list, no standing state.
-A receipt is a notification, and notifications are read once.
-
-**Recommendation: don't build the page, do steal the block.** The
-counted-nothings idea is worth keeping as a possible later addition to
-Concept A's save confirmation — but it is an enhancement, not a requirement,
-and it is *not* part of what I am asking CTO to architect. Documented, not
-silently dropped.
-
-### Concept C — `Inline.dc.html`: capture and start from Active Work
-
-No new page. A capture strip at the top of Active Work; saved ideas fall into
-a permanently receded "Not started" zone below the running work, each row
-carrying its own `Start work…` control.
-
-**Its genuine strength**: the only concept where a parked idea is permanently
-part of the company's status picture rather than a thing on its own page, and
-where starting happens exactly where the Founder triages. It also forces the
-`is_stuck()` question into the open, which is a virtue.
-
-**Why it doesn't win**: three separate problems, any one of which would be
-enough. It bolts a write form onto a page whose own headline today reads
-*"Active Work — read-only."* It repeats a money-spending control once per
-row, so the accidental-click surface grows with the backlog — the opposite of
-what this feature needs. And it asks one screen to be a monitor, an authoring
-form and a dispatch console simultaneously, which is how the dashboard stops
-being scannable.
-
-**One piece of it is worth keeping regardless of concept**: the receded
-treatment for a `BACKLOG` row on Active Work — hollow gray dot, no gate line,
-"Not started," and *no stuck badge*. See §8.
-
-## 6. Validation, errors, and per-field caps (`Closeups.dc.html` §2–3)
-
-**The rule that matters most: every rejection re-renders the form with the
-Founder's typed text still in it.** Losing 300 words of idea to a validation
-error is the worst thing this form can do and it is entirely avoidable.
-Server-side validation is authoritative; browser `required`/`maxlength` are
-convenience only.
-
-- Empty title → *"Give the idea a title — a short name is all it needs."*
-- Empty idea → *"Tell us the idea. One or two sentences is enough — Product
-  takes it from there."*
-- Whitespace-only counts as empty (strip before checking).
-- Over cap → names the real count and the real limit: *"That title is 214
-  characters. The limit is 160 — shorten it, or move the detail into the idea
-  below."* Same shape as the existing ask-message/topic rejections.
-- Save failure → *"Not saved. Nothing was written."* — never the word "saved"
-  without a row id.
-
-**Caps, recommended with the real numbers behind them:**
-
-| Field | Real avg | Real max | **Cap** | Reasoning |
+| Voice | Colour | Container shape | Kicker | Attribution |
 |---|---|---|---|---|
-| `title` | 68 | **146** | **160** | The longest title this company actually uses is 146 (TASK-018). A tidier-looking 120 would have rejected a title already in the database. 160 clears the observed max with room and still fits the one-line Active Work card. |
-| `business_goal` | 412 | 929 | **4,000** | Reuses the existing `MAX_DECISION_CHARS` value rather than inventing a new magic number — ~600 words, over 4× the longest idea anyone has written here. Deliberately half of `MAX_ASK_MESSAGE_CHARS` (8,000): an ask message is transient, this text is stored forever, re-rendered on a dashboard card, and concatenated into every agent transcript for the task. |
-| `priority` | — | — | **allowlist** | Exactly one of `high`/`medium`/`low`. Anything else is **rejected, not coerced to medium** — a value that isn't one of the three did not come from this form, and silently accepting it hides that. |
+| **You said** | gray (`--gray`) | recessed ground, 3px left rule, quotation marks, `pre-wrap` | `YOU SAID` | *your words, 20:03 UTC, never edited* |
+| **We think you mean** | blue (`--blue`) | panel, 3px left rule | `WE THINK YOU MEAN` | *the company · round N · vN* |
+| **What we think of it** | violet (`--violet`) | panel, 3px left rule | `WHAT WE THINK OF IT` | *the company · round N* |
+| **We recommend** | amber (`--accent`) | **filled ground + full border** — the only one | `WE RECOMMEND` / `WE NEED FROM YOU` | *one recommendation, round N* |
+| **You approved** | green (`--green`) | **double border + header bar** — built like a document, not a card | `YOU APPROVED` | *v3 · by you · 20:41 UTC* |
 
-160 + 4,000 chars ≈ 4 KB, far under the 64 KiB `MAX_BODY_BYTES` — so these
-caps, not the transport limit, are the real bound on one submission, which is
-what Product §8.4 asked for.
+Four decisions inside that are worth stating rather than leaving to be discovered:
 
-**Double-submit**: Save is cheap, so a duplicate row is a duplicate row, not
-money — POST→redirect→GET (the pattern the existing routes already use) is
-sufficient, which means **the confirmation must survive a redirect and name
-the new task id** (e.g. `/ideas.html?saved=26`). Mechanism is CTO's; the
-design requirement is that the id appears. Start is neither cheap nor
-idempotent and gets the stricter guard in §3.
+- **The palette is not extended.** DEC-002's five hues plus gray were already fully
+  assigned and this feature spends all of them at once. Nothing new was invented for it.
+- **The Founder's own words carry no company colour at all.** They are the only element on
+  any screen rendered as a literal quotation on a recessed ground. They are not the
+  company's claim and they do not get the company's palette.
+- **Colour is never the only signal.** Container shape, a kicker naming the speaker in
+  words, and an attribution line all survive a grayscale print, a screenshot and
+  colour-blindness.
+- **The legend is in the page chrome**, on every screen of the journey. The Founder learns
+  the grammar once.
 
-## 7. Nav placement (`Closeups.dc.html` §1)
+**The test the design has to pass** is drawn as its own block on `Distinctions.dc.html`:
+five statements about one idea, side by side, such that none of them can be read as
+another — out of context, in grayscale, by someone who has not read the legend.
 
-**"Ideas", second, between Overview and Active Work.** The bar reads
-left-to-right as the company's own lifecycle: Overview (how are we) → Ideas
-(queued, not started) → Active Work (running) → Pipeline. It is a noun, like
-all thirteen existing items — "New Idea" would be the only imperative in the
-bar, and it describes the form rather than the page, which also holds saved
-ideas. Rejected: "New Idea" first (demotes Overview, the intended landing
-page, for a form used occasionally) and "Intake"/"Backlog" last (process
-vocabulary for a one-person company; buries the only route that creates work
-behind twelve read-only registers).
+**One honest weakness, stated rather than hidden.** Violet already means *actor identity*
+elsewhere in this product and is asked here to also mean *the company's judgment of the
+idea*. That is a second meaning for one hue and it is the weakest link in the system. It is
+written on the artboard itself, not only here.
 
-## 8. The two findings Product surfaced
+### 1.1 The pairing that never goes away
 
-**`is_stuck()` and `BACKLOG` — Design position, CTO's code call.** A parked
-idea must not be presented as a failure. Recommendation: **exclude `BACKLOG`
-from `task_is_stuck()`**, the same way `BLOCKED` and `FOUNDER_APPROVAL` are
-excluded and for the same reason its own docstring gives — the status already
-has a better-labelled treatment of its own. The age stays visible and honest
-("In Backlog 4d · waiting for you to start it"); it is only the *failure
-framing* that goes. Also, a `BACKLOG` row on Active Work should read "Not
-started" with a hollow gray dot rather than today's "Gate: — · not yet on the
-gate ladder", which is accurate but obscure. This satisfies AC-11.
+Product §6's requirement — *the Founder must always be able to open the product and see the
+words they originally typed, next to what the company decided those words meant, forever, on
+the same screen, not in an archive* — is met literally. **The raw idea appears on all ten
+stages**, in the same place, in the same treatment. On stages 5, 6 and 7 it is a compact
+one-line strip; on 3, 8 and 10 it sits directly beside the interpretation or the approved
+brief. It is present on the screen where the factory is still running (stage 10), which is
+the screen where it is most tempting to drop it.
 
-**`priority` free text.** Intake writes only the three clean values;
-retro-fixing the 24 existing rows stays out of scope. But wherever priority
-renders, an unrecognised legacy value (`"P0 - Phase 1 Foundation"`) must
-render **verbatim in the dimmest gray** — never mapped to a known colour,
-never hidden, never crashed on; `NULL` renders as an em dash. Pill colours:
-`high` takes the accent, `medium`/`low` are gray. Priority is a hint, not a
-status, and every colour in this palette already means a status.
+---
 
-## 9. What CTO needs to decide
+## 2. The concise/expanded split, in practice
 
-Carried forward from Product's §10, plus what the scope correction adds:
+Product §5's rule, rendered rather than described:
 
-1. **`is_stuck()` and `BACKLOG`** — §8. Must not ship undecided.
-2. **`project_id` on intake** — unchanged from Product's open question; the
-   mockups render `1` ("AI-Pipeline Ops Bootstrap") because Task Detail and
-   Active Work both have a Project field that otherwise shows an em dash.
-3. **`cmd_task_create()`'s refactor shape** — unchanged.
-4. **Caps** — §6 recommends 160 / 4,000 / allowlist with reasoning; CTO
-   confirms or overrides.
-5. **New: what the Start route actually dispatches, and its guard.** Design
-   specifies the *behaviour* — one deliberate human click, two steps,
-   idempotent against double-dispatch, honest on failure, control removed once
-   running. The route, the dispatch mechanism, and how the "already running"
-   check is made are CTO's. Two things Design will flag as non-negotiable
-   from the screen's side: **the "Started" state must not render unless a
-   status transition was actually written**, and **a failed dispatch must
-   leave the task in `BACKLOG` and say so.**
-6. **New: whether Start reuses the automation poller's dispatch path or a
-   direct invocation.** Product's §3 argument turned on this route not being
-   *automation*; Design's requirement is only that whatever CTO chooses stays
-   human-triggered and attended, with no path by which saving alone reaches it.
-7. **Confirmation-survives-redirect mechanism** — §6.
+> **Concise = everything needed to decide whether to approve. Expanded = everything needed
+> to check that decision.**
 
-## 10. What this review is not asking for
+**How it is built.** The concise layer is **ten question rows**, one per Founder question,
+each carrying its full answer in prose on the panel ground. The expanded material sits
+behind one control per row — *"+ Show the working · sections 5 and 6"* — and opens into a
+**visually recessed inset** with a darker ground, a thinner rule and a kicker naming which
+of Part 2's fifteen sections it is. The two layers do not look alike, so a Founder can tell
+at a glance which one they are reading.
 
-No editing, no deleting, no CRUD surface, no attachments, no multi-project,
-no rendering of `user_story`/`requirements`/`acceptance_criteria`, no
-auto-start, no retro-fix of existing rows. Concept B's receipt and Concept C's
-inline capture are documented and rejected, not quietly dropped. Design cannot
-approve its own mockup — this goes to Product or the Founder for that call.
+**Four rules the rendering enforces:**
+
+1. **The page says so at the top:** *"Ten answers, about two minutes. You can approve from
+   this page without opening anything."* If that sentence is not true of a round, the round
+   is wrong, not the sentence.
+2. **Every expander is labelled with what it contains**, by section number. A control that
+   says only "more" invites the Founder to assume something decision-relevant is behind it.
+3. **The Company View is never behind a disclosure.** It closes the concise layer, always
+   visible, always the same six fields.
+4. **The uncomfortable answers stay in the concise layer.** Question 4 on this idea is
+   answered *"We don't know, and here is why"* in full, in the concise layer, at the same
+   size as every other answer. It is not softened and it is not demoted.
+
+**The check I applied to my own draft**, which is also Product's AC-29: read only the
+concise layer, decide, then open everything and ask whether the decision would have changed.
+On this idea it would not. Every fact that could change the answer — the data floor, the
+missing differentiation, the ellipse being uncommitted, the two open questions — is above the
+fold in the concise answers. The expanded layer holds *evidence*, never *news*.
+
+**The ten questions map onto the fifteen sections exactly as Product specified**, and each
+expander names its sections: Q1→1+2, Q2→3, Q3→4, Q4→5+6, Q5→7, Q6→8, Q7→9+10+12, Q8→11,
+Q9→13, Q10→14, closing on §15.
+
+---
+
+## 3. Depth scaling, and the three labels
+
+**Depth is shown as a chip with its one-line reason beside it**, not as a setting buried in
+a panel. It appears on the interpreting screen (stage 2) and again on the result strip
+(stage 3), each time reading:
+
+> **Light** — nobody outside this company chooses between this screen and an alternative; it
+> is our own operating console. Competitor and market analysis could not change the
+> recommendation, so it will not be produced.
+
+Beside it, the honest note that the other setting exists, that Full has to name *who chooses
+and what else they could choose*, and that Full costs more — which is part of why the
+Founder is shown which one ran.
+
+**At Light, sections 5–7 are drawn as present-and-not-produced**, with the reason, never
+silently absent. Section 5's block carries the line that matters most:
+
+> *This is not the claim that there are no competitors. We have not looked, and we cannot look.*
+
+**The three labels are shown in the one place they can be shown honestly.**
+`FullDepth.dc.html` draws the Full-depth expanded layer with **every value as a bracketed
+structural placeholder** — `[competitor]`, `[what they offer]`, `[overlap with our idea]`,
+`[where they appear stronger]`, `[where our idea could differentiate]`. The directive bans
+invented competitor information and a mockup is not exempt from that, so no competitor was
+invented to make the sheet look finished.
+
+That sheet shows, as they would actually render today:
+
+- The **standing disclosure on the section itself**, verbatim: *"Research has not been
+  performed; all entries below are company inference or unknown."*
+- **COMPANY INFERENCE** on the substitute and on the named competitor — and **substitutes
+  before vendors**, because how people solve the problem today is more decision-relevant and
+  needs no verification.
+- **UNKNOWN** as a first-class entry: *"We are not aware of an established competitor here,
+  and cannot check. That is not evidence there are none."*
+- **VERIFIED / CURRENT struck through and marked unreachable**, with the reason (it requires
+  a preserved source and no agent here can produce one) and the consequence: *if this label
+  ever appears on a real evaluation, treat it as evidence that something fabricated it.*
+- The **Founder-checkable prompt** on the named third party: *"Before committing, check
+  whether [competitor] already does this — we cannot."*
+- A **Company View at Full depth with unknown competitor data**, which lands on
+  **OPPORTUNITY: Unclear** and **RECOMMENDATION: Investigate first** — Product's requirement
+  that *Investigate first* be a reachable outcome rather than a value nobody selects, drawn
+  as the case that reaches it.
+
+---
+
+## 4. The journey, stage by stage
+
+Ten stages, one artboard each, laid left-to-right in journey order, plus `Main.dc.html` —
+the walkable window that mounts each of them behind a clickable rail.
+
+| # | Stage | Artboard | What it settles |
+|---|---|---|---|
+| 1 | RAW IDEA | `S1RawIdea.dc.html` | **Save Idea** (filled, free) and **Refine / Interpret…** (outlined, ellipsis). Neither spends on this click — the compose surface still has no spend control on it. *Refine* opens the disclosure; the standing "In Backlog — saved, not started" ledger stays. |
+| 2 | FACTORY INTERPRETING | `S2Interpreting.dc.html` | Roster (*Product · CTO · Red Team*) with a reason per role **and the roles left out with their reasons**; depth and its reason; **no progress bar and why**; no transcripts; leaving is free. |
+| 3 | FACTORY UNDERSTANDING | `S3Understanding.dc.html` | Your words beside our reading; concise questions 1–3 with expansion; roster/depth strip. |
+| 4 | IDEA EVALUATION | `S4Evaluation.dc.html` | Concise questions 4–10 and the **Company View**. Same page as stage 3 — the rail splits it only so it can be jumped to, and the screen says so. |
+| 5 | FOUNDER REVIEW | `S5Review.dc.html` | **Edit/Correct · Reconsider · Approve Brief**, each with what it costs on itself. Both question states drawn: two questions with their stakes, and the honest zero. |
+| 6 | CORRECTION / RECONSIDERATION | `S6Reconsider.dc.html` | What Reconsider actually does: feedback captured verbatim, the spend warning **on the button**, round counter, round 2's real delta. Edit/Correct beside it, free and attributed to the Founder. |
+| 7 | FOUNDER APPROVAL | `S7Approval.dc.html` | What approving does and does not do; approvable with a question still open; **silence is not consent**. |
+| 8 | APPROVED BRIEF | `S8ApprovedBrief.dc.html` | **WHAT I APPROVED** as a distinct artifact — double border, header bar, seal — beside the raw idea. The three artifacts, the version ladder, and what downstream agents receive. |
+| 9 | START WORK | `S9StartWork.dc.html` | Arm → confirm → started, plus the drawn failure and double-click states. |
+| 10 | FACTORY BEGINS EXECUTION | `S10Running.dc.html` | What was actually written, **the four things this screen will not show and why**, and where to watch it. |
+
+Plus three reference sheets: `Distinctions.dc.html` (the five voices), `HonestStates.dc.html`
+(ten honest states drawn), `FullDepth.dc.html` (§3).
+
+**Walkability.** Artboards on this canvas share no runtime state, so cross-stage navigation
+lives in one place: `Main.dc.html` mounts each stage through `dc-import` and drives it from
+a clickable ten-step rail plus Back/Next. Each stage also advances itself — its own forward
+control calls back into the shell — so the journey can be walked by using the screens rather
+than the rail. Standing alone on the canvas, each stage's **local** controls still work
+(expanders, the arm-then-confirm, the reconsider box, the version ladder). One authored copy
+of each screen, two ways to read it.
+
+---
+
+## 5. What Reconsider does, decided
+
+The directive says *"the Founder provides feedback and the company re-evaluates"* and leaves
+the rest to Design. What is drawn:
+
+- **The feedback box is the action**, not an afterthought. It is the only thing round 2 has
+  that round 1 did not, and the screen says so: *without it we would re-run the same
+  reasoning on the same input and hand you the same answer, at the same price.*
+- **The spend warning is on the control**, in its label — *"Send back for round 2 — this
+  spends again"* — not in a paragraph above it. Product §8's requirement, rendered.
+- **Rounds are numbered and visible**, with the honest line reserved for round 3:
+  *another round costs again — it may be cheaper to approve and correct downstream.* It does
+  not block.
+- **Round 2 reports what did not change as well as what did.** A delta that lists only
+  changes reads as agreement about everything else. The drawn round 2 carries five marked
+  lines — CLOSED, SHARPER, NEW, SAME, OPEN — including one still-open question that the
+  company did not quietly decide.
+- **Edit/Correct is the other half of the same screen**: free, zero `agent_runs`, and the
+  new version is **authored by the Founder**, with the added line marked as theirs wherever
+  it appears afterwards, including downstream. And the screen states the boundary: an edit
+  never reaches the raw idea, which has no edit path anywhere in the product, for anyone.
+
+---
+
+## 6. Start Work — what survived, and what changed
+
+**Survived from Revision 1, unchanged in shape:** arm-then-confirm; outlined control arms and
+dispatches nothing; the filled control appears exactly once, on a screen whose whole body is
+the consequence; the control is **removed** after firing rather than disabled; and the failure
+state says *"Not started. TASK-026 is still in the Backlog"* — the word "started" never
+rendering unless a transition was written.
+
+**Changed:** it now applies to **Approve Brief & Start Work** only, and the label
+`Start work on TASK-025…` from Revision 1 is gone — Product was right that the first click
+starts *understanding*, not building.
+
+**Added, from Part 3 §5 and Product §8.1/§9.2** — the confirm screen states four things:
+agents begin working; **real AI cost may be incurred and there is no estimate** (0 of 13
+recorded runs carries a figure); the **approved brief** is what those agents receive, with
+the raw idea beneath it labelled as context; and **there is no stop button.**
+
+---
+
+## 7. Honest states, drawn
+
+`HonestStates.dc.html` draws ten, several with the tempting wrong version beside them, marked:
+
+1. **"We are not aware of established competitors, and cannot check. That is not evidence
+   there are none."** — beside the struck-through *"There are no competitors"*, which is
+   always a failure and is the sentence the Founder most wants to hear.
+2. **"We don't know, and here is why"** — in the concise layer, at full size.
+3. **"We do not yet see a strong differentiation"** — a complete answer, not a gap.
+4. **An empty competitor section that says why it is empty** (Light depth, with the reason).
+5. **Zero Founder questions** — a passing score, with the note that eight small questions
+   would be the failure.
+6. **"Not started. Still in the Backlog."**
+7. **No cost estimate**, with the enforced-ceiling slot drawn empty and bracketed.
+8. **No progress bar**, with the bar this product will not ship shown as a hatched
+   placeholder and labelled.
+9. **A roster of one** — legitimate, never silent.
+10. **A perspective that could not be consulted** — *Design would have been material here;
+    `design` is not on the meeting participant allowlist today.*
+
+The rule underneath all ten is on the sheet: *an empty space with a reason is information;
+an empty space without one is a bug; a filled space without evidence is a lie.*
+
+---
+
+## 8. What I could not draw honestly
+
+Stated plainly, because a mockup that quietly invents the parts it cannot know is the exact
+failure this feature exists to prevent.
+
+1. **The per-round cost ceiling.** Product §8.4 permits a maximum only if it is recomputed
+   from the mechanism CTO actually builds, and explicitly forbids copying the figure in the
+   brief. That mechanism does not exist. So the slot is drawn, empty and bracketed —
+   `[ per-round maximum — computed from the real dispatch path; not yet wired ]` — on the
+   interpret disclosure, the reconsider panel and the Start confirm. **CTO fills it or it
+   stays empty.** An empty slot with a reason is the honest state; a copied number is not.
+2. **Any competitor, at Full depth.** No competitor, substitute, price, feature or market
+   fact is named anywhere on this canvas. `FullDepth.dc.html` shows the *shape* of that
+   layer with every value bracketed.
+3. **The Founder's title for the idea.** The Founder typed the idea, not a title. The compose
+   field therefore shows placeholder text rather than a value, and every later screen
+   identifies the idea as **TASK-026** — which is real — rather than putting words in the
+   Founder's mouth.
+4. **Any timing.** No ETA, no duration, no "usually takes about" anywhere. Nothing has run
+   often enough to have a history.
+5. **The internal debate.** It is referenced as reachable in one click and is not drawn,
+   because no such meeting has been held for this idea and drawing one would be fake
+   evidence.
+
+---
+
+## 9. What changed from Revision 1, and why
+
+| Revision 1 | Now | Why |
+|---|---|---|
+| Three concepts (A/B/C) for one intake screen | **One direction, ten stages** | The visual language is settled (DEC-002 and Revision 1). The open question is the journey, not the aesthetic. |
+| *Brainstorm More* | **Gone entirely** | The Founder rejected the concept. Not renamed — removed. |
+| Start = the whole pipeline from a raw idea | **Start = execution of an approved brief** | DEC-013/014/015. |
+| `Start work on TASK-025…` | **Approve Brief & Start Work** | The first click starts understanding, not building. |
+| Save/Start as the central tension | **The five-way voice distinction as the central problem** | Part 3 §6. Save/Start survives as one stage of ten. |
+| — | **Concise/expanded split, depth chip, three labels, honest states** | Part 2 and Part 3 §1, §7, §10. |
+
+**Kept, deliberately:** the principle that **the compose surface carries no control that
+spends on click**; the **arm-then-confirm** treatment of a consequential action; *"Not
+started. Still in the Backlog"*; the standing "saved, not started" ledger and its
+double-duty as the first-run empty state; and the finding that **no honest cost estimate
+exists**.
+
+**Documented and rejected, again:** Concept B's receipt page and Concept C's inline capture
+(`superseded/`). Concept B's counted-nothings block *did* survive — it is the
+"0 agents dispatched · 0 model calls · nothing spent · 0 other tasks changed" line on the
+saved state of stage 1.
+
+---
+
+## 10. Open, for the Founder and then CTO
+
+**For the Founder** — this is what the gate is for:
+
+1. Does the five-way distinction actually hold for you when you walk it? That is the whole
+   feature, and it is the one thing I cannot check on my own behalf.
+2. Is the concise layer genuinely enough to approve from without expanding anything?
+3. Is *Refine / Interpret…* the right pairing with *Save Idea* on the compose surface, given
+   that neither spends on the click?
+
+**For CTO, carried forward and added:**
+
+- All twelve of Product §13's open questions stand.
+- **The cost-ceiling slot** (§8.1) — computed and rendered, or left empty. Not copied.
+- **Where the "authored by the Founder" attribution is stored**, so an edited line can be
+  marked as the Founder's on every later screen and in downstream transcripts.
+- **The approved brief as a pointer to a version**, not a copy — stage 8 renders it that way.
+- **Whether `design` joins the participant allowlist.** Stage 2 renders its absence as a
+  visible, named gap; if the allowlist changes, that line changes with it.
+
+**What Design will flag as non-negotiable from the screen's side:** the raw idea renders on
+every screen of the journey and is never editable; "started" never renders without a written
+transition; no number appears that the records cannot support; and no competitor claim
+renders without one of the three labels.
+
+---
+
+## 11. What this review is not asking for
+
+No production code, no schema, no routes. No editing the raw idea, by anyone. No auto-start,
+no auto-approval, no timeout. No research capability. No scores, meters or percentages on the
+Company View. No invented competitors, market numbers, costs, durations or progress —
+anywhere, including in the mockup.
+
+**Design cannot approve its own mockup.** This goes to the Founder.
