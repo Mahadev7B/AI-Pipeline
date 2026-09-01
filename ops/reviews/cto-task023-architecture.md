@@ -1039,3 +1039,346 @@ can't actually fire" the review warns against. So:
 
 This addendum, like the first Correction, goes to Red Team as the required,
 non-skippable gate before Development resumes.
+
+---
+
+## Second addendum (Code Review round 3, `ops/reviews/code-review-task023-round3.md`, REJECT) — credential delivery into the sandbox (C2), and the argv fix (C1)
+
+R1's bind-set fix finally let Code Review exec the *real* `claude` binary
+through the *real* wrapper, and it found two things the milestone had never
+reached before: an argv the CLI rejects outright (C1), and — behind it — that
+the sandboxed CLI cannot authenticate, because the credential material it
+reads lives at a path the bind set deliberately excludes (C2). Code Review was
+right not to prescribe "just bind it": that is an architecture decision about
+which secrets a potentially-compromised Developer session may hold, and it is
+mine.
+
+Nothing Red Team has already blessed is reopened. The bwrap namespace shape,
+the filesystem/PID/network containment results (§1 and the first Correction),
+the five-verb broker allowlist with its session-binding and identity-pinning,
+the `ai-developer` account, Developer-only scoping, the invocation-model
+change, and addendum 1's default-no-network/one-brokered-egress posture all
+stand unchanged. This addendum changes exactly one thing: **how the sandboxed
+CLI obtains model-API credentials** — and, as a direct consequence, which
+transport the model path uses across the already-blessed egress socket. Both
+changes are routed through Red Team, not asserted as settled.
+
+### C1 — disposition: keep `stream-json`, add `--verbose`
+
+The shipped exec line passes `--output-format stream-json` without `--verbose`;
+CLI 2.1.252 rejects that combination in `-p` mode before any work happens.
+Code Review reproduced it two independent ways and the fix is one token.
+
+**Target: `--output-format stream-json --verbose`. Do not switch to `json`.**
+
+The reason is not stylistic. §4.1 step 4 requires the launcher to stream
+Developer's tool-call-by-tool-call activity to a watching human *as it is
+produced*, and §4.2's entire disclosed ergonomics tradeoff — the human loses
+the native inline Task-tool UI but keeps live visibility — rests on exactly
+that property. `--output-format json` emits one object after the run
+completes; it structurally cannot stream. `agent_runtime.py` uses `json`
+correctly, because its callers are the unsupervised zero-tool paths where
+nobody is watching and there is nothing to stream to. Matching
+`agent_runtime.py` here would silently delete the one property that makes
+§4.2's tradeoff acceptable, to save a flag. So the wrapper's deviation was the
+right call and only its execution was wrong.
+
+Confirmed against the real binary during this pass: with `--verbose` added and
+nothing else changed, `/opt/claude-code/bin/claude` 2.1.252 starts correctly
+inside a real `bwrap --unshare-all` sandbox and emits
+`{"type":"system","subtype":"init",...,"tools":["Read","Edit","Write","Bash","Grep","Glob","Skill"]}`
+with the `developer` agent resolved and cwd set to the worktree.
+
+Two things Development owns alongside the one-token change, because a flag fix
+is not the whole finding: the launcher's stdout consumer must be checked
+against what `stream-json --verbose` *actually* emits (newline-delimited JSON,
+many events per turn, not one terminal object — Code Review's own point that
+this must be verified, not assumed), and the check must be run through the real
+binary, since a stub `claude` accepts any argv and is what let this survive
+three rounds.
+
+### C2 — what I determined empirically, before deciding anything
+
+Addendum 1's credibility came from testing rather than reasoning; the same
+discipline applies here. All of the following was run live in this environment
+against the real CLI, with throwaway processes and fake credential values only.
+**The real credential material was never read, copied, moved, or written
+anywhere** — only its path metadata was inspected.
+
+**1. The exact credential path, named precisely rather than as a directory.**
+Code Review's bisection localised the failure to "somewhere under
+`/home/claude/.claude`." The binary itself is more specific — three hardcoded
+absolute path constants:
+
+```js
+var T="/home/claude/.claude/remote",
+    AOe=`${T}/.oauth_token`, iKt=`${T}/.api_key`, W2=`${T}/.session_ingress_token`
+```
+
+These are absolute and are resolved independently of `HOME` and of
+`CLAUDE_CONFIG_DIR`. On this host `/home/claude/.claude/remote/` is `0700
+root:root` and `.oauth_token` is 108 bytes, `0600 root:root`. That it is the
+load-bearing file was confirmed behaviourally, not inferred: with `env -i`,
+`HOME` and `CLAUDE_CONFIG_DIR` both pointed at empty scratch directories and no
+other credential of any kind, the CLI still authenticated and sent
+`Authorization: Bearer <…>` with a total header length of 115 — exactly
+`len("Bearer ") + 108`, the oauth token file's own size.
+
+This on its own disqualifies "bind it read-only," before any threat reasoning:
+that path is an artifact of *this hosting container's* managed/remote CLI
+build, not the credential shape of an ordinary `claude` install (which uses
+`~/.claude/.credentials.json` or an OS keychain). Binding it would hard-code an
+environment-specific path into the one script named by the sudoers line, and
+would be wrong on the production host anyway — the exact objection Code Review
+raised, confirmed.
+
+**2. The CLI does not require a credential file to exist.** On the bare host,
+`env -i`, empty `HOME`, empty `CLAUDE_CONFIG_DIR`, `ANTHROPIC_BASE_URL` pointed
+at a throwaway local HTTP endpoint, and `ANTHROPIC_API_KEY` set to a plainly
+fake string: no "Not logged in," no prompt — the CLI went straight to `POST
+/v1/messages?beta=true` carrying `x-api-key: sk-ant-FAKE-…` verbatim. Two
+consequences, both load-bearing: the **environment variable takes precedence**
+over the on-disk token (that run had the oauth file readable and the CLI did
+not use it), and the **value is not validated** — any string is passed through
+to the wire.
+
+**3. End-to-end, in the real sandbox, with zero credential material inside
+it.** First verified that under the shipped bind set both `/home/claude` and
+`/home/claude/.claude/remote/.oauth_token` resolve `exists=False` inside the
+namespace. Then ran the real `/opt/claude-code/bin/claude` 2.1.252 under real
+`bwrap --unshare-all`, with the shipped bind set plus `--verbose`, the shipped
+relay shape (in-sandbox loopback → bind-mounted Unix socket),
+`ANTHROPIC_BASE_URL=http://127.0.0.1:8889`, and `ANTHROPIC_API_KEY` set to a
+non-secret sentinel literal. Result: no "Not logged in." A proper `init` event
+with the full tool list and the `developer` agent resolved, then a real `POST
+/v1/messages?beta=true`, terminating on my stub's own reply (`API Error: 400
+FAKE-API: reached upstream`). Meanwhile the host-side component logged
+`sentinel_seen=True swapped=True` and the upstream received the injected
+credential (a fake stand-in) instead of the sentinel. **The CLI functioned end
+to end with no credential material anywhere in the namespace.**
+
+**4. Host-side TLS re-origination is viable in this environment.** A host-side
+Python process opened a genuine TLS connection to `api.anthropic.com:443`
+through this environment's ambient agent proxy (`HTTPS_PROXY`, CA bundle
+`/root/.ccr/ca-bundle.crt`, per `/root/.ccr/README.md`) and received a real
+`401 {"error":{"type":"authentication_error","message":"x-api-key header is
+required"}}` with a real `request_id`. The trusted host-side component can
+complete the outbound leg; the ambient proxy is not an obstacle to this shape.
+
+**5. A gotcha found only by running it: keep-alive.** My first gateway
+rewrote the credential on the first request of each connection. The CLI reuses
+connections, and its **second** POST — on the same socket — arrived upstream
+still carrying the sentinel. Re-implemented to parse every request on the
+connection (request line, headers, `Content-Length` body, repeat), the leak
+closed: 2/2 upstream requests carried the injected credential, 0 leaked the
+sentinel. **Per-request substitution is a correctness requirement, not an
+optimisation**, and it must be a QA assertion across a multi-request session
+rather than a single call.
+
+**6. The alternative mechanism, tested rather than speculated about.**
+`apiKeyHelper` works inside the sandbox: with `{"apiKeyHelper": "<script>"}` in
+the config dir and `CLAUDE_CODE_API_KEY_HELPER_TTL_MS` set, the CLI executed the
+script, took its stdout as the credential, and sent it as both `x-api-key` and
+`Authorization: Bearer`. The binary also carries `CLAUDE_CODE_API_KEY_FILE_DESCRIPTOR`
+and `CCR_OAUTH_TOKEN_FILE`. So a short-lived-token broker is genuinely
+implementable — which is why it gets a real evaluation below rather than a
+hand-wave.
+
+### C2 — the decision
+
+**Chosen: the credential-broker shape, realised as host-side auth injection at
+the egress boundary that already exists. The sandbox holds a non-secret
+sentinel; the real credential is added host-side and never enters the
+namespace.** Concretely:
+
+- `launch_developer_sandboxed.sh` sets `--setenv ANTHROPIC_BASE_URL
+  http://127.0.0.1:$EGRESS_RELAY_PORT` and `--setenv ANTHROPIC_API_KEY
+  <fixed non-secret sentinel literal>`. The sentinel is a documented constant
+  (e.g. `SANDBOX-PLACEHOLDER-NOT-A-CREDENTIAL`), safe to hold in a reviewed
+  script in git, because it is not a credential.
+- `egress_relay.py` is unchanged in role: loopback → the one bind-mounted Unix
+  socket. It remains untrusted-but-harmless for exactly the reason Red Team
+  verified (attack angle 3): the sandbox has no other reachable destination, so
+  whatever Developer does to the relay changes nothing about what the host side
+  will forward.
+- `egress_proxy.py` gains a second, model-API-gateway mode alongside its
+  existing CONNECT mode: it terminates the plain-HTTP request arriving on the
+  Unix socket, substitutes the sentinel credential header for the real one on
+  **every** request on the connection, and re-originates over TLS to the
+  configured model-API host — chaining through the ambient `HTTPS_PROXY` where
+  one is configured — streaming the response back unmodified.
+- The real credential lives in a file owned by the proxy's own trusted
+  account, `0600`, alongside and under the same rules as the allowlist config:
+  **not bind-mounted**, therefore structurally invisible inside the sandbox by
+  Red Team's verified property #5, which Code Review re-confirmed this round
+  with the file actually present on the host.
+- Which header to inject is deployment configuration, not a code constant: a
+  Console API key goes out as `x-api-key`, a claude.ai OAuth token as
+  `Authorization: Bearer`. The gateway reads the credential *and its header
+  form* from the trusted-side config.
+
+**Why not bind the credential read-only — the blast radius, concretely.**
+On this host the file is a durable, portable, long-lived bearer credential for
+the operator's own account: not scoped to this session, not scoped to this
+task, not refreshable-away, and usable by anyone who obtains it, from anywhere.
+The tempting counter-argument is "the sandbox's only egress is the model API,
+so a stolen token cannot leave." **That argument is false, and this is what
+decides the question.** The sandbox has several legitimate, load-bearing
+channels that carry attacker-chosen text out to a place a human or another
+system will read it: it writes freely into the bind-mounted worktree, whose
+contents are committed and pushed; and the broker's `handoff` and
+`activity-log` verbs accept free-text fields (`work_completed`,
+`known_limitations`, `summary`, `detail`) that land in `operations.sqlite3` and
+are rendered into the control-center HTML. Those channels exist *by design* and
+cannot be closed without destroying the milestone's purpose. A durable
+credential placed inside the sandbox is therefore a durable credential that can
+be smuggled out through the work product itself — precisely the class of secret
+§2.3 and §6 promised to keep away from `ai-developer`. **Rejected.**
+
+**Why not a short-lived token via `apiKeyHelper`** — the honest version, since
+it does work. It is strictly better than binding the durable file: what leaks
+is time-bounded. But it is still *a usable credential inside the sandbox*, and
+the helper is invoked by the sandboxed process itself, so a compromised session
+simply calls it again whenever it wants a fresh one. The TTL bounds the value
+of a single captured token; it does not bound the session's access. And it
+depends on something this project does not have and cannot build here: an
+upstream that mints scoped, short-lived, per-session credentials. Nothing in
+the auth model available to us issues a task-scoped API key. So it buys a real
+but modest reduction at the cost of a mint/refresh service that does not exist.
+**Rejected as the primary; recorded as the correct fallback** if a future
+deployment's identity provider does support scoped short-lived tokens — in
+which case it *composes* with the chosen shape (the gateway injects a
+short-lived credential) rather than replacing it.
+
+**Why not TLS-MITM between the CLI and the gateway.** Keeping HTTPS on the
+in-sandbox hop and terminating it with a locally-minted CA trusted inside the
+sandbox gives *exactly the same* plaintext visibility to *exactly the same*
+component, while adding a CA to mint, distribute, rotate and bind into the
+sandbox's trust store. Strictly more moving parts for zero additional security.
+Plain HTTP over a host-local Unix socket has the identical property with none
+of that. **Rejected as gratuitous complexity.**
+
+**What the chosen shape costs — the real tradeoff, not a free win.** The
+gateway must see model-API traffic in the clear in order to inject the header.
+That is a genuine change to the trust story Red Team blessed: in addendum 1 the
+host-side proxy was a CONNECT tunnel carrying opaque TLS that could not read a
+byte of the payload; for the model path it now terminates plaintext and
+re-originates, so it can read — and in principle alter — every prompt and every
+response. Three points, the third conceded rather than argued away:
+
+- The plaintext hop never leaves the host. It is the sandbox's own loopback
+  into a bind-mounted Unix socket, inside the sandbox's netns, which addendum
+  1's items 1–2 verified has no interface, route or DNS reaching anywhere else.
+  No plaintext crosses a network.
+- The component that sees the plaintext is the same trusted, non-`ai-developer`
+  account that already owns the allowlist and already decides what the sandbox
+  may reach. It is not a new principal in the trust model.
+- **It is nonetheless a wider capability for that principal.** A bug or
+  compromise in `egress_proxy.py` now reaches prompt and response *content*,
+  not just destinations. That raises the review bar for this artifact, and it
+  must be stated to Red Team and to the adversarial Security gate in those
+  terms rather than presented as equivalent to what was already reviewed.
+  (Context, not justification: this environment's own ambient agent proxy
+  already re-terminates TLS — `/root/.ccr/README.md`, "TLS is re-terminated
+  there" — so the gateway is not the first inspecting intermediary on this
+  host. The production host may differ, and DevOps should not assume it does
+  not.)
+
+**A consequence that must not be left implicit: the CONNECT path now has no
+permitted destination.** With model traffic moved to the gateway, nothing the
+sandbox does uses `HTTPS_PROXY` or CONNECT any more, so the allowlist config
+becomes *empty by default*. That is a strengthening, not a regression —
+general egress is now closed at the proxy as well as at the netns — but it
+means two egress mechanisms coexist with only one in use.
+**Recommendation: keep the CONNECT path, with an empty allowlist, as
+fail-closed reserve surface**; it is reviewed, tested and correct, and deleting
+it to re-add it later is churn. But its role must be documented as reserve, and
+the QA charter's CONNECT deny-tests (addendum 1 items (c) and (f)) stay,
+because an empty allowlist that silently stopped denying would be invisible
+otherwise. Whether to keep or delete it is Red Team's to endorse or overturn;
+it should not be left ambiguous in code.
+
+This also resolves, by construction, addendum 1's open option-(a)/option-(b)
+question for the model path: the CLI is pointed at the relay via
+`ANTHROPIC_BASE_URL`, not via `HTTPS_PROXY`, so the "does the CLI accept a
+Unix-socket proxy directly" question no longer gates the model path at all —
+option (b)'s in-sandbox relay is required and is what ships, verified above
+against the real binary. `HTTPS_PROXY`/CONNECT behaviour against the real
+binary remains untested and remains relevant only to the reserve path.
+
+### C2 — residual exposure, stated plainly (§6 discipline)
+
+1. **In-session API use by a compromised Developer**, at the deployment's
+   expense, through the one permitted channel. Unchanged from addendum 1's
+   already-disclosed and already-accepted exfil-via-API residual; the chosen
+   shape does not make it worse, and does not close it.
+2. **The gateway sees prompts and responses in plaintext.** New, named above.
+   This is the price of the credential never entering the sandbox, and the
+   Founder should accept it explicitly at Red Team alongside the §4.2
+   ergonomics tradeoff and addendum 1's exfil residual — not have it folded in
+   silently as an implementation detail.
+3. **Spend is not actually contained.** `--max-budget-usd` is enforced by the
+   sandboxed CLI itself — the untrusted side. A compromised session can issue
+   requests the CLI's own accounting never sees, and the gateway will forward
+   them. Real containment would require per-session request/byte counters and a
+   hard cut-off *in the gateway*. **Not built, not required by this addendum,
+   named so it is not mistaken for covered.** (The wrapper's
+   `DEVELOPER_MAX_BUDGET_USD="5.00"` is separately still an unreviewed
+   placeholder and stays flagged as one.)
+4. **Production auth-shape parity is unverified.** Everything above was
+   determined against this container's CLI build and its managed-OAuth
+   arrangement. Whether the production deployment authenticates with a Console
+   API key (`x-api-key`) or a claude.ai OAuth token (`Authorization: Bearer`),
+   and whether that account's organisation permits API-key auth at all — the
+   binary carries a "Your organization has disabled API key authentication"
+   path — is a **DevOps pre-cutover verification**, in the same slot as §1's
+   production-host feasibility re-run and held to the same standard. If the
+   production account cannot present a header-injectable credential, this
+   mechanism does not apply as designed and the milestone returns to CTO. It
+   does not get patched around in code.
+5. **Whether the CLI needs any destination besides the model API** was not
+   exhaustively determined. My test endpoint saw a `HEAD /api/hello` preflight
+   and the `/v1/messages` calls, both against `ANTHROPIC_BASE_URL`, and nothing
+   else — but background telemetry that fails silently would not have shown up.
+   A verify item for the §7 QA charter, not a claim.
+
+### C2 — implementation targets for Development (after Red Team)
+
+- **`launch_developer_sandboxed.sh`**: add `--verbose` (C1); add the
+  `ANTHROPIC_BASE_URL` and sentinel `ANTHROPIC_API_KEY` `--setenv`s. Add **no**
+  bind under `/home/claude` or any other credential path, and extend the
+  existing fail-closed `case` guard that protects `EGRESS_ALLOWLIST_DIR` to
+  cover the new credential-file directory the same way.
+- **`egress_proxy.py`**: model-API gateway mode; per-request (not
+  per-connection) credential substitution; credential and header-form read from
+  a trusted-side `0600` config; TLS re-origination with the system CA bundle,
+  chaining through `HTTPS_PROXY` when set; the CONNECT path retained unchanged
+  as documented reserve. This is new security-relevant surface that now handles
+  secret material — it goes through the full Code Review/QA/Security gates on
+  its own merits and must not be waved through as "the same file we already
+  reviewed."
+- **`egress_relay.py`**: unchanged in role.
+- **`ops/reviews/task023-os-provisioning-runbook.md`**: provisioning for the
+  credential file (trusted account, `0600`, not bind-mounted, not under any
+  bound path), the DevOps auth-shape verification step, and the empty-allowlist
+  reserve-path note.
+- **`known_limitations` in the next handoff** must stop implying the
+  `HTTPS_PROXY` bridge is the only open real-binary question. Credential
+  delivery was the thing that failed first, it is now answered by a named
+  mechanism rather than a disclosure, and residuals 2–5 above are what belongs
+  in that field instead.
+- **§7 QA charter additions**: (g) a real sandboxed session authenticates and
+  completes a model call with **no** credential file present anywhere in the
+  namespace; (h) the credential path (`/home/claude/...` here, the production
+  equivalent there) and the gateway's credential config both resolve
+  `exists=False` inside the sandbox; (i) the sentinel never reaches upstream —
+  asserted across a multi-request keep-alive session, not one call; (j) a
+  positive control that the sentinel, if written into the worktree or a broker
+  row, is worthless — demonstrating that the exfil path which would have been
+  decisive under the bind-it option now carries nothing of value.
+
+Code Review's six non-blocking items from round 3 are unchanged and remain
+Development's, alongside the above.
+
+This second addendum, like the first and like the original Correction, goes to
+Red Team as the required, non-skippable gate before Development resumes.
