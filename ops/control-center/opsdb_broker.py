@@ -99,8 +99,8 @@ from __future__ import annotations
 
 import json
 import os
-import secrets
 import socket
+import sqlite3
 import struct
 import sys
 import threading
@@ -128,6 +128,14 @@ _SO_PEERCRED_FMT = "3i"
 _SO_PEERCRED_SIZE = struct.calcsize(_SO_PEERCRED_FMT)
 
 _MAX_REQUEST_BYTES = 1_000_000  # generous ceiling against a misbehaving/compromised sandboxed client
+
+# B1 (Code Review REJECT / addendum): a client that connects and holds the
+# connection open (or never shuts down its write half) must not wedge the
+# single-threaded accept loop for every other caller. An idle/slow client
+# costs at most one timeout, never the daemon. Low-QPS, trusted-path broker,
+# so a few seconds is ample; a hostile client can still serialize others up
+# to this bound (documented, acceptable — see the module docstring).
+_CONN_TIMEOUT_S = 10.0
 
 
 def _err(message: str) -> dict:
@@ -280,10 +288,21 @@ class OpsdbBroker:
         return _ok(progress)
 
     def _handle_activity_log(self, session: dict, args: dict) -> dict:
+        # B1 (addendum): validate required arg presence/type BEFORE touching
+        # the DB, so a schema-invalid request (e.g. a missing/empty summary)
+        # is a clean rejection here, not a caught sqlite3.IntegrityError
+        # (agent_activity.summary is NOT NULL) — the DB is never needlessly
+        # opened, and the error message is about the actual problem.
+        summary = args.get("summary")
+        if not isinstance(summary, str) or not summary:
+            return _err("activity-log requires a non-empty string 'summary'")
+        detail = args.get("detail")
+        if detail is not None and not isinstance(detail, str):
+            return _err("activity-log 'detail' must be a string when present")
         conn = self._open_conn()
         try:
             activity_id = opsdb.record_activity(
-                conn, "developer", session["task_id"], args.get("summary"), args.get("detail"),
+                conn, "developer", session["task_id"], summary, detail,
             )
         finally:
             conn.close()
@@ -332,13 +351,23 @@ class OpsdbBroker:
         handler = self._VERB_HANDLERS[verb]
         try:
             return handler(self, session, args)
-        except (LookupError, ValueError, SystemExit) as exc:
+        except (LookupError, ValueError, SystemExit, sqlite3.Error) as exc:
             # SystemExit: opsdb.py's own _agent_id() (used by
             # record_activity()) raises SystemExit rather than a typed
             # exception for an unknown agent — a pre-existing,
             # narrower inconsistency in opsdb.py that predates this
-            # broker; caught here so a malformed request can never crash
-            # this always-running daemon process.
+            # broker.
+            #
+            # sqlite3.Error (B1, Code Review REJECT): the PARENT of
+            # IntegrityError (a schema-invalid but verb-valid request),
+            # OperationalError ("database is locked" past the busy
+            # timeout), and InterfaceError (a non-string arg type slipping
+            # past validation) — all caught here and returned as a clean
+            # _err, so NO database exception can ever escape handle_request
+            # and kill serve_forever(). Pre-DB validation (above, per
+            # handler) turns the common cases into clean rejections before
+            # the DB is touched at all; this catch is the backstop for
+            # everything else.
             return _err(str(exc))
 
     # --------------------------------------------------------------- I/O ---
@@ -346,12 +375,29 @@ class OpsdbBroker:
     def _accept_loop(self, server_sock: socket.socket) -> None:
         while True:
             conn, _ = server_sock.accept()
+            # B1 (Code Review REJECT): NOTHING a single connection does may
+            # escape and kill serve_forever(). handle_request() already
+            # returns _err for every application-level failure, but a
+            # broken/closed socket (BrokenPipeError/ConnectionResetError on
+            # recv or sendall), a socket timeout, or any other unexpected
+            # exception must also cost exactly one connection, never the
+            # daemon. This catch-all is the outer backstop; _handle_connection
+            # guards sendall itself as well.
             try:
                 self._handle_connection(conn)
+            except Exception:
+                pass
             finally:
-                conn.close()
+                try:
+                    conn.close()
+                except OSError:
+                    pass
 
     def _handle_connection(self, conn: socket.socket) -> None:
+        # B1: a slow/held-open client cannot wedge this single-threaded loop
+        # indefinitely — recv/sendall raise socket.timeout after this bound,
+        # which the accept loop's catch-all turns into one dropped connection.
+        conn.settimeout(_CONN_TIMEOUT_S)
         peer_uid = _get_peer_uid(conn)
         raw = _recv_request(conn)
         try:
@@ -360,7 +406,14 @@ class OpsdbBroker:
             response = _err("malformed JSON request")
         else:
             response = self.handle_request(request, peer_uid)
-        conn.sendall((json.dumps(response) + "\n").encode("utf-8"))
+        try:
+            conn.sendall((json.dumps(response) + "\n").encode("utf-8"))
+        except OSError:
+            # B1: a client that sent its request and closed without reading
+            # the response (or died mid-write) must not crash the daemon —
+            # the DB write, if any, already happened; the lost response is
+            # the client's problem, not the broker's.
+            pass
 
     def serve_forever(self) -> None:
         """Binds the socket and accepts connections forever. NOT called

@@ -124,7 +124,11 @@ def _best_effort_log_alert(result: dict) -> None:
             )
         finally:
             conn.close()
-    except BaseException:
+    except Exception:
+        # Best-effort logging only — narrowed from BaseException (Code
+        # Review non-blocking item): swallowing KeyboardInterrupt/SystemExit
+        # here would mask a deliberate interrupt/exit; Exception is the right
+        # breadth for "an opsdb/IO failure must never change our exit code".
         pass
 
 

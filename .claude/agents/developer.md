@@ -71,12 +71,20 @@ already on disk) — the same "no new dependency without review" rule this
 file's own "Must NOT" list already states, enforced structurally rather
 than only by convention in this mode.
 
-**The existing `hooks:` frontmatter block above still applies as a
-second, independent layer in this mode** (both are real; the sandbox does
-not replace the hook, and the hook does not replace the sandbox) — once
-the trust-flag deployment fix ships (§5 of the architecture doc), since
-without it `PreToolUse` hooks are silently skipped in any non-interactive
-print-mode invocation, sandboxed or not.
+**Inside the sandbox, the containment is the namespace layer, not the
+`PreToolUse` hook.** The `hooks:` frontmatter block above does NOT fire in
+this mode, and that is correct and intended, not a gap (addendum B4 of
+`ops/reviews/cto-task023-architecture.md`, Red Team PASS): the sandbox's
+config dir is an empty per-session tmpfs, so `hasTrustDialogAccepted` can
+never be true and the hook is skipped — and even if it fired, a
+string-pattern denylist hook is strictly weaker than, and structurally
+superseded by, the kernel-enforced filesystem/network/PID namespaces plus
+the two brokers. Do not read the frontmatter hook as a second live layer
+in this mode; it is not. (The hook remains real and active in the ordinary,
+non-sandboxed Task-tool invocation path, where the trust flag is set — this
+correction is about the sandboxed mode only. The trust-flag concern for the
+still-native `qa`/`cto`/`devops` roles is covered separately by
+`ops/control-center/trust_flag_monitor.py`.)
 
 This mode is NOT yet this repository's default Developer-invocation path
 as of TASK-023's own Development pass — cutover depends on DevOps'

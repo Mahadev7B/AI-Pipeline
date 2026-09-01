@@ -374,3 +374,18 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
     except ProcessLookupError:
         pass
+    except PermissionError:
+        # TASK-023 B2.4 backstop: when this function is reused by
+        # launch_developer_session.py, the process group can contain
+        # root-owned `sudo` and `ai-developer`-owned `bwrap`/`claude`
+        # processes this (Founder-UID) caller is not permitted to signal —
+        # os.killpg then raises PermissionError. The PRIMARY wall-clock
+        # enforcement for a sandboxed session is an inner
+        # `timeout --signal=KILL` running as `ai-developer` against its own
+        # process (launch_developer_sandboxed.sh), plus bwrap
+        # `--die-with-parent`; this outer kill is only a backstop, so a
+        # cross-UID permission failure must degrade gracefully (the caller
+        # records `timed_out` and closes the stream) rather than throw in a
+        # timer thread and be lost. See launch_developer_session.py's own
+        # kill path for where this is relied on.
+        pass

@@ -19,20 +19,26 @@ Founder's own user (never as `ai-developer`). Concretely:
      SO_PEERCRED on the broker's side) are what make the token's later
      task-id binding real enforcement, not a documentation convention
      (see opsdb_broker.py's own module docstring).
-  3. Runs `sudo -u ai-developer ops/control-center/launch_developer_sandboxed.sh
-     <worktree> <prompt-file>` via subprocess.Popen(..., start_new_session=True)
-     — the same real-child-OS-process pattern agent_runtime.py's own
-     `_run_claude()` already establishes for the unsupervised (zero-tool)
-     paths, extended here with the `sudo -u` prefix and real tool grants.
+  3. Runs `sudo --preserve-env=OPSDB_BROKER_SOCKET,OPSDB_EGRESS_SOCKET -u
+     ai-developer launch_developer_sandboxed.sh <worktree> <prompt-file>
+     <token-file> <wallclock-seconds>` via subprocess.Popen(...,
+     start_new_session=True) — the same real-child-OS-process pattern
+     agent_runtime.py's own `_run_claude()` already establishes, extended
+     with the `sudo -u` prefix and real tool grants. The broker token
+     travels as a group-readable FILE (B2.1 — survives `sudo`'s env_reset,
+     stays out of the process table); only the non-secret socket PATHS
+     travel as `--preserve-env` env vars.
   4. Streams the subprocess's stdout live to the caller's own stdout as it
      is produced — not a batch replay assembled after the fact (§4.2's
      own disclosed ergonomics tradeoff: this is a streamed subprocess
      output feed, not the native in-context Task-tool UI).
-  5. Applies a wall-clock timeout and a process-group kill on expiry —
-     the exact `start_new_session=True` + `os.killpg(os.getpgid(...),
-     SIGKILL)` pattern agent_runtime.py's own `_kill_process_group()`
-     already implements; reused directly here (imported from
-     agent_runtime), not reimplemented.
+  5. Wall-clock enforcement is PRIMARILY the inner `timeout --signal=KILL
+     <wallclock>` inside the sandbox (B2.4 — run as ai-developer against
+     its own tree, where the killer has permission, plus bwrap
+     `--die-with-parent`). This launcher keeps only a BACKSTOP outer timer
+     reusing agent_runtime._kill_process_group() — now hardened to swallow
+     the PermissionError a Founder-UID `killpg` of the root/ai-developer
+     process group would otherwise raise in the timer thread.
   6. Calls `end_session` on the broker when the sandboxed process exits
      (success, failure, or timeout alike) so a stale token cannot be
      reused for anything ever again.
@@ -60,9 +66,9 @@ from __future__ import annotations
 import argparse
 import os
 import secrets
+import shutil
 import subprocess
 import sys
-import tempfile
 import threading
 from pathlib import Path
 
@@ -74,10 +80,24 @@ sys.path.insert(0, str(DB_DIR))
 sys.path.insert(0, str(CONTROL_CENTER_DIR))
 import opsdb  # noqa: E402
 import opsdb_broker  # noqa: E402
+import egress_proxy  # noqa: E402 — for its DEFAULT_SOCKET_PATH only
 import agent_runtime  # noqa: E402 — reuses _kill_process_group() directly, see module docstring
 import review_transcripts  # noqa: E402 — reuses _read_coding_standards()/CODING_STANDARDS_PATH
 
 LAUNCH_SCRIPT = CONTROL_CENTER_DIR / "launch_developer_sandboxed.sh"
+
+# B2.2 (Code Review REJECT): the prompt and token files must be readable by
+# `ai-developer`, so they go in a session dir INSIDE the per-task worktree
+# (already bind-mounted and group-shared via ai-pipeline-dev with the setgid
+# bit, §4.4) — NOT a mode-0700 tempfile.mkdtemp() the sandbox's UID cannot
+# even traverse. The dir name is dot-prefixed and cleaned up in `finally`.
+_SESSION_SCRATCH_DIRNAME = ".ai-pipeline-session"
+
+# B2.4: wall-clock is enforced PRIMARILY inside the sandbox by
+# `timeout --signal=KILL` (as ai-developer, against its own tree). This
+# launcher's own outer timer is only a BACKSTOP, so it is given extra grace
+# beyond the inner ceiling — the inner timeout should always fire first.
+_OUTER_TIMER_GRACE_S = 60.0
 
 # PLACEHOLDER VALUE — see the identical disclosure in
 # launch_developer_sandboxed.sh next to DEVELOPER_MAX_BUDGET_USD. This is
@@ -183,8 +203,28 @@ def end_session(socket_path: str, token: str) -> None:
         sys.stderr.write(f"[launch_developer_session] warning: end_session failed: {exc}\n")
 
 
+def _write_session_files(worktree_path: Path, transcript: str, token: str) -> tuple[Path, Path, Path]:
+    """Write the prompt and token files into a session dir INSIDE the
+    worktree (B2.2) so `ai-developer` can read them via the shared
+    ai-pipeline-dev group. Returns (session_dir, prompt_file, token_file).
+    Files are 0640 (group-readable, not other-readable); the token is not a
+    secret to the sandbox itself — it is handed to the sandbox anyway — but
+    passing it as a file (not an env var) keeps it out of the process table
+    and survives `sudo`'s env_reset (B2.1)."""
+    session_dir = worktree_path / _SESSION_SCRATCH_DIRNAME
+    session_dir.mkdir(mode=0o750, exist_ok=True)
+    prompt_file = session_dir / "prompt.txt"
+    prompt_file.write_text(transcript)
+    prompt_file.chmod(0o640)
+    token_file = session_dir / "broker-token"
+    token_file.write_text(token)
+    token_file.chmod(0o640)
+    return session_dir, prompt_file, token_file
+
+
 def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
                                      socket_path: str = opsdb_broker.DEFAULT_SOCKET_PATH,
+                                     egress_socket_path: str = egress_proxy.DEFAULT_SOCKET_PATH,
                                      timeout_s: float = DEFAULT_TIMEOUT_S) -> dict:
     """Returns {"ok": bool, "returncode": int|None, "timed_out": bool,
     "error": str|None}. Streams the sandboxed process's combined
@@ -199,28 +239,28 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
         raise LaunchError(f"no such task TASK-{task_id:03d}")
 
     transcript = assemble_developer_transcript(task_row)
-    prompt_dir = Path(tempfile.mkdtemp(prefix=f"developer-session-task{task_id}-"))
-    prompt_file = prompt_dir / "prompt.txt"
-    prompt_file.write_text(transcript)
-    # World-unreadable by default umask concerns aside, this is explicit
-    # defense-in-depth: the prompt file (task content, never a secret, but
-    # no reason to leave it group/other-readable) is chmod'd narrowly and
-    # `ai-developer` needs read access via the worktree's own shared-group
-    # bind — the prompt file itself lives OUTSIDE the worktree in this
-    # scratch dir, so it must be independently reachable to `ai-developer`;
-    # see ops/reviews/task023-os-provisioning-runbook.md for the concrete
-    # ownership/group step this implies (writing the prompt file under the
-    # worktree itself, which IS bind-mounted, is the simpler alternative a
-    # real deployment may prefer — left as an explicit choice for whoever
-    # wires this up for real, not silently decided here).
-    prompt_file.chmod(0o640)
-
     token = register_session(socket_path, task_id)
+    session_dir, prompt_file, token_file = _write_session_files(worktree_path, transcript, token)
 
-    cmd = ["sudo", "-u", "ai-developer", str(LAUNCH_SCRIPT), str(worktree_path), str(prompt_file)]
+    # B2.1: the token travels as a FILE argument; only the non-secret socket
+    # PATHS travel as env vars, preserved across `sudo`'s env_reset via
+    # `--preserve-env` (the sudoers line carries the matching SETENV: tag —
+    # see the runbook). B2.4: the inner wall-clock ceiling is passed as a
+    # positional arg (int seconds) for `timeout --signal=KILL` inside the
+    # sandbox to enforce as ai-developer against its own tree.
+    cmd = [
+        "sudo",
+        "--preserve-env=OPSDB_BROKER_SOCKET,OPSDB_EGRESS_SOCKET",
+        "-u", "ai-developer",
+        str(LAUNCH_SCRIPT),
+        str(worktree_path),
+        str(prompt_file),
+        str(token_file),
+        str(int(timeout_s)),
+    ]
     env = os.environ.copy()
     env["OPSDB_BROKER_SOCKET"] = socket_path
-    env["OPSDB_BROKER_TOKEN"] = token
+    env["OPSDB_EGRESS_SOCKET"] = egress_socket_path
 
     result = {"ok": False, "returncode": None, "timed_out": False, "error": None}
     proc = None
@@ -235,16 +275,26 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
         )
     except (FileNotFoundError, OSError) as exc:
         end_session(socket_path, token)
+        shutil.rmtree(session_dir, ignore_errors=True)
         result["error"] = f"could not start sandboxed Developer process: {exc}"
         return result
 
     timed_out = threading.Event()
 
     def _on_timeout() -> None:
+        # B2.4 BACKSTOP ONLY — the inner `timeout --signal=KILL` (running as
+        # ai-developer) is the primary enforcement. This outer killpg fires
+        # `_OUTER_TIMER_GRACE_S` later and, crucially, no longer throws in
+        # this timer thread if the cross-UID kill is refused:
+        # agent_runtime._kill_process_group() now swallows PermissionError
+        # (the process group holds root-owned `sudo` and ai-developer-owned
+        # `bwrap`/`claude` this Founder-UID process cannot signal). We still
+        # record `timed_out` and close the stream so the outcome is honest
+        # even if the outer kill is a no-op.
         timed_out.set()
         agent_runtime._kill_process_group(proc)
 
-    timer = threading.Timer(timeout_s, _on_timeout)
+    timer = threading.Timer(timeout_s + _OUTER_TIMER_GRACE_S, _on_timeout)
     timer.start()
     try:
         for line in proc.stdout:
@@ -254,6 +304,7 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
     finally:
         timer.cancel()
         end_session(socket_path, token)
+        shutil.rmtree(session_dir, ignore_errors=True)
 
     result["timed_out"] = timed_out.is_set()
     result["returncode"] = proc.returncode
@@ -270,12 +321,15 @@ def main() -> int:
     parser.add_argument("--task-id", type=int, required=True, dest="task_id")
     parser.add_argument("--worktree-path", type=Path, required=True, dest="worktree_path")
     parser.add_argument("--socket-path", default=opsdb_broker.DEFAULT_SOCKET_PATH, dest="socket_path")
+    parser.add_argument("--egress-socket-path", default=egress_proxy.DEFAULT_SOCKET_PATH,
+                         dest="egress_socket_path")
     parser.add_argument("--timeout-s", type=float, default=DEFAULT_TIMEOUT_S, dest="timeout_s")
     args = parser.parse_args()
 
     try:
         result = run_sandboxed_developer_session(
-            args.task_id, args.worktree_path, socket_path=args.socket_path, timeout_s=args.timeout_s,
+            args.task_id, args.worktree_path, socket_path=args.socket_path,
+            egress_socket_path=args.egress_socket_path, timeout_s=args.timeout_s,
         )
     except LaunchError as exc:
         print(f"error: {exc}", file=sys.stderr)

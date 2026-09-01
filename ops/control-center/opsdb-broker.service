@@ -5,17 +5,34 @@ After=network.target
 
 [Service]
 Type=simple
-# Runs as the Founder's own account by default, per the architecture doc
-# (ops/reviews/cto-task023-architecture.md §3 point 2: "the Founder's own
-# user, or a dedicated trusted ai-pipeline-broker system account — never
-# as ai-developer"). Uncomment and adjust the User=/Group= lines below if
-# provisioning a separate ai-pipeline-broker account instead — see the
-# runbook's "Option B" for the matching OPSDB_BROKER_TRUSTED_UIDS value
-# that keeps the launcher (running as the Founder's own user) able to
-# register sessions.
+# ============================ REQUIRED EDIT ============================
+# This unit MUST NOT run as root (B2.3, Code Review REJECT): a systemd unit
+# with no User= defaults to root, which both violates least-privilege AND
+# breaks session registration — opsdb_broker._default_trusted_uids() would
+# then be {0}, so the Founder-UID launcher's SO_PEERCRED-gated
+# register_session is refused on every launch. Per the architecture doc
+# (ops/reviews/cto-task023-architecture.md §3 point 2): the broker runs as
+# "the Founder's own user, or a dedicated trusted ai-pipeline-broker system
+# account — never as ai-developer".
 #
-# User=ai-pipeline-broker
-# Group=ai-pipeline-db
+# The placeholders below are intentionally NOT valid, so this unit FAILS
+# LOUDLY (systemd refuses to start it) until a human sets them — fail
+# closed, never fall back to root. Pick ONE option, per the runbook:
+#
+#   Option A (simplest — broker runs as the Founder's own account, which is
+#   the same account launch_developer_session.py runs as, so
+#   _default_trusted_uids() already resolves to the launcher's UID with NO
+#   extra config): set User=/Group= to that account and its primary group;
+#   leave OPSDB_BROKER_TRUSTED_UIDS unset.
+#
+#   Option B (dedicated broker account): set User=ai-pipeline-broker,
+#   Group=ai-pipeline-db, AND uncomment the OPSDB_BROKER_TRUSTED_UIDS line
+#   below with the Founder's numeric UID (`id -u <founder-user>`) so the
+#   launcher — a different UID than the broker — can still register.
+User=__REPLACE_WITH_FOUNDER_USER_OR_ai-pipeline-broker__
+Group=__REPLACE_WITH_ITS_GROUP_OR_ai-pipeline-db__
+# Environment=OPSDB_BROKER_TRUSTED_UIDS=__FOUNDER_NUMERIC_UID__   # Option B only
+# ======================================================================
 WorkingDirectory=/home/user/AI-Pipeline
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/opsdb_broker.py

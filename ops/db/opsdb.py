@@ -314,7 +314,15 @@ def cmd_task_status(args: argparse.Namespace) -> None:
         # ops/reviews/cto-task023-architecture.md §3). --to is broker-side
         # allowlisted, not merely forwarded.
         result = _broker_call("task-status", {"to": args.to, "note": args.note, "owner": args.owner})
-        print(f"TASK-{args.task_id:03d}: {result.get('from_status', '?')} -> {result.get('to_status', args.to)}")
+        # Print the broker's OWN authoritative values, not the client-supplied
+        # --task-id (which the broker ignores in favour of the session's bound
+        # task) and not a literal None for from_status (Code Review
+        # non-blocking item). The broker binds/forces both, so its reply is
+        # the honest thing to echo.
+        from_status = result.get("from_status")
+        to_status = result.get("to_status", args.to)
+        print(f"task moved (this session's bound task): "
+              f"{from_status if from_status is not None else '(none)'} -> {to_status}")
         return
     conn = connect()
     try:

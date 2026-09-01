@@ -39,8 +39,8 @@ caller didn't — same convention as every other ops/db/test_*.py script.)
 """
 from __future__ import annotations
 
-import json
 import os
+import re
 import socket
 import sys
 import tempfile
@@ -110,15 +110,25 @@ def main() -> int:
     broker = _new_broker()
     _register(broker, "tok-a", task_a)
 
-    for verb in opsdb_broker.ALLOWED_VERBS:
-        check(f"'{verb}' is in ALLOWED_VERBS (sanity)", verb in opsdb_broker.ALLOWED_VERBS)
+    # The allowlist is EXACTLY these five, no more, no fewer (Code Review
+    # non-blocking item: the old loop checked membership of ALLOWED_VERBS in
+    # itself, which is tautological — assert the exact tuple instead).
+    check("ALLOWED_VERBS is exactly the five documented verbs",
+          opsdb_broker.ALLOWED_VERBS
+          == ("handoff", "task-status", "task-step-status", "task-progress", "activity-log"),
+          str(opsdb_broker.ALLOWED_VERBS))
 
-    excluded_sample = [
-        "query", "init", "task-create", "review-result", "qa-result",
-        "decision-record", "risk-resolve", "approval-create", "approval-decide",
-        "deployment-record", "agent-upsert", "task-update", "run-start",
-    ]
-    for verb in excluded_sample:
+    # EXHAUSTIVE exclusion (Code Review non-blocking item: test ALL excluded
+    # verbs, not a 13-of-24 sample). Derive the full opsdb.py subcommand set
+    # straight from its source `add_parser("<name>"` declarations, so a new
+    # subcommand added to opsdb.py in future is automatically covered here
+    # and cannot silently gain a broker path. Every one of those NOT in
+    # ALLOWED_VERBS must be rejected by the same allowlist check.
+    all_subcommands = set(re.findall(r'add_parser\(\s*"([^"]+)"', Path(opsdb.__file__).read_text()))
+    excluded_verbs = sorted(all_subcommands - set(opsdb_broker.ALLOWED_VERBS))
+    check("derived the full opsdb.py subcommand set (sanity: >= 24 excluded)",
+          len(excluded_verbs) >= 24, f"got {len(excluded_verbs)}: {excluded_verbs}")
+    for verb in excluded_verbs:
         resp = broker.handle_request({"verb": verb, "token": "tok-a", "args": {}}, TRUSTED_UID)
         check(f"excluded verb '{verb}' is rejected", resp["ok"] is False and "not permitted" in resp["error"],
               str(resp))
@@ -240,7 +250,38 @@ def main() -> int:
     )
     check("token is unusable after a real end_session", resp["ok"] is False, str(resp))
 
-    # ---- Case 6: a real Unix domain socket, end to end ----
+    # ---- Case 6: B1 robustness — a bad request never crashes/wedges ----
+    # (Code Review REJECT finding B1, reproduced here so it stays fixed.)
+    broker_b1 = _new_broker()
+    _register(broker_b1, "tok-b1", task_a)
+
+    # (1) A verb-valid but schema-invalid request (missing required summary)
+    # must be a clean _err, NOT an escaped sqlite3.IntegrityError. Validated
+    # before the DB is even touched.
+    resp = broker_b1.handle_request({"verb": "activity-log", "token": "tok-b1", "args": {}}, TRUSTED_UID)
+    check("activity-log with no summary -> clean _err (no sqlite3.IntegrityError escapes)",
+          resp["ok"] is False and "summary" in resp["error"], str(resp))
+    # An empty-string and a non-string summary are likewise clean rejections.
+    resp = broker_b1.handle_request(
+        {"verb": "activity-log", "token": "tok-b1", "args": {"summary": ""}}, TRUSTED_UID)
+    check("activity-log with empty summary -> clean _err", resp["ok"] is False, str(resp))
+    resp = broker_b1.handle_request(
+        {"verb": "activity-log", "token": "tok-b1", "args": {"summary": 123}}, TRUSTED_UID)
+    check("activity-log with non-string summary -> clean _err", resp["ok"] is False, str(resp))
+    # The broker still works right after those rejections (no wedged state).
+    resp = broker_b1.handle_request(
+        {"verb": "activity-log", "token": "tok-b1", "args": {"summary": "fine now"}}, TRUSTED_UID)
+    check("broker still serves a valid request after schema-invalid ones", resp["ok"] is True, str(resp))
+
+    # (2) Fail-closed on lost sessions: a fresh broker (simulating a restart
+    # that dropped the in-memory _sessions) rejects a previously-valid token.
+    restarted = _new_broker()
+    resp = restarted.handle_request(
+        {"verb": "activity-log", "token": "tok-b1", "args": {"summary": "x"}}, TRUSTED_UID)
+    check("a token from before a broker 'restart' is rejected (fail closed)",
+          resp["ok"] is False and "token" in resp["error"], str(resp))
+
+    # ---- Case 7: a real Unix domain socket, end to end (incl. B1 sendall guard) ----
     check("wire-protocol test", _run_socket_test(task_a=task_b))
 
     conn.close()
@@ -275,26 +316,41 @@ def _run_socket_test(task_a: int) -> bool:
             return False
 
         # Register a session — this connection's own peer UID is our real
-        # UID (os.geteuid()), which we put in trusted_uids above.
-        reg = _socket_call(sock_path, {"verb": "register_session",
+        # UID (os.geteuid()), which we put in trusted_uids above. Uses the
+        # real wire client `opsdb_broker.send_request` (Code Review
+        # non-blocking item: do NOT reimplement a third copy of the client).
+        reg = opsdb_broker.send_request(sock_path, {"verb": "register_session",
                                         "args": {"token": "sock-tok", "task_id": task_a, "agent": "developer"}})
         if not reg.get("ok"):
             print(f"[FAIL] socket test: register_session over the real socket failed: {reg}")
             return False
 
-        resp = _socket_call(sock_path, {"verb": "activity-log", "token": "sock-tok",
+        resp = opsdb_broker.send_request(sock_path, {"verb": "activity-log", "token": "sock-tok",
                                          "args": {"summary": "socket test"}})
         if not resp.get("ok"):
             print(f"[FAIL] socket test: activity-log over the real socket failed: {resp}")
             return False
 
-        resp = _socket_call(sock_path, {"verb": "query", "token": "sock-tok", "args": {"sql": "SELECT 1"}})
+        resp = opsdb_broker.send_request(sock_path, {"verb": "query", "token": "sock-tok",
+                                                     "args": {"sql": "SELECT 1"}})
         if resp.get("ok"):
             print("[FAIL] socket test: excluded verb 'query' was NOT rejected over the real socket")
             return False
 
-        print("[PASS] socket test: register_session, an allowed verb, and an excluded verb all behave "
-              "correctly over a real Unix domain socket")
+        # B1: a client that sends a request and closes WITHOUT reading the
+        # response must not crash the daemon (the old code raised
+        # BrokenPipeError in sendall and killed serve_forever). Do exactly
+        # that, then confirm the broker still serves the next connection.
+        _send_and_abandon(sock_path, {"verb": "activity-log", "token": "sock-tok",
+                                      "args": {"summary": "client will not read the reply"}})
+        resp = opsdb_broker.send_request(sock_path, {"verb": "activity-log", "token": "sock-tok",
+                                         "args": {"summary": "daemon survived the abandoned client"}})
+        if not resp.get("ok"):
+            print(f"[FAIL] socket test: daemon did not survive a close-before-read client: {resp}")
+            return False
+
+        print("[PASS] socket test: register_session, an allowed verb, an excluded verb, and a "
+              "close-before-read client all behave correctly over a real Unix domain socket")
         return ok
     finally:
         try:
@@ -303,18 +359,17 @@ def _run_socket_test(task_a: int) -> bool:
             pass
 
 
-def _socket_call(sock_path: str, request: dict) -> dict:
+def _send_and_abandon(sock_path: str, request: dict) -> None:
+    """Send one request then immediately close, never reading the reply —
+    the B1 'client that disconnects before the broker's sendall' repro."""
+    import json as _json
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.connect(sock_path)
-        sock.sendall((json.dumps(request) + "\n").encode("utf-8"))
+        sock.sendall((_json.dumps(request) + "\n").encode("utf-8"))
         sock.shutdown(socket.SHUT_WR)
-        chunks = []
-        while True:
-            chunk = sock.recv(65_536)
-            if not chunk:
-                break
-            chunks.append(chunk)
-    return json.loads(b"".join(chunks).decode("utf-8"))
+        # deliberately do NOT recv — close on __exit__
+    # Give the broker a moment to attempt its (guarded) sendall and loop back.
+    time.sleep(0.1)
 
 
 if __name__ == "__main__":

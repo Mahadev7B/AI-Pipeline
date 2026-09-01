@@ -1,0 +1,47 @@
+[Unit]
+Description=ai-pipeline egress proxy (TASK-023, finding B3) — the ONLY permitted egress path out of a sandboxed Developer session; allowlisting HTTP-CONNECT proxy to the model API host(s) only
+Documentation=file:///home/user/AI-Pipeline/ops/reviews/cto-task023-architecture.md file:///home/user/AI-Pipeline/ops/reviews/task023-os-provisioning-runbook.md
+After=network.target
+
+[Service]
+Type=simple
+# ============================ REQUIRED EDIT ============================
+# Like opsdb-broker.service, this MUST NOT run as root and MUST NOT run as
+# ai-developer (the addendum, B3: "runs as the broker's trusted account (or
+# a dedicated ai-pipeline-egress system account) — never as ai-developer").
+# The placeholders below are intentionally invalid so systemd fails loudly
+# until a human sets them — fail closed, never fall back to root. Use the
+# same trusted account as the opsdb broker, or a dedicated
+# ai-pipeline-egress account; see the runbook.
+User=__REPLACE_WITH_TRUSTED_ACCOUNT_OR_ai-pipeline-egress__
+Group=__REPLACE_WITH_ITS_GROUP_OR_ai-pipeline-db__
+# ======================================================================
+WorkingDirectory=/home/user/AI-Pipeline
+Environment=PYTHONUNBUFFERED=1
+# The allowlist config file: host-owned, NOT bind-mounted into the sandbox,
+# 0644 root-owned (or trusted-account-owned) and NOT writable by
+# ai-developer (the addendum, B3, and Red Team verification #5). It lists
+# exactly the model-API host(s) and this environment's chained agent proxy.
+Environment=EGRESS_PROXY_CONFIG_PATH=/etc/ai-pipeline/egress-allowlist.json
+Environment=EGRESS_PROXY_SOCKET_PATH=/run/ai-pipeline/egress.sock
+ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/egress_proxy.py
+Restart=on-failure
+RestartSec=5
+# The socket directory (/run/ai-pipeline) must exist and be group-owned by
+# ai-pipeline-db before this unit starts — shared with opsdb-broker.service;
+# see the runbook, step 5.
+RuntimeDirectory=ai-pipeline
+RuntimeDirectoryMode=0770
+
+# Defense in depth beyond the application-level allowlist enforcement in
+# egress_proxy.py itself. This process needs outbound network (unlike the
+# opsdb broker), so ProtectSystem=strict but no network restriction here —
+# the allowlist IS the network restriction.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/ai-pipeline
+ReadWritePaths=/run/ai-pipeline
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
