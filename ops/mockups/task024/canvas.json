@@ -1,0 +1,17 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",      "x": 0,    "y": 0,    "w": 1160, "h": 2650 },
+    { "file": "StartFlow.dc.html", "x": 1280, "y": 0,    "w": 1160, "h": 1750 },
+    { "file": "Receipt.dc.html",   "x": 2560, "y": 0,    "w": 920,  "h": 1700 },
+    { "file": "Inline.dc.html",    "x": 1280, "y": 1900, "w": 1160, "h": 1320 },
+    { "file": "Closeups.dc.html",  "x": 2560, "y": 1900, "w": 1160, "h": 2300 }
+  ],
+  "annotations": [
+    { "id": "note-main", "x": 0, "y": -150, "w": 520, "text": "CONCEPT A - RECOMMENDED\nSave lives on the Ideas page. Start lives on the idea's own Task Detail page. The two actions are never on the same screen, so the compose surface can never spend money." },
+    { "id": "note-startflow", "x": 1280, "y": -150, "w": 500, "text": "THE START ACTION, EVERY STATE\nArm (outlined, runs nothing) -> confirm (the only click that spends) -> started -> failed. Plus why Save and Start cannot look alike." },
+    { "id": "note-receipt", "x": 2560, "y": -150, "w": 460, "text": "CONCEPT B - alternate\nOne surface, staged: a receipt that counts the things that did NOT happen, then offers Start on the same page." },
+    { "id": "note-inline", "x": 1280, "y": 1770, "w": 500, "text": "CONCEPT C - alternate\nNo new page. Capture strip plus a receded 'Not started' zone on Active Work, with a Start control on each parked row." },
+    { "id": "note-closeups", "x": 2560, "y": 1770, "w": 500, "text": "CLOSEUPS\nNav placement, validation and error states, per-field caps from real data, the priority control, and the BACKLOG stuck-badge question." }
+  ],
+  "launch": { "view": "canvas" }
+}

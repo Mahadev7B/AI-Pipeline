@@ -7,7 +7,7 @@
 <body>
 <x-dc>
 <helmet>
-  <title>Concept A &mdash; Ideas page with a standing Backlog ledger</title>
+  <title>Concept A &mdash; Save on Ideas, Start on the idea&rsquo;s own page</title>
   <style>
 :root{
   --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
@@ -37,22 +37,24 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 .inp{ width:100%; box-sizing:border-box; padding:9px 10px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); color:var(--text); font-size:13px; font-family:var(--sans); }
 .ph{ color:var(--text3); }
 .statehdr{ font-family:var(--disp); font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent); margin:0 0 3px; }
-.statesub{ font-size:11px; color:var(--text2); margin:0 0 14px; line-height:1.5; }
+.statesub{ font-size:11px; color:var(--text2); margin:0 0 14px; line-height:1.55; max-width:900px; }
+.btn-save{ padding:9px 20px; border-radius:8px; background:var(--accent); color:#1a1206; font-weight:600; font-size:13px; }
+.btn-ghost{ padding:9px 18px; border-radius:8px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-weight:600; font-size:12.5px; }
   </style>
 </helmet>
 
 <div style="padding:26px; width:1108px; box-sizing:border-box; background:var(--bg);">
 
 <!-- ============ STATE 1 : FIRST RUN ============ -->
-<div class="statehdr">Concept A &middot; State 1 &mdash; first run, nothing saved yet</div>
-<div class="statesub">The page a Founder who has never submitted an idea lands on. The form and the standing Backlog ledger are the same screen &mdash; the ledger is where saved ideas live, and its empty state is the first-run state.</div>
+<div class="statehdr">Concept A &middot; State 1 &mdash; Ideas, first run</div>
+<div class="statesub">The page a Founder who has never saved an idea lands on. <b style="color:var(--text2);">There is no Start control anywhere on this screen</b> &mdash; the compose surface can never spend money. The ledger below the form is where saved ideas live; its empty state is the first-run state.</div>
 
 <div style="border:1px solid var(--border2); border-radius:16px; padding:22px; margin-bottom:34px;">
 
-  <h1>Ideas <span style="font-size:11px; color:var(--text3); font-weight:400;">&mdash; saved here, not started</span></h1>
-  <div class="sub" style="margin-top:-14px; max-width:780px; line-height:1.6;">
-    Write an idea down and save it to the Backlog. <b style="color:var(--text2);">Saving does not start work</b> &mdash; no agent runs,
-    nothing is spent, and no task moves. Ideas wait here until you ask the Chief of Staff to start one.
+  <h1>Ideas</h1>
+  <div class="sub" style="margin-top:-14px; max-width:800px; line-height:1.6;">
+    Write an idea down and save it. <b style="color:var(--text2);">Saving costs nothing and starts nothing</b> &mdash; it puts the idea
+    in the Backlog, where it waits. Starting the work is a separate, deliberate click on the idea&rsquo;s own page.
   </div>
 
   <div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:18px; align-items:start;">
@@ -79,32 +81,35 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <div class="help">A hint for ordering later. Medium is fine &mdash; it does not change when the work starts.</div>
 
       <div style="display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
-        <div style="padding:9px 20px; border-radius:8px; background:var(--accent); color:var(--bg); font-weight:600; font-size:13px;">Save to Backlog</div>
+        <div class="btn-save">Save to Backlog</div>
         <div style="font-size:11px; color:var(--text2); line-height:1.45;">Writes one task at status <span class="mono" style="color:var(--text);">BACKLOG</span>.<br><span style="color:var(--text3);">No agents run. Nothing is spent.</span></div>
       </div>
     </div>
 
-    <!-- HOW WORK ACTUALLY STARTS -->
+    <!-- TWO ACTIONS, EXPLAINED -->
     <div class="panel" style="border-color:var(--border2);">
-      <div class="label" style="margin-bottom:12px;">How an idea becomes work</div>
+      <div class="label" style="margin-bottom:12px;">Two separate actions</div>
 
-      <div style="display:flex; gap:11px; margin-bottom:14px;">
+      <div style="display:flex; gap:11px; margin-bottom:15px;">
         <div class="mono" style="width:18px; flex-shrink:0; color:var(--accent); font-size:11px; font-weight:700; padding-top:1px;">1</div>
-        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">You save it here</div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">One task row, status <span class="mono" style="color:var(--text2);">BACKLOG</span>, attributed to you. This page is the only step that happens automatically.</div></div>
+        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">Save &mdash; here, on this page</div>
+          <div style="font-size:11px; color:var(--text2); line-height:1.5;">One task row at status <span class="mono">BACKLOG</span>, attributed to you. Free. Nothing runs. You can walk away and think.</div></div>
       </div>
 
-      <div style="display:flex; gap:11px; margin-bottom:14px;">
-        <div class="mono" style="width:18px; flex-shrink:0; color:var(--accent); font-size:11px; font-weight:700; padding-top:1px;">2</div>
+      <div style="display:flex; gap:11px; margin-bottom:15px;">
+        <div class="mono" style="width:18px; flex-shrink:0; color:var(--text3); font-size:11px; font-weight:700; padding-top:1px;">2</div>
         <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">It waits &mdash; for as long as you like</div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Nothing reads it, nothing runs on it, nothing is charged. An idea can sit in the Backlog for a week and cost nothing.</div></div>
+          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Nothing reads it and nothing is charged. An idea can sit in the Backlog for a week and cost nothing.</div></div>
       </div>
 
       <div style="display:flex; gap:11px;">
         <div class="mono" style="width:18px; flex-shrink:0; color:var(--accent); font-size:11px; font-weight:700; padding-top:1px;">3</div>
-        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px;">You ask the Chief of Staff to start it</div>
-          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Work begins the same way it does today &mdash; you ask. <a class="accentlink" href="#">Ask the Chief of Staff &rarr;</a></div>
-          <div style="font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:5px;">There is no &ldquo;start&rdquo; button on this page, and there is not one anywhere else either. That is deliberate, not missing.</div></div>
+        <div><div style="font-size:12px; font-weight:600; margin-bottom:2px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;">Start &mdash; on the idea&rsquo;s own page <span class="pill" style="background:var(--accent-soft); color:var(--accent); font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span></div>
+          <div style="font-size:11px; color:var(--text2); line-height:1.5;">Hands the idea to Product and begins the real pipeline. Deliberately not on this screen &mdash; you open the idea, read what starting does, and confirm.</div></div>
+      </div>
+
+      <div style="font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+        Saving and starting are never one click, and never on the same screen. That is the whole point of the split.
       </div>
     </div>
   </div>
@@ -123,15 +128,15 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 </div>
 
 <!-- ============ STATE 2 : JUST SAVED ============ -->
-<div class="statehdr">Concept A &middot; State 2 &mdash; immediately after Save to Backlog</div>
-<div class="statesub">Real content: this is the moment TASK-025 was created today. The confirmation names the task, states what did <i>not</i> happen, and the idea is now visible in the ledger below the form &mdash; the same place it will still be tomorrow.</div>
+<div class="statehdr">Concept A &middot; State 2 &mdash; immediately after Save</div>
+<div class="statesub">Real content: this is the moment TASK-025 was created today. The confirmation names the task, states what did <i>not</i> happen, and offers the Start action only as a <b style="color:var(--text2);">link away to the idea&rsquo;s own page</b> &mdash; never as a button that could be clicked from muscle memory a second after Save.</div>
 
-<div style="border:1px solid var(--border2); border-radius:16px; padding:22px;">
+<div style="border:1px solid var(--border2); border-radius:16px; padding:22px; margin-bottom:34px;">
 
-  <h1>Ideas <span style="font-size:11px; color:var(--text3); font-weight:400;">&mdash; saved here, not started</span></h1>
-  <div class="sub" style="margin-top:-14px; max-width:780px; line-height:1.6;">
-    Write an idea down and save it to the Backlog. <b style="color:var(--text2);">Saving does not start work</b> &mdash; no agent runs,
-    nothing is spent, and no task moves. Ideas wait here until you ask the Chief of Staff to start one.
+  <h1>Ideas</h1>
+  <div class="sub" style="margin-top:-14px; max-width:800px; line-height:1.6;">
+    Write an idea down and save it. <b style="color:var(--text2);">Saving costs nothing and starts nothing</b> &mdash; it puts the idea
+    in the Backlog, where it waits. Starting the work is a separate, deliberate click on the idea&rsquo;s own page.
   </div>
 
   <!-- CONFIRMATION -->
@@ -140,13 +145,13 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="9" stroke="var(--green)" stroke-width="1.7"/><path d="M8 12.4 L11 15.2 L16 9.2" stroke="var(--green)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div style="flex:1; min-width:0;">
         <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">Saved to Backlog &mdash; <span class="mono" style="color:var(--green);">TASK-025</span></div>
-        <div style="font-size:12px; color:var(--text2); line-height:1.55; max-width:720px;">
-          <b style="color:var(--text);">Nothing has started.</b> No agent was dispatched, no model was called, nothing was spent, and no other
-          task changed. Your idea is written down and it is sitting still. It will keep sitting still until you ask for it to be picked up.
+        <div style="font-size:12px; color:var(--text2); line-height:1.55; max-width:740px;">
+          <b style="color:var(--text);">Nothing has started.</b> No agent was dispatched, no model was called, nothing was spent, and no
+          other task changed. Your idea is written down and it is sitting still &mdash; and it will keep sitting still until you open it
+          and start it yourself.
         </div>
         <div style="display:flex; gap:16px; margin-top:10px; font-size:11.5px;">
-          <a class="accentlink" href="#">Read it back on TASK-025 &rarr;</a>
-          <a class="accentlink" href="#">Ask the Chief of Staff to start it &rarr;</a>
+          <a class="accentlink" href="#">Open TASK-025 &mdash; read it back, or start the work &rarr;</a>
         </div>
       </div>
     </div>
@@ -155,21 +160,21 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
   <div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:18px; align-items:start; margin-bottom:20px;">
     <div class="panel">
       <div class="label" style="margin-bottom:8px;">Title</div>
-      <div class="inp"><span class="ph">A short name for the idea &mdash; e.g. &ldquo;Weekly digest of what the company shipped&rdquo;</span></div>
+      <div class="inp"><span class="ph">A short name for the idea</span></div>
       <div class="help">Cleared and ready for the next one. Nothing you already saved is affected.</div>
       <div class="label" style="margin:16px 0 8px;">The idea &mdash; what do you want, and why does it matter?</div>
       <div class="inp" style="height:80px;"><span class="ph">Say it the way you&rsquo;d say it out loud.</span></div>
       <div style="display:flex; align-items:center; gap:14px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-        <div style="padding:9px 20px; border-radius:8px; background:var(--accent); color:var(--bg); font-weight:600; font-size:13px;">Save to Backlog</div>
+        <div class="btn-save">Save to Backlog</div>
         <div style="font-size:11px; color:var(--text3);">Starts nothing.</div>
       </div>
     </div>
 
     <div class="panel" style="border-color:var(--border2);">
-      <div class="label" style="margin-bottom:12px;">How an idea becomes work</div>
-      <div style="display:flex; gap:11px; margin-bottom:12px;"><div class="mono" style="width:18px; color:var(--green); font-size:11px; font-weight:700;">1</div><div style="font-size:12px;"><b>You save it here</b> <span style="color:var(--green); font-size:11px;">&mdash; done</span></div></div>
-      <div style="display:flex; gap:11px; margin-bottom:12px;"><div class="mono" style="width:18px; color:var(--accent); font-size:11px; font-weight:700;">2</div><div><div style="font-size:12px; font-weight:600;">It waits</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">TASK-025 is in the Backlog right now, doing nothing, costing nothing.</div></div></div>
-      <div style="display:flex; gap:11px;"><div class="mono" style="width:18px; color:var(--text3); font-size:11px; font-weight:700;">3</div><div><div style="font-size:12px; font-weight:600; color:var(--text2);">You ask the Chief of Staff to start it</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">Not done. <a class="accentlink" href="#">Ask the Chief of Staff &rarr;</a></div></div></div>
+      <div class="label" style="margin-bottom:12px;">Two separate actions</div>
+      <div style="display:flex; gap:11px; margin-bottom:13px;"><div class="mono" style="width:18px; color:var(--green); font-size:11px; font-weight:700;">1</div><div style="font-size:12px;"><b>Saved</b> <span style="color:var(--green); font-size:11px;">&mdash; done, TASK-025</span></div></div>
+      <div style="display:flex; gap:11px; margin-bottom:13px;"><div class="mono" style="width:18px; color:var(--accent); font-size:11px; font-weight:700;">2</div><div><div style="font-size:12px; font-weight:600;">Waiting</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">TASK-025 is in the Backlog right now, doing nothing, costing nothing.</div></div></div>
+      <div style="display:flex; gap:11px;"><div class="mono" style="width:18px; color:var(--text3); font-size:11px; font-weight:700;">3</div><div><div style="font-size:12px; font-weight:600; color:var(--text2);">Not started</div><div style="font-size:11px; color:var(--text2); line-height:1.5;">Start it from its own page, after reading what starting does.</div></div></div>
     </div>
   </div>
 
@@ -204,8 +209,65 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     </div>
 
     <div style="font-size:10.5px; color:var(--text3); margin-top:9px; line-height:1.5; max-width:820px;">
-      Ideas stay in this list until they are started. This list is read-only &mdash; there is nothing to click here that spends money or
-      moves work.
+      This list is read-only. Nothing on it spends money &mdash; a row is a link to the idea&rsquo;s own page, where starting lives.
+    </div>
+  </div>
+</div>
+
+<!-- ============ STATE 3 : TASK DETAIL, START LIVES HERE ============ -->
+<div class="statehdr">Concept A &middot; State 3 &mdash; TASK-025&rsquo;s own page, where Start lives</div>
+<div class="statesub">Real row, real values (owner unassigned, no gate, no cost data). Two things are new to this page: the <b style="color:var(--text2);">&ldquo;The idea, as you wrote it&rdquo;</b> panel that AC-5 requires, and the <b style="color:var(--text2);">Start work</b> panel &mdash; the only place in the product where a click begins a pipeline. Its armed and confirmed states are on the <span class="mono" style="color:var(--text2);">StartFlow</span> artboard.</div>
+
+<div style="border:1px solid var(--border2); border-radius:16px; padding:22px;">
+
+  <h1>TASK-025 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills</span></h1>
+  <div class="sub" style="margin-top:-10px;">Status <span class="pill" style="background:var(--gray-soft); color:var(--text2);">BACKLOG</span> &middot; saved by Founder 1 Sep 19:42 UTC</div>
+
+  <div class="panel" style="margin-bottom:16px;">
+    <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+      <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;">AI-Pipeline Ops Bootstrap</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px; color:var(--text2);">unassigned</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">0d since created</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px;">0</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; not started</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px; color:var(--text2);">No</div></div>
+      <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;">$0.00</div></div>
+    </div>
+  </div>
+
+  <!-- AC-5 : THE IDEA, READ BACK -->
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="label" style="margin-bottom:9px;">The idea &mdash; as you wrote it</div>
+    <div style="font-size:12.5px; color:var(--text); line-height:1.65; white-space:pre-wrap; max-width:860px;">Today the pipeline runs idea -&gt; requirements -&gt; design with no divergent-thinking step: the first interpretation of a Founder's idea becomes the spec. Design produces 2-3 concepts, but only about visuals, after the shape is already fixed. Add a genuine brainstorming stage between a Founder idea landing and Product locking requirements, so alternative framings get generated and pressure-tested before convergence.</div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:10px; padding-top:9px; border-top:1px solid var(--border);">Stored exactly as typed and shown escaped &mdash; plain text only, no formatting is interpreted.</div>
+  </div>
+
+  <!-- START PANEL : RESTING STATE -->
+  <div class="panel" style="border-color:var(--accent);">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:10px;">
+      <div class="label" style="margin:0; color:var(--accent);">Start work on this idea</div>
+      <span class="pill" style="background:var(--accent-soft); color:var(--accent); font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span>
+    </div>
+
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:9px;">Nothing has run on this idea yet.</div>
+
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:8px 12px; align-items:baseline; max-width:800px; margin-bottom:14px;">
+      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Starting hands TASK-025 to <b style="color:var(--text);">Product</b>, which writes the brief. Design, CTO, Developer, Code Review, Security and QA follow &mdash; the full pipeline, one stage at a time.</div>
+
+      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Every one of those stages is a <b style="color:var(--text);">real model invocation that costs real money</b>. This is not a simulation and it is not free.</div>
+
+      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;"><b style="color:var(--text);">How much?</b> This product cannot tell you yet &mdash; none of the 13 agent runs recorded so far carries a cost figure, so there is no honest estimate to show. Watch it on <a class="accentlink" href="#">Costs</a> as it runs.</div>
+
+      <div style="color:var(--accent); font-size:11px; padding-top:2px;">&#9679;</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">There is <b style="color:var(--text);">no stop button</b>. Once a stage is dispatched it runs to completion. You can pause the work between stages, but you cannot un-spend what a running stage costs.</div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <div class="btn-ghost">Start work on TASK-025&hellip;</div>
+      <div style="font-size:11px; color:var(--text2); line-height:1.45;">You get one confirmation step before anything runs.<br><span style="color:var(--text3);">Not ready? Do nothing. This idea stays in the Backlog and keeps costing nothing.</span></div>
     </div>
   </div>
 </div>

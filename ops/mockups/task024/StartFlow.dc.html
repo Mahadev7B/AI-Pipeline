@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>The Start action &mdash; arm, confirm, after-state, failure</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+h1{ font-family:var(--disp); font-size:17px; font-weight:600; margin:0 0 4px; }
+h2{ font-family:var(--disp); font-size:13px; font-weight:600; margin:26px 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 16px; line-height:1.55; max-width:900px; }
+.verdict{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px; display:inline-block; margin-top:9px; }
+  </style>
+</helmet>
+
+<div style="padding:26px; width:1108px; box-sizing:border-box; background:var(--bg);">
+
+<h1>The Start action &mdash; every state</h1>
+<div class="sub">
+  Start is the first control in this product that begins a multi-stage pipeline on a click. These are its four states, the two-step
+  shape that separates it from Save, and the honest failure case. Real content throughout: TASK-025 as it exists in the database today.
+</div>
+
+<!-- ================= SAVE VS START ================= -->
+<h2>1. Why Save and Start cannot look alike</h2>
+<div class="sub" style="margin-bottom:12px;">The palette is already fully spoken for &mdash; amber = active / primary, green = passed, red = danger &amp; open risk, blue = agent waiting, violet = actor identity, gray = neutral. Inventing a sixth colour for &ldquo;expensive&rdquo; would break a closed system; painting Start red would lie about it (starting work is the thing the Founder is <i>supposed</i> to do). So the two actions are separated by <b style="color:var(--text2);">fill, step count and label</b>, not by hue.</div>
+
+<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;">
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Save &mdash; filled, one step</div>
+    <div style="padding:9px 20px; border-radius:8px; background:var(--accent); color:#1a1206; font-weight:600; font-size:13px; display:inline-block;">Save to Backlog</div>
+    <div class="verdict" style="background:var(--green-soft); color:var(--green);">Safe primary</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:7px; line-height:1.55;">Keeps the filled-amber primary every other safe action in this product already uses. Costs nothing, so it earns the one-click treatment.</div>
+  </div>
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Start, step 1 &mdash; outlined, arms only</div>
+    <div style="padding:9px 18px; border-radius:8px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-weight:600; font-size:12.5px; display:inline-block;">Start work on TASK-025&hellip;</div>
+    <div class="verdict" style="background:var(--accent-soft); color:var(--accent);">Arms &mdash; runs nothing</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:7px; line-height:1.55;">No fill, and an ellipsis: in this UI an unfilled button has never been the &ldquo;go&rdquo;. Clicking it dispatches nothing &mdash; it opens step 2.</div>
+  </div>
+
+  <div class="panel" style="border-color:var(--accent);">
+    <div class="label" style="margin-bottom:10px; color:var(--accent);">Start, step 2 &mdash; filled, but it says what it does</div>
+    <div style="padding:9px 18px; border-radius:8px; background:var(--accent); color:#1a1206; font-weight:700; font-size:12.5px; display:inline-block;">Yes &mdash; start Product on TASK-025 and spend</div>
+    <div class="verdict" style="background:var(--accent-soft); color:var(--accent);">The only click that spends</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:7px; line-height:1.55;">The filled button appears exactly once, on a screen whose entire body is the consequence disclosure. Its label names the agent and the spend &mdash; it can&rsquo;t be misread as &ldquo;save&rdquo;.</div>
+  </div>
+</div>
+
+<!-- ================= STEP 2 : CONFIRM ================= -->
+<h2>2. Step 2 &mdash; the confirmation screen</h2>
+<div class="sub" style="margin-bottom:12px;">Server-rendered, not a browser <span class="mono">confirm()</span> &mdash; this product renders every state on the server and runs no client JS. The Founder&rsquo;s idea is repeated back <i>on this screen</i>, so &ldquo;which idea am I about to spend money on&rdquo; is never a question.</div>
+
+<div class="panel" style="border-color:var(--accent); max-width:820px;">
+  <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+    <div class="label" style="margin:0; color:var(--accent);">Confirm &mdash; start work on TASK-025</div>
+    <span class="pill" style="background:var(--accent-soft); color:var(--accent); font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="label" style="margin-bottom:6px;">You are about to start</div>
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:5px;">TASK-025 &mdash; Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills</div>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Today the pipeline runs idea -&gt; requirements -&gt; design with no divergent-thinking step: the first interpretation of a Founder's idea becomes the spec&hellip;</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:auto 1fr; gap:9px 14px; align-items:baseline; margin-bottom:16px;">
+    <div class="mono" style="font-size:12px; color:var(--accent); font-weight:700; text-align:right;">now</div>
+    <div style="font-size:12px; color:var(--text2);"><b style="color:var(--text);">Product</b> is dispatched and starts writing the brief. Status moves <span class="mono" style="color:var(--text3);">BACKLOG &rarr; PLANNING</span>.</div>
+
+    <div class="mono" style="font-size:12px; color:var(--text3); font-weight:700; text-align:right;">then</div>
+    <div style="font-size:12px; color:var(--text2);">Design, CTO, Developer, Code Review, Security, QA &mdash; each a real model invocation, each costing real money.</div>
+
+    <div class="mono" style="font-size:12px; color:var(--text3); font-weight:700; text-align:right;">cost</div>
+    <div style="font-size:12px; color:var(--text2);">Unknown, honestly: 0 of the 13 agent runs on record carries a cost figure, so this product has no estimate to give you. It will show up on <a class="accentlink" href="#">Costs</a> as it accrues.</div>
+
+    <div class="mono" style="font-size:12px; color:var(--text3); font-weight:700; text-align:right;">stop</div>
+    <div style="font-size:12px; color:var(--text2);">There is no stop button. A dispatched stage runs to completion.</div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:10px; padding-top:14px; border-top:1px solid var(--border);">
+    <div style="padding:9px 18px; border-radius:8px; background:var(--accent); color:#1a1206; font-weight:700; font-size:12.5px;">Yes &mdash; start Product on TASK-025 and spend</div>
+    <div style="padding:9px 18px; border-radius:8px; background:var(--panel2); border:1px solid var(--border2); color:var(--text2); font-size:12.5px;">Cancel &mdash; leave it in the Backlog</div>
+  </div>
+</div>
+
+<!-- ================= AFTER-STATE ================= -->
+<h2>3. After-state &mdash; &ldquo;started&rdquo; must be as unmistakable as &ldquo;saved&rdquo;</h2>
+<div class="sub" style="margin-bottom:12px;">The mirror image of the save confirmation: it names what <i>is</i> running, where to watch it, and it removes the Start control entirely &mdash; a second click is impossible, not merely discouraged. Same in-progress lock the Ask-Agent panel already uses.</div>
+
+<div style="display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:14px; align-items:start;">
+  <div class="panel" style="border-color:var(--accent); background:var(--accent-soft);">
+    <div style="display:flex; gap:12px; align-items:flex-start;">
+      <div style="width:9px; height:9px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:5px;"></div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:5px;">Started &mdash; Product is working on TASK-025 now</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:10px;">
+          Dispatched at 20:04 UTC. Status moved <span class="mono" style="color:var(--text);">BACKLOG &rarr; PLANNING</span>, owner is now
+          <b style="color:var(--text);">Product</b>. This is real work and it is spending money from this moment on.
+        </div>
+        <div style="display:flex; gap:16px; font-size:11.5px; flex-wrap:wrap;">
+          <a class="accentlink" href="#">Watch it on Active Work &rarr;</a>
+          <a class="accentlink" href="#">Watch the spend on Costs &rarr;</a>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid oklch(78% 0.14 75 / 0.28); font-size:11px; color:var(--text2); line-height:1.5;">
+      The Start control is gone from this page &mdash; there is nothing left here to click twice. It comes back only if the work is
+      ever returned to the Backlog.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">And on the Ideas page</div>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.55; margin-bottom:12px;">TASK-025 leaves the &ldquo;In Backlog &mdash; saved, not started&rdquo; ledger the moment it starts. The list shrinking is itself the signal: the ledger only ever holds things that are not running.</div>
+    <div class="card" style="text-align:center; padding:20px 12px;">
+      <div style="font-size:12.5px; color:var(--text2);">No ideas waiting.</div>
+      <div style="font-size:11px; color:var(--text3); margin-top:5px;">Everything you&rsquo;ve saved has been started.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FAILURE ================= -->
+<h2>4. Failure &mdash; the state this project has already got wrong once</h2>
+<div class="sub" style="margin-bottom:12px;">TASK-023 shipped a sandbox that reported success while doing nothing, and QA caught it. The Start path is the same shape of risk: a dispatch that fails must never render the &ldquo;Started&rdquo; panel. If the pipeline was not dispatched, the screen says so in those words and the task is still in the Backlog.</div>
+
+<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+  <div class="panel" style="border-color:var(--red);">
+    <div class="label" style="margin-bottom:8px; color:var(--red);">Start failed</div>
+    <div style="font-size:13px; font-weight:600; margin-bottom:5px;">Not started. TASK-025 is still in the Backlog.</div>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.6;">
+      The dispatch did not go through, so no agent was started and nothing was spent. The idea is untouched and its status is still
+      <span class="mono" style="color:var(--text);">BACKLOG</span> &mdash; you can try again, and trying again starts one pipeline, not two.
+    </div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:9px; line-height:1.5;">The word &ldquo;started&rdquo; never appears unless a status change was actually written.</div>
+    <div style="margin-top:12px;"><span style="padding:8px 16px; border-radius:8px; background:transparent; border:1px solid var(--accent); color:var(--accent); font-weight:600; font-size:12px; display:inline-block;">Try starting it again&hellip;</span></div>
+  </div>
+
+  <div class="panel" style="border-color:var(--border2);">
+    <div class="label" style="margin-bottom:8px;">Already running &mdash; the double-click lock</div>
+    <div style="font-size:13px; font-weight:600; margin-bottom:5px; color:var(--text2);">Product is already working on this.</div>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.6;">
+      Reached by a refresh, a back-button, or a second tab. No Start control is rendered and the route refuses a second dispatch &mdash;
+      the same in-progress lock the Ask-Agent panel already uses (&ldquo;a request is already in progress&rdquo;), applied to a far more
+      expensive action.
+    </div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:9px; line-height:1.5;">Save is idempotent-ish and cheap; Start is neither. It gets the stricter guard.</div>
+  </div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
