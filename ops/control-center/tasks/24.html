@@ -1,0 +1,393 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-024 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-024 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Founder Idea Intake: submit a new idea from the Control Center UI</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">design</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">4h09m since created<br><span style="color:var(--text3); font-size:10.5px;">1m in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Requirements</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup Review</div>
+          <span class="pill" style="background:var(--accent-soft); color:var(--accent);">CURRENT</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Red Team Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">In Development</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Code Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">QA</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Security</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Release · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; not reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T23:45:59.587Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Founder-review UI shell built and handed to Code Review (not Development of TASK-024 -- status stays MOCKUP_REVIEW because the Founder is still reviewing). Design&#x27;s fourteen TASK-024 artboards are now twelve real Control Center pages behind the existing session gate: entry &#x27;Ideas (preview)&#x27; -&gt; /ideas-preview/stage-1.html, the ten stages in order with a persistent clickable rail plus Back/Next, the five-voice legend on every screen, and the Distinctions and FullDepth reference sheets. No backend: generate_ideas_preview.py never opens a database connection, every control is a GET link or a CSS-only &lt;details&gt;, and a full walk of the running server changed zero rows across all 22 tables (counts and per-table sha256 identical). All 16 pre-existing pages still 200; the seven ops/db/test_*.py suites pass (test_egress_gateway C8 is flaky at the base commit too). Commits 3ac657d..7058471.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T23:22:31.212Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Founder review medium changed, 2026-09-01: the Founder does not want a design canvas (&#x27;I don&#x27;t want screenshots, I need UI so I can see clearly&#x27; -- the third time this has been said this session). The review artifact for the Founder gate becomes a UI SHELL built into the real Control Center: the ten-stage journey as real pages the Founder opens locally and clicks through. Strictly UI-only per the Founder&#x27;s earlier &#x27;only UI, no functionality, JUST UI&#x27;: static sample content (the Founder&#x27;s own TASK-026 raw idea, as in the design), navigation between shell pages only, NO backend, NO opsdb writes, NO schema change, NO agent invocation, NO model spend, no POST handler that does anything but navigate. This is the review artifact, NOT Development of TASK-024 -- the Founder&#x27;s approval gate (DEC-015 Part 3 s11) remains in force and nothing downstream proceeds until the Founder approves what they click through. The 14 design artboards in ops/mockups/task024/ are the spec to translate faithfully.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T23:10:58.059Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">DEC-015 revision of the TASK-024 mockup: the complete Founder journey, walkable. 14 artboards on one canvas (https://claude.ai/code/artifact/cb4151f6-1fa2-4d17-ab71-981e13d629de) - Main.dc.html is a clickable prototype with working navigation and no backend, mounting all ten directive stages (raw idea, interpreting, understanding, evaluation, review, correction/reconsideration, approval, approved brief, start work, execution) behind a clickable rail; the ten stages also stand alone left-to-right in journey order; plus three reference sheets. Central problem solved by a five-voice grammar (DEC-020): each of what I said / what you think I meant / what you think of it / what you recommend / what I approved gets one existing palette colour plus three non-colour signals (container shape, kicker, attribution), with the raw idea on every one of the ten stages. Concise layer = the ten questions all answered including &#x27;we don&#x27;t know and here is why&#x27;; expanded layer holds evidence only, each expander labelled with the sections it contains; Company View never behind a disclosure. Depth chip Light with its one-line reason beside the roster; sections 5-7 drawn as present-and-not-produced with the reason. Walked with the Founder&#x27;s real TASK-026 idea verbatim and the real later feedback for the Reconsider round; every DB figure quoted is real. NO competitor, price, market number, duration or cost estimate is invented anywhere - the Full-depth sheet shows every label slot (COMPANY INFERENCE, UNKNOWN, VERIFIED/CURRENT struck through as unreachable) with bracketed structural placeholders and the standing &#x27;Research has not been performed&#x27; line, and reaches RECOMMENDATION: Investigate first. Could not draw honestly, and said so: the per-round cost ceiling (slot drawn empty and bracketed - CTO computes it or it stays empty), any competitor, a Founder-typed title, any timing, the internal debate. Review revised in place at ops/reviews/design-review-task024.md (Revision 2, supersedes Revision 1; superseded artboards kept at ops/mockups/task024/superseded/). MOCKUP_REVIEW rather than ARCHITECTURE: the Founder reviews this before anything else proceeds, per Part 3 s11. Design cannot approve its own mockup.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T22:38:33.628Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Product brief revised to Revision 4 (DEC-015), incorporating the complete Founder directive v2 (Parts 1, 2 and 3 - Part 2 arrived mid-revision). Brainstorming framing removed entirely: no feature, no skill dependency, no Brainstorm More; gate is Edit/Correct - Reconsider - Approve Brief, plus the separate Approve Brief &amp; Start Work. Adopts Part 2&#x27;s fifteen-section output contract closing in a fixed-shape Company View (OPPORTUNITY/WHY/BIGGEST MERIT/BIGGEST THREAT/BEST DIFFERENTIATION/RECOMMENDATION, no numeric scores). Competitor sourcing resolved to the Founder&#x27;s VERIFIED-CURRENT / COMPANY INFERENCE / UNKNOWN labels, reconciled against the established fact that every dispatched agent runs with --tools &#x27;&#x27; (agent_runtime.py:304) and so has no research capability: every competitor claim today is COMPANY INFERENCE or UNKNOWN, VERIFIED is unreachable and its appearance is itself a FAIL, evaluations must state research was not performed, and UNKNOWN that matters yields RECOMMENDATION &#x27;Investigate first&#x27;. Nine mechanical QA checks specified; QA verifies labelling, never existence. Depth scales via the exposure test (does this have to win against something an outsider could choose?), Light default, audited by the contribution test. Ten questions are the concise layer, the fifteen sections expand behind them, with the rule that nothing decision-changing may live only in an expanded section. Downstream source of truth is a release blocker with named test SOT-1 against review_transcripts.py:203-204,261-262 and launch_developer_session.py:129. Next: Design revises the full Founder journey; Founder sees the clickable mockup before any Development.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T22:20:49.272Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">DEC-015 Part 2 of 3 received and inserted verbatim into ops/reviews/founder-directive-task024-deciphering-v2.md. It is the 15-section output contract (Original Idea; What We Think You Mean; What You Are Really Trying to Achieve; Why Valuable; Known Competitors/Alternatives; Competitor Data Freshness; Competitive Advantages; Threats/Weaknesses; Recommended Direction; Initial Scope; Important Assumptions; Alternatives; What We Need From You; Definition of Success; Company View). Section 6 directly resolves the competitor-sourcing problem: use available public research where it materially matters, never rely only on stale memory, label every claim VERIFIED/CURRENT vs COMPANY INFERENCE vs UNKNOWN, never invent pricing/counts/revenue/funding/share/features, and if research has not been performed, say so. Section 15&#x27;s Company View is an executive judgment (Opportunity H/M/L/Unclear; Recommendation Proceed / narrowed scope / Investigate first / Reconsider), explicitly not a score. Product&#x27;s in-flight Revision 4 notified.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T22:18:44.697Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">DEC-015 (decisions.id=19): Founder scope correction v2, Parts 1 and 3 of 3 (Part 2 not received; Parts 1 and 3 coherent and actionable, Part 2 governs if it arrives). Verbatim at ops/reviews/founder-directive-task024-deciphering-v2.md. Supersedes DEC-014&#x27;s brainstorming framing: NO brainstorming feature, NO skill dependency, &#x27;Reconsider&#x27; replaces &#x27;Brainstorm More&#x27;. Adds EVALUATION (merits, competitors/substitutes, threats, differentiation, definition of success) alongside interpretation, with depth scaling to the idea. Founder view is a concise ten-question executive summary with progressive disclosure. Review actions: Edit/Correct, Reconsider, Approve Brief. HARD REQUIREMENT: downstream agents receive the Founder-approved brief, never the raw idea. Process order unchanged and explicit: Product revises the brief FIRST, then Design revises the full journey, then the Founder is shown the clickable mockup before any Development.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T21:25:03.659Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Owner set to design; MOCKUP already recorded in the preceding transition. Per the DEC-014 directive&#x27;s process clause: Product revises the brief first, then Design revises the mockup.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T21:24:54.129Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Product brief rewritten clean as Revision 3 under DEC-014 (multi-agent deciphering, CoS synthesis, three artifacts, four-action review gate, separate Approve Brief &amp; Start Work). Supersedes the damaged part-DEC-013 intermediate state. Settles: CoS perspective-selection materiality (only-you test + post-hoc contribution audit; Product always, Red Team a rebuttable presumption; Product-only rounds allowed but never silent); Founder-question materiality (divergence test, cap 3, zero is a pass, new internal-disagreement filter); three-artifact persistence requirements (raw idea write-once and visible beside the interpretation forever; append-only versions; approved brief is a pointer and is what goes downstream); Brainstorm More/Refine spend again, Edit is free and Founder-attributed; approvals machinery reused unchanged, one row per round. Reuse finding: chief_of_staff.py + meeting_orchestrator.py already implement most of the deciphering engine (_parse_consult, run_consult_meeting, narration pass) - genuinely new is a task-scoped caller, the roster rule vs CEO-always, design missing from MEETING_PARTICIPANT_ALLOWLIST, selection-reason capture, and the persisted brief + gate + screens. Skill finding: prompt-master invoked successfully in-session but loads from a user-account-synced path, cannot fire on the agent_runtime path (--tools &quot;&quot;), is a prompt engineer not a brief writer, and no brainstorming skill exists anywhere reachable - the stage must have no skill dependency. 30 ACs. Next: Design revises the mockup.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T21:15:27.660Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">DEC-014 (decisions.id=18): Founder scope correction, specifying the deciphering stage properly. Verbatim directive at ops/reviews/founder-directive-task024-deciphering.md, which governs over any summary. Deciphering is multi-agent -- Product leads, Chief of Staff picks only the perspectives that materially help (CEO/CTO/Red Team/Design/Security/Financial), never all by default. Agents debate internally; the Founder gets ONE Chief of Staff synthesis in a fixed six-part shape, never separate agent reports. Review gate: Brainstorm More / Refine / Edit / Approve Brief. Starting work is a separate consequential action stating cost and consequence before the click. Three versions preserved and never overwritten. Process is explicit: Product revises the brief FIRST, then Design revises the mockup, and implementation waits until the journey is visually coherent and Founder-approved. NOTE for whoever picks this up: ops/reviews/product-task024-brief.md is currently a PARTIALLY REWRITTEN document -- an earlier re-brief agent was killed mid-write by Founder instruction -- so it is part original, part DEC-013 revision, internally inconsistent, and must not be treated as a specification.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:05:02.653Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">DEC-013 (decisions.id=17): Founder folded the idea-understanding/brainstorming stage into this milestone and corrected what Start does. Start must NOT launch Design/CTO/Development. Journey is now Raw Idea -&gt; Save -&gt; Refine/Brainstorm -&gt; Interpreted Brief -&gt; Founder Approval -&gt; Start Execution -&gt; downstream. Returned to PLANNING because this changes what the product IS, not just how it looks: Product must re-brief before Design revises. Three artifacts must be preserved and distinguishable (raw idea, AI-interpreted brief, Founder-approved brief), and the APPROVED brief -- not the raw idea -- is the authoritative input to downstream agents. Design&#x27;s Concept A Save half should largely survive; the Start flow needs rework.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:02:48.996Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design complete. 3 concepts + a dedicated Start-action artboard, published as a canvas (https://claude.ai/code/artifact/6eb8e58e-4ef8-4201-8f7c-e92aad45c612); review at ops/reviews/design-review-task024.md, mockups at ops/mockups/task024/. Recommends Concept A: Save on a new &#x27;Ideas&#x27; nav page (form + standing &#x27;In Backlog — saved, not started&#x27; ledger), Start on the idea&#x27;s own Task Detail page only, so the compose surface has no money-spending control on it. Start is a two-step arm-then-confirm action with four states incl. an honest failure state (never says &#x27;started&#x27; unless a transition was written). Revised mid-design for a Founder scope correction that added the UI Start action to Product&#x27;s brief; auto-start remains out of scope. Caps recommended: title 160, business_goal 4000, priority allowlist (reject, don&#x27;t coerce). Design position: exclude BACKLOG from is_stuck(). Finding: 0 of 13 agent_runs rows carries cost_usd, so the Start disclosure must say the cost is unknown rather than fabricate one. DEC-016 recorded. CTO owns: is_stuck resolution, project_id, cmd_task_create refactor, cap confirmation, and the Start route&#x27;s dispatch path + double-dispatch guard.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T19:48:52.040Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">FOUNDER SCOPE CORRECTION to Product&#x27;s brief, 2026-09-01: Product recommended (correctly) that submitting an idea must not auto-start the pipeline, since auto-dispatch would be the first-ever automatic dispatch of a new agent type and would silently reopen the sequencing decision the Founder has frozen three times (DEC-008, DEC-010, DEC-012). But Product then also scoped OUT any start button, stating that advancing out of BACKLOG happens &#x27;the way every other transition already does&#x27; -- i.e. on the command line, by the orchestrator. The Founder reviewed that and rejected it: it would leave the Founder able to save an idea but still unable to start anything from the app, which is the exact gap this milestone exists to close. A form that only saves is a suggestion box, not a front door. Decision: the design must include BOTH a Save action (writes to BACKLOG, nothing runs, no spend) and a separate, deliberate &#x27;Start work on this&#x27; action the Founder clicks on an already-saved idea, which does dispatch the pipeline and does spend real money. The distinction between them must be unmistakable and the consequence shown before the click. This does NOT breach the automation freeze: a Founder clicking start is attended action, identical in kind to the existing Ask-Agent control which already spends on a click. Auto-start on submit remains out of scope. Design was redirected mid-flight rather than after completing against the narrower scope.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T19:41:30.969Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Product brief delivered (ops/reviews/product-task024-brief.md). Recommends BACKLOG-on-submit, not auto-start: auto-dispatching Product would be the first non-Phase-3A automatic agent dispatch, on the path DEC-012 froze pending TASK-023. Fields: title + business_goal required, priority optional (fixed list); user_story/requirements/acceptance_criteria derived by Product, not asked of the Founder. 11 acceptance criteria. Excludes edit/delete, CRUD surface, attachments, multi-project, any new status transitions, auto-start. Flags first-ever work-creating write route (unbounded object creation, free text into agent prompts, new render surface, per-field caps) and the latent is_stuck()/BACKLOG ambiguity in derived_state.py that this milestone makes live.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T19:38:10.823Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Founder chose Path B (2026-09-01): build the idea front door in the app before bringing an app idea through it. Product owns the brief first -- this is a genuinely new Founder-facing capability, not a Founder directive already specifying its own requirements the way Milestones A-D were. Product must resolve one open question with the Founder: whether submitting an idea immediately starts the pipeline or lands in BACKLOG for deliberate launch. TASK-023 (the security lock) is parked at ARCHITECTURE after its eighth round, committed and resumable -- explicitly NOT abandoned, and its own Red Team REJECT stands unaddressed.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T19:37:56.795Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T23:45:50.912Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">FOUNDER-REVIEW UI SHELL, NOT DEVELOPMENT OF TASK-024. Translated Design&#x27;s fourteen approved TASK-024 artboards (ops/mockups/task024/*.dc.html, design-review-task024.md Revision 2) into twelve real Control Center pages so the Founder can walk the ten-stage deciphering journey as clickable UI instead of screenshots, for the DEC-015 / Part 3 s11 approval gate. New ops/control-center/generate_ideas_preview.py (1,870 lines) renders: the ten stages in journey order; a persistent ten-stage rail on every page (all stages clickable, current highlighted) plus Back/Next; the five-voice legend in the page chrome on every screen (gray you said / blue we think you mean / violet what we think of it / amber we recommend-need from you / green you approved, each carried by colour + container shape + kicker + attribution, per design review s1); the concise ten-question layer with each row&#x27;s &#x27;Show the working - sections N and M&#x27; expander opening a recessed inset; the Company View closing the concise layer, never behind a disclosure; the three Founder review actions with Reconsider&#x27;s pre-click spend disclosure; the approved brief as a visibly distinct artifact (double border + header bar) beside the raw idea; arm-then-confirm Start Work with its four-point pre-click disclosure and its honest &#x27;Not started&#x27; failure state; and the two reference sheets Distinctions and FullDepth. Content copied from the artboards, not rewritten: TASK-026&#x27;s raw idea and the Founder&#x27;s real later correction quoted verbatim, depth Light with its reason, the empty competitor section carrying &#x27;This is not the claim that there are no competitors. We have not looked, and we cannot look.&#x27;, the roster naming omissions including design not being on the participant allowlist, and every Full-depth value a bracketed placeholder with VERIFIED / CURRENT struck through as unreachable and the standing &#x27;Research has not been performed&#x27; line rendered as it would appear. One new GET route in server.py behind the existing _authenticated_session() gate; one new nav entry &#x27;Ideas (preview)&#x27; in layout.py placed second, where Design put Ideas on Main.dc.html.</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/control-center/generate_ideas_preview.py&quot;, &quot;ops/control-center/server.py&quot;, &quot;ops/control-center/layout.py&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: 1. DELIBERATE DEVIATIONS FROM THE ARTBOARDS, all additive and labelled: (a) stage 1 carries a small &#x27;Compose / Saved / Refine-Interpret disclosure&#x27; state bar that the artboard does not have, labelled &#x27;Three drawn states of one screen. In the product you reach them by using the controls; here they are also directly reachable&#x27; -- all three states are ALSO reachable through the real controls exactly as drawn; (b) stage 3&#x27;s roster/depth strip puts its disclosure toggle below the strip rather than inline at its right; (c) stage 10&#x27;s &#x27;Where you watch it from here&#x27; destinations are drawn as labels, not links, with a line saying so, because the artboard drew them as future destinations; (d) stage 6&#x27;s shared bottom forward link reads &#x27;Read v2 and decide&#x27; on the round-2 view and &#x27;Continue to Founder approval&#x27; elsewhere. 2. Nine shades Design used on the artboards have no name in layout.CSS_TOKENS (recessed ground, inset ground, hairline, dimmest text, dashed-placeholder border, two prose weights, two on-filled-button inks). CSS_TOKENS was NOT forked or extended: they are page-local custom properties scoped to .idj in generate_ideas_preview.SHELL_CSS, copied from the artboards, deliberately not promoted into the shared token set by a review shell. 3. HonestStates.dc.html was not built as a page -- the brief asked for two reference sheets (Distinctions, FullDepth); its ten states are already drawn inside the journey (the honest zero on stage 5, the empty competitor section on stage 4, no progress bar on stage 2, the roster omission on stage 2, &#x27;Not started&#x27; on stage 9, the four absences on stage 10). 4. Static snapshots: main() writes all twelve pages under ops/control-center/ideas-preview/ but they are NOT committed, matching TASK-022&#x27;s own nav-adding commit. Consequence, stated rather than hidden: the 46 committed page snapshots now show a nav bar one entry short until someone re-runs the generators -- exactly the state TASK-020/021/022 each left behind. A file:// snapshot also renders default states only, since there is no server to read the query string. 5. NO VISUAL VERIFICATION: no headless browser exists on this host, so layout fidelity rests on the inline styles being translated from the artboards plus tag-balance parsing -- nobody has looked at these pages rendered. That is the one check the Founder&#x27;s own walk will perform. 6. This is not the feature. Nothing here interprets an idea, runs a round, stores a version or approves anything; TASK-024 stays in MOCKUP_REVIEW.</div>
+    </div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  <div style="font-size:12px; color:var(--text2);">No Code Review, QA, or Security findings recorded for this task yet.</div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T23:10:29.952Z</span> &middot; Revised TASK-024 mockup to the full DEC-015 Founder journey: 14 artboards, walkable prototype published</div><div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:02:48.933Z</span> &middot; Delivered TASK-024 mockups: 3 concepts + Start-action states, published as a canvas; recommended Concept A</div>
+</div>
+</div>
+</body>
+</html>

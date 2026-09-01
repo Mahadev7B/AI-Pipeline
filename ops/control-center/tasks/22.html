@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>TASK-021 — Task Detail — Command Center</title>
+<title>TASK-022 — Task Detail — Command Center</title>
 <style>
 :root{
   --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
@@ -54,7 +54,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 <div style="padding:26px;">
 <div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
 
-<h1>TASK-021 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Milestone C: Company-wide Risks register</span></h1>
+<h1>TASK-022 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Milestone D: Project / Phase Progress</span></h1>
 <div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
 
 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
@@ -62,9 +62,9 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 <div class="panel" style="margin-bottom:20px;">
   <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
     <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
-    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">cto</div></div>
-    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">21h19m since created<br><span style="color:var(--text3); font-size:10.5px;">20h41m in this gate</span></div></div>
-    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">qa</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">20h40m since created<br><span style="color:var(--text3); font-size:10.5px;">19h50m in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; color:var(--red); font-weight:600;">1 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
     <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
     <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
     <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
@@ -136,7 +136,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
           <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
         </div>
-        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass &middot; 1 reject/fail (Red Team review reject) <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
       </div>
     </div>
     <div style="display:flex; gap:12px;">
@@ -214,7 +214,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
           <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
         </div>
-        
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
       </div>
     </div>
     <div style="display:flex; gap:12px;">
@@ -241,31 +241,39 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:06:16.442Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:56:39.829Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO final conformance CONFORMS -- no drift, cleanest of the three shipped milestones (no rejection rounds). Milestone C of the Founder-approved four-milestone UI Completeness plan (DEC-009) is complete: company-wide Risks register, making risks.id=3 finally visible in the product. Milestone D (Project/Phase Progress) remains -- the last of the four.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO final conformance CONFORMS (review_results id=72), no drift across the full gate sequence (one Red Team REJECT round on Batch1/Batch2 sequencing, resolved and re-verified PASS). Batch 2 executed by the orchestrating session immediately after CONFORMS: phases &#x27;Milestone D&#x27; and &#x27;Founder UI Completeness&#x27; both set to complete. This is the fourth and final milestone of the Founder-approved DEC-009 UI Completeness plan -- ui_100pct_complete is now TRUE for the first time.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
-        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:03:54.767Z</div>
+        <div style="font-size:12px; font-weight:600;">FOUNDER_APPROVAL &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:52:15.234Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Security PASS. CTO final conformance begins -- the last gate before this milestone is DONE.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Correction: prior transition to FOUNDER_APPROVAL was a mistake, not the convention used for Milestones A/B/C (SECURITY_REVIEW -&gt; READY_TO_RELEASE for CTO final conformance). Security PASS confirmed (review_results id=71). CTO final conformance begins -- the last gate before this milestone is DONE.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; FOUNDER_APPROVAL</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:52:00.535Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Security PASS (focused review): auth boundary reused correctly, no new HTTP write route for phases (CLI-only, parameterized, FK-validated), all rendered free text escaped, no path traversal, no new sensitive-data exposure. Full report ops/reviews/security-milestone-d-review.md. Advancing to CTO final conformance.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:02:07.562Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:49:46.591Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS. Focused Security review begins.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS on Milestone D (/progress.html): live-DB reconfirmed phases.status still in_progress for both Milestone D and Founder UI Completeness (Batch 2 not run); Right now panel correctly excludes TASK-022 self-reference; readiness booleans honest (3-of-4); full regression clean; auth/tamper/path-traversal probes correct. Advancing to focused Security review.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:57:41.537Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:43:47.171Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
       <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review PASS, first pass. QA begins.</div>
@@ -273,55 +281,55 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:50:51.297Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:40:23.626Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone C implementation complete: /risks.html (generate_risks.py), derived_state.risk_register_rows()/related_decisions_for_risk() (Red Team&#x27;s loosened regex folded in), server.py route, layout.py nav entry, and the small cross-links CTO&#x27;s doc named (generate_decisions.py card anchors, generate_task.py empty-state copy, generate_agents.py risk cross-links). ops/db/test_risk_register.py added. Ready for Code Review.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone D implemented: phases table + phase-add/phase-set-status CLI, derived_state.phase_progress_rows()/founder_readiness_summary(), /progress.html (readiness header + Right now panel + phase tree + in-flight work), Batch 1 backfill (11 phase-add calls) run against the live DB. Batch 2 (2 phase-set-status calls) deliberately NOT run.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; In Development</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:45:18.214Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:30:15.799Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Red Team PASS. Development builds Milestone C.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Red Team PASS. Development builds Milestone D -- Batch 1 (phase-add backfill) only, per CTO&#x27;s sequencing fix. Batch 2 (final status-flip to complete) stays with the orchestrating session, strictly after CTO conformance.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Red Team Review</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:43:19.524Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:21:45.025Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review approved with 3 refinements. Red Team review begins.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review approved with one addition (Right now panel). Red Team review begins.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Red Team Review</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:42:43.815Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:21:02.566Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review complete: CTO&#x27;s architecture (ops/reviews/cto-milestone-c-architecture.md) is ready for Development with 3 small, additive refinements -- (1) a page-level &#x27;Needs attention&#x27; strip (open + medium/high-severity risks, quick-jump links), (2) the mitigation-history disclosure moved from per-card to page-level (shown once), (3) mitigation text block width capped (max-width:760px, not 100%) for readability. Status-first section grouping (Open/Mitigated/Resolved) confirmed as the right primary sort over a severity-first alternative -- tested directly against the real risks table (Main.dc.html vs FlatSeverityFirst.dc.html). risks.id=3&#x27;s real 2,820-char mitigation text tested directly (Risk3Detail.dc.html); related decisions confirmed as a compact chip row, not a full list. Task-scoped link affordance and nav placement confirmed as specified. No change to CTO&#x27;s data model, route, or read-only/no-JS constraints. See ops/reviews/design-review-milestone-c.md and ops/mockups/milestone-c/.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review complete: CTO&#x27;s architecture (ops/reviews/cto-milestone-d-architecture.md) is approved for Development with one additive change -- a &#x27;Right now&#x27; panel between the readiness header and the phase tree, surfacing the Founder UI Completeness sub-plan&#x27;s real 3-of-4 state and TASK-016/017/018 (all real, live, Founder-actionable today) above the fold, so the one genuinely moving fact is not buried under Phase 0/1/2&#x27;s historical Complete rows. Readiness-boolean treatment (pill + one honest clause) confirmed as CTO specified, no change. New &#x27;paused&#x27; status pill: blue (extends the existing agent-status &#x27;waiting&#x27; semantic; red/violet rejected as already meaning something else in this project&#x27;s convention). One level of tree nesting (Phase 3 -&gt; Founder UI Completeness -&gt; Milestone D) confirmed legible via indent + left-border connector, no accordion/JS. No change to CTO&#x27;s schema, computed functions, backfill sequence, CLI, or nav placement. Concept B (a full Live/History zone restructure) considered and explicitly rejected, documented not silently dropped. See ops/reviews/design-review-milestone-d.md and ops/mockups/milestone-d/.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">Architecture &rarr; Mockup Review</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:34:26.425Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:14:19.068Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO architecture complete. Design review of the Risks register page.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO architecture complete. Design review of the Project/Phase Progress page.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:28:12.539Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:07:10.971Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone C of the four-milestone Founder UI Completeness plan (DEC-009). CTO architecture begins.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone D, the final one of the four-milestone Founder UI Completeness plan (DEC-009). CTO architecture begins.</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:28:05.325Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:07:00.015Z</div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
       <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
@@ -333,11 +341,11 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
         <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
-        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:51:10.804Z</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:40:23.694Z</div>
       </div>
-      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Implemented Milestone C (company-wide Risks register, /risks.html) per CTO&#x27;s architecture (ops/reviews/cto-milestone-c-architecture.md) and Design review&#x27;s three required refinements (ops/reviews/design-review-milestone-c.md): (1) derived_state.risk_register_rows() and related_decisions_for_risk() -- the latter with Red Team&#x27;s non-blocking loosened regex (risks\.id\s*=\s*{id}\b) already folded in; (2) new ops/control-center/generate_risks.py rendering three status-grouped sections (Open/Mitigated/Resolved) with anchor jump-nav, a page-level Needs-attention strip (open + medium/high severity), mitigation text capped at max-width:760px via pre-wrap, a single page-level mitigation-history-not-preserved disclosure (not per-card), and compact wrapped related-decisions chips; (3) one new GET /risks.html route in server.py reusing the existing Founder session/CSRF gate exactly, zero new write route, zero new auth code; (4) one new NAV_LINKS entry in layout.py, placed after Decisions; (5) the small cross-links CTO&#x27;s Part 5 named: generate_decisions.py card id=decision-{id} anchors, generate_task.py&#x27;s updated Associated-risks empty-state copy pointing at risks.html, and one full-Risks-register link appended per risks_owned/risks_raised section in generate_agents.py (interpreted as one link per section since the CTO doc says appended once per section, not once per row -- see known-limitations for this interpretation call).</div>
-      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/db/derived_state.py&quot;, &quot;ops/control-center/generate_risks.py&quot;, &quot;ops/control-center/server.py&quot;, &quot;ops/control-center/layout.py&quot;, &quot;ops/control-center/generate_decisions.py&quot;, &quot;ops/control-center/generate_task.py&quot;, &quot;ops/control-center/generate_agents.py&quot;, &quot;ops/db/test_risk_register.py&quot;]</div>
-      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: Per-agent cross-link placement (generate_agents.py) is a judgment call on an ambiguous instruction: CTO&#x27;s Part 5 shows literal markup with a #risk-{id} anchor but also says the link is &#x27;appended once per section (not once per row)&#x27; -- since one section can list multiple risk ids, I rendered one plain ../risks.html link per section (no specific-risk anchor) rather than fabricate which single id to point at; flagging for Code Review to confirm or redirect. Regenerated 36 static HTML snapshots (risks.html, decisions.html, agents.html/agents/*.html, tasks/*.html) in a second commit -- several of the agent/task snapshots were already stale from before Milestone B (missing the costs.html nav link/cost cross-link); this regeneration incidentally catches those up too, not a change this task introduced. risk_history table (mitigation-history audit trail) intentionally NOT built -- CTO&#x27;s architecture explicitly defers it as a distinct future scoped pass; this milestone only discloses the gap on the page, per spec.</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Milestone D (Project/Phase Progress): new phases table (schema.sql), phase-add/phase-set-status CLI commands (opsdb.py, the table&#x27;s only writers), derived_state.phase_progress_rows()/founder_readiness_summary(), new /progress.html (generate_progress.py) with the CTO-specified readiness header, Design review&#x27;s required &#x27;Right now&#x27; panel, one-level-nested phase tree with paused=blue status pill, and the in-flight-work register -- one new GET route in server.py, one new nav entry in layout.py. Batch 1 backfill (11 real phase-add calls) run against the live DB; Batch 2 (2 phase-set-status calls marking Milestone D / Founder UI Completeness complete) explicitly NOT run -- withheld for the orchestrating session/agent after CTO final conformance returns CONFORMS.</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/db/schema.sql&quot;, &quot;ops/db/opsdb.py&quot;, &quot;ops/db/derived_state.py&quot;, &quot;ops/control-center/generate_progress.py&quot;, &quot;ops/control-center/server.py&quot;, &quot;ops/control-center/layout.py&quot;, &quot;ops/db/test_phase_progress.py&quot;, &quot;ops/control-center/progress.html&quot;, &quot;ops/db/operations.sqlite3&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: ROADMAP.md is not auto-generated from phases (Part 7, disclosed limitation, named future work only). No technical gate prevents Batch 2 from being run early -- process discipline only, per the architecture&#x27;s own correction section.</div>
     </div>
 </div>
 <div class="panel" id="findings" style="margin-bottom:16px;">
@@ -350,51 +358,75 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
     
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
-        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #67</span></div>
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #72</span></div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
-          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:03:24.946Z</div>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:55:58.942Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; CONFORMS: schema (phases table, schema.sql) matches architecture Part 2 exactly, confirmed live via sqlite_master</div><div style="margin-bottom:6px;">&bull; CLI (phase-add/phase-set-status, opsdb.py) matches Part 6 exactly, including parent-id existence pre-check and COALESCE-preserving UPDATE</div><div style="margin-bottom:6px;">&bull; derived_state.phase_progress_rows()/founder_readiness_summary() match Parts 3.4/4.3 exactly; 18/18 test_phase_progress.py checks pass live</div><div style="margin-bottom:6px;">&bull; /progress.html (generate_progress.py) matches design-review-approved layout: readiness header, Right now panel, phase tree, in-flight work register; nav placed after Decisions per Part 8.1; zero new write route confirmed</div><div style="margin-bottom:6px;">&bull; CRITICAL: live phases table re-queried this session -- Milestone D and Founder UI Completeness both status=in_progress. Batch 2 (2 phase-set-status calls) confirmed NOT run; Batch 1 (11 phase-add rows) confirmed present and byte-for-byte correct vs Part 5</div><div style="margin-bottom:6px;">&bull; No scope creep: git diff 02e6c7a..211fcc0 touches exactly Part 10&#x27;s 9 files; risks.id=3 unchanged (open, 2820-char mitigation); no ROADMAP.md/DECISIONS.md/auth/write-route touch; no Milestone E work</div><div style="margin-bottom:6px;">&bull; Review trail clean: red-team REJECT id=68 (Batch1/Batch2 sequencing gap) correctly resolved by architecture correction 0db87c3 and red-team PASS id=69; code-review PASS id=70; security PASS id=71; no unresolved REJECT</div><div style="margin-bottom:6px;">&bull; Non-blocking: pre-existing ROADMAP.md Phase 2 heading staleness (still says &#x27;current phase&#x27;) observed during Part 9.3 spot-check -- not introduced by this milestone, matches Part 7&#x27;s disclosed ROADMAP.md/phases drift limitation</div><div style="margin-bottom:6px;">&bull; Full report: ops/reviews/cto-milestone-d-conformance.md. Orchestrating session/agent is clear to run Batch 2 next -- not CTO&#x27;s role per architecture&#x27;s own Batch 2 restriction.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #71</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:51:38.707Z</div>
         </div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Auth: /risks.html sits after the unconditional _authenticated_session() check in do_GET (server.py:420) with only /login exempt (line 416) -- confirmed independently, same gate as every other route, no bypass.</div><div style="margin-bottom:6px;">&bull; XSS: all DB-sourced fields (title, description, mitigation, owner, raised_by, scope names, decision chip id/title) pass through layout.e() -&gt; html.escape() before interpolation in generate_risks.py; confirmed independently.</div><div style="margin-bottom:6px;">&bull; related_decisions_for_risk(): SQL is a fully static parameterless query (LIKE &#x27;%risks.id%&#x27; hardcoded); risk_id is never interpolated into SQL, only into a Python re.compile() pattern, and risk_id always originates from risk_register_rows() DB rows, never from HTTP input -- no injection surface.</div><div style="margin-bottom:6px;">&bull; Confirmed read-only: single GET route, generate_risks.py has zero write/POST logic, zero client-side JS.</div><div style="margin-bottom:6px;">&bull; Point 2 (prominence/visibility of risks.id=3 content): considered and does not change the risk in any material way. The full risks.id=3 mitigation text was already present, in the same or greater detail, in ops/reviews/cto-risk3-*.md files already committed to the repo with NO runtime auth gate at all (plain git/filesystem access suffices). /risks.html sits behind the identical Founder session/CSRF gate as every other control-center page -- if anything a narrower access surface than the raw markdown docs. Any principal who could already read those docs (the Founder, or a Developer-role agent with Read/Grep repo access -- the same role risks.id=3 is about) already had this information; this page adds a second, equally-gated place to find it, not a new audience. One minor observation for the record, not blocking: generate_risks.py writes a static risks.html into the git repo (same pattern as every other generate_*.py output), so the sensitive text now also lives in one more committed file alongside the review docs -- pure duplication of an already-committed artifact, not a widening of who can reach it.</div></div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Focused review of Milestone D (TASK-022): auth boundary reused correctly (/progress.html sits after _authenticated_session() check, same as all other pages), no new HTTP write route for phases table (phase-add/phase-set-status are CLI-only, parameterized SQL, FK-validated), all DB-sourced free text (name/note/task title) escaped via layout.e() before HTML interpolation, no path traversal in route registration, no new sensitive-data exposure beyond what is already visible on decisions.html/risks.html. Full detail in ops/reviews/security-milestone-d-review.md.</div></div>
       
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
-        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #72</span></div>
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #73</span></div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
-          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:01:36.050Z</div>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:46:41.103Z</div>
         </div>
       </div>
-      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Full checklist: /risks.html against real live risk data (all 4 risks, risks.id=3 full 2820-char mitigation + 5 real related decision chips cross-checked against decisions table), Needs-attention strip correctness, zero-risks empty state, short-mitigation risk (id=4) rendering, task-scoped risk link-through to real Task Detail, unauthenticated redirect, regression of Decisions/Task Detail/Agent Detail cross-links and Milestones A/B pages, nav placement, 20x rapid concurrent requests</div><div style="margin-bottom:6px;">Repro: Cloned repo + live operations.sqlite3 into an isolated scratch dir; created a scratch Founder credential in that clone only; ran server.py on a scratch port (8931), never touching the live repo/DB/credential. 1) Queried live DB directly first: risks.id=1(task,medium,mitigated) id=2(company,medium,mitigated) id=3(company,medium,open,mitigation=2820 chars) id=4(company,low,resolved,mitigation=866 chars); related_decisions_for_risk() logic hand-run against live decisions table: id=3-&gt;[9,10,11,12,13], id=2-&gt;[9], id=4-&gt;[13], id=1-&gt;[]. 2) Logged in via /login+/api/login, fetched /risks.html: all 4 risks rendered in correct Open/Mitigated/Resolved sections; risk-3&#x27;s rendered mitigation text diffed start/end against the raw DB column (2820 chars, HTML-escaped, zero truncation/corruption); its 5 related-decision chips exactly matched ids 9/10/11/12/13 with correct titles/dates linking to decisions.html#decision-N. 3) Needs-attention strip showed exactly 1 entry (Risk #3, open+medium) - confirmed no other risk qualifies (id=1/2 mitigated, id=4 resolved). Disclosure panel rendered once, page-level, not per-card. 4) Zero-risks case: reinitialized a fresh scratch DB via opsdb.py init (0 risk rows), restarted server, GET /risks.html returned 200 with &#x27;No risks recorded yet.&#x27; - no error/traceback. 5) risk id=4 (866-char mitigation) rendered in the same card style as id=3 without visual breakage; both use same 760px pre-wrap block. 6) Clicked through risk id=1&#x27;s task-scoped link (tasks/1.html) - landed on real &#x27;TASK-001 - Verify Agent Pipeline&#x27; page (200 OK). 7) Unauthenticated GET /risks.html returned 303 -&gt; /login, same as every other route. 8) Regression: decisions.html (all 13 decision-N anchors present), tasks/1.html (empty-state copy correctly updated to link ../risks.html), agents/cto.html (&#x27;-&gt; full Risks register&#x27; link appended once per risks_owned/risks_raised section, not per row); active-work.html, costs.html, reviews.html, automation.html, pipeline.html, overview.html, agents.html, releases.html, meetings.html, inbox.html all returned 200. 9) Nav bar: Risks tab present between Decisions and Meetings on every page checked. 10) 20 concurrent rapid GET /risks.html all returned 200, no server-log errors. Restored the withrisks DB backup and re-verified before final teardown; scratch clone, DB, credential, cookies, and server process all deleted/killed after testing.</div></div>
-      
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by QA Agent</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Milestone D /progress.html: live-DB independent re-confirmation of phases.status; scratch-clone/scratch-server rendering vs real live data; Right now panel + TASK-022 self-reference exclusion; readiness booleans honesty; status pill colors vs Design review; unauthenticated access; nav placement; edge case rows with no decision/task link; regression across Decisions/Risks/Active Work/Task Detail/Costs/Reviews/Automation; rapid repeated requests; tampered session; path traversal</div><div style="margin-bottom:6px;">Repro: 1) Ran opsdb.py query directly against live DB (before, during, after testing): phases.status for &#x27;Milestone D&#x27; and &#x27;Founder UI Completeness&#x27; both &#x27;in_progress&#x27; each time -- Batch 2 confirmed not run. 2) Built scratch clone + scratch .founder_credential.json + scratch server (port 8927, live repo/DB/credential never touched), copied a snapshot of the live operations.sqlite3 into the clone only. 3) curl unauthenticated GET /progress.html -&gt; 303 to /login (matches every other route). 4) Logged in via scratch credential, fetched /progress.html: phase tree matches live phases table exactly (Phase 0/1/2/3/3A/4, Founder UI Completeness, Milestones A-D, correct nesting, correct decision/task links, honest empty-link rendering for Phase 3/4/Phase0-open which have no decision/task). &#x27;Right now&#x27; panel shows exactly TASK-016/017/018 (cross-checked against &#x27;SELECT id,title,status FROM tasks WHERE status!=DONE&#x27; on live DB); TASK-022 correctly absent from both the Right now panel and the in-flight register (excluded via phases.task_id=22 coverage). Readiness header: ui_100pct_complete=NOT YET (gray), exploratory_testing_ready=YES (green) -- correct given 3-of-4. Pill colors read from generate_progress.py _STATUS_COLOR match Design review (green/accent/gray/blue for paused). 5) Regression: GET 200 + no error/traceback on decisions.html, risks.html, active-work.html, tasks/22.html, costs.html, reviews.html, automation.html, overview.html, pipeline.html, agents.html; decision anchors and task links referenced from progress.html all resolve. 6) Nav bar: Progress positioned after Decisions, before Risks on every page. 7) 20 concurrent rapid requests to /progress.html all 200. 8) Tampered session cookie -&gt; 303 redirect to login. Path-traversal probe -&gt; 404, no leak. 9) Stopped scratch server, deleted scratch clone/db/credential; live repo left with zero modifications (git status clean).</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to none</div>
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
-        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #66</span></div>
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #70</span></div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
-          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:57:05.575Z</div>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:43:16.149Z</div>
         </div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; generate_risks.py closely follows generate_decisions.py&#x27;s established conventions (same connect()/page()/e()/out_path patterns, same generated_note, same card/pill/label vocabulary) and consistently HTML-escapes every DB-sourced text field.</div></div>
-      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to developer</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; [&quot;Live DB verified: phases.status for both &#x27;Milestone D&#x27; and &#x27;Founder UI Completeness&#x27; read in_progress, NOT complete -- Batch 2 (the 2 phase-set-status calls) was correctly withheld, confirmed directly against operations.sqlite3, not from Development&#x27;s self-report.&quot;, &quot;sqlite_master confirms phases table genuinely exists live (not just in schema.sql).&quot;, &quot;Spot-checked decisions ids 2,5,10,12,13 and task ids 15,19,20,21,22 directly against live decisions/tasks tables -- all real, all match the phases rows&#x27; opened/closed_decision_id and task_id claims and notes.&quot;, &quot;cmd_phase_add validates --parent-id existence explicitly (SystemExit with clear message) and relies on real FK enforcement (PRAGMA foreign_keys=ON) for opened/closed_decision_id and task_id, matching Part 6/9.2 exactly; cmd_phase_set_status uses COALESCE-preserves-unless-supplied shape, matching risk-resolve precedent.&quot;, &quot;_in_flight_rows() helper verified working: excludes any task whose id is covered by a phases.task_id row, so TASK-022 (covered by the Milestone D phases row) does not self-appear in the in-flight/Right-now chip list -- confirmed both in test_phase_progress.py case 5 and directly in the regenerated static progress.html snapshot.&quot;, &quot;/progress.html route sits inside the same do_GET-level 503/session gate as every other top-level route (same dispatch pattern, same setup_required_page check before any route matching) -- confirmed by reading server.py directly, not taken on faith.&quot;, &quot;ops/db/test_phase_progress.py run directly: 17/17 checks pass, not 18/18 as the developer handoff and test docstring claim -- a real but minor self-report inaccuracy (off-by-one on the count), not a functional defect; every case actually present passes.&quot;, &quot;Pre-existing suites test_risk_register.py, test_cost_tracking.py, test_gates_remaining.py all still pass -- no regression.&quot;, &quot;Scope discipline confirmed: no TASK-017/risks.id=3 touch in the code diff, no new HTTP write route for phases (CLI-only, matches architecture Part 6/9.2), no Milestone E creep.&quot;, &quot;Schema/derived_state/CLI diffs match ops/reviews/cto-milestone-d-architecture.md Parts 2, 3.4, 4, 6 verbatim; page layout matches design-review-milestone-d.md&#x27;s required Right now panel addition.&quot;]</div></div>
+      
     </div>
     <div class="card" style="margin-bottom:8px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
-        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #65</span></div>
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #69</span></div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
-          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:44:48.237Z</div>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:29:41.463Z</div>
         </div>
       </div>
       <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
-      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; related_decisions_for_risk() word-boundary regex (risks\.id={id}\b) is disclosed as a soft prose-convention match, correctly -- verified: &#x27;risks.id = 3&#x27; (spaces) and &#x27;risk #3&#x27; do NOT match, silent under-link with no error; 100% historical consistency across 6 decisions justifies the choice; non-blocking suggestion for Development: loosen to risks\.id\s*=\s*{id}\b to also catch whitespace-around-= variants at zero cost</div><div style="margin-bottom:6px;">&bull; Disclosure-not-fix scope call on mitigation-history gap (no risk_history table this milestone) verified consistent with DEC-009&#x27;s own bar: 100% feature-complete is defined as UI reachability of current state, not audit-trail completeness; the Risks audit item (cto-product-architecture-completion-v2.md line 149) is about a reachable register, not history; DEC-009&#x27;s gate text itself says lower-severity findings become disclosed follow-up, not another correction loop -- agree with CTO&#x27;s scope call</div><div style="margin-bottom:6px;">&bull; Needs-attention strip is an index into the complete sections, not a filter replacing them -- no real risk of underselling other risks</div><div style="margin-bottom:6px;">&bull; risks.scope_id pointing at a deleted task verified structurally impossible: opsdb.py&#x27;s only task-deletion path (cmd_task_purge_scratch, line ~1424-1428) explicitly blocks deletion if any risks row references the task; LEFT JOIN would degrade safely even if it somehow occurred</div><div style="margin-bottom:6px;">&bull; Scope discipline confirmed: no opsdb.py/schema.sql changes, no write routes, TASK-017 and risks.id=3 disposition untouched, no Milestone D creep</div></div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Correction (0db87c3) resolves the Batch1/Batch2 contradiction I flagged: Part 10&#x27;s file list now explicitly caps Development at Part 5&#x27;s phase-add calls and explicitly excludes the 2 phase-set-status calls (&#x27;must not be run in the same commit/task as Batch 1&#x27;), attributing them to &#x27;the orchestrating session/agent&#x27; -- specific enough (dispatches Part 9&#x27;s gates, runs every task-status/review-result call project-wide) that Development cannot plausibly self-identify as that actor.</div><div style="margin-bottom:6px;">&bull; Part 3.3, the Part 5 correction block, and Part 9.3&#x27;s new CTO-conformance checklist item (explicitly confirm Batch 2 has NOT run yet) all point consistently at the same split. &#x27;Process discipline only, no code-level gate&#x27; is acceptable: matches existing project precedent (tasks.status-&gt;DONE flips work the same way), Batch 2 is wholly absent from Development&#x27;s own command list (nothing to accidentally run), a real independent CTO-conformance check exists, and a concrete future technical gate is named as follow-up if this ever recurs, per this doc&#x27;s own &#x27;name it, don&#x27;t build it&#x27; discipline.</div><div style="margin-bottom:6px;">&bull; Non-blocking: Part 5&#x27;s actual backfill block contains 11 distinct phase-add calls (5 top-level Phase 0-4 + Phase 3A + Founder UI Completeness + Milestones A-D), but the correction text/Part 9.3/Part 10 repeatedly say &#x27;10 phase-add calls... including Milestone D&#x27;s own row&#x27; -- off by one arithmetic slip. Does not change which calls Development runs (all of Part 5&#x27;s phase-add block) or withholds (only the 2 phase-set-status calls), so it does not reopen the who/when ambiguity; flag for a cheap fix, not blocking.</div><div style="margin-bottom:6px;">&bull; Confirmed via diff d8cb560..0db87c3 that schema (Part 2), CLI (Part 6), page design (Part 4), and the backfill command block itself (Part 5 lines 370-411) are byte-identical to the version already passed -- only the correction section, one inline note in 3.3, and Part 9.3/Part 10 attribution text were added.</div></div>
       
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #68</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:24:38.802Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Verified: decision ids 2,5,10,12,13 and task ids 15,16,17,18,19,20,21,22 spot-checked directly against live DB, all real and match cto-milestone-d-architecture.md&#x27;s claims -- no fabricated ids.</div><div style="margin-bottom:6px;">&bull; Scope discipline confirmed: read-only page, CLI-only phases writes, no TASK-017/risks.id=3 involvement, no auth changes, genuinely final milestone. Design&#x27;s Right-now panel reuses founder_readiness_summary()/phases/active_tasks_digest() with no new query, no hardcoded fraction string.</div><div style="margin-bottom:6px;">&bull; Phase 3 single in_progress status + child rows (Phase 3A complete, Founder UI Completeness in_progress) + note text disclosing scope-not-finalized/unauthorized remainder is an acceptable non-fabricating representation -- not flattening in a misleading way.</div><div style="margin-bottom:6px;">&bull; ROADMAP.md staleness disclosure (Part 7) is a reasonable, proportionate scope call consistent with this project&#x27;s own precedent (Milestone C risk_history deferral); non-blocking suggestion: fold a one-time backfill-vs-current-ROADMAP-text spot-check into CTO&#x27;s own final-conformance checklist.</div><div style="margin-bottom:6px;">&bull; BLOCKING: concrete internal inconsistency on the self-completion chicken-and-egg step. Part 3.3 and Part 5 both state the final phase-set-status writes (Milestone D -&gt; complete, Founder UI Completeness -&gt; complete/4-of-4) happen at the very end of CTO final-conformance, strictly after Development/Code Review/QA/Security/CTO-conformance all pass. But Part 10&#x27;s file list attributes ALL 12 phase-add/phase-set-status commands, including these final 2, to being run once by Development as one undivided backfill sequence, with no separation from the other 10 phase-add calls. Verified ops/agents/cto.md: CTO&#x27;s tools are read-only (no Bash/CLI-write capability) and cto-milestone-c-conformance.md confirms CTO conformance is a read-only verification document, never an execution step -- so Part 3.3&#x27;s literal claim is not actually executable by CTO, while Part 10 (Development&#x27;s implementation checklist) points the opposite way and would let Development mark ui_100pct_complete=true in its very first commit, before any review gate has run. This is exactly the premature/fabricated-progress class of bug this whole plan exists to prevent.</div><div style="margin-bottom:6px;">&bull; Required fix before Development starts: CTO adds an explicit corrective sentence to Part 10 (or a new Part 5 subsection) stating the final 2 phase-set-status calls are NOT part of the initial backfill batch, are withheld until CTO final conformance records CONFORMS, and naming which actual role/agent (not CTO itself) executes them at that point -- consistent with how tasks.status has always flipped to DONE post-conformance in this project. Narrow textual/procedural fix only; schema, CLI shape, page design, and backfill data are otherwise sound and verified.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to cto</div>
     </div>
 </div>
 <div class="panel" id="decisions" style="margin-bottom:16px;">
@@ -407,7 +439,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 </div>
 <div class="panel" id="activity" style="margin-bottom:16px;">
   <div class="label" style="margin-bottom:8px;">Activity timeline</div>
-  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:42:38.107Z</span> &middot; Design review complete for Milestone C (/risks.html) -- ready for Development with 3 refinements</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:20:55.912Z</span> &middot; Design review of CTO&#x27;s Milestone D (/progress.html) architecture: approved with one addition</div>
 </div>
 </div>
 </body>

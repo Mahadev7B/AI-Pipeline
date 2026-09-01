@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ideas (preview) — Founder approval — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+
+<style>
+.idj{
+  --recess:#101317; --inset:#0f1216; --hair:#1e2229; --dim:#4e545c;
+  --dash:#3d434d; --prose:#c8ccd2; --prose2:#d8dce2;
+  --ink-accent:#1a1206; --ink-green:#06180d;
+}
+.idj a{ color:inherit; text-decoration:none; }
+.idj .dcx{ margin-top:11px; }
+.idj .dcx > summary{ list-style:none; cursor:pointer; font-size:11px; color:var(--accent); }
+.idj .dcx > summary::-webkit-details-marker{ display:none; }
+.idj .dcx > summary:hover{ color:oklch(84% 0.14 75); }
+.idj .dcx .dcx-hide{ display:none; }
+.idj .dcx[open] .dcx-show{ display:none; }
+.idj .dcx[open] .dcx-hide{ display:inline; }
+.idj .inset{ margin-top:12px; border-radius:10px; background:var(--inset); border:1px solid var(--hair);
+             border-left:2px solid var(--border2); padding:14px 16px; }
+.idj .inset-k{ font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:var(--dim);
+               text-transform:uppercase; margin-bottom:10px; }
+.idj .ph{ font-family:var(--mono); font-size:10.5px; color:var(--dim); border:1px dashed var(--dash);
+          border-radius:5px; padding:2px 7px; }
+.idj .qrow{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+@media (max-width:900px){ .idj .qrow{ grid-template-columns:minmax(0,1fr); } }
+</style>
+<div class="idj">
+
+<div style="border-radius:10px; border:1px dashed oklch(78% 0.14 75 / 0.55); background:oklch(78% 0.14 75 / 0.06); padding:9px 14px; margin-bottom:16px; display:flex; align-items:center; gap:11px; flex-wrap:wrap;">
+  <span style="padding:2px 8px; border-radius:100px; background:var(--accent-soft); color:var(--accent); font-size:9.5px; font-weight:700; letter-spacing:0.06em;">PREVIEW</span>
+  <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Preview — nothing on these pages runs an agent or spends money.</div>
+  <div style="font-size:10.5px; color:var(--dim); margin-left:auto;">A drawn shell of the TASK-024 journey for Founder review &mdash; no backend behind any control.</div>
+</div>
+
+<div style="border-radius:14px; border:1px solid var(--border); background:var(--recess); padding:14px 16px 12px; margin-bottom:18px;">
+  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:10px;">
+    <div style="display:flex; align-items:baseline; gap:11px; flex-wrap:wrap;">
+      <div style="font-size:13px; font-weight:600;">TASK-026</div>
+      <div style="font-size:11px; color:var(--text3);">from a sentence you typed to agents at work &mdash; ten stages, all clickable</div>
+    </div>
+    <div style="display:flex; gap:7px;"><a href="stage-6.html" style="padding:5px 12px; border-radius:7px; border:1px solid var(--border); background:var(--panel); color:var(--text2); font-size:11px;">&larr; Back</a><a href="stage-8.html" style="padding:5px 12px; border-radius:7px; border:1px solid oklch(78% 0.14 75 / 0.55); background:var(--panel); color:var(--accent); font-size:11px; font-weight:600;">Next &rarr;</a></div>
+  </div>
+  <div style="display:flex; gap:3px; align-items:stretch; flex-wrap:wrap;"><a href="stage-1.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">01</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Raw idea</div>
+    </a><a href="stage-2.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">02</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Interpreting</div>
+    </a><a href="stage-3.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">03</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Understanding</div>
+    </a><a href="stage-4.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">04</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Evaluation</div>
+    </a><a href="stage-5.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">05</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Founder review</div>
+    </a><a href="stage-6.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--panel); border:1px solid var(--border2); color:var(--text2);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--dim);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">06</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Correction</div>
+    </a><a href="stage-7.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--accent);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">07</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Approval</div>
+    </a><a href="stage-8.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--recess); border:1px solid var(--border); color:var(--dim);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--border);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">08</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Approved brief</div>
+    </a><a href="stage-9.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--recess); border:1px solid var(--border); color:var(--dim);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--border);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">09</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Start work</div>
+    </a><a href="stage-10.html" style="flex:1; min-width:74px; border-radius:8px; padding:8px 7px 9px; box-sizing:border-box; background:var(--recess); border:1px solid var(--border); color:var(--dim);">
+      <div style="height:2px; border-radius:2px; margin-bottom:6px; background:var(--border);"></div>
+      <div class="mono" style="font-size:9px; opacity:0.75; margin-bottom:2px;">10</div>
+      <div style="font-size:10px; font-weight:600; line-height:1.3;">Executing</div>
+    </a></div>
+  
+<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:11px 0 2px;">
+  <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:var(--dim); text-transform:uppercase;">Who is speaking</div>
+  <div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:var(--gray); border-radius:2px;"></div><div style="font-size:10.5px; color:var(--text2);">you said</div></div><div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:var(--blue); border-radius:2px;"></div><div style="font-size:10.5px; color:var(--text2);">we think you mean</div></div><div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:var(--violet); border-radius:2px;"></div><div style="font-size:10.5px; color:var(--text2);">what we think of it</div></div><div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:var(--accent); border-radius:2px;"></div><div style="font-size:10.5px; color:var(--text2);">what we recommend</div></div><div style="display:flex; align-items:center; gap:6px;"><div style="width:3px; height:12px; background:var(--green); border-radius:2px;"></div><div style="font-size:10.5px; color:var(--text2);">you approved</div></div>
+  <div style="display:flex; gap:14px; margin-left:auto;"><a href="distinctions.html" style="font-size:10.5px; color:var(--accent);">The five voices &rarr;</a><a href="full-depth.html" style="font-size:10.5px; color:var(--accent);">The Full-depth layer &rarr;</a></div>
+</div>
+</div>
+
+<div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+  <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--gray); text-transform:uppercase;">Stage 7 of 10</div>
+  <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase;">Founder approval</div>
+</div>
+<div style="font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px;">Approve this understanding</div>
+<div style="font-size:11.5px; color:var(--text3); margin:0 0 20px; line-height:1.55; max-width:860px;">You are approving <b style="color:var(--text2);">a specific version</b>, not an idea in general. Which version is on the record, and it is the one every agent downstream will read.</div>
+
+<div style="border-radius:12px; border:1px solid var(--border); background:var(--recess); padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+  <div style="width:3px; align-self:stretch; min-height:16px; background:var(--gray); border-radius:2px; flex-shrink:0;"></div>
+  <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:var(--gray); text-transform:uppercase; flex-shrink:0;">You said</div>
+  <div style="font-size:11.5px; color:var(--text2); line-height:1.55; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I&#x27;M THINKING like an ellipse where we can track flow&rdquo;</div>
+  <div style="font-size:10px; color:var(--dim); flex-shrink:0; margin-left:auto;">unedited &middot; on every screen</div>
+</div>
+<div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:16px; align-items:start;">
+  <div class="panel" style="border-color:oklch(72% 0.15 150 / 0.5); padding:20px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--green); text-transform:uppercase; margin-bottom:12px;">You are about to approve</div>
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex; align-items:baseline; gap:9px; margin-bottom:7px; flex-wrap:wrap;">
+        <div class="mono" style="font-size:12px; color:var(--green); font-weight:700;">v3</div>
+        <div style="font-size:12.5px; font-weight:600;">TASK-026 &mdash; round 2, with your edit</div>
+      </div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;">The company&rsquo;s round-2 reading, plus the one line you added to the definition of success. v1, v2 and your feedback all stay readable.</div>
+    </div>
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:11px 14px; align-items:baseline; font-size:12px; line-height:1.65;">
+      <div class="mono" style="text-align:right; font-size:11px; font-weight:700; color:var(--green);">does</div>
+      <div style="color:var(--prose);">Marks v3 as the approved brief. From this moment there is an answer to &ldquo;what did the Founder actually agree to?&rdquo;</div>
+      <div class="mono" style="text-align:right; font-size:11px; font-weight:700; color:var(--text3);">does not</div>
+      <div style="color:var(--prose);"><b style="color:var(--text);">Start any work. Spend any money. Dispatch any agent.</b> Approving is a complete outcome on its own &mdash; you can stop here and start next week.</div>
+      <div class="mono" style="text-align:right; font-size:11px; font-weight:700; color:var(--text3);">later</div>
+      <div style="color:var(--prose);">When work does start, every agent &mdash; Product, Design, CTO, Red Team, Developer, Code Review, QA, Security &mdash; is given <i>this</i>, not your original sentence. Your sentence travels with it, labelled as context.</div>
+      <div class="mono" style="text-align:right; font-size:11px; font-weight:700; color:var(--accent);">open</div>
+      <div style="color:var(--prose);">One question is unanswered &mdash; whether the ellipse is a requirement. <b style="color:var(--text);">Approving with it open is allowed</b>; the brief will record that we proceeded on our stated assumption, in your name.</div>
+    </div>
+    
+      <div style="display:flex; align-items:center; gap:11px; margin-top:18px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap;">
+        <a href="stage-7.html?done=1" style="padding:10px 20px; border-radius:8px; background:var(--green); color:var(--ink-green); font-weight:700; font-size:13px;">Approve v3 as the brief</a>
+        <a href="stage-6.html" style="padding:10px 18px; border-radius:8px; background:var(--panel2); border:1px solid var(--border2); color:var(--text2); font-size:12.5px;">Not yet &mdash; go back</a>
+      </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:14px;">
+    <div style="border-radius:14px; border:1px solid var(--border); background:var(--recess); padding:17px;">
+      <div class="label" style="margin-bottom:10px;">Nothing here approves itself</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.65;">
+        There is no timeout, no default and no path by which a brief becomes approved because nobody looked at it. If you never click, it is never approved. <b style="color:var(--prose);">Silence is not consent</b>, and there is no code path in this product that treats it as consent.
+      </div>
+    </div>
+    <div style="border-radius:14px; border:1px solid var(--border); background:var(--recess); padding:17px;">
+      <div class="label" style="margin-bottom:10px;">What you are not being asked to do</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.65;">
+        Approving is not agreeing that every sentence is perfect. It is saying <i style="color:var(--prose);">this is close enough to what I meant that building from it is not a waste.</i> Anything still wrong is cheaper to fix now than after &mdash; but not everything has to be right for this to be worth approving.
+      </div>
+    </div>
+    <div style="border-radius:14px; border:1px solid var(--border); background:var(--recess); padding:17px;">
+      <div class="label" style="margin-bottom:10px;">Reversibility, honestly</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.65;">
+        Approval itself is a record, not an action, so it costs nothing to have made. What is <b style="color:var(--prose);">not</b> reversible is what comes after it &mdash; and that is the next screen, behind its own deliberate decision.
+      </div>
+    </div>
+  </div>
+</div>
+<div style="margin-top:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+  <a href="stage-8.html" style="padding:9px 18px; border-radius:8px; background:transparent; border:1px solid var(--border2); color:var(--text2); font-weight:600; font-size:12.5px; display:inline-block;">See the approved brief &rarr;</a>
+</div>
+
+<div style="margin-top:26px; border-radius:12px; border:1px dashed var(--border); background:var(--recess); padding:14px 18px;">
+  <div class="label" style="margin-bottom:7px;">About this preview</div>
+  <div style="font-size:11px; color:var(--text3); line-height:1.65; max-width:920px;">
+    Working navigation, no backend. Every control here moves you between drawn states; nothing is dispatched, no model is invoked and no money is spent by clicking anything.
+    The idea it walks is real &mdash; the Founder&rsquo;s own words for TASK-026, together with the real feedback given later.
+    The database facts quoted throughout (0 of 13 agent runs carrying a cost, <span class="mono">task_steps</span> on 1 of 24 tasks, <span class="mono">project_id</span> NULL on 20 of 24, one row in <span class="mono">projects</span>) are quoted from Design&rsquo;s artboards. Anything the product could not know honestly is drawn as a bracketed placeholder rather than filled in.
+  </div>
+  <div style="font-size:11px; color:var(--text3); margin-top:10px;">Reference sheets: <a href="distinctions.html" style="color:var(--accent);">The five voices</a> &middot; <a href="full-depth.html" style="color:var(--accent);">The Full-depth layer</a></div>
+</div>
+</div>
+</div>
+</body>
+</html>
