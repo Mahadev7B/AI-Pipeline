@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Costs — Concept A: Digest</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</helmet>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:22px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:1px; flex-wrap:wrap;"><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</span><span style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Costs</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+        </div>
+      </div>
+    </div>
+<div style="padding:26px; max-width:1500px;">
+
+<h1>Costs</h1>
+<div class="sub" style="margin-top:-2px;">Company-wide AI invocation cost across all four Founder-facing paths &mdash; Ask-Agent, Executive Meetings, Chief of Staff, and Code Review. Read-only: no spend ceiling or write-side control lives here &mdash; see <a class="accentlink" href="#">Automation</a> for the poller's own $10.00/day cap, unchanged and unduplicated.</div>
+
+<div style="border-radius:10px; border:1px dashed var(--border2); background:var(--panel2); padding:12px 14px; margin-bottom:20px;">
+  <div style="font-size:11px; color:var(--text2); line-height:1.6;">
+    <b style="color:var(--text);">Cost tracking begins today.</b> No Ask-Agent, Meeting, Chief-of-Staff, or Code Review invocation has been recorded with a real cost yet &mdash; this is the actual current state of the operational database, not a placeholder. Figures below will populate as the four paths are used. A separate, distinct case &mdash; a real invocation whose cost was never captured, because it happened before this page shipped &mdash; is labeled <i>&ldquo;recorded before cost tracking&rdquo;</i> everywhere it appears, never merged with &ldquo;hasn&rsquo;t happened yet.&rdquo;
+  </div>
+</div>
+
+<div style="display:flex; gap:14px; margin-bottom:16px;">
+
+    <div class="panel" style="flex:1;">
+      <div class="label" style="margin-bottom:8px;">Today&rsquo;s AI spend</div>
+      <div style="font-size:26px; font-weight:700; color:var(--text); margin-bottom:4px;">$0.00</div>
+      <div style="font-size:11px; color:var(--text3); line-height:1.5;">0 invocations recorded today, across all four paths.</div>
+    </div>
+
+    <div class="panel" style="flex:1;">
+      <div class="label" style="margin-bottom:8px;">All-time AI spend</div>
+      <div style="font-size:26px; font-weight:700; color:var(--accent); margin-bottom:4px;">$0.00</div>
+      <div style="font-size:11px; color:var(--text3); line-height:1.5;">0 invocations recorded since cost tracking began (2026-09-01).</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">By invocation path</div>
+  
+    <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-size:12.5px; font-weight:600;">Ask-Agent</div>
+      <div style="font-size:11px; color:var(--text3); text-align:right;">No invocations recorded yet</div>
+    </div>
+  
+    <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-size:12.5px; font-weight:600;">Meetings</div>
+      <div style="font-size:11px; color:var(--text3); text-align:right;">No invocations recorded yet</div>
+    </div>
+  
+    <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-size:12.5px; font-weight:600;">Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text3); text-align:right;">No invocations recorded yet</div>
+    </div>
+  
+    <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-size:12.5px; font-weight:600;">Automated Code Review</div>
+      <div style="font-size:11px; color:var(--text3); text-align:right;">No invocations recorded yet</div>
+    </div>
+  
+    <div class="card" style="margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="font-size:12.5px; font-weight:600;">Synchronous review <span style="font-size:9.5px; color:var(--text3); font-weight:400; text-transform:none;">(Founder-triggered Code/Security/Red-Team review)</span></div>
+      <div style="font-size:11px; color:var(--text3); text-align:right;">No invocations recorded yet</div>
+    </div>
+  <div style="font-size:10px; color:var(--text3); margin-top:6px; line-height:1.5;">&ldquo;Synchronous review&rdquo; is a fifth real invocation path (<span class="mono" style="font-size:9.5px;">reviewer_sync.py</span>, TASK-017) distinct from the automation poller &mdash; shown as its own row rather than folded silently into Automated Code Review. See Design review, item 6.</div>
+</div>
+
+<div class="panel" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">By agent <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; Ask-Agent + Chief of Staff conversations</span></div>
+  <div style="font-size:11.5px; color:var(--text2);">No Ask-Agent or Chief-of-Staff activity recorded yet.</div>
+</div>
+
+<div class="panel">
+  <div class="label" style="margin-bottom:8px;">Recent meetings, with cost</div>
+  <div style="font-size:11.5px; color:var(--text2);">No executive meetings recorded yet. Meetings will appear here, most recent first, with each meeting&rsquo;s real total once one is raised.</div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>
