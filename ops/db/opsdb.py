@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import socket as socket_module
 import sqlite3
 import sys
 from pathlib import Path
@@ -40,6 +41,66 @@ from pathlib import Path
 DB_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH") else DB_DIR / "operations.sqlite3"
 SCHEMA_PATH = DB_DIR / "schema.sql"
+
+# --------------------------------------------------------- TASK-023 -------
+# Broker client mode (ops/reviews/cto-task023-architecture.md §3 point 3).
+# When OPSDB_BROKER_SOCKET is set in the environment (only ever true inside
+# a sandboxed Developer invocation — ops/control-center/opsdb_broker.py's
+# own docstring has the full design), the five commands the broker
+# supports (handoff, task-status, task-step-status, task-progress,
+# activity-log) serialize their already-validated arguments and ship them
+# to the broker over a Unix domain socket instead of calling connect() and
+# writing to operations.sqlite3 directly — because inside the sandbox that
+# file does not exist at all (§3 point 1). Every other command, and every
+# invocation anywhere OPSDB_BROKER_SOCKET is unset (all six other roles,
+# automation.py, direct human use), is completely untouched by this: zero
+# behavior change, verified by the existing ops/db/test_*.py suites, which
+# never set this variable.
+_BROKER_SOCKET_ENV = "OPSDB_BROKER_SOCKET"
+_BROKER_TOKEN_ENV = "OPSDB_BROKER_TOKEN"
+_BROKER_RECV_CHUNK = 65_536
+_BROKER_MAX_RESPONSE_BYTES = 1_000_000  # generous ceiling against a misbehaving/compromised broker
+                                          # response — this client trusts the broker's identity (it's
+                                          # a fixed, root-owned socket path) but not an unbounded read.
+
+
+def _broker_enabled() -> bool:
+    return bool(os.environ.get(_BROKER_SOCKET_ENV))
+
+
+def _broker_call(verb: str, args: dict) -> dict:
+    """Sends one request to opsdb_broker.py and returns its `result` dict
+    on success. Raises SystemExit on any transport failure or a broker-
+    reported error — the same "clean error, not a traceback" contract
+    every other opsdb.py command already gives a CLI caller."""
+    sock_path = os.environ.get(_BROKER_SOCKET_ENV)
+    token = os.environ.get(_BROKER_TOKEN_ENV, "")
+    request = json.dumps({"verb": verb, "token": token, "args": args}) + "\n"
+    try:
+        with socket_module.socket(socket_module.AF_UNIX, socket_module.SOCK_STREAM) as sock:
+            sock.connect(sock_path)
+            sock.sendall(request.encode("utf-8"))
+            sock.shutdown(socket_module.SHUT_WR)
+            chunks = []
+            total = 0
+            while True:
+                chunk = sock.recv(_BROKER_RECV_CHUNK)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                total += len(chunk)
+                if total > _BROKER_MAX_RESPONSE_BYTES:
+                    raise SystemExit("error: broker response exceeded the size ceiling")
+    except OSError as exc:
+        raise SystemExit(f"error: could not reach opsdb broker at {sock_path!r}: {exc}")
+    try:
+        response = json.loads(b"".join(chunks).decode("utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        raise SystemExit("error: broker returned a response that could not be parsed")
+    if not isinstance(response, dict) or not response.get("ok"):
+        detail = response.get("error") if isinstance(response, dict) else None
+        raise SystemExit(f"error: broker rejected the request — {detail or 'unknown error'}")
+    return response.get("result") or {}
 
 
 def connect(require_exists: bool = True) -> sqlite3.Connection:
@@ -245,6 +306,16 @@ def record_task_status(conn: sqlite3.Connection, task_id: int, to_status: str,
 
 
 def cmd_task_status(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        # TASK-023: --task-id/--by are still required by argparse below for
+        # CLI-syntax parity with the non-sandboxed path, but the broker
+        # ignores both — task_id is forced to this session's bound task and
+        # by is forced to "developer" (Correction section,
+        # ops/reviews/cto-task023-architecture.md §3). --to is broker-side
+        # allowlisted, not merely forwarded.
+        result = _broker_call("task-status", {"to": args.to, "note": args.note, "owner": args.owner})
+        print(f"TASK-{args.task_id:03d}: {result.get('from_status', '?')} -> {result.get('to_status', args.to)}")
+        return
     conn = connect()
     try:
         from_status = record_task_status(conn, args.task_id, args.to, args.by, args.note, args.owner)
@@ -289,33 +360,85 @@ def cmd_task_step_add(args: argparse.Namespace) -> None:
     print(f"step added to TASK-{args.task_id:03d}: {args.title}")
 
 
-def cmd_task_step_status(args: argparse.Namespace) -> None:
-    conn = connect()
+def task_step_owner(conn: sqlite3.Connection, step_id: int) -> int | None:
+    """Looks up the task_id a task_steps row belongs to, or None if no such
+    step exists. Added (TASK-023) so opsdb_broker.py can verify a
+    Developer-bound-session's step_id actually belongs to that session's
+    own task before forwarding a task-step-status write — never trusting
+    a client-supplied task_id for this verb (there isn't one to trust; the
+    binding is via step_id -> task_id, checked here)."""
+    row = conn.execute("SELECT task_id FROM task_steps WHERE id = ?", (step_id,)).fetchone()
+    return row["task_id"] if row is not None else None
+
+
+def set_task_step_status(conn: sqlite3.Connection, step_id: int, status: str) -> None:
+    """Plain, directly-callable form of task-step-status — refactored out
+    of cmd_task_step_status (TASK-023, same "small refactor, not a
+    rewrite" pattern as record_task_status() above; opsdb_broker.py
+    imports this directly). Raises ValueError if no such step exists."""
     with conn:
         cur = conn.execute(
             "UPDATE task_steps SET status = ?, "
             "completed_at = CASE WHEN ? = 'done' THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE NULL END "
             "WHERE id = ?",
-            (args.status, args.status, args.step_id),
+            (status, status, step_id),
         )
         if cur.rowcount == 0:
-            raise SystemExit(f"error: no such task step id={args.step_id}")
+            raise ValueError(f"no such task step id={step_id}")
+
+
+def cmd_task_step_status(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        result = _broker_call("task-step-status", {"step_id": args.step_id, "status": args.status})
+        print(f"step {result.get('step_id', args.step_id)}: {result.get('status', args.status)}")
+        return
+    conn = connect()
+    try:
+        set_task_step_status(conn, args.step_id, args.status)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
     print(f"step {args.step_id}: {args.status}")
 
 
-def cmd_task_progress(args: argparse.Namespace) -> None:
-    conn = connect()
+def compute_task_progress(conn: sqlite3.Connection, task_id: int) -> dict:
+    """Plain, directly-callable form of task-progress — refactored out of
+    cmd_task_progress (TASK-023, same pattern as every other refactored
+    read/write function in this file; opsdb_broker.py imports this
+    directly, since task-progress is the one read-only verb the broker
+    still forwards, per the Correction section of
+    ops/reviews/cto-task023-architecture.md — it only ever sums one
+    task's own task_steps rows, no schema-wide exposure). Returns
+    {"task_id", "total", "done", "pct"} — total/done/pct are None when the
+    task has no steps yet (the same "no progress percentage" case the CLI
+    wrapper's print statement already handled)."""
     row = conn.execute(
         "SELECT SUM(weight) AS total, "
         "SUM(CASE WHEN status='done' THEN weight ELSE 0 END) AS done "
         "FROM task_steps WHERE task_id = ?",
-        (args.task_id,),
+        (task_id,),
     ).fetchone()
     if not row or row["total"] in (None, 0):
-        print(f"TASK-{args.task_id:03d}: not yet broken into steps — no progress percentage")
-        return
+        return {"task_id": task_id, "total": None, "done": None, "pct": None}
     pct = round(100 * row["done"] / row["total"])
-    print(f"TASK-{args.task_id:03d}: {pct}% ({row['done']:g}/{row['total']:g} weighted steps done)")
+    return {"task_id": task_id, "total": row["total"], "done": row["done"], "pct": pct}
+
+
+def _format_task_progress(progress: dict) -> str:
+    task_id = progress["task_id"]
+    if progress["pct"] is None:
+        return f"TASK-{task_id:03d}: not yet broken into steps — no progress percentage"
+    return (f"TASK-{task_id:03d}: {progress['pct']}% "
+            f"({progress['done']:g}/{progress['total']:g} weighted steps done)")
+
+
+def cmd_task_progress(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        result = _broker_call("task-progress", {"task_id": args.task_id})
+        print(_format_task_progress(result))
+        return
+    conn = connect()
+    progress = compute_task_progress(conn, args.task_id)
+    print(_format_task_progress(progress))
 
 
 # ------------------------------------------------------------- agent_runs --
@@ -948,14 +1071,32 @@ def decide_meeting(conn: sqlite3.Connection, meeting_id: int, decision_text: str
 
 # ------------------------------------------------------- other write ops --
 
-def cmd_activity_log(args: argparse.Namespace) -> None:
-    conn = connect()
-    agent_id = _agent_id(conn, args.agent)
+def record_activity(conn: sqlite3.Connection, agent: str, task_id: int | None,
+                     summary: str, detail: str | None = None) -> int:
+    """Plain, directly-callable form of activity-log — refactored out of
+    cmd_activity_log (TASK-023, same pattern as every other refactored
+    write function here). Returns the new agent_activity.id. Note:
+    _agent_id() raises SystemExit (not a typed exception) for an unknown
+    agent — a pre-existing, narrower inconsistency with this file's own
+    "typed ValueError" convention that predates this refactor; not fixed
+    here (out of this task's scope), and opsdb_broker.py's caller catches
+    SystemExit alongside LookupError/ValueError for exactly this reason."""
+    agent_id = _agent_id(conn, agent)
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO agent_activity (agent_id, task_id, summary, detail) VALUES (?, ?, ?, ?)",
-            (agent_id, args.task_id, args.summary, args.detail),
+            (agent_id, task_id, summary, detail),
         )
+    return cur.lastrowid
+
+
+def cmd_activity_log(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        _broker_call("activity-log", {"summary": args.summary, "detail": args.detail})
+        print("activity logged")
+        return
+    conn = connect()
+    record_activity(conn, args.agent, args.task_id, args.summary, args.detail)
     print("activity logged")
 
 
@@ -1051,18 +1192,52 @@ def cmd_review_result(args: argparse.Namespace) -> None:
     print(f"{args.type} review recorded: {args.result}")
 
 
-def cmd_handoff(args: argparse.Namespace) -> None:
-    conn = connect()
+def record_handoff(conn: sqlite3.Connection, task_id: int, from_agent: str, to_agent: str,
+                    work_completed: str | None = None, files: list | None = None,
+                    tests_added: str | None = None, expected_behavior: str | None = None,
+                    known_limitations: str | None = None, checklist: str | None = None,
+                    base_commit_sha: str | None = None, head_commit_sha: str | None = None) -> int:
+    """Plain, directly-callable form of handoff — refactored out of
+    cmd_handoff (TASK-023, same pattern as every other refactored write
+    function here; opsdb_broker.py imports this directly). Returns the
+    new handoffs.id."""
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO handoffs (task_id, from_agent, to_agent, work_completed, "
             "files_changed, tests_added, expected_behavior, known_limitations, "
             "receiving_agent_checklist, base_commit_sha, head_commit_sha) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (args.task_id, args.from_agent, args.to_agent, args.work_completed,
-             json.dumps(args.files or []), args.tests_added, args.expected_behavior,
-             args.known_limitations, args.checklist, args.base_commit_sha, args.head_commit_sha),
+            (task_id, from_agent, to_agent, work_completed,
+             json.dumps(files or []), tests_added, expected_behavior,
+             known_limitations, checklist, base_commit_sha, head_commit_sha),
         )
+    return cur.lastrowid
+
+
+def cmd_handoff(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        # TASK-023: --task-id/--from-agent are still required by argparse
+        # below for CLI-syntax parity, but the broker ignores both —
+        # task_id is forced to this session's bound task, from_agent is
+        # forced to "developer". --to-agent is broker-side allowlisted to
+        # "code-review" only, not merely forwarded.
+        result = _broker_call("handoff", {
+            "to_agent": args.to_agent,
+            "work_completed": args.work_completed,
+            "files": args.files,
+            "tests_added": args.tests_added,
+            "expected_behavior": args.expected_behavior,
+            "known_limitations": args.known_limitations,
+            "checklist": args.checklist,
+            "base_commit_sha": args.base_commit_sha,
+            "head_commit_sha": args.head_commit_sha,
+        })
+        print(f"handoff recorded: developer -> {result.get('to_agent', args.to_agent)}")
+        return
+    conn = connect()
+    record_handoff(conn, args.task_id, args.from_agent, args.to_agent, args.work_completed,
+                    args.files, args.tests_added, args.expected_behavior,
+                    args.known_limitations, args.checklist, args.base_commit_sha, args.head_commit_sha)
     print(f"handoff recorded: {args.from_agent} -> {args.to_agent}")
 
 

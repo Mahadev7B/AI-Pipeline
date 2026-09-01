@@ -106,20 +106,57 @@ _REPO_ROOT_RESOLVED = REPO_ROOT.resolve()
 # "open(p).read()"` call), at the cost of four more string literals, no
 # scope expansion. Still bypassable by base64/heredoc/glob/concatenation
 # indirection — disclosed, not claimed closed (§2.3).
+#
+# TASK-023 (§5 point 3): "ptrace" alone stays a plain substring (it's a
+# syscall/API name, not a standalone shell token an ordinary command line
+# would ever contain as a whole word next to legitimate text — e.g.
+# "ptrace(2)" in a comment string would still deny, which is fine/coarse
+# by design). " gdb"/" strace" (WITH a leading space) were dropped from
+# this list — see _BASH_DENYLISTED_TOKENS and _check_bash() below for why
+# and what replaced them.
 _BASH_SUBSTRINGS = (
     "founder_credential",
     "operations.sqlite3",
     "import sqlite3",
     "sqlite3.connect",
     "ptrace",
-    " gdb",
-    " strace",
     "sudo ",
     ".claude/agents/developer.md",
     "developer_pretooluse.py",
     ".claude/settings.json",
     ".claude/settings.local.json",
 )
+
+# TASK-023 (§5 point 3, "the leading-space " gdb"/" strace" substring
+# bug"): the ORIGINAL check above used " gdb" and " strace" (a literal
+# leading space) as plain substrings. That has two real, live bugs, not
+# hypothetical ones: (1) it misses gdb/strace as the very FIRST token on
+# the command line ("gdb -p 1234" has no leading space before "gdb" — the
+# substring never matches), and (2) it CAN false-positive on an unrelated
+# word that merely contains " gdb"/" strace" as a substring inside a
+# longer token (e.g. a path or flag containing "outgdbstuff"). Token-based
+# matching — checking whole, shlex-split tokens for exact membership —
+# fixes both: it catches "gdb ..." as the first token, and it does not
+# fire on a longer token that merely contains the substring. Still the
+# same disclosed, non-adversarial-only backstop as every other Bash check
+# here (a quoted/escaped/glob-expanded "gdb" can still evade a token
+# check, same as it could evade the old substring check) — this closes a
+# concrete correctness bug in the existing mechanism, not a claim of new
+# completeness.
+_BASH_DENYLISTED_TOKENS = ("gdb", "strace")
+
+# TASK-023 (§5 point 3, "the shlex.split() hang-to-fail-open bug"):
+# shlex.split() has real, documented quadratic-time behavior on certain
+# adversarial inputs (long runs of unbalanced quote/escape characters) —
+# a large-enough crafted `command` string can make the call itself run
+# long enough to look "hung," and this hook's own fail-closed contract
+# (§2.2a) means an in-flight call that never returns is not "denied," it
+# is a tool call the harness is left waiting on indefinitely. Enforced as
+# a plain length check on `command` BEFORE shlex.split() is ever called —
+# a real, non-adversarial Bash command from Developer's own legitimate
+# workflow is never anywhere close to this size; a command this large is
+# itself denial-worthy regardless of content.
+_MAX_BASH_COMMAND_CHARS = 50_000
 
 # The narrower, token-anchored check, retained ALONGSIDE the substring
 # list above (§2.2) because it also catches variable/glob-expanded forms
@@ -191,6 +228,15 @@ def _check_bash(tool_input: dict) -> tuple[str, str] | None:
     if not isinstance(command, str):
         return ("deny", f"command was not a string (got {type(command).__name__})")
 
+    # TASK-023 (§5 point 3): the length ceiling MUST be checked before
+    # ANY parsing of `command` — including the plain substring loop below,
+    # which is linear and not itself the quadratic-blowup risk, but
+    # ordering the ceiling first, unconditionally, means this stays true
+    # even if a future edit adds a more expensive check above shlex.split().
+    if len(command) > _MAX_BASH_COMMAND_CHARS:
+        return ("deny", f"command exceeds the {_MAX_BASH_COMMAND_CHARS}-character ceiling "
+                         f"({len(command)} chars) — denied before parsing, not evaluated further")
+
     for pattern in _BASH_SUBSTRINGS:
         if pattern in command:
             return ("deny", f"bash substring match: {pattern!r}")
@@ -203,6 +249,17 @@ def _check_bash(tool_input: dict) -> tuple[str, str] | None:
         # deny, never silently "no pattern matched, allow" — this is the
         # exact fail-open trap Red Team's original finding named.
         return ("deny", f"shlex parse failed: {exc}")
+
+    # TASK-023 (§5 point 3): token-based, not substring-based — see
+    # _BASH_DENYLISTED_TOKENS' own comment above for why. Checked against
+    # the WHOLE token (exact match) and, separately, against just the
+    # token's final path component (os.path.basename-equivalent) so an
+    # invocation via an absolute/relative path (e.g. "/usr/bin/gdb -p 1")
+    # is still caught, not only a bare "gdb".
+    for tok in tokens:
+        base = tok.rsplit("/", 1)[-1]
+        if tok in _BASH_DENYLISTED_TOKENS or base in _BASH_DENYLISTED_TOKENS:
+            return ("deny", f"bash token match: {tok!r}")
 
     anchor_present = any(tok in _BASH_ANCHOR_TOKENS for tok in tokens)
     if anchor_present:
