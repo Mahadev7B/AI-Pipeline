@@ -52,15 +52,29 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 20:03 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 20:05 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (16 records) — structured, queryable state from the
+  This is the operational decision log (17 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" id="decision-17" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#17 — Idea intake becomes a two-gate journey: raw idea -&gt; AI-interpreted brief -&gt; Founder-approved brief -&gt; execution</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The Founder observed that the pipeline begins IMPLEMENTING an idea without ever confirming it understood the idea correctly. As designed, Start would dispatch Product and then flow straight into Design, CTO, Red Team and Development from the company&#x27;s FIRST interpretation of a one-line idea. A misread idea would not surface until hours of work had been built on it, and the Founder would have had no opportunity to correct the interpretation. Separately, the company has no divergent-thinking step anywhere: Design produces 2-3 concepts, but only about visuals, after the shape is already fixed.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> The intended journey is now: Raw Idea -&gt; Save -&gt; Refine/Brainstorm -&gt; Interpreted Brief -&gt; Founder Approval -&gt; Start Execution -&gt; Design/CTO/Red Team/Development. &#x27;Start work on this&#x27; must NOT immediately launch Design, CTO or Development. It first runs an idea-understanding/brainstorming stage which must: use the brainstorming skill where useful, understand the real problem and intended outcome, identify assumptions, explore a few reasonable approaches, recommend a direction, ask only MATERIAL clarifying questions, and produce a clean Product/project brief. That brief is then shown to the Founder as &#x27;Here is what I understood you want to build&#x27;, and the Founder must be able to review, correct, refine, or brainstorm further. Only after the Founder approves the interpreted brief does the downstream company workflow begin. All three artifacts must be preserved and distinguishable: the raw Founder idea, the AI-interpreted brief, and the Founder-approved brief. The FOUNDER-APPROVED brief -- not the raw idea -- is the authoritative input to every downstream agent.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> A Start button that reliably begins building the wrong thing is worse than no Start button. The checkpoint is what makes Start safe to press, so shipping them separately would hand the Founder a way to reliably start the wrong work. The Founder was explicit that a raw, possibly incomplete or informal idea must not be treated as the final implementation prompt. Preserving all three artifacts keeps the record honest about what the Founder actually said versus what the company decided it meant -- the same discipline this project applies everywhere else.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> TASK-024 grows materially: a new pipeline stage, new persisted state for the interpreted and approved briefs, new screens for reviewing/correcting/refining an interpretation, and a changed Start route. Product must re-brief and Design must revise artboards already produced (Concept A&#x27;s Save half should largely survive; the Start flow needs rework). TASK-025 (divergent-thinking stage) is substantially absorbed by this decision -- what remains distinct is its first job, verifying whether the prompt-master skill referenced in product.md actually fires in this deployment, which this milestone now depends on and must answer rather than assume. The refinement stage itself spends real model money before any building begins, which must be disclosed honestly on the same screen that already discloses there is no cost estimate available and no stop button.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
         <div class="card" id="decision-16" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#16 — Save and Start are separated by fill, step count and label — not by a new colour</div>
