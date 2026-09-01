@@ -249,6 +249,22 @@ this work resumes, which is required before any broader unattended
 automation, external users, production credentials, production
 deployment automation, or multi-user access.
 
+TASK-017 later resumed (DEC-010) through Code Review and QA, which
+found the Developer-denylist hook never actually fires in this
+project's deployed non-interactive context. CTO's follow-up
+investigation found the fix restores it only against non-adversarial
+mistakes, not a determined bypass — see
+`ops/reviews/cto-risk3-hook-invocation-investigation.md`. Presented
+with the choice, **the Founder chose real OS-level/process-separation
+sandboxing over the narrowed protection (DEC-011, 2026-09-01)**. TASK-017
+now sits `BLOCKED`, not abandoned — its real, delivered work (the
+reviewer zero-tool rollout for Code Review/Security/Red Team) stands
+unchanged and durable. The sandboxing work is opened as **TASK-023**,
+a new architecture cycle building on
+`ops/reviews/cto-risk3-architecture-investigation.md` §3.6/3.7, starting
+at CTO architecture, with Red Team review required as a non-skippable
+gate per the Founder's explicit instruction.
+
 **Remaining Phase 3 / Founder-testability architecture** — under
 review per the same Founder directive: CTO and Chief of Staff are
 producing a completion assessment covering the rest of Phase 3's
