@@ -116,6 +116,23 @@ def _parse_consult(reply_text: str | None) -> list[str]:
     return capped
 
 
+def _sum_costs(*results) -> float | None:
+    """TASK-020 (Milestone B), CTO's architecture doc §2.2/§2.4. One
+    Founder message can trigger up to two real model invocations under one
+    agent_runs row — ask_chief_of_staff()'s own `result` and, only when a
+    CONSULT: line is present, a second `narration_result`. Sums
+    `r.cost_usd` for every `r` that is not None and whose cost_usd is not
+    None; returns None (never 0.0) if no real cost value was ever
+    collected — the same "don't fabricate a $0.00" discipline
+    derived_state.task_cost_usd() already established. Does NOT include
+    the cost of a consult meeting itself (that meeting's own participant
+    invocations get their own agent_runs rows, scope_type='meeting', and
+    are shown as that meeting's own cost — see the architecture doc's
+    explicit reasoning against double-counting)."""
+    real = [r.cost_usd for r in results if r is not None and r.cost_usd is not None]
+    return sum(real) if real else None
+
+
 def _build_state_digest(conn) -> str:
     """Assembles the bounded state digest (§A.2) — built fresh on every
     call, never cached across turns, so staleness within one conversation
@@ -366,6 +383,14 @@ def ask_chief_of_staff(message: str) -> None:
 
     conn = opsdb.connect()
     try:
+        # TASK-020 (Milestone B): initialized here, before the inner try, so
+        # the outer except below can safely call _sum_costs(result,
+        # narration_result) even if an exception is raised before either
+        # invocation ever runs (e.g. send_message() itself raising) —
+        # otherwise that branch would hit a NameError instead of ending the
+        # run.
+        result = None
+        narration_result = None
         try:
             opsdb.send_message(conn, THREAD_ID, "agent", "founder", message, to_agent=AGENT_NAME)
 
@@ -379,7 +404,7 @@ def ask_chief_of_staff(message: str) -> None:
                 sys.stderr.write(
                     f"[control-center] Chief of Staff invocation failed ({result.error_kind}): {result.error}\n"
                 )
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 return
 
             consult_targets = _parse_consult(result.response_text)
@@ -417,10 +442,10 @@ def ask_chief_of_staff(message: str) -> None:
                 final_text = result.response_text
 
             opsdb.send_message(conn, THREAD_ID, "agent", AGENT_NAME, final_text, to_agent="founder")
-            opsdb.end_run(conn, run_id, "ended")
+            opsdb.end_run(conn, run_id, "ended", cost_usd=_sum_costs(result, narration_result))
         except Exception:
             try:
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=_sum_costs(result, narration_result))
             except (LookupError, ValueError):
                 pass  # already ended somehow — nothing more to reconcile
             raise

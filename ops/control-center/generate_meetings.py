@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
+import derived_state as ds  # noqa: E402
 from derived_state import display_name  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
@@ -150,6 +151,92 @@ def render_position_card(agent_name: str, body_text: str, requested_by: str | No
     <div class="card" style="{style}">
       <div style="font-size:10.5px; font-weight:700; color:{label_color}; margin-bottom:5px; text-transform:uppercase;">{e(display_name(agent_name))}{label_suffix}</div>
       <div style="font-size:12px; color:var(--text2); line-height:1.5;">{e(body_text)}</div>
+    </div>'''
+
+
+# TASK-020 (Milestone B): current_activity -> a short, human-readable
+# per-invocation suffix for the Cost panel's line items. Every value here
+# is one of the real MEETING_*_ACTIVITY_LABEL constants
+# (agent_runtime.py) — restated as plain literals for the same
+# control-center -> db layering reason derived_state.py's own
+# _MEETING_ACTIVITY_LIKE etc. are restated there, not imported. A
+# current_activity that matches none of these (a pre-Milestone-B row with
+# some other/blank value) falls back to a generic "activity" label rather
+# than crashing or guessing.
+_MEETING_RUN_SUFFIX = {
+    "Meeting: contributing a position": "position",
+    "Meeting: synthesizing": "synthesizing",
+    "Meeting: follow-up reply": "follow-up reply",
+}
+
+
+def render_cost_panel(conn: sqlite3.Connection, meeting_id: int) -> str:
+    """TASK-020 (Milestone B), CTO's architecture doc §3.3 / Design's
+    review §2.2 (Concept 2, recommended): one dedicated Cost panel placed
+    directly under the header — mirroring Milestone A Task Detail's own
+    summary-panel precedent — rather than badges sprinkled across
+    existing position cards (Concept 1, not recommended: forces CTO's
+    full NULL phrase to abbreviate to "n/a", reading as an error rather
+    than an honest disclosure).
+
+    Lists every real agent_runs row scoped to this meeting (participant
+    positions, plus — since §2.4's three extra instrumentation brackets
+    shipped — CEO's own synthesis and any follow-up replies), each with
+    its own real cost or the honest "not available (recorded before cost
+    tracking)" phrase, never a bare abbreviation. The meeting total uses
+    the same cost_coverage()/format_cost_coverage() discipline the
+    company-wide Costs page uses, including Red Team's required
+    "never a bare $0.00" fix for the covered==0 case."""
+    cov = ds.meeting_cost_usd(conn, meeting_id)
+    rows = conn.execute(
+        "SELECT a.name AS agent_name, r.current_activity, r.cost_usd "
+        "FROM agent_runs r JOIN agents a ON a.id = r.agent_id "
+        "WHERE r.scope_type = 'meeting' AND r.scope_id = ? ORDER BY r.id",
+        (meeting_id,),
+    ).fetchall()
+
+    if cov["n"] == 0:
+        total_html = '<span style="color:var(--text3);">no invocations recorded yet</span>'
+        caption = "No costed invocation exists for this meeting yet."
+    elif cov["covered"] == 0:
+        total_html = '<span style="color:var(--text3);">not available</span>'
+        caption = (f'0 of {cov["n"]} invocations tracked &middot; recorded before cost tracking. '
+                    "Excludes CEO's own participant-selection call for this meeting — that call is "
+                    'company-scoped, not attributable to one specific meeting; see the company-wide '
+                    '<a class="accentlink" href="../costs.html">Costs</a> page for that figure.')
+    else:
+        total_html = f'${cov["usd"]:.2f} <span style="font-size:10.5px; font-weight:400; color:var(--text3);">total</span>'
+        missing = cov["n"] - cov["covered"]
+        missing_note = f' &middot; {missing} recorded before cost tracking' if missing else ""
+        caption = (f'{cov["covered"]} of {cov["n"]} invocations tracked{missing_note}. '
+                    "Excludes CEO's own participant-selection call for this meeting — that call is "
+                    'company-scoped, not attributable to one specific meeting; see the company-wide '
+                    '<a class="accentlink" href="../costs.html">Costs</a> page for that figure.')
+
+    lines = []
+    for r in rows:
+        suffix = _MEETING_RUN_SUFFIX.get(r["current_activity"], "activity")
+        label = f'<span style="text-transform:uppercase;">{e(display_name(r["agent_name"]))}</span> &mdash; {e(suffix)}'
+        if r["cost_usd"] is None:
+            amount_html = ('<div class="mono" style="font-size:12px; font-weight:600; color:var(--text);">not available</div>'
+                            '<div style="font-size:10px; color:var(--text3); margin-top:2px;">recorded before cost tracking</div>')
+        else:
+            amount_html = f'<div class="mono" style="font-size:12px; font-weight:600; color:var(--text);">${r["cost_usd"]:.2f}</div>'
+        lines.append(f'''
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+          <div style="font-size:12px; color:var(--text2);">{label}</div>
+          <div style="text-align:right;">{amount_html}</div>
+        </div>''')
+    lines_html = "".join(lines) or '<div style="font-size:11.5px; color:var(--text2);">No per-invocation cost data recorded for this meeting yet.</div>'
+
+    return f'''
+    <div class="panel" id="cost" style="margin-bottom:16px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;">
+        <div class="label">Cost</div>
+        <div style="font-size:15px; font-weight:700;">{total_html}</div>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-bottom:10px; line-height:1.5;">{caption}</div>
+      {lines_html}
     </div>'''
 
 
@@ -390,6 +477,8 @@ def build_meeting_detail(conn: sqlite3.Connection, meeting: sqlite3.Row, token: 
         decision_html = ('<div class="panel" style="border-color:var(--accent);"><div style="font-size:11.5px; color:var(--text2);">'
                           'Deciding requires python3 ops/control-center/server.py running locally.</div></div>')
 
+    cost_html = render_cost_panel(conn, meeting["id"])
+
     body = f'''
 <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
   <a href="../meetings.html" style="font-size:12px; color:var(--text3);">&larr; Meetings</a>
@@ -398,6 +487,7 @@ def build_meeting_detail(conn: sqlite3.Connection, meeting: sqlite3.Row, token: 
   <h1 style="margin:0;">{e(meeting["topic"])}</h1>
   <div style="font-size:11px; color:var(--text3);">Raised by {e("Founder" if meeting["initiated_by"] == "founder" else meeting["initiated_by"])} &middot; {e(meeting["created_at"])}</div>
 </div>
+{cost_html}
 {orchestrator_html}
 {grid}
 {request_perspective_html}

@@ -153,7 +153,14 @@ def render_summary_panel(conn: sqlite3.Connection, row: dict) -> str:
     else:
         founder_html = '<span style="color:var(--text2);">No</span>'
     cost = row["cost"]
-    cost_html = f'${cost["usd"]:.2f}' if cost["available"] else '<span style="color:var(--text3);">not available</span>'
+    # TASK-020 (Milestone B), CTO's architecture doc §3.1: task_cost_usd()
+    # still only ever reflects automation-poller cost (none of the three
+    # newly-wired paths produce a task-scoped agent_runs row) — the "not
+    # available" case now links to the company-wide Costs page so a
+    # Founder is never left wondering where the rest of a task's real
+    # conversational cost lives.
+    cost_html = (f'${cost["usd"]:.2f}' if cost["available"] else
+                 '<span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span>')
     # CTO architecture doc §3.2's first table field ("Project / Phase /
     # Milestone"): tasks.project_id -> projects.name via
     # task_progress_row()'s LEFT JOIN, or an honest "—" when project_id is

@@ -83,7 +83,18 @@ def _select_participants(topic: str) -> list[str]:
     always included by the caller (run_meeting), never decided here. On
     any invocation failure, returns an empty list (a meeting with just
     CEO is still a valid, honest meeting — never fabricate a selection
-    when the real call failed)."""
+    when the real call failed).
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.4: this call runs
+    BEFORE run_meeting() creates the meeting row, so — unlike
+    _gather_position()/_synthesize() — it must use scope_type='company'
+    (no scope_id exists yet), the same structural reason the existing
+    Orchestrator-validation bracket right next to this one in run_meeting()
+    already uses 'company'. This means this one invocation's cost is real
+    and persisted, and correctly grouped into the company-wide Meetings
+    bucket on /costs.html, but CANNOT be attributed to the specific
+    meeting it precedes once that meeting exists — a small, disclosed,
+    structural limit (see the Meeting Detail cost panel's own footnote)."""
     prompt = (
         f"Founder: A cross-cutting question has been raised for an Executive Meeting: "
         f"\"{topic}\" From this list of candidate roles, which should participate because "
@@ -92,10 +103,24 @@ def _select_participants(topic: str) -> list[str]:
         f"comma-separated list of the role names you select from that exact list, nothing "
         f"else — no explanation, no punctuation besides commas."
     )
-    result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
-    if not result.ok:
-        return []
-    return _parse_selection(result.response_text)
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_run(conn, "ceo", "company", agent_runtime.MEETING_SELECT_PARTICIPANTS_ACTIVITY_LABEL)
+        try:
+            result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
+            if not result.ok:
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return []
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return _parse_selection(result.response_text)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
+    finally:
+        conn.close()
 
 
 def cap_participants(candidates: list[str], cap: int) -> tuple[list[str], list[str]]:
@@ -192,12 +217,12 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
         if result.ok:
             opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
                                 to_agent=None, meeting_id=meeting_id)
-            opsdb.end_run(conn, run_id, "ended")
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (agent_name, True, result.response_text)
         else:
             sys.stderr.write(f"[control-center] meeting {meeting_id}: {agent_name} failed to provide a position "
                               f"({result.error_kind}): {result.error}\n")
-            opsdb.end_run(conn, run_id, "failed")
+            opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
             return (agent_name, False, None)
     except Exception as exc:  # noqa: BLE001 — one participant's bug must not abort the whole meeting
         sys.stderr.write(f"[control-center] meeting {meeting_id}: unhandled error gathering {agent_name}'s position: "
@@ -211,12 +236,22 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
         conn.close()
 
 
-def _synthesize(topic: str, positions: dict[str, str]) -> tuple[str | None, str | None, str | None, str | None]:
+def _synthesize(meeting_id: int, topic: str,
+                 positions: dict[str, str]) -> tuple[str | None, str | None, str | None, str | None]:
     """Step 4: a real, separate CEO call — cannot happen concurrently
     with step 3, since it needs every position that succeeded. Returns
     (agreements, disagreements, unresolved_questions, recommendation),
     each None if the call fails or a field wasn't present in the
-    response — never fabricated."""
+    response — never fabricated.
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.4: this call runs
+    AFTER the meeting row already exists, so — unlike
+    _select_participants() — it gets a real 'meeting'-scoped agent_runs
+    row (scope_id=meeting_id), the same bracket discipline every other
+    per-invocation cost site in this file already uses. Plausibly the
+    single most expensive call in most meetings (it processes every
+    participant's full position text), so leaving it uninstrumented
+    would materially understate a meeting's own cost total."""
     if not positions:
         return (None, None, None, None)
     positions_text = "\n".join(f"{name}: {text}" for name, text in positions.items())
@@ -233,10 +268,24 @@ def _synthesize(topic: str, positions: dict[str, str]) -> tuple[str | None, str 
         f"If a section has nothing real to report, write 'None.' for that section rather than "
         f"inventing content."
     )
-    result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
-    if not result.ok:
-        return (None, None, None, None)
-    return _parse_synthesis(result.response_text)
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_run(conn, "ceo", "meeting", agent_runtime.MEETING_SYNTHESIS_ACTIVITY_LABEL, scope_id=meeting_id)
+        try:
+            result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
+            if not result.ok:
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return (None, None, None, None)
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return _parse_synthesis(result.response_text)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
+    finally:
+        conn.close()
 
 
 def _parse_synthesis(text: str) -> tuple[str | None, str | None, str | None, str | None]:
@@ -278,7 +327,7 @@ def _gather_and_synthesize(meeting_id: int, participants: list[str], topic: str)
             if ok:
                 positions[name] = text
 
-    agreements, disagreements, unresolved, recommendation = _synthesize(topic, positions)
+    agreements, disagreements, unresolved, recommendation = _synthesize(meeting_id, topic, positions)
     conn = opsdb.connect()
     try:
         opsdb.finalize_meeting_synthesis(conn, meeting_id, agreements, disagreements, unresolved, recommendation)
@@ -486,13 +535,13 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
             if not result.ok:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
                                   f"provide a position ({result.error_kind}): {result.error}\n")
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 _release_reservation(conn, meeting_id, agent_name)
                 return (False, result.error)
 
             opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
                                 to_agent=None, meeting_id=meeting_id)
-            opsdb.end_run(conn, run_id, "ended")
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (True, None)
         except Exception:
             try:
@@ -568,25 +617,36 @@ def gather_followup_reply(meeting_id: int, agent_name: str, topic: str, founder_
     the caller (server.py) before this is invoked, not here — this
     function's own job is only the write + the invocation.
 
-    Returns (ok, error_message_or_None). No agent_runs row is created for
-    this call — matching _select_participants()'s and _synthesize()'s own
-    existing precedent (neither of those creates one either); CTO's
-    Milestone 2B3B round 2 architecture document does not call for one
-    here, unlike items 2 and 5 which explicitly do."""
+    Returns (ok, error_message_or_None). TASK-020 (Milestone B), CTO's
+    architecture doc §2.4: this call now runs inside a real
+    'meeting'-scoped agent_runs bracket (it previously had none —
+    _select_participants()'s and _synthesize()'s prior precedent, now
+    also closed for those two above) so its own real cost is captured and
+    attributed to this meeting like every other participant invocation."""
     conn = opsdb.connect()
     try:
         thread_id = f"meeting-{meeting_id}-{agent_name}"
         opsdb.send_message(conn, thread_id, "meeting", "founder", founder_message,
                             to_agent=agent_name, meeting_id=meeting_id)
         transcript = _build_followup_transcript(conn, meeting_id, agent_name, topic, thread_id)
-        result = agent_runtime.invoke_agent(agent_name, transcript, wait_for_slot=True)
-        if not result.ok:
-            sys.stderr.write(f"[control-center] meeting {meeting_id}: follow-up with {agent_name} failed "
-                              f"({result.error_kind}): {result.error}\n")
-            return (False, result.error)
-        opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
-                            to_agent="founder", meeting_id=meeting_id)
-        return (True, None)
+        run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_FOLLOWUP_ACTIVITY_LABEL, scope_id=meeting_id)
+        try:
+            result = agent_runtime.invoke_agent(agent_name, transcript, wait_for_slot=True)
+            if not result.ok:
+                sys.stderr.write(f"[control-center] meeting {meeting_id}: follow-up with {agent_name} failed "
+                                  f"({result.error_kind}): {result.error}\n")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return (False, result.error)
+            opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
+                                to_agent="founder", meeting_id=meeting_id)
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return (True, None)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
     finally:
         conn.close()
 
@@ -628,12 +688,12 @@ def retry_position(meeting_id: int, agent_name: str, topic: str) -> tuple[bool, 
             if result.ok:
                 opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
                                     to_agent=None, meeting_id=meeting_id)
-                opsdb.end_run(conn, run_id, "ended")
+                opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
                 return (True, None)
             else:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: retry for {agent_name} failed "
                                   f"({result.error_kind}): {result.error}\n")
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 return (False, result.error)
         except Exception:
             try:

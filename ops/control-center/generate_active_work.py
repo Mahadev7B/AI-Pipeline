@@ -109,7 +109,11 @@ def _detail_line(conn: sqlite3.Connection, row: dict) -> str:
     elif row["gate_entered_at"]:
         extra_elapsed = f' &middot; {ds.elapsed_since(conn, row["gate_entered_at"])} in this gate'
     cost = row["cost"]
-    cost_html = f'${cost["usd"]:.2f}' if cost["available"] else "not available"
+    # TASK-020 (Milestone B), CTO's architecture doc §3.1: same "not
+    # available" -> link-to-Costs treatment as generate_task.py's own
+    # summary panel.
+    cost_html = (f'${cost["usd"]:.2f}' if cost["available"] else
+                 'not available &mdash; see <a class="accentlink" href="costs.html">Costs</a>')
     return (
         f'Bounces: {row["bounce_count"]} &middot; Last event: {last_event_html} &middot; '
         f'Next: {next_action} &middot; Elapsed: {elapsed_created} since created{extra_elapsed} &middot; Cost: {cost_html}'

@@ -480,7 +480,12 @@ def _invoke_and_record(event_id: int, task_id: int, transcript: str, truncated: 
         )
         conn = opsdb.connect()
         try:
-            opsdb.end_run(conn, run_id, "failed")
+            # TASK-020 (Milestone B): the same result.cost_usd already
+            # passed to _end_event() below now also lands in agent_runs —
+            # not a new number, not a new decision path, just the value
+            # this path already computed landing in the column that now
+            # exists on the table it was always missing from.
+            opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
         finally:
             conn.close()
         # §B.8: no review_results row fabricated from a call that didn't
@@ -502,7 +507,7 @@ def _invoke_and_record(event_id: int, task_id: int, transcript: str, truncated: 
         )
         conn = opsdb.connect()
         try:
-            opsdb.end_run(conn, run_id, "failed")
+            opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
         finally:
             conn.close()
         _end_event(event_id, "failed", outcome="error", cost_usd=result.cost_usd, truncated=truncated,
@@ -512,7 +517,7 @@ def _invoke_and_record(event_id: int, task_id: int, transcript: str, truncated: 
     findings = [result.response_text or ""]
     conn = opsdb.connect()
     try:
-        opsdb.end_run(conn, run_id, "ended")
+        opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
         if verdict == "pass":
             # §B.8: tasks.status is left UNCHANGED at CODE_REVIEW — no
             # automatic advance to QA, per the Founder's explicit

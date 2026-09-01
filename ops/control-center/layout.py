@@ -54,6 +54,9 @@ NAV_LINKS = [
     ("reviews.html", "Reviews"),
     ("releases.html", "Releases"),
     ("automation.html", "Automation"),
+    ("costs.html", "Costs"),  # Milestone B (TASK-020) — placed after Automation: spend
+                              # visibility is a company-health concern adjacent to, but not
+                              # part of, the automation kill-switch page it sits next to.
 ]
 
 

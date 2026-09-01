@@ -278,6 +278,20 @@ def _invoke_and_record(task_id: int, kind: str, agent_name: str, transcript: str
         review_type = _REVIEW_KIND_TO_REVIEW_TYPE[kind]
         conn = opsdb.connect()
         try:
+            # TASK-020 (Milestone B), Red Team's review (required fix #2):
+            # this end_run() call deliberately does NOT pass
+            # cost_usd=result.cost_usd, even though that real,
+            # already-computed value sits right here (and IS passed to
+            # opsdb.end_reviewer_invocation() a few lines below). DEC-009's
+            # Milestone B boundary explicitly excludes TASK-017/risks.id=3/
+            # reviewer_sync.py — this file is not touched functionally by
+            # that milestone. The disclosed consequence: as long as
+            # TASK-017 stays paused (DEC-008), every "Synchronous review"
+            # agent_runs row will have cost_usd = NULL by construction, not
+            # just historically — not a Milestone B bug, and not something
+            # end_run()'s now-existing cost_usd column fixes on its own.
+            # See generate_costs.py's "Synchronous review" by-path row for
+            # the Founder-facing side of this same disclosure.
             opsdb.end_run(conn, run_id, "ended")
             if verdict == "pass":
                 # §1.5: PASS never auto-advances the task — a human still

@@ -408,7 +408,19 @@ def task_cost_usd(conn: sqlite3.Connection, task_id: int) -> dict:
     """{"available": bool, "usd": float | None, "note": str}.
     A real $0.00 (automation ran but a zero-cost event, e.g. a 'skipped'
     row) must not be conflated with 'automation never touched this task'
-    — the count, not just the sum, decides availability."""
+    — the count, not just the sum, decides availability.
+
+    TASK-020 (Milestone B), CTO's architecture doc §3.1: this function is
+    NOT widened to also read agent_runs.cost_usd — none of the three
+    newly-wired paths (Ask-Agent, Meeting, Chief of Staff) ever produce a
+    task-scoped agent_runs row (they're company- or meeting-scoped
+    conversations, not task work units; see start_ask_agent_run() and
+    meeting_orchestrator.py), so there is nothing new for a per-task query
+    to pick up. Only the note text below changed — the old wording ("is
+    not persisted until Milestone B ships") became false the moment this
+    milestone shipped; company-wide figures for the other three paths now
+    live on the dedicated company_cost_digest()-backed /costs.html page
+    instead."""
     row = conn.execute(
         "SELECT COUNT(*) AS n, COALESCE(SUM(cost_usd), 0) AS total "
         "FROM automation_events WHERE task_id = ?",
@@ -418,9 +430,209 @@ def task_cost_usd(conn: sqlite3.Connection, task_id: int) -> dict:
     return {
         "available": available,
         "usd": float(row["total"]) if available else None,
-        "note": ("automation-poller cost only; Ask-Agent/Meeting/Chief-of-Staff "
-                 "invocation cost is not persisted until Milestone B ships."),
+        "note": ("automation-poller cost only — Ask-Agent, Meeting, and Chief-of-Staff "
+                 "conversations are not tied to a specific task in this system's data "
+                 "model; see the company-wide Costs page for those figures."),
     }
+
+
+# --------------------------------------------------------- TASK-020 (Milestone B) --
+
+# Mirrors agent_runtime.py's own ASK_AGENT_ACTIVITY_LIKE / MEETING_ACTIVITY_LIKE /
+# CHIEF_OF_STAFF_ACTIVITY_LIKE / AUTOMATED_CODE_REVIEW_ACTIVITY_LIKE /
+# REVIEWER_SYNC_ACTIVITY_LIKE — restated here as plain literals (not
+# imported) for the same control-center -> db layering reason
+# automation_status_digest()'s own docstring gives for SPEND_CEILING_USD
+# in generate_automation.py: this module is db-layer, read-only rendering
+# support, not a control-center -> db -> control-center import cycle.
+# Development must keep these in sync with agent_runtime.py if those
+# constants are ever revised.
+_ASK_AGENT_ACTIVITY_LIKE = "Ask-Agent:%"
+_MEETING_ACTIVITY_LIKE = "Meeting:%"
+_CHIEF_OF_STAFF_ACTIVITY_LIKE = "Chief of Staff:%"
+_AUTOMATED_CODE_REVIEW_ACTIVITY_LIKE = "Automated Code Review:%"
+_REVIEWER_SYNC_ACTIVITY_LIKE = "Synchronous review:%"
+
+
+def cost_coverage(n: int, covered: int, total_usd: float) -> dict:
+    """{"n": int, "covered": int, "usd": float | None} — the shared
+    'count decides availability' shape every SUM(...cost_usd) figure this
+    milestone introduces uses (company_cost_digest(), meeting_cost_usd()),
+    extending task_cost_usd()'s original discipline two ways:
+
+    Design's review (item 3): n == 0 ("no invocations recorded yet" — a
+    real fact, hasn't happened) must render differently from n > 0 with
+    covered == 0 ("recorded before cost tracking" — a real invocation
+    happened, its cost just wasn't captured) — two different facts,
+    never conflated into the same wording.
+
+    Red Team's review (§3, required fix): extends the "never show a bare
+    $0.00" rule to ALSO cover covered == 0 when n > 0 (not just n == 0
+    alone) — a Founder skimming a row must never see a leading "$0.00"
+    token for a bucket where no real cost was ever captured, even though
+    real invocations happened.
+
+    `usd` is None whenever covered == 0, regardless of n — callers render
+    the three-way wording branch (see generate_costs.py's/
+    generate_meetings.py's own cost-line renderers) from n/covered
+    directly, never by testing `usd` alone."""
+    return {"n": n, "covered": covered, "usd": float(total_usd) if covered else None}
+
+
+def format_cost_coverage(cov: dict, noun: str = "invocations") -> str:
+    """Plain-text rendering of cost_coverage()'s three-way branch — one
+    shared implementation so generate_costs.py and generate_meetings.py
+    never hand-roll two copies of this wording that could drift (the same
+    DRY reasoning every other shared formula in this module follows). No
+    HTML markup — callers wrap this in whatever element/color styling
+    their own layout needs."""
+    n, covered, usd = cov["n"], cov["covered"], cov["usd"]
+    if n == 0:
+        return f"No {noun} recorded yet."
+    if covered == 0:
+        return f"not available — 0 of {n} {noun} have a recorded cost (recorded before cost tracking)"
+    missing = n - covered
+    base = f"${usd:.2f} across {covered} of {n} {noun}"
+    return f"{base} ({missing} recorded before cost tracking)" if missing else f"{base}."
+
+
+def company_cost_digest(conn: sqlite3.Connection) -> dict:
+    """TASK-020 (Milestone B), CTO's architecture doc §3.2. Company-wide
+    AI invocation cost across all five real invocation paths — Ask-Agent,
+    Executive Meetings, Chief of Staff, Automated Code Review, and
+    Synchronous review (a genuinely distinct, human-triggered path per
+    Design's review item 6/Red Team's §1 — grouped here because CTO's own
+    composition already lists all five constants, even though this
+    milestone's own Founder-facing framing names only four; see
+    reviewer_sync.py's own disclosure comment for why Synchronous review
+    stays uncosted by construction while TASK-017 stays paused, DEC-008).
+
+    Returns {"today": cost_coverage(), "all_time": cost_coverage(),
+    "by_path": [{"label", "cov"} ...], "by_agent": [{"name", "cov"} ...],
+    "recent_meetings": [{"id","topic","created_at","cov"} ...]}.
+
+    Today's/all-time's headline totals: SUM(agent_runs.cost_usd) for the
+    four non-automation paths (Ask-Agent/Meeting/Chief of Staff/
+    Synchronous review) PLUS SUM(automation_events.cost_usd) —
+    automation_events remains the historically authoritative source for
+    that one path (it has real cost data going back further than this
+    milestone's agent_runs.cost_usd column does), so automation's own
+    agent_runs rows are deliberately excluded from the first sum to avoid
+    double-counting the same real spend twice. The by-path breakdown's own
+    'Automated Code Review' row is, for the identical reason, built from
+    automation_events directly, not from agent_runs — every other row
+    there IS built from agent_runs (the only source that exists for those
+    four paths)."""
+    today = conn.execute("SELECT strftime('%Y-%m-%d', 'now')").fetchone()[0]
+
+    def _headline(date_filter: str | None) -> dict:
+        agent_runs_where = (
+            "current_activity LIKE ? OR current_activity LIKE ? OR "
+            "current_activity LIKE ? OR current_activity LIKE ?"
+        )
+        agent_runs_params = [
+            _ASK_AGENT_ACTIVITY_LIKE, _MEETING_ACTIVITY_LIKE,
+            _CHIEF_OF_STAFF_ACTIVITY_LIKE, _REVIEWER_SYNC_ACTIVITY_LIKE,
+        ]
+        automation_where = "1=1"
+        automation_params: list = []
+        if date_filter is not None:
+            agent_runs_where = f"({agent_runs_where}) AND started_at LIKE ?"
+            agent_runs_params.append(date_filter)
+            automation_where = "started_at LIKE ?"
+            automation_params.append(date_filter)
+
+        ar = conn.execute(
+            f"SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE cost_usd IS NOT NULL) AS covered, "
+            f"COALESCE(SUM(cost_usd), 0) AS total FROM agent_runs WHERE {agent_runs_where}",
+            agent_runs_params,
+        ).fetchone()
+        ae = conn.execute(
+            f"SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE cost_usd IS NOT NULL) AS covered, "
+            f"COALESCE(SUM(cost_usd), 0) AS total FROM automation_events WHERE {automation_where}",
+            automation_params,
+        ).fetchone()
+        return cost_coverage(ar["n"] + ae["n"], ar["covered"] + ae["covered"], ar["total"] + ae["total"])
+
+    def _path_row(label: str, activity_like: str) -> dict:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE cost_usd IS NOT NULL) AS covered, "
+            "COALESCE(SUM(cost_usd), 0) AS total FROM agent_runs WHERE current_activity LIKE ?",
+            (activity_like,),
+        ).fetchone()
+        return {"label": label, "cov": cost_coverage(row["n"], row["covered"], row["total"])}
+
+    ae_row = conn.execute(
+        "SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE cost_usd IS NOT NULL) AS covered, "
+        "COALESCE(SUM(cost_usd), 0) AS total FROM automation_events"
+    ).fetchone()
+
+    by_path = [
+        _path_row("Ask-Agent", _ASK_AGENT_ACTIVITY_LIKE),
+        _path_row("Meetings", _MEETING_ACTIVITY_LIKE),
+        _path_row("Chief of Staff", _CHIEF_OF_STAFF_ACTIVITY_LIKE),
+        {"label": "Automated Code Review",
+         "cov": cost_coverage(ae_row["n"], ae_row["covered"], ae_row["total"])},
+        _path_row("Synchronous review", _REVIEWER_SYNC_ACTIVITY_LIKE),
+    ]
+
+    # Ordered in Python by display_name(), not SQL — same reasoning
+    # agent_status_rows() above already gives: sorting must happen on the
+    # same displayed label callers render, not the raw machine key.
+    agent_rows = conn.execute(
+        """
+        SELECT a.name AS name, COUNT(*) AS n,
+               COUNT(*) FILTER (WHERE r.cost_usd IS NOT NULL) AS covered,
+               COALESCE(SUM(r.cost_usd), 0) AS total
+        FROM agent_runs r JOIN agents a ON a.id = r.agent_id
+        WHERE r.scope_type = 'company' AND
+              (r.current_activity LIKE ? OR r.current_activity LIKE ?)
+        GROUP BY a.id
+        """,
+        (_ASK_AGENT_ACTIVITY_LIKE, _CHIEF_OF_STAFF_ACTIVITY_LIKE),
+    ).fetchall()
+    by_agent = sorted(
+        [{"name": r["name"], "cov": cost_coverage(r["n"], r["covered"], r["total"])} for r in agent_rows],
+        key=lambda x: display_name(x["name"]).lower(),
+    )
+
+    recent_meetings = conn.execute(
+        "SELECT id, topic, created_at FROM meetings ORDER BY id DESC LIMIT 10"
+    ).fetchall()
+    recent_meetings = [
+        {"id": m["id"], "topic": m["topic"], "created_at": m["created_at"],
+         "cov": meeting_cost_usd(conn, m["id"])}
+        for m in recent_meetings
+    ]
+
+    return {
+        "today": _headline(today + "%"),
+        "all_time": _headline(None),
+        "by_path": by_path,
+        "by_agent": by_agent,
+        "recent_meetings": recent_meetings,
+    }
+
+
+def meeting_cost_usd(conn: sqlite3.Connection, meeting_id: int) -> dict:
+    """TASK-020 (Milestone B), CTO's architecture doc §3.3.
+    cost_coverage()-shaped: {"n", "covered", "usd"}, built from every
+    agent_runs row scoped to this meeting (every participant position,
+    plus — since §2.4's three extra instrumentation brackets shipped —
+    CEO's own synthesis and any follow-up replies). Deliberately excludes
+    CEO's own participant-selection call for this meeting: that call is
+    scope_type='company' (the meeting doesn't exist yet when it runs —
+    see meeting_orchestrator._select_participants()'s own docstring), not
+    attributable to one specific meeting; it is counted in the
+    company-wide Meetings bucket on /costs.html instead, never both
+    places (double-counting would overstate company-wide spend when
+    summed)."""
+    row = conn.execute(
+        "SELECT COUNT(*) AS n, COUNT(*) FILTER (WHERE cost_usd IS NOT NULL) AS covered, "
+        "COALESCE(SUM(cost_usd), 0) AS total FROM agent_runs WHERE scope_type = 'meeting' AND scope_id = ?",
+        (meeting_id,),
+    ).fetchone()
+    return cost_coverage(row["n"], row["covered"], row["total"])
 
 
 def _format_duration_days(days: float) -> str:

@@ -80,6 +80,20 @@ MEETING_ACTIVITY_LABEL = "Meeting: contributing a position"
 MEETING_ACTIVITY_LIKE = "Meeting:%"
 MAX_MEETING_PARTICIPANTS = 6  # CEO + up to 5 others — see cto-milestone2b3b-architecture.md
 
+# TASK-020 (Milestone B), CTO's architecture doc §2.4: three CEO/agent
+# invocations inside meeting_orchestrator.py that previously had NO
+# agent_runs row at all (_select_participants(), _synthesize(),
+# gather_followup_reply()) — needed so a meeting's per-invocation cost
+# total isn't silently missing its most expensive call (CEO's synthesis
+# processes every participant's full position text). All three labels
+# deliberately start with "Meeting:" so they match the existing
+# MEETING_ACTIVITY_LIKE = "Meeting:%" grouping pattern already used
+# everywhere runs are scoped/grouped by path (startup reconciliation,
+# /costs.html's by-path breakdown) — no new LIKE pattern needed.
+MEETING_SELECT_PARTICIPANTS_ACTIVITY_LABEL = "Meeting: selecting participants"
+MEETING_SYNTHESIS_ACTIVITY_LABEL = "Meeting: synthesizing"
+MEETING_FOLLOWUP_ACTIVITY_LABEL = "Meeting: follow-up reply"
+
 # Phase 3A Part A (TASK-015): the Chief of Staff Founder Interface. A
 # third, distinct invocation category — Founder-typed, not meeting-
 # selected, not Ask-Agent's five-role allowlist — for exactly one agent

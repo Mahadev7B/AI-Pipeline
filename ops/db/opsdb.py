@@ -105,12 +105,31 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
     head_commit_sha — nullable TEXT, no CHECK constraint, a plain
     additive column exactly as the architecture doc specifies; only the
     *application* of it is made idempotent here, not the migration's own
-    shape. See ops/DATA_MODEL.md."""
+    shape. See ops/DATA_MODEL.md.
+
+    TASK-020 (Milestone B), CTO's architecture doc §1.2: agent_runs.cost_usd
+    — nullable REAL, no CHECK constraint, same additive shape and same
+    idempotency guard, applied to a second table now instead of a new
+    function. Red Team's Milestone B review (required fix, §4): this
+    migration only takes effect on the LIVE database once a human/deploy
+    step re-runs `python3 ops/db/opsdb.py init` — it is not applied on
+    server startup or by any other code path. That review found a real,
+    live example of exactly this gap left unaddressed (`reviewer_invocations`,
+    specified in schema.sql since commit fdaf253 but never actually
+    created live, because `init` was never re-run after that commit — see
+    risks.id=4, out of scope for this milestone to fix). Development
+    verified `init` was re-run against the real operations.sqlite3 for
+    THIS migration specifically (`PRAGMA table_info(agent_runs)` confirmed
+    to include `cost_usd` afterward) — do not repeat that gap here."""
     cols = {row["name"] for row in conn.execute("PRAGMA table_info(handoffs)").fetchall()}
     if "base_commit_sha" not in cols:
         conn.execute("ALTER TABLE handoffs ADD COLUMN base_commit_sha TEXT")
     if "head_commit_sha" not in cols:
         conn.execute("ALTER TABLE handoffs ADD COLUMN head_commit_sha TEXT")
+
+    agent_runs_cols = {row["name"] for row in conn.execute("PRAGMA table_info(agent_runs)").fetchall()}
+    if "cost_usd" not in agent_runs_cols:
+        conn.execute("ALTER TABLE agent_runs ADD COLUMN cost_usd REAL")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -405,21 +424,33 @@ def cmd_run_heartbeat(args: argparse.Namespace) -> None:
 RUN_END_STATUSES = ("ended", "failed")
 
 
-def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> None:
+def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended",
+            cost_usd: float | None = None) -> None:
     """Plain, directly-callable form of run-end. Atomic and conditional
     (WHERE ended_at IS NULL) — same guard pattern as decide_approval():
     a run can only be ended once; a second call (duplicate/racing
     request) affects zero rows instead of silently overwriting ended_at
     or flipping a 'failed' run back to 'ended' (Red Team's Milestone 2B2
     review). Raises LookupError / ValueError, same convention as
-    decide_approval() and start_run()."""
+    decide_approval() and start_run().
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.1: `cost_usd`
+    (extended, not replaced — every existing caller now passes it,
+    see server.py/meeting_orchestrator.py/chief_of_staff.py/automation.py)
+    defaults to None so this function's contract stays additive/backward-
+    compatible, the same discipline end_automation_event() already sets
+    for its own optional params. The value is always exactly what
+    agent_runtime.invoke_agent() already returned to the caller — no new
+    computation happens here. None (never a fabricated 0.0) means either
+    "this invocation failed before producing a real cost" or "cost_usd
+    was never passed" — both honest, distinct from a real $0.00."""
     if status not in RUN_END_STATUSES:
         raise ValueError(f"status must be one of {RUN_END_STATUSES}, got {status!r}")
     with conn:
         cur = conn.execute(
-            "UPDATE agent_runs SET status = ?, "
+            "UPDATE agent_runs SET status = ?, cost_usd = ?, "
             "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND ended_at IS NULL",
-            (status, run_id),
+            (status, cost_usd, run_id),
         )
         if cur.rowcount == 0:
             row = conn.execute("SELECT status FROM agent_runs WHERE id = ?", (run_id,)).fetchone()

@@ -112,6 +112,19 @@ CREATE TABLE IF NOT EXISTS agent_runs (
     (scope_type = 'company' AND scope_id IS NULL) OR
     (scope_type != 'company' AND scope_id IS NOT NULL)
   )
+  -- TASK-020 (Milestone B), CTO's architecture doc §1.1/§1.2: cost_usd
+  -- (nullable REAL, no CHECK constraint — identical shape to
+  -- automation_events.cost_usd) is added by ops/db/opsdb.py's
+  -- cmd_init()/_apply_additive_column_migrations(), not as a raw ALTER
+  -- TABLE statement here — same reasoning as handoffs.base_commit_sha/
+  -- head_commit_sha above: SQLite's ALTER TABLE ADD COLUMN has no "IF NOT
+  -- EXISTS" form, so a plain ALTER TABLE statement in this executescript'd
+  -- file would fail the second time `init` runs against an
+  -- already-migrated database, breaking this command's own documented
+  -- idempotency. NULL means either "this run predates cost tracking"
+  -- (backfilled by the ALTER TABLE itself) or "the invocation failed
+  -- before producing a real total_cost_usd" — both honest, both distinct
+  -- from a genuine $0.00, never fabricated. See ops/DATA_MODEL.md.
 );
 CREATE INDEX IF NOT EXISTS idx_runs_agent_open ON agent_runs(agent_id, ended_at);
 

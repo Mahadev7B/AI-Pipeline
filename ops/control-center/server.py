@@ -182,6 +182,7 @@ import generate_releases  # noqa: E402
 import generate_automation  # noqa: E402 — Phase 3A Part B (TASK-015)
 import generate_active_work  # noqa: E402 — Milestone A (TASK-019)
 import generate_task  # noqa: E402 — Milestone A (TASK-019)
+import generate_costs  # noqa: E402 — Milestone B (TASK-020)
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -503,6 +504,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/automation.html":
                 self._send_html(200, generate_automation.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
+            if path == "/costs.html":
+                # Milestone B (TASK-020): GET-only, read-only — reuses the
+                # exact same Founder session/CSRF gate every other route on
+                # this server goes through (the do_GET-level check above),
+                # no new write route or auth mechanism.
+                self._send_html(200, generate_costs.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
             self._send_html(404, _error_page(404, "Not found", "No such page."))
         except SystemExit as exc:
             # dbutil.connect() raises SystemExit if the DB file is missing — surface it as a page, not a crash.
@@ -788,6 +796,13 @@ class Handler(BaseHTTPRequestHandler):
             # would violate this milestone's own acceptance bar
             # ("failures... in one invocation do not corrupt or block
             # another") just as surely as the race this milestone fixed.
+            # TASK-020 (Milestone B): result is initialized here, before the
+            # try, so the outer except below can safely reference
+            # result.cost_usd even if an exception is raised before
+            # invoke_agent() ever runs (e.g. _build_transcript() itself
+            # raising) — otherwise that branch would hit a NameError instead
+            # of ending the run.
+            result = None
             try:
                 opsdb.send_message(conn, thread_id, "agent", "founder", message, to_agent=agent_name)
 
@@ -796,15 +811,15 @@ class Handler(BaseHTTPRequestHandler):
 
                 if result.ok:
                     opsdb.send_message(conn, thread_id, "agent", agent_name, result.response_text, to_agent="founder")
-                    opsdb.end_run(conn, run_id, "ended")
+                    opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
                 else:
                     # No response message on failure — never fabricate an
                     # agent answer. The failed run itself is the honest record.
                     sys.stderr.write(f"[control-center] Ask-Agent invocation failed ({result.error_kind}): {result.error}\n")
-                    opsdb.end_run(conn, run_id, "failed")
+                    opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
             except Exception:
                 try:
-                    opsdb.end_run(conn, run_id, "failed")
+                    opsdb.end_run(conn, run_id, "failed", cost_usd=(result.cost_usd if result is not None else None))
                 except (LookupError, ValueError):
                     pass  # already ended somehow (e.g. by the branch that raised) — nothing more to reconcile
                 raise
