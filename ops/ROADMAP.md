@@ -321,24 +321,46 @@ the fact:
   overwritten on update, with no history table — already lost three
   times for `risks.id=3` itself; the register page carries this
   disclosure honestly rather than hiding the gap.
-- **Milestone D** — Project / Phase Progress, built on a small new
-  structured representation (phase/milestone state exists today only as
-  prose in this file) — no invented percentages; real fractions where
-  genuinely queryable, otherwise an explicit status
-  (Complete/In Progress/Not Started/Paused).
+- **Milestone D — DONE (TASK-022):** Project / Phase Progress
+  (`/progress.html`), built on a new `phases` table (phase/milestone
+  state previously existed only as prose in this file) — no invented
+  percentages; real fractions where genuinely queryable, otherwise an
+  explicit status (Complete/In Progress/Not Started/Paused). Shows a
+  readiness header, the full phase tree, and a "Right now" panel of
+  every non-DONE task not already covered by a phase row. Cleared CTO
+  architecture, Design review, Red Team (one REJECT round — the
+  architecture document self-contradicted about who executes the final
+  "mark complete" writes and when, corrected and re-verified PASS),
+  Development, Code Review, QA, a focused Security review, and CTO final
+  conformance (CONFORMS, no drift) — see
+  `ops/reviews/cto-milestone-d-architecture.md`,
+  `ops/reviews/design-review-milestone-d.md`,
+  `ops/reviews/security-milestone-d-review.md`,
+  `ops/reviews/cto-milestone-d-conformance.md`. The `phases` backfill
+  was deliberately split in two: Development populated every row via
+  `phase-add` (all `not_started`/`in_progress`/inherited-complete
+  states), and the 2 final `phase-set-status` calls marking "Milestone
+  D" and "Founder UI Completeness" themselves `complete` were withheld
+  until CTO conformance formally returned CONFORMS, then executed by
+  the orchestrating session — not Development, not CTO — as the very
+  last step.
 
-Build order: A → B → C → D, unless CTO finds a concrete dependency
-requiring otherwise.
+Build order: A → B → C → D, completed in that order, no dependency
+overrides required.
 
 **Two distinct readiness states — kept separate everywhere this project
 reports status, per the Founder's explicit instruction:**
 
 - **Exploratory Founder Testing ready** = Milestones A + B + C complete.
-  The Founder may begin testing a real app idea through the company at
-  this point, if the Chief of Staff recommends it.
+  TRUE since Milestone C shipped. The Founder may begin testing a real
+  app idea through the company at this point, if the Chief of Staff
+  recommends it.
 - **Founder UI 100% feature-complete** = Milestones A + B + C + D
-  complete. A + B + C being done does **not** mean the UI is 100%
-  complete — that claim requires D as well.
+  complete. **TRUE as of Milestone D's completion** — this is the first
+  point in the project where this claim holds.
+
+All four milestones of the Founder-approved DEC-009 plan are now
+shipped. The Founder UI Completeness effort is complete.
 
 Security hardening (TASK-017/`risks.id=3`, see DEC-008) and the
 remaining Phase 3 orchestration automation (Code Review PASS → QA, QA →
