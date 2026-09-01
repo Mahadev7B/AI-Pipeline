@@ -545,6 +545,63 @@ def cmd_risk_resolve(args: argparse.Namespace) -> None:
     print(f"risk {args.risk_id}: {args.status}")
 
 
+# ----------------------------------------------------------------- phases --
+# Milestone D (TASK-022): the *only* writer of the `phases` table — no HTTP
+# write route, no Founder-facing write UI. Same pattern as risk-add/
+# risk-resolve/decision-record. See
+# ops/reviews/cto-milestone-d-architecture.md Part 6.
+
+def _phase_row_exists(conn: sqlite3.Connection, phase_id: int) -> bool:
+    return conn.execute("SELECT 1 FROM phases WHERE id = ?", (phase_id,)).fetchone() is not None
+
+
+def cmd_phase_add(args: argparse.Namespace) -> None:
+    # Explicit existence checks (not just relying on the FK constraint),
+    # matching risk-add's own scope-validation discipline and Security's
+    # framing in Part 9.2 — a clear error, not a bare IntegrityError, for
+    # the one FK (parent_phase_id) that references this same table and so
+    # could otherwise silently insert a dangling reference if foreign_keys
+    # enforcement were ever off. decisions/tasks FKs are still enforced by
+    # SQLite itself (PRAGMA foreign_keys = ON, connect()) and surfaced as a
+    # clean error by main()'s sqlite3.IntegrityError handler.
+    conn = connect()
+    if args.parent_phase_id is not None and not _phase_row_exists(conn, args.parent_phase_id):
+        raise SystemExit(f"error: no phases row with id={args.parent_phase_id} — --parent-id must reference an existing phase")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO phases (name, parent_phase_id, status, sort_order, "
+            "opened_decision_id, closed_decision_id, task_id, "
+            "milestones_total, milestones_complete, note) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (args.name, args.parent_phase_id, args.status, args.sort_order,
+             args.opened_decision_id, args.closed_decision_id, args.task_id,
+             args.milestones_total, args.milestones_complete, args.note),
+        )
+    print(f"phase added: id={cur.lastrowid} name={args.name!r} status={args.status}")
+
+
+def cmd_phase_set_status(args: argparse.Namespace) -> None:
+    conn = connect()
+    if args.phase_id is not None:
+        phase_id = args.phase_id
+        if not _phase_row_exists(conn, phase_id):
+            raise SystemExit(f"error: no phases row with id={phase_id}")
+    else:
+        row = conn.execute("SELECT id FROM phases WHERE name = ?", (args.phase_name,)).fetchone()
+        if row is None:
+            raise SystemExit(f"error: no phases row named {args.phase_name!r}")
+        phase_id = row["id"]
+    with conn:
+        conn.execute(
+            "UPDATE phases SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), "
+            "closed_decision_id = COALESCE(?, closed_decision_id), "
+            "milestones_complete = COALESCE(?, milestones_complete), "
+            "note = COALESCE(?, note) WHERE id = ?",
+            (args.status, args.closed_decision_id, args.milestones_complete, args.note, phase_id),
+        )
+    print(f"phase {phase_id}: {args.status}")
+
+
 # --------------------------------------------------------------- meetings --
 
 def _normalize_participant(entry) -> dict:
@@ -1565,6 +1622,31 @@ def main() -> None:
     rr.add_argument("--status", required=True, choices=["open", "mitigated", "resolved"])
     rr.add_argument("--mitigation")
     rr.set_defaults(func=cmd_risk_resolve)
+
+    pa = sub.add_parser("phase-add", help="record a phase/milestone row (the only writer of the phases table, at creation)")
+    pa.add_argument("--name", required=True)
+    pa.add_argument("--status", required=True,
+                     choices=["not_started", "in_progress", "complete", "paused"])
+    pa.add_argument("--sort-order", type=int, required=True, dest="sort_order")
+    pa.add_argument("--parent-id", type=int, dest="parent_phase_id")
+    pa.add_argument("--opened-decision-id", type=int, dest="opened_decision_id")
+    pa.add_argument("--closed-decision-id", type=int, dest="closed_decision_id")
+    pa.add_argument("--task-id", type=int, dest="task_id")
+    pa.add_argument("--milestones-total", type=int, dest="milestones_total")
+    pa.add_argument("--milestones-complete", type=int, dest="milestones_complete")
+    pa.add_argument("--note")
+    pa.set_defaults(func=cmd_phase_add)
+
+    ps = sub.add_parser("phase-set-status", help="update a phase's status — the only writer of phases.status after creation")
+    group = ps.add_mutually_exclusive_group(required=True)
+    group.add_argument("--id", type=int, dest="phase_id")
+    group.add_argument("--name", dest="phase_name")   # convenience lookup, resolved to id before UPDATE
+    ps.add_argument("--status", required=True,
+                     choices=["not_started", "in_progress", "complete", "paused"])
+    ps.add_argument("--closed-decision-id", type=int, dest="closed_decision_id")
+    ps.add_argument("--milestones-complete", type=int, dest="milestones_complete")
+    ps.add_argument("--note")
+    ps.set_defaults(func=cmd_phase_set_status)
 
     ms = sub.add_parser("message-send", help="record a message (Founder<->agent or agent<->agent) — the only writer of the messages table")
     ms.add_argument("--thread-id", required=True, dest="thread_id")

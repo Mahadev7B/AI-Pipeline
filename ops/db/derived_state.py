@@ -1019,6 +1019,74 @@ def related_decisions_for_risk(conn: sqlite3.Connection, risk_id: int) -> list[d
     return out
 
 
+def phase_progress_rows(conn: sqlite3.Connection) -> list[dict]:
+    """Every row in `phases`, ordered by `sort_order` — the single shared
+    computation `/progress.html` reads from (Milestone D, TASK-022; see
+    ops/reviews/cto-milestone-d-architecture.md Part 4.3). LEFT JOINs to
+    `decisions` (twice, aliased, for opened/closed) and `tasks` (for
+    `task_id`) so the page can render '#{id} · {date}' / a real task
+    title/status without a second query per row. At most two levels of
+    real nesting exist in the data (Phase → Phase 3A/Founder UI
+    Completeness → Milestone A-D) — callers build the tree from
+    `parent_phase_id` in Python; no recursive CTE needed. Returns one
+    plain dict per phase: {"id", "name", "parent_phase_id", "status",
+    "sort_order", "opened_decision_id", "opened_decision_date",
+    "closed_decision_id", "closed_decision_date", "task_id",
+    "task_title", "task_status", "milestones_total",
+    "milestones_complete", "note", "updated_at"}. No fabricated field —
+    every key is a real column or a real LEFT JOIN result, NULL rendered
+    honestly by the caller."""
+    rows = conn.execute(
+        """
+        SELECT p.id, p.name, p.parent_phase_id, p.status, p.sort_order,
+               p.opened_decision_id, od.date AS opened_decision_date,
+               p.closed_decision_id, cd.date AS closed_decision_date,
+               p.task_id, t.title AS task_title, t.status AS task_status,
+               p.milestones_total, p.milestones_complete, p.note, p.updated_at
+        FROM phases p
+        LEFT JOIN decisions od ON od.id = p.opened_decision_id
+        LEFT JOIN decisions cd ON cd.id = p.closed_decision_id
+        LEFT JOIN tasks t ON t.id = p.task_id
+        ORDER BY p.sort_order, p.id
+        """
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def founder_readiness_summary(conn: sqlite3.Connection) -> dict:
+    """Reads the four Milestone A-D `phases` rows by name (not the
+    'Founder UI Completeness' parent row's own status, which could in
+    principle be set inconsistently with its children — this function
+    is the ground truth, derived from the children directly, exactly
+    the discipline task_progress_fraction() already applies to gates).
+    Returns:
+    {"exploratory_testing_ready": bool,   # A+B+C all status='complete'
+     "ui_100pct_complete": bool,          # above AND D status='complete'
+     "milestones_done": int, "milestones_total": 4}
+    Never a percentage — two real booleans plus a real integer fraction,
+    per DEC-009's own explicit requirement that these two states stay
+    separate everywhere this project reports status (Milestone D,
+    TASK-022, ops/reviews/cto-milestone-d-architecture.md Part 3.4).
+    If the `phases` table hasn't been backfilled yet (or one of the four
+    named rows doesn't exist), that milestone counts as honestly
+    incomplete rather than raising — a missing row is not evidence of
+    completion."""
+    names = ("Milestone A", "Milestone B", "Milestone C", "Milestone D")
+    rows = conn.execute(
+        "SELECT name, status FROM phases WHERE name IN (?, ?, ?, ?)", names
+    ).fetchall()
+    status_by_name = {row["name"]: row["status"] for row in rows}
+    milestones_done = sum(1 for n in names if status_by_name.get(n) == "complete")
+    abc_complete = all(status_by_name.get(n) == "complete" for n in ("Milestone A", "Milestone B", "Milestone C"))
+    d_complete = status_by_name.get("Milestone D") == "complete"
+    return {
+        "exploratory_testing_ready": abc_complete,
+        "ui_100pct_complete": abc_complete and d_complete,
+        "milestones_done": milestones_done,
+        "milestones_total": 4,
+    }
+
+
 def release_readiness_gap(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Milestone 2B5 (TASK-014): tasks whose status is READY_TO_RELEASE,
     DEPLOYED, or DONE but that have no matching row in `deployments` at

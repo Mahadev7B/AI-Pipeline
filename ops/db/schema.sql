@@ -383,6 +383,58 @@ CREATE INDEX IF NOT EXISTS idx_reviewer_invocations_status ON reviewer_invocatio
 -- by opsdb.record_hook_denial(), called by the hook script itself via
 -- its own short-lived opsdb.connect() (a standalone subprocess the
 -- harness spawns per tool call).
+-- Milestone D (TASK-022): phase/milestone state as real, queryable rows —
+-- not parsed from ROADMAP.md's prose, not a hardcoded Python literal.
+-- Written ONLY through opsdb.py's phase-add / phase-set-status commands
+-- (Part 6) -- no HTTP write route, no Founder-facing write UI, matching
+-- how risks/decisions/automation_state are written today. See
+-- ops/reviews/cto-milestone-d-architecture.md Part 2.
+CREATE TABLE IF NOT EXISTS phases (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  name                 TEXT NOT NULL UNIQUE,       -- 'Phase 0' .. 'Phase 3A',
+                                                    -- 'Founder UI Completeness',
+                                                    -- 'Milestone A' .. 'Milestone D',
+                                                    -- 'Phase 4 (proposed)'
+  parent_phase_id      INTEGER REFERENCES phases(id),  -- NULL for the 5 top-level
+                                                        -- rows (Phase 0/1/2/3/4);
+                                                        -- Phase 3A and "Founder UI
+                                                        -- Completeness" point at
+                                                        -- Phase 3; Milestones A-D
+                                                        -- point at "Founder UI
+                                                        -- Completeness"
+  status               TEXT NOT NULL DEFAULT 'not_started'
+                       CHECK (status IN ('not_started','in_progress','complete','paused')),
+  sort_order           INTEGER NOT NULL,           -- explicit display order —
+                                                    -- independent of id/insertion
+                                                    -- order, since backfill and
+                                                    -- future inserts won't match
+  opened_decision_id   INTEGER REFERENCES decisions(id),  -- the DEC-00x that
+                                                           -- approved/started it;
+                                                           -- NULL, never guessed,
+                                                           -- if no single decision
+                                                           -- row cleanly covers it
+  closed_decision_id   INTEGER REFERENCES decisions(id),  -- the DEC-00x that
+                                                           -- marked it complete or
+                                                           -- paused, if any
+  task_id              INTEGER REFERENCES tasks(id),      -- ONLY when this phase
+                                                           -- row is genuinely 1:1
+                                                           -- with one task
+                                                           -- (Milestones A-D, Phase
+                                                           -- 3A); NULL for
+                                                           -- multi-task phases
+                                                           -- (0/1/2/3) — never
+                                                           -- forced
+  milestones_total     INTEGER,                     -- NULL if not honestly
+                                                      -- countable — see Part 3
+  milestones_complete  INTEGER,
+  note                 TEXT,                        -- short, factual, structured
+                                                      -- status note — NOT a copy
+                                                      -- of ROADMAP.md's narrative
+                                                      -- prose (Part 6)
+  updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_phases_parent ON phases(parent_phase_id);
+
 CREATE TABLE IF NOT EXISTS hook_denials (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   role               TEXT NOT NULL,           -- 'developer' (only role hooked this milestone)

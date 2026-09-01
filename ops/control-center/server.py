@@ -184,6 +184,7 @@ import generate_active_work  # noqa: E402 — Milestone A (TASK-019)
 import generate_task  # noqa: E402 — Milestone A (TASK-019)
 import generate_costs  # noqa: E402 — Milestone B (TASK-020)
 import generate_risks  # noqa: E402 — Milestone C (TASK-021)
+import generate_progress  # noqa: E402 — Milestone D (TASK-022)
 from layout import page, e, login_page, setup_required_page  # noqa: E402
 
 HOST = "127.0.0.1"
@@ -477,6 +478,14 @@ class Handler(BaseHTTPRequestHandler):
                 # this server goes through (the do_GET-level check above),
                 # no new write route or auth mechanism.
                 self._send_html(200, generate_risks.build_html(token=SESSION_TOKEN).encode("utf-8"))
+                return
+            if path == "/progress.html":
+                # Milestone D (TASK-022): GET-only, read-only — reuses the
+                # exact same Founder session/CSRF gate every other route on
+                # this server goes through (the do_GET-level check above),
+                # no new write route or auth mechanism. `phases` itself is
+                # written only via opsdb.py's CLI commands, never via HTTP.
+                self._send_html(200, generate_progress.build_html(token=SESSION_TOKEN).encode("utf-8"))
                 return
             if path == "/reviews.html":
                 self._send_html(200, generate_reviews.build_html(token=SESSION_TOKEN).encode("utf-8"))

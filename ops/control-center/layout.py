@@ -49,6 +49,11 @@ NAV_LINKS = [
     ("pipeline.html", "Pipeline"),
     ("agents.html", "Agents"),
     ("decisions.html", "Decisions"),
+    ("progress.html", "Progress"),  # Milestone D (TASK-022) — placed right after Decisions,
+                                    # before Risks: a phase row's opened/closed_decision_id
+                                    # are literally built from the decisions table, the same
+                                    # adjacency reasoning Milestone C used to place Risks next
+                                    # to Decisions.
     ("risks.html", "Risks"),  # Milestone C (TASK-021) — placed right after Decisions: both
                               # are company-governance, read-only registers of durable
                               # record-keeping, a natural adjacent pair.
