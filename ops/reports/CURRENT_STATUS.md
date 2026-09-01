@@ -23,7 +23,7 @@ Generated 2026-09-01 00:21 UTC by `ops/db/report.py` from the live database — 
 ## In progress
 - TASK-016 — Risk id=3 architecture investigation: can agent access be scoped below the Bash tool-category level (FOUNDER_APPROVAL, owner: orchestrator, progress: not broken into steps)
 - TASK-018 — Product architecture completion review: remaining Phase 3, Founder Work Progress capability, Founder Test Readiness definition, ROADMAP correction (ARCHITECTURE, owner: cto, progress: not broken into steps)
-- TASK-019 — Milestone A: Active Work dashboard + Task Detail page (QA, owner: qa, progress: not broken into steps)
+- TASK-019 — Milestone A: Active Work dashboard + Task Detail page (SECURITY_REVIEW, owner: security, progress: not broken into steps)
 
 ## Blocked
 - TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist: no reason recorded
