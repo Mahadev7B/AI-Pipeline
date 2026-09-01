@@ -1,6 +1,6 @@
 # CURRENT_STATUS.md
 
-Generated 2026-09-01 21:15 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-09-01 21:26 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
 ## Company Health: Good
 1 task(s) blocked, 0 high-severity open risk(s)
@@ -28,7 +28,7 @@ Generated 2026-09-01 21:15 UTC by `ops/db/report.py` from the live database — 
 
 ## In progress
 - TASK-023 — risks.id=3 durable closure: OS-level/process-separation sandboxing for Developer (ARCHITECTURE, owner: cto, progress: not broken into steps)
-- TASK-024 — Founder Idea Intake: submit a new idea from the Control Center UI (PLANNING, owner: cto, progress: not broken into steps)
+- TASK-024 — Founder Idea Intake: submit a new idea from the Control Center UI (MOCKUP, owner: design, progress: not broken into steps)
 - TASK-026 — Control Center redesign: a flow-first dashboard, not thirteen tabs of text (MOCKUP, owner: —, progress: not broken into steps)
 
 ## Blocked
