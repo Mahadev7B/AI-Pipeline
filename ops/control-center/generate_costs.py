@@ -77,9 +77,10 @@ def render_advisory(digest: dict) -> str:
     return '''
     <div style="border-radius:10px; border:1px dashed var(--border2); background:var(--panel2); padding:12px 14px; margin-bottom:20px;">
       <div style="font-size:11px; color:var(--text2); line-height:1.6;">
-        <b style="color:var(--text);">Cost tracking begins today.</b> No Ask-Agent, Meeting, Chief-of-Staff, or Code Review
-        invocation has been recorded with a real cost yet &mdash; this is the actual current state of the operational
-        database, not a placeholder. Figures below will populate as the four paths are used. A separate, distinct case
+        <b style="color:var(--text);">Cost tracking begins today.</b> No invocation, across any invocation path (see the
+        &ldquo;By invocation path&rdquo; breakdown below for the current full list), has been recorded with a real cost yet
+        &mdash; this is the actual current state of the operational database, not a placeholder. Figures below will
+        populate as those paths are used. A separate, distinct case
         &mdash; a real invocation whose cost was never captured, because it happened before this page shipped &mdash; is
         labeled <i>&ldquo;recorded before cost tracking&rdquo;</i> everywhere it appears, never merged with
         &ldquo;hasn&rsquo;t happened yet.&rdquo;
