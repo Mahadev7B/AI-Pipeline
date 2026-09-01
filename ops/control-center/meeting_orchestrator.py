@@ -637,6 +637,20 @@ def gather_followup_reply(meeting_id: int, agent_name: str, topic: str, founder_
                                   f"({result.error_kind}): {result.error}\n")
                 opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 return (False, result.error)
+            # NOTE (TASK-020 Code Review, deferred, not fixed here): if
+            # send_message() itself raises here (e.g. a DB lock) after a
+            # real, successful, cost-incurring invoke_agent() call above,
+            # the except block below ends the run "failed" with
+            # cost_usd=None, losing a real known cost. Reordering to
+            # end_run(..., cost_usd=...) before send_message() would trade
+            # that for a different risk — a run marked "ended" whose
+            # position text never got persisted — and the same ordering
+            # is used consistently by _gather_position(),
+            # gather_requested_position(), and retry_position() in this
+            # file, so fixing it here alone would just be inconsistent,
+            # not correct. Left as a pre-existing, narrow race (per Code
+            # Review) for a deliberate follow-up across all four
+            # functions together, not a partial fix now.
             opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
                                 to_agent="founder", meeting_id=meeting_id)
             opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)

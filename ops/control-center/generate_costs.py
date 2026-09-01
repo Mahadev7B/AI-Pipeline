@@ -48,7 +48,7 @@ def _stat_card(label: str, cov: dict, accent: bool = False) -> str:
     color = "var(--accent)" if accent else "var(--text)"
     if cov["n"] == 0:
         big = '<div style="font-size:26px; font-weight:700; color:var(--text3); margin-bottom:4px;">&mdash;</div>'
-        detail = "0 invocations recorded, across all four paths."
+        detail = "0 invocations recorded, across every invocation path (see breakdown below)."
     elif cov["covered"] == 0:
         big = '<div style="font-size:26px; font-weight:700; color:var(--text3); margin-bottom:4px;">not available</div>'
         detail = f'0 of {cov["n"]} invocations have a recorded cost (recorded before cost tracking).'
@@ -160,8 +160,8 @@ def build_html(token: str | None = None) -> str:
 
     body = f'''
 <h1>Costs</h1>
-<div class="sub" style="margin-top:-2px;">Company-wide AI invocation cost across all four Founder-facing paths &mdash;
-  Ask-Agent, Executive Meetings, Chief of Staff, and Code Review. Read-only: no spend ceiling or write-side control
+<div class="sub" style="margin-top:-2px;">Company-wide AI invocation cost across every AI invocation path &mdash; see
+  &ldquo;By invocation path&rdquo; below for the current full list. Read-only: no spend ceiling or write-side control
   lives here &mdash; see <a class="accentlink" href="automation.html">Automation</a> for the poller's own $10.00/day cap,
   unchanged and unduplicated.</div>
 {render_advisory(digest)}
