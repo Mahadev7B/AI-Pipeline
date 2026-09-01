@@ -1,7 +1,53 @@
 # Product Brief — TASK-024: Founder Idea Intake
 
-Author: Product agent · Date: 2026-09-01 · Status: for Design, then CTO
-Task: TASK-024 · Prior state: PLANNING → moved to MOCKUP on delivery of this brief
+**Revision 2 — re-briefed under DEC-013.** Author: Product agent · Date: 2026-09-01
+Status: for Design (revise Start flow), then CTO
+Task: TASK-024 · Prior state: PLANNING → MOCKUP on delivery of this revision
+
+Revision 1 (same file, sections 1–10) was written before DEC-013 and before the
+Founder's mid-design scope correction recorded in `ops/reviews/design-review-task024.md`
+§0. It is **not withdrawn** — most of it still holds and is still the requirement.
+Where DEC-013 supersedes it, the passage is left in place and marked
+`[SUPERSEDED — see §N]` rather than deleted, so the record shows what the company
+believed before the Founder corrected it. New sections §11–§19 carry everything
+DEC-013 adds.
+
+---
+
+## 0. What changed under DEC-013, and what it supersedes
+
+DEC-013 (2026-09-01, the Founder's own written directive) replaces the journey
+this brief was written against.
+
+Revision 1 assumed: **Founder types an idea → it lands in `BACKLOG` → something
+later starts the pipeline.** Design's §0 correction then added a Founder-pressable
+Start. DEC-013 changes what Start *does*.
+
+The journey is now:
+
+> **Raw Idea → Save → Refine/Brainstorm → Interpreted Brief → Founder Approval →
+> Start Execution → Design / CTO / Red Team / Development**
+
+"Start work on this" must **not** launch Design, CTO or Development. It launches an
+idea-understanding stage. Only a Founder-approved interpretation starts real building.
+
+| Revision 1 section | Status under DEC-013 |
+|---|---|
+| §1 The problem | **Holds.** Still the reason this milestone exists. |
+| §2 Who this is for | **Holds**, and matters more — a non-technical Founder is exactly who needs an interpretation checkpoint. |
+| §3 BACKLOG, not auto-start | **Holds.** Auto-start on submit is still out. DEC-013 strengthens the argument rather than weakening it. |
+| §4 What the Founder types | **Holds for intake**, but `business_goal` acquires a new obligation: it is now the *raw idea artifact* and is **write-once**. See §13. |
+| §5 Acceptance criteria | **Extended**, not replaced. AC-1..11 stand; AC-12..24 added in §19. |
+| §6 Scope — what this is NOT | **Holds in full**, extended by §17. |
+| §7 Constraints | **Holds in full.** Unchanged. |
+| §8 Security weight | **Holds**, and grows: the refinement stage makes Founder free text a *model prompt* on a new path. See §18. |
+| §9 Assumptions | One superseded — see marker in §9. |
+| §10 Open questions for CTO | **Superseded by §20**, which carries all four forward plus what DEC-013 adds. |
+
+**The single most important new requirement, stated once, plainly:** the Founder
+must always be able to see **what they originally typed**, next to **what the
+company decided it meant**. Nothing in this milestone may destroy, overwrite, or
+silently improve the raw idea.
 
 ---
 
@@ -66,7 +112,11 @@ This is a real recommendation, not a hedge. Three reasons, in order of weight:
    lets the Founder write three ideas Sunday night and start one Monday. Auto-start
    turns every draft into committed company work.
 
-**What "the second click" is, and is not:** this brief does *not* require building
+**What "the second click" is, and is not:** [SUPERSEDED — see §11 and §15. Design's
+§0 correction established that a Start control *is* required; DEC-013 then established
+that what it starts is refinement, not the pipeline. The paragraph below is left intact
+because its reasoning — that submitting must not equal starting — survives both
+corrections and is still load-bearing.] this brief does *not* require building
 a start-the-pipeline button. Advancing a task out of `BACKLOG` already happens the
 way every other status transition in this company happens — the Founder asks the
 Chief of Staff, or `task-status` is run on their behalf. Intake's job is to get the
@@ -244,9 +294,11 @@ This one has no such bound. What that changes:
   prior milestone.
 - The Founder wants to capture ideas in their own words, not fill in a spec template.
 - Ideas arrive occasionally, not in bulk. No import, no bulk entry.
-- The pipeline that runs after an idea is started is unchanged by this milestone.
+- ~~The pipeline that runs after an idea is started is unchanged by this milestone.~~
+  **[SUPERSEDED by DEC-013 — §11.]** The pipeline gains a stage in front of it. What
+  runs *after Founder approval* is unchanged; what runs *on Start* is new.
 
-## 10. Open questions for CTO
+## 10. Open questions for CTO  [SUPERSEDED — carried forward and extended in §20]
 
 1. `is_stuck()` and `BACKLOG` — resolve the ambiguity `derived_state.py` already documents
    (§3). Must not ship undecided.
