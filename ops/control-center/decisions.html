@@ -52,15 +52,29 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 11:04 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 19:25 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (14 records) — structured, queryable state from the
+  This is the operational decision log (15 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" id="decision-15" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#15 — Finish the risks.id=3 security lock (TASK-023) before any Phase 3 automation work begins</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The Founder asked to complete Phase 3 automation, then asked whether everything could be marked 100% complete. Two facts made that impossible to answer yes honestly: (a) the remaining Phase 3 automation -- automatic Code Review PASS to QA, QA to Security, Security to Release, and automated Developer reinvocation -- has zero code written, so &#x27;complete&#x27; would be false; (b) TASK-023, the security lock DEC-010 and DEC-011 placed in front of that automation, had just FAILED QA with four blocking defects, two of which falsified the design&#x27;s own threat-model claims (the operational database materialising inside every sandbox via git worktree, letting QA forge a review_results row claiming a red-team PASS and flip risks.id=3 to resolved).</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Finish TASK-023 (the OS-level Developer sandboxing lock) through its remaining gates -- Red Team on addendum 3, Development, Code Review, a QA re-run against the same charter that caught the D1-D4 failures, focused Security review, and CTO final conformance. Phase 3 automation is NOT started as part of this; it returns to the Founder as a separate decision once the lock is installed and demonstrably running. Phase 3 stays honestly recorded as in_progress: Phase 3A complete (2 of 2), the security lock in progress, the remaining orchestration automation not started.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The Founder&#x27;s own instruction was &#x27;finish the lock&#x27;. Independently, the orchestrator&#x27;s recommendation was the same and was given before the choice: every serious defect in this milestone was caught by a human-triggered stage doing real work, and Phase 3 automation is precisely what removes the human trigger. Installing and proving the lock before automating on top of it is the sequencing DEC-008 and DEC-010 already established, and QA&#x27;s forged-review-row demonstration is concrete evidence of what unattended operation would inherit if the lock shipped unverified. Marking Phase 3 100% complete was refused as a factual misstatement, of exactly the kind this milestone has repeatedly caught: the sandbox that reported success while every tool call was denied, the docs claiming a protection that could not fire, and QA&#x27;s own forged approval record.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Phase 3 automation is deferred again, with no date. The remaining TASK-023 work is estimated at 3-8 active hours and that estimate is explicitly low-confidence: an earlier estimate of 45-70 minutes for the same remaining gates was followed by a QA FAIL with four blocking defects. Two closing steps are also not the orchestrator&#x27;s to perform and were disclosed as such: a human must run the OS-provisioning runbook (account, sudoers line, gateway and broker services), and a real-endpoint cutover smoke test against the live model service has been deliberately deferred throughout to avoid handling real credential material. &#x27;Lock complete&#x27; will therefore mean &#x27;built, reviewed and verified up to the provisioning line&#x27;, not &#x27;installed and live&#x27;, and must be reported that way.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
         <div class="card" id="decision-14" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#14 — TASK-017/risks.id=3: pursue OS-level sandboxing over the narrowed Developer-denylist protection</div>
