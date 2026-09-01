@@ -1,5 +1,5 @@
 [Unit]
-Description=ai-pipeline egress proxy (TASK-023, finding B3) — the ONLY permitted egress path out of a sandboxed Developer session; allowlisting HTTP-CONNECT proxy to the model API host(s) only
+Description=ai-pipeline egress proxy (TASK-023, findings B3 + C2) — the ONLY permitted egress path out of a sandboxed Developer session; model-API credential gateway plus an allowlisting HTTP-CONNECT reserve path
 Documentation=file:///home/user/AI-Pipeline/ops/reviews/cto-task023-architecture.md file:///home/user/AI-Pipeline/ops/reviews/task023-os-provisioning-runbook.md
 After=network.target
 
@@ -25,10 +25,14 @@ Group=ai-pipeline-db
 # ======================================================================
 WorkingDirectory=/home/user/AI-Pipeline
 Environment=PYTHONUNBUFFERED=1
-# The allowlist config file: host-owned, NOT bind-mounted into the sandbox,
-# 0644 root-owned (or trusted-account-owned) and NOT writable by
-# ai-developer (the addendum, B3, and Red Team verification #5). It lists
-# exactly the model-API host(s) and this environment's chained agent proxy.
+# The config file: host-owned, NOT bind-mounted into the sandbox, 0644
+# root-owned (or trusted-account-owned) and NOT writable by ai-developer
+# (addendum B3, and Red Team verification #5). It carries the CONNECT
+# reserve allowlist (normally empty) AND the `gateway` block naming the one
+# model-API destination, the request-path allowlist and the spend ceiling.
+# The REAL CREDENTIAL is not in this file — it is a separate 0600 file this
+# unit's User= owns, named by gateway.credential_file, and the daemon
+# refuses to start if it is missing, empty, or readable by anyone else.
 Environment=EGRESS_PROXY_CONFIG_PATH=/etc/ai-pipeline/egress-allowlist.json
 Environment=EGRESS_PROXY_SOCKET_PATH=/run/ai-pipeline/egress.sock
 ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/egress_proxy.py

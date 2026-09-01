@@ -295,53 +295,191 @@ sudo useradd --system --no-create-home --shell /usr/sbin/nologin ai-pipeline-bro
 sudo usermod -aG ai-pipeline-db ai-pipeline-broker
 ```
 
+**Option B also needs one more step that Option A does not, and it is the
+exact point a human following this runbook previously stopped** (Code
+Review round-3 non-blocking item): `ai-pipeline-broker` must be able to
+**read AND write `ops/db/operations.sqlite3` — and to create files in its
+containing directory**, because SQLite writes `operations.sqlite3-wal` and
+`operations.sqlite3-journal` alongside the database and a read-only
+directory makes every write fail with `attempt to write a readonly
+database` even when the database file itself is writable. Under Option A
+this is automatic (the broker runs as the account that already owns the
+repo); under Option B it must be granted explicitly:
+
+```bash
+# The database file and its DIRECTORY are group-owned by ai-pipeline-db,
+# group-writable, with the setgid bit on the directory so the -wal/-journal
+# files SQLite creates inherit the group instead of the broker's primary one.
+sudo chgrp ai-pipeline-db /home/user/AI-Pipeline/ops/db /home/user/AI-Pipeline/ops/db/operations.sqlite3
+sudo chmod g+rwx,g+s /home/user/AI-Pipeline/ops/db
+sudo chmod g+rw     /home/user/AI-Pipeline/ops/db/operations.sqlite3
+# Any pre-existing sidecar files need the same treatment (they may not exist):
+sudo chgrp ai-pipeline-db /home/user/AI-Pipeline/ops/db/operations.sqlite3-wal 2>/dev/null || true
+sudo chgrp ai-pipeline-db /home/user/AI-Pipeline/ops/db/operations.sqlite3-shm 2>/dev/null || true
+```
+
+`ai-developer` must NOT be given any of this — it is already a member of
+`ai-pipeline-db` for the *socket*, and the whole point of §3 is that the
+database file is never present in its namespace at all. Note the
+consequence and accept it deliberately: `ai-pipeline-db` group membership
+now confers direct write access to the database file for accounts that
+hold it, so keep that group's membership to `ai-developer` (socket only,
+no filesystem path to the file) and the broker account. If you would rather
+not couple socket access and file access in one group, create a separate
+`ai-pipeline-dbfile` group for the file/directory ownership above and leave
+`ai-pipeline-db` for the socket alone — either is fine; what is not fine is
+leaving the broker unable to write and discovering it at first handoff.
+
+Verify, as the broker's own account:
+
+```bash
+sudo -u ai-pipeline-broker python3 -c \
+  "import sqlite3; c=sqlite3.connect('/home/user/AI-Pipeline/ops/db/operations.sqlite3'); \
+   c.execute('BEGIN IMMEDIATE'); c.rollback(); print('broker can write')"
+```
+
 ---
 
-## 6b. Start `egress_proxy.py` — the model-API egress carve-out (B3)
+## 6b. Start `egress_proxy.py` — the model-API egress carve-out (B3) and the credential gateway (C2)
 
 The sandbox keeps `--unshare-all` (no network), and reaches the model API
-through exactly ONE bind-mounted Unix socket served by a host-side,
-allowlisting HTTP-CONNECT proxy (`ops/control-center/egress_proxy.py`,
-architecture doc Addendum B3). This proxy runs as a trusted account —
-NEVER `ai-developer` — with a host-owned allowlist config file that is NOT
-bind-mounted into the sandbox.
+through exactly ONE bind-mounted Unix socket served by a host-side daemon
+(`ops/control-center/egress_proxy.py`). That daemon runs as a trusted
+account — NEVER `ai-developer`, NEVER root (it refuses to start as root) —
+with a host-owned config file and a host-owned credential file, **neither
+of which is bind-mounted into the sandbox**.
 
-First, write the allowlist config (owned by the trusted account or root,
-`0644` — i.e. root-writable only, and world-READABLE on the host like most
-of `/etc`; the security property that matters is that it is **not
-bind-mounted into the sandbox**, so it is neither readable nor widenable
-from *inside* the sandbox, which is what Red Team verified as property #5.
-`launch_developer_sandboxed.sh` binds only an enumerated handful of `/etc`
-paths — `/etc/alternatives`, `/etc/ssl`, `/etc/pki`, `/etc/passwd`,
-`/etc/group` — never `/etc` itself, and it refuses to start if that list is
-ever edited into something that would expose `/etc/ai-pipeline`. Verified
-live during Development: with this file present on the host, `ls
-/etc/ai-pipeline` from inside the real sandbox reports it does not exist.
-If you prefer it unreadable on the host as well, `chmod 0640` and `chgrp`
-it to the egress proxy's own account — the proxy is the only process that
-reads it):
+It serves two modes on that one socket:
+
+- **Gateway mode (the live model path, architecture doc addendum 2 / C2).**
+  The sandbox holds only a non-secret sentinel
+  (`ANTHROPIC_API_KEY=SANDBOX-PLACEHOLDER-NOT-A-CREDENTIAL`) and an
+  `ANTHROPIC_BASE_URL` pointing at the in-sandbox relay. The gateway
+  terminates the request, substitutes the REAL credential from the `0600`
+  file below, and re-originates over TLS to the host named in **its own
+  config** — never one named by the request.
+- **CONNECT mode (reserve, addendum 1 / B3).** Kept with an **empty**
+  `allow` list. This is not dormant surface: Red Team confirmed the real
+  CLI still issues `CONNECT api.anthropic.com:443` and `CONNECT
+  http-intake.logs.us5.datadoghq.com:443` (Datadog telemetry) on this same
+  socket, all correctly `403`-ed, with the CLI working normally.
+  Reproduced again during Development: 5 × `CONNECT api.anthropic.com:443`
+  denied in one short real-binary run, exit 0, model call completed through
+  the gateway. **Do NOT add `api.anthropic.com:443` back to `allow`** — the
+  CLI does not need a credentialed CONNECT, and giving it one would hand it
+  a content-opaque tunnel to the API that the gateway cannot see.
+
+First, write the credential file. This is the only place on the host the
+real model-API credential exists for this design, and it must be `0600` and
+owned by the account the daemon runs as — the daemon refuses to start
+otherwise (contract clause C9), rather than silently forwarding
+un-credentialed or forwarding the sentinel:
 
 ```bash
 sudo mkdir -p /etc/ai-pipeline
+# Write the credential WITHOUT it entering your shell history:
+sudo install -o <trusted-account> -g <trusted-account> -m 0600 /dev/null \
+  /etc/ai-pipeline/model-api-credential
+sudo -u <trusted-account> $EDITOR /etc/ai-pipeline/model-api-credential   # one line, no trailing junk
+sudo ls -l /etc/ai-pipeline/model-api-credential
+# expect: -rw------- 1 <trusted-account> <trusted-account> ... model-api-credential
+```
+
+Then write the config (owned by the trusted account or root; the security
+property that matters is that it is **not bind-mounted into the sandbox**,
+so it is neither readable nor widenable from *inside*, which is what Red
+Team verified as property #5. `launch_developer_sandboxed.sh` binds only an
+enumerated handful of `/etc` paths — `/etc/alternatives`, `/etc/ssl`,
+`/etc/pki`, `/etc/passwd`, `/etc/group` — never `/etc` itself, and it
+refuses to start if that list is ever edited into something that would
+expose `/etc/ai-pipeline`, which is now the home of BOTH the config and the
+credential):
+
+```bash
 sudo tee /etc/ai-pipeline/egress-allowlist.json >/dev/null <<'JSON'
 {
-  "allow": ["api.anthropic.com:443"],
-  "upstream_proxy": null
+  "allow": [],
+  "upstream_proxy": null,
+  "gateway": {
+    "upstream": "api.anthropic.com:443",
+    "credential_file": "/etc/ai-pipeline/model-api-credential",
+    "credential_header": "x-api-key",
+    "allowed_paths": ["/v1/messages", "/api/hello"],
+    "max_requests_per_session": 500,
+    "max_request_bytes_per_session": 268435456,
+    "max_request_body_bytes": 33554432
+  }
 }
 JSON
 sudo chmod 0644 /etc/ai-pipeline/egress-allowlist.json
 ```
 
-- `allow` is an exact list of `hostname:port`. `api.anthropic.com:443` is
-  the model API. Deliberately narrower than the ambient environment's own
-  `NO_PROXY`: package registries (`registry.npmjs.org`, `pypi.org`,
-  `files.pythonhosted.org`) are NOT listed and are therefore denied — the
-  "no ad-hoc `pip install`" property is preserved, not reopened.
-- `upstream_proxy` (optional): set it to this environment's own agent
-  egress proxy `host:port` (see `HTTPS_PROXY` / `/root/.ccr/README.md`) if
-  outbound HTTPS on this host must be chained through it; the egress proxy
-  then issues its own CONNECT to that upstream for allowlisted destinations.
-  Leave `null` for a host with direct outbound to the API.
+- `allow` is the CONNECT reserve list, an exact list of `hostname:port`.
+  **Empty is the correct and expected value now.** An empty `allow` is
+  accepted *only* alongside a valid `gateway` block; empty `allow` with no
+  gateway still refuses to start, exactly as before (clause C9 — the
+  fail-closed guard was reconciled, not deleted). Package registries
+  (`registry.npmjs.org`, `pypi.org`, `files.pythonhosted.org`) are not
+  listed and are therefore denied: the "no ad-hoc `pip install`" property
+  is preserved, not reopened.
+- `gateway.upstream` is **the only** source of the destination. The
+  request's URI authority and `Host:` header are never consulted. This is
+  the single line that decides whether the operator's credential can be
+  stolen in one request; do not "improve" the daemon to derive it from the
+  request.
+- `gateway.credential_header` is `x-api-key` for a Console API key, or
+  `authorization` (with `"credential_prefix": "Bearer "`, which is the
+  default for that header) for a claude.ai OAuth token. **Which one is
+  correct on the production host is a DevOps pre-cutover verification, not
+  an assumption** — see step 0b below.
+- `gateway.allowed_paths` is fail-closed. A real session was observed using
+  exactly `HEAD /api/hello` and `POST /v1/messages?beta=true`; anything else
+  gets a visible `403` from the gateway rather than a silent widening of
+  what the operator's credential is used for. If a genuinely needed
+  endpoint is missing you will see it as a `gateway_denied_path` log line —
+  add it deliberately, with review.
+- `max_requests_per_session` / `max_request_bytes_per_session` are the
+  gateway-side spend ceiling. They exist because the CLI's own
+  `--max-budget-usd` is enforced by the *untrusted* side and is worth
+  nothing against a compromised session. They are a crude request/byte cap,
+  not token-accurate cost accounting; their job is to turn "unbounded"
+  into "bounded and alarming" (`429` + a `gateway_budget_exceeded` log
+  line). Size them for a real Developer task on this deployment.
+- `gateway.ca_file` (optional): set it only if this host's outbound path
+  re-terminates TLS with a private CA. On THIS container the ambient agent
+  proxy's bundle is `/root/.ccr/ca-bundle.crt` under a `0700 /root` — which
+  a non-root `ai-pipeline-egress` account cannot read. The system store
+  works here (verified: a real `401` from `api.anthropic.com` both ways).
+  If a deployment does need a private CA, **provision a readable copy owned
+  by the trusted account and point `ca_file` at it** — do NOT run the
+  daemon as root (it refuses) and do NOT disable verification (there is no
+  config key that can, by design: clause C10).
+- `upstream_proxy` (optional, top level): set it to this environment's own
+  agent egress proxy `host:port` (see `HTTPS_PROXY` / `/root/.ccr/README.md`)
+  if outbound HTTPS on this host must be chained through it. The gateway
+  inherits it for its own TLS re-origination (and will otherwise fall back
+  to the daemon's own `HTTPS_PROXY` environment variable); the CONNECT
+  reserve path chains through it too. Leave `null` for a host with direct
+  outbound to the API.
+
+### 0b. DevOps pre-cutover verification: the production auth shape
+
+This is a **gate, not a suggestion** (architecture doc, second addendum,
+residual 4). Everything above was determined against this container's CLI
+build and its managed-OAuth arrangement. Before cutover, DevOps must
+confirm, on the production host:
+
+1. Whether that account authenticates with a Console API key (`x-api-key`)
+   or a claude.ai OAuth token (`Authorization: Bearer`), and set
+   `credential_header`/`credential_prefix` accordingly.
+2. Whether the organisation permits API-key authentication at all — the
+   binary carries a "Your organization has disabled API key
+   authentication" path.
+3. Whether the ambient outbound proxy re-terminates TLS, and with which CA.
+
+**If the production account cannot present a header-injectable credential,
+this mechanism does not apply as designed and the milestone returns to CTO.
+It does not get patched around in code.**
 
 Then install the unit (same REQUIRED `User=` edit discipline as the broker —
 an intentionally-invalid placeholder, fails loud with `217/USER`, never
@@ -422,6 +560,73 @@ instructions.
 
 ---
 
+## 7b. Assertions the QA charter must make about the credential gateway
+
+Handed forward for the live QA charter (§7 sequencing item 7 of the
+architecture doc). These are the addendum-2 items (g)–(j) plus the specific
+assertions Red Team's binding contract requires. Development has proved
+each of them at the unit/integration level
+(`ops/db/test_egress_gateway.py`, 50 checks) and, where marked *[live]*,
+against the real binary in a real sandbox during this pass — QA re-runs
+them against the provisioned, real-account deployment.
+
+- **(g)** A real sandboxed session authenticates and completes a model call
+  with **no credential file present anywhere in the namespace**. *[live:
+  real `claude` 2.1.252 under real `bwrap --unshare-all` through the
+  shipped wrapper — exit 0, `apiKeySource: ANTHROPIC_API_KEY`, upstream
+  received the injected credential, sandbox held only the sentinel.]*
+- **(h)** The credential path (`/home/claude/...` here, the production
+  equivalent there) and `/etc/ai-pipeline` (config **and** credential
+  file) all resolve `exists=False` inside the sandbox.
+- **(i)** The sentinel never reaches upstream — asserted across a
+  **multi-request keep-alive session whose responses are real streamed
+  SSE**, not one call and not a `Content-Length` stub. *[live: 2/2 real-CLI
+  requests on one gateway connection carried the injected credential, 0
+  carried the sentinel, over real chunked SSE.]*
+- **(j)** Positive control: the sentinel, written into the worktree or a
+  broker free-text field, is worthless — the exfil path that would have
+  been decisive under the "just bind the credential" option now carries
+  nothing of value.
+- **CONNECT deny-assertions (named by Red Team).** With the empty `allow`
+  list, `CONNECT api.anthropic.com:443` and `CONNECT
+  http-intake.logs.us5.datadoghq.com:443` must both be `403`-ed and the CLI
+  must still work. *[live: 5 × `CONNECT api.anthropic.com:443` denied in one
+  run; session exit 0.]*
+- **No credential in logs.** Drive a session, then grep the daemon's ENTIRE
+  log output for the credential literal and for prompt text — both must be
+  absent.
+- **Fixed destination.** From inside a live sandbox, send both of Red
+  Team's attack shapes at the egress socket — absolute-form
+  `POST http://<attacker>/v1/messages` and origin-form with
+  `Host: <attacker>` — and confirm the attacker host receives zero
+  connections and zero bytes. *[live: both shapes run from inside a real
+  bwrap sandbox; attacker listener recorded 0 connections; both requests
+  reached the configured upstream instead.]*
+- **Path allowlist.** `POST /steal` (in both request forms) and a cloud
+  metadata `GET` must be `403`-ed by the gateway and never reach upstream.
+  *[live, from inside the sandbox.]*
+- **Framing.** `Content-Length` + `Transfer-Encoding`, duplicate/non-decimal
+  `Content-Length`, chunked requests, obs-fold headers and oversized header
+  blocks must all be `400` + close.
+- **TLS.** An untrusted/bad upstream certificate must fail closed (`502`)
+  with no credential sent, and there must be no configuration that disables
+  verification.
+- **Spend ceiling.** Exceeding `max_requests_per_session` or
+  `max_request_bytes_per_session` must produce a `429` and a
+  `gateway_budget_exceeded` log line.
+
+**Two factual corrections Red Team recorded against the architecture
+document's own addendum-2 text**, repeated here so a reader of this runbook
+does not inherit them: (a) the addendum says nothing the sandbox does uses
+`HTTPS_PROXY`/CONNECT any more — false, the real CLI still issues CONNECTs
+on this socket, which is precisely why the reserve path and its deny-tests
+stay; (b) the addendum's recommended empty allowlist was, as written,
+incompatible with the shipped `AllowlistConfig.load()` guard — resolved by
+clause C9's "empty `allow` is permitted only alongside a valid gateway",
+not by deleting the guard.
+
+---
+
 ## 8. What this runbook deliberately does NOT do
 
 - It does not change the default Developer-invocation path anywhere in
@@ -443,4 +648,16 @@ instructions.
   wall-clock `--timeout-s` default (in `launch_developer_session.py`) are
   both explicitly flagged in those files as placeholder values needing
   Founder/CTO/Red Team confirmation, not numbers this runbook or
-  Development independently authorized.
+  Development independently authorized. The same applies to the gateway's
+  `max_requests_per_session` / `max_request_bytes_per_session` defaults in
+  §6b: they are a real, enforced ceiling (unlike `--max-budget-usd`, which
+  the untrusted side enforces on itself), but the specific numbers are
+  starting values for this deployment to set, not reviewed figures.
+- It does not put the model-API credential anywhere near the sandbox. The
+  credential file provisioned in §6b lives beside the allowlist config,
+  `0600`, owned by the egress daemon's own trusted account, and
+  `launch_developer_sandboxed.sh` carries a fail-closed guard that refuses
+  to start if its `/etc` bind list is ever edited into something that would
+  expose that directory. If a deployment moves the credential elsewhere,
+  the guard's `EGRESS_CREDENTIAL_DIR` value must move with it — the guard
+  is only as good as that value.

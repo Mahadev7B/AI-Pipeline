@@ -146,6 +146,26 @@ if [ ! -x "$CLAUDE_BIN" ]; then
   echo "needs a reviewed change to the bind set, not an ad-hoc widening)" >&2
   exit 1
 fi
+# CODE REVIEW round-3 non-blocking item: hold CLAUDE_BIN to the SAME
+# standard as TIMEOUT_BIN/PYTHON_BIN below — resolve it host-side and check
+# that it lands under a tree this wrapper actually binds. Without this, a
+# /opt/claude-code/bin/claude that is a symlink OUT of the bound directory
+# passes the -x check here (where the whole host filesystem is visible) and
+# then fails inside the namespace with a bare "No such file or directory"
+# and no diagnostic. /usr is accepted as well as $CLAUDE_INSTALL_DIR
+# because both are bound read-only below.
+CLAUDE_BIN="$(readlink -f "$CLAUDE_BIN" 2>/dev/null || true)"
+if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
+  echo "error: could not resolve the claude CLI to a real executable path" >&2
+  exit 1
+fi
+case "$CLAUDE_BIN" in
+  "$CLAUDE_INSTALL_DIR"/*|/usr/*) ;;
+  *)
+    echo "error: $CLAUDE_BIN resolves outside $CLAUDE_INSTALL_DIR and /usr, the only trees" >&2
+    echo "this wrapper binds — refusing to widen the bind set implicitly. Re-review §4.4." >&2
+    exit 1 ;;
+esac
 
 # bwrap itself — absolute, like every other binary in this exec chain, so
 # the launch never depends on sudo's `secure_path` (Code Review non-blocking
@@ -199,6 +219,25 @@ done
 # the sandbox's OWN loopback, isolated in its netns.
 EGRESS_RELAY_PORT="8889"
 
+# ADDENDUM 2 (C2) — the credential NEVER enters this namespace.
+#
+# The sandboxed CLI is pointed at the in-sandbox relay via
+# ANTHROPIC_BASE_URL and given a NON-SECRET SENTINEL as its API key. The
+# host-side egress_proxy.py gateway terminates the request on the other end
+# of the bind-mounted Unix socket, replaces this sentinel with the real
+# credential read from a 0600 file owned by its own trusted account, and
+# re-originates over TLS. Verified against the real CLI: ANTHROPIC_API_KEY
+# takes precedence over any on-disk credential and its value is never
+# validated locally, so a sentinel is enough to make the CLI function while
+# leaving nothing of value inside the sandbox (QA charter item (j): this
+# literal, if smuggled out through the worktree or a broker free-text
+# field, is worthless).
+#
+# This literal is safe to hold in a reviewed script in git BECAUSE IT IS
+# NOT A CREDENTIAL. It must stay byte-identical to
+# egress_proxy.SENTINEL_API_KEY, which the gateway logs as `sentinel_seen`.
+SANDBOX_SENTINEL_API_KEY="SANDBOX-PLACEHOLDER-NOT-A-CREDENTIAL"
+
 BWRAP_ARGS=(
   --unshare-all
   --die-with-parent
@@ -235,6 +274,11 @@ BWRAP_ARGS=(
   --setenv OPSDB_BROKER_TOKEN "$OPSDB_BROKER_TOKEN"
   --setenv EGRESS_UNIX_SOCKET "$OPSDB_EGRESS_SOCKET"
   --setenv EGRESS_RELAY_PORT "$EGRESS_RELAY_PORT"
+  # C2: point the CLI's model calls at the in-sandbox relay (which forwards
+  # to the one bind-mounted Unix socket) and hand it the sentinel, never a
+  # credential. See SANDBOX_SENTINEL_API_KEY above.
+  --setenv ANTHROPIC_BASE_URL "http://127.0.0.1:$EGRESS_RELAY_PORT"
+  --setenv ANTHROPIC_API_KEY "$SANDBOX_SENTINEL_API_KEY"
   # A writable, sandbox-local, ephemeral config dir for claude's own
   # runtime state (session cache etc.) — carved out of the tmpfs /tmp
   # already bound above, never the real $HOME/.claude.json this design's
@@ -314,15 +358,25 @@ done
 # location. If a deployment moves the config, move this with it — the guard
 # below is only as good as this value.
 EGRESS_ALLOWLIST_DIR="/etc/ai-pipeline"   # host-only — must NEVER be reachable inside
+# ADDENDUM 2 (C2): the real model-API credential file lives in the same
+# trusted-side directory (egress_proxy.py reads it at
+# gateway.credential_file, 0600, owned by its own account). It is covered
+# by the SAME fail-closed guard, named separately so that moving one
+# without the other cannot silently expose the credential — if a deployment
+# puts the credential somewhere else, this value moves with it.
+EGRESS_CREDENTIAL_DIR="/etc/ai-pipeline"  # host-only — must NEVER be reachable inside
 for etc_path in /etc/alternatives /etc/ssl /etc/pki /etc/passwd /etc/group; do
   # Fail closed if this list ever grows into something that would expose the
-  # allowlist config (e.g. a well-meaning future "/etc" entry).
-  case "$EGRESS_ALLOWLIST_DIR/" in
-    "$etc_path"/*)
-      echo "error: refusing to bind $etc_path — it would expose $EGRESS_ALLOWLIST_DIR" >&2
-      echo "inside the sandbox, breaking the B3 allowlist trust boundary." >&2
-      exit 1 ;;
-  esac
+  # allowlist config or the credential file (e.g. a well-meaning future
+  # "/etc" entry).
+  for protected_dir in "$EGRESS_ALLOWLIST_DIR" "$EGRESS_CREDENTIAL_DIR"; do
+    case "$protected_dir/" in
+      "$etc_path"/*)
+        echo "error: refusing to bind $etc_path — it would expose $protected_dir" >&2
+        echo "inside the sandbox, breaking the egress allowlist / credential trust boundary." >&2
+        exit 1 ;;
+    esac
+  done
   if [ -e "$etc_path" ]; then
     BWRAP_ARGS+=(--ro-bind "$etc_path" "$etc_path")
   fi
@@ -353,6 +407,17 @@ DEVELOPER_MAX_BUDGET_USD="5.00"
 # loopback, then forks+execs claude with the argv below passed through
 # unchanged (no shell re-interpretation of $PROMPT_TEXT — it is a single
 # argv element handed to os.execv). See egress_relay.py's own docstring.
+#
+# CODE REVIEW round-3 C1 — `--verbose` is REQUIRED, not decorative: CLI
+# 2.1.252 exits 1 with "When using --print, --output-format=stream-json
+# requires --verbose" before any work happens. Reproduced against the real
+# binary, and the fixed argv re-verified against the real binary through
+# this wrapper (a stub `claude` accepts any argv and is exactly what let
+# this survive three review rounds). Do NOT "simplify" to
+# `--output-format json` to match agent_runtime.py: `json` emits one object
+# after the run completes and structurally cannot stream, which would
+# delete §4.1 step 4's live-visibility property that §4.2's whole disclosed
+# ergonomics tradeoff rests on.
 exec "$BWRAP_BIN" "${BWRAP_ARGS[@]}" -- \
   "$TIMEOUT_BIN" --signal=KILL "$WALLCLOCK_S" \
   "$PYTHON_BIN" "$RELAY_SCRIPT" \
@@ -360,5 +425,6 @@ exec "$BWRAP_BIN" "${BWRAP_ARGS[@]}" -- \
   --agent developer \
   --tools "Read,Edit,Write,Bash,Grep,Glob,Skill" \
   --output-format stream-json \
+  --verbose \
   --max-budget-usd "$DEVELOPER_MAX_BUDGET_USD" \
   -p "$PROMPT_TEXT"

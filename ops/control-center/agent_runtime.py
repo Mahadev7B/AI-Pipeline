@@ -324,6 +324,15 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
     try:
         stdout_bytes, stderr_bytes = proc.communicate(timeout=timeout_s)
     except subprocess.TimeoutExpired:
+        # The bool _kill_process_group() now returns is deliberately IGNORED
+        # here (Code Review round-3 non-blocking item, made explicit rather
+        # than left to inference). False means "not permitted to signal that
+        # process group", which can only happen for a cross-UID child — and
+        # every child on THIS path is spawned by this same process, under
+        # this same UID, with no `sudo` in the chain, so the refusal case is
+        # unreachable. If that ever changes, this `proc.communicate()` would
+        # block forever on a surviving child and this call site must handle
+        # the False the way launch_developer_session._on_timeout() does.
         _kill_process_group(proc)
         proc.communicate()  # reap
         return RuntimeResult(ok=False, error=f"the agent did not respond within {timeout_s:g}s.",

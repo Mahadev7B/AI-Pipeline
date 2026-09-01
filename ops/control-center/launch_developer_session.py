@@ -240,15 +240,44 @@ def _write_session_files(worktree_path: Path, transcript: str, token: str) -> tu
     return session_dir, prompt_file, token_file
 
 
-def _stream_process_output(proc: subprocess.Popen, timed_out: threading.Event) -> bool:
+def _write_out(chunk: bytes) -> None:
+    """Write raw child output to this process's own stdout.
+
+    Code Review round-3 non-blocking item: `sys.stdout.buffer` is the right
+    target for the real CLI path (the child's output is `stream-json`
+    NDJSON — arbitrary UTF-8, forwarded byte-for-byte, never re-encoded),
+    but a test harness that replaces `sys.stdout` with a text-only object
+    (`io.StringIO`, pytest's capture) has no `.buffer` and this used to
+    raise `AttributeError` in the middle of the read loop. Fall back to a
+    decoded text write in that case."""
+    buffer = getattr(sys.stdout, "buffer", None)
+    if buffer is not None:
+        buffer.write(chunk)
+        buffer.flush()
+    else:
+        sys.stdout.write(chunk.decode("utf-8", errors="replace"))
+        sys.stdout.flush()
+
+
+def _stream_process_output(proc: subprocess.Popen, timed_out: threading.Event) -> tuple[bool, str | None]:
     """Stream the child's combined stdout/stderr to our own stdout as it is
     produced, WITHOUT ever blocking indefinitely (Code Review R3).
 
-    Returns True if the stream reached EOF — the normal path, including a
-    timeout whose kill actually worked — and False if we gave up on a stream
-    that never closed, which is exactly the refused-cross-UID-kill case the
-    B2.4 backstop exists for. The caller must treat False as "abandoned",
-    not as a clean exit.
+    Returns `(reached_eof, failure_kind)`:
+      * `(True, None)`  — the stream reached EOF. The normal path, including
+        a timeout whose kill actually worked.
+      * `(False, "timeout")` — we stopped draining a stream that never
+        closed after the wall-clock timeout fired: the refused-cross-UID-kill
+        case the B2.4 backstop exists for.
+      * `(False, "read_error")` — `select`/`os.read` failed with NO timeout
+        in play. Code Review round-3 non-blocking item: this is a broken
+        pipe/closed fd, NOT an unkillable session, and the caller must not
+        describe it as "exceeded the timeout and could not be killed",
+        which would be simply false.
+
+    Either False is "abandoned" — the caller must not treat it as a clean
+    exit — but the two have different causes and must be reported
+    differently.
 
     Why not `for line in proc.stdout` plus a `close()` from the timer
     thread: closing a buffered stream while another thread is blocked
@@ -256,9 +285,17 @@ def _stream_process_output(proc: subprocess.Popen, timed_out: threading.Event) -
     stream's lock, and the close raises `RuntimeError: reentrant call`
     instead). Polling the raw fd with select() and os.read() has no such
     interaction, so the timeout is always able to take effect.
+
+    NDJSON note (Code Review round-3 C1): this loop is deliberately a raw
+    BYTE pump, not a line reader. `--output-format stream-json --verbose`
+    emits newline-delimited JSON with many events per turn and individual
+    lines measured at 2 KB+ (the `init` event) and unbounded above, so any
+    line-oriented or fixed-width framing here would risk truncation or
+    interleaving. Forwarding chunks verbatim is correct for arbitrarily
+    long lines and preserves the live streaming §4.1 step 4 requires;
+    verified against the real binary's real NDJSON output.
     """
     fd = proc.stdout.fileno()
-    out = sys.stdout.buffer
     give_up_at: float | None = None
     while True:
         if timed_out.is_set() and give_up_at is None:
@@ -266,21 +303,20 @@ def _stream_process_output(proc: subprocess.Popen, timed_out: threading.Event) -
             # then stop — bounded, so a survivor cannot block us forever.
             give_up_at = time.monotonic() + _POST_TIMEOUT_DRAIN_S
         if give_up_at is not None and time.monotonic() >= give_up_at:
-            return False
+            return (False, "timeout")
         try:
             readable, _, _ = select.select([fd], [], [], _STREAM_POLL_S)
         except (OSError, ValueError):
-            return False
+            return (False, "timeout" if timed_out.is_set() else "read_error")
         if not readable:
             continue
         try:
             chunk = os.read(fd, _READ_CHUNK)
         except OSError:
-            return False
+            return (False, "timeout" if timed_out.is_set() else "read_error")
         if not chunk:
-            return True  # EOF — every writer of this pipe is gone
-        out.write(chunk)
-        out.flush()
+            return (True, None)  # EOF — every writer of this pipe is gone
+        _write_out(chunk)
 
 
 def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
@@ -329,6 +365,12 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
     try:
         proc = subprocess.Popen(
             cmd,
+            # Observed against the real binary while verifying C1: with an
+            # inherited stdin the CLI blocks for 3s per launch waiting for
+            # piped input ("Warning: no stdin data received in 3s") before
+            # proceeding. DEVNULL also means the sandboxed session can never
+            # consume keystrokes from the watching human's own terminal.
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             # Bytes, not text: the stream is drained with os.read() on the raw
@@ -379,7 +421,7 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
     timer = threading.Timer(timeout_s + _OUTER_TIMER_GRACE_S, _on_timeout)
     timer.start()
     try:
-        reached_eof = _stream_process_output(proc, timed_out)
+        reached_eof, failure_kind = _stream_process_output(proc, timed_out)
         if reached_eof:
             proc.wait()
         else:
@@ -403,7 +445,18 @@ def run_sandboxed_developer_session(task_id: int, worktree_path: Path,
     result["abandoned"] = not reached_eof
     result["returncode"] = proc.returncode
     result["ok"] = (proc.returncode == 0) and not result["timed_out"] and reached_eof
-    if result["abandoned"]:
+    if result["abandoned"] and failure_kind == "read_error":
+        # Code Review round-3 non-blocking item: this branch is a stream
+        # read failure with NO timeout in play (broken pipe, closed fd). It
+        # must NOT claim the session "exceeded the timeout and could not be
+        # killed" — that would be false, and would send whoever reads it
+        # hunting for a surviving bwrap process that does not exist.
+        result["error"] = (
+            "the sandboxed Developer session's output stream failed before it closed "
+            "(read error, not a timeout); output may be incomplete and the exit status "
+            "may not reflect the real outcome"
+        )
+    elif result["abandoned"]:
         result["error"] = (
             f"sandboxed Developer session exceeded {timeout_s:g}s and could NOT be killed "
             "by this launcher (cross-UID kill refused); its output stream was abandoned "
