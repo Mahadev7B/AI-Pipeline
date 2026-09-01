@@ -753,7 +753,7 @@ milestone's scope, and I am flagging it rather than doing it.
 DEC-013 requires the stage to *"use the brainstorming skill where useful."* **No such
 skill exists anywhere reachable.** The complete synced set is: `docx`, `import-memory`,
 `morning`, `pdf`, `pptx`, `prompt-master`, `skill-creator`, `xlsx`. The repo's own
-registry (`ops/skills/`) lists thirteen skills, none of them brainstorming. Nothing in
+registry (`ops/skills/`) lists twelve skills, none of them brainstorming. Nothing in
 the session roster is one either.
 
 **Requirement — the mechanism DEC-013 needs, restated so it can actually be built:**
@@ -943,9 +943,16 @@ AC-1 – AC-11 in §5 stand unchanged. Written in the shape QA verifies.
 
 Carried forward from §10, all still open:
 
-1. **`is_stuck()` and `BACKLOG`** — still unresolved, still must not ship undecided.
-   (Note: `FOUNDER_APPROVAL` is already excluded, so the new approval gate is fine;
-   `BACKLOG` is the one that bites.)
+1. **`is_stuck()` and `BACKLOG`** — still unresolved, still must not ship undecided,
+   and **no longer latent.** `task_is_stuck()`'s own docstring (lines 341–349) excuses
+   itself on the grounds that this is "currently latent (no active BACKLOG task
+   exists)". **That is no longer true** — TASK-025 sits in `BACKLOG` today, created
+   2026-09-01. It crosses `STUCK_THRESHOLD_DAYS = 3` on **2026-09-04** and will be
+   rendered as stuck on Active Work from that date, before this milestone ships. The
+   condition the docstring deferred on has already expired.
+   (Verified separately: `FOUNDER_APPROVAL` **is** excluded — `task_is_stuck()` returns
+   False immediately for it — so the new approval gate in §15 is safe. `BACKLOG` is the
+   only one that bites.)
 2. **`project_id` on intake** — `1` or `NULL`. TASK-024 and TASK-025 both currently have
    `NULL`, so the inconsistency is still live.
 3. **`cmd_task_create()`'s refactor shape** — it is still the only write path in
