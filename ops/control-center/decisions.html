@@ -24,6 +24,8 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans)
 .panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
 .card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
 a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
 h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
 .sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
 </style>
@@ -36,7 +38,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
           <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
         </div>
-        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Decisions</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a></div>
+        <div style="display:flex; gap:2px;"><a href="overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="active-work.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</a><a href="pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="decisions.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Decisions</a><a href="risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
@@ -50,16 +52,72 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-08-30 22:51 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-01 02:50 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (9 records) — structured, queryable state from the
+  This is the operational decision log (13 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-13" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#13 — Sequencing: resume TASK-017 security hardening before building full Phase 3 automation</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The Founder asked to &#x27;finish Phase 3 completely&#x27; (automate the remaining handoffs: Code Review PASS -&gt; QA, QA -&gt; Security, Security -&gt; Release, automated Developer reinvocation on reject). This is exactly the &#x27;broader unattended automation&#x27; trigger the Founder&#x27;s own earlier directive (DEC-008, &#x27;PAUSE SECURITY HARDENING, FINISH PRODUCT ARCHITECTURE FIRST&#x27;) named as the condition for resuming TASK-017/risks.id=3 hardening BEFORE, not after, such automation ships. Proceeding straight to full Phase 3 automation while risks.id=3 stays open and TASK-017&#x27;s own design (Development-complete since before the pause) remains unreviewed would silently contradict the Founder&#x27;s own standing sequencing rule.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> TASK-017 resumes at exactly the gate it was paused at: Development was already complete (commit fdaf253) when DEC-008 paused it; it now proceeds through Code Review, QA, Security-adversarial review, and CTO conformance -- the same full gate sequence as every other milestone. Only once TASK-017 reaches a final disposition (risks.id=3 moved to mitigated-with-disclosed-residual-scope, or another Founder-reviewed outcome) does Phase 3 automation work begin. risks.id=4 (reviewer_invocations table specified but never created in the live database, discovered during Milestone B&#x27;s Red Team review) is exactly the kind of gap this resumed review sequence exists to catch -- expected to surface as a Code Review finding, not pre-fixed outside the process.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The Founder chose this explicitly when presented with the direct conflict, selecting it as the recommended option: build on a reviewed security foundation before adding more unattended automation on top of an open, medium-severity risk, rather than accepting new automation risk while an already-scoped mitigation sits unreviewed.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Phase 3 completion is delayed by however long TASK-017&#x27;s remaining gates take (Code Review, QA, Security-adversarial, CTO conformance -- likely several review rounds based on this project&#x27;s own track record on similarly-sized milestones). This is an accepted, explicit tradeoff, not a silent one -- the Founder chose sequencing correctness over speed when given the direct choice.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            
+          </div>
+        </div>
+        <div class="card" id="decision-12" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#12 — Founder UI Completeness: four-milestone plan (A-D), two distinct readiness definitions</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> Two prior TASK-018 rounds under-scoped what the Founder actually required. Round 1 proposed two milestones; the Founder corrected that &#x27;necessary but not sufficient&#x27; and required 100% feature-complete via a strict product-UI-reachability bar. Round 2&#x27;s CTO audit (v2) found the true gap was larger (Active Work dashboard, Task Detail page, Risks register, Project/Phase Progress all missing) and proposed three milestones with Project/Phase Progress deferred indefinitely as lower priority -- the Founder corrected this a second time: Project/Phase Progress must be part of the definition of &#x27;100% complete&#x27;, not permanently deferred, though testing may begin before it ships. Separately, CTO&#x27;s v2 document&#x27;s own prose &#x27;headline count&#x27; (16 COMPLETE/7 PARTIAL/7 MISSING) did not match its own per-item audit table (verified by direct recount: 18 COMPLETE/6 PARTIAL/6 MISSING of 30 total) -- the Founder caught this inconsistency and required one authoritative, reconciled count before any percentage is used again.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Official plan: Milestone A (Active Work dashboard + Task Detail page, shipped together), Milestone B (company-wide AI cost visibility across all four invocation paths), Milestone C (company-wide Risks register), Milestone D (Project/Phase Progress on real structured data, no invented percentages). Build order A to B to C to D unless CTO finds a concrete dependency. Two distinct, permanently separate readiness states: &#x27;Exploratory Founder Testing ready&#x27; = A+B+C complete; &#x27;Founder UI 100% feature-complete&#x27; = A+B+C+D complete -- the former does not imply the latter, and this distinction is kept visible in ROADMAP.md, status reporting, and every Chief of Staff communication going forward. Authoritative UI audit reconciled: 30 capabilities, 18 COMPLETE, 6 PARTIAL, 6 MISSING (verified by direct recount against ops/reviews/cto-product-architecture-completion-v2.md&#x27;s own per-item table, correcting that document&#x27;s inconsistent prose summary). Security hardening (TASK-017/risks.id=3) and remaining Phase 3 orchestration automation stay explicitly deferred, not bundled into this work. Gates per milestone: CTO architecture, Design review where Founder-facing UX changes, Red Team, Development, Code Review, QA, a focused Security review scoped to newly introduced risk only, CTO final conformance -- proportionate, not open-ended: only a concrete blocking defect repeatedly halts progress, lower-severity findings become disclosed follow-up work.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The Founder&#x27;s own bar (100% feature-complete meaning everything reachable through the actual product UI, no exceptions carved out after the fact) requires all four gaps closed, not three -- Project/Phase Progress narrowing the definition mid-review would have quietly redefined &#x27;complete&#x27; to mean something smaller than what was asked for. Separating exploratory-testing-readiness from full completeness lets real Founder testing start without waiting for the full four milestones, which independently honors the Founder&#x27;s separate, standing instruction not to postpone testing until every feature is done.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Milestone D requires genuinely new schema work (no phase/milestone concept exists in the database today), not just a new page -- real, disclosed net-new scope, not a relabeling of existing data. This is accepted as necessary rather than narrowed away. The three-round back-and-forth to reach this plan (two Founder corrections) is itself now the documented record of how the scope was actually settled, preserved rather than smoothed over in retrospect.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            
+          </div>
+        </div>
+        <div class="card" id="decision-11" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#11 — Pause TASK-017 security hardening mid-Development; prioritize product architecture completion</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> TASK-017 (risks.id=3 reduction milestone) had gone through three real adversarial review rounds (Security: one CONCERNS, fixed; Red Team: two REJECTs, both fixed and independently re-verified, final PASS) before Development began implementing the approved design. The Founder judged that continuing to spend repeated architecture/Red Team correction cycles perfecting this one security mechanism, before the rest of the product architecture (remaining Phase 3 orchestration, a Founder progress view, a defined Founder Test Readiness milestone) is complete enough for the Founder to actually test the product, was the wrong sequencing.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> TASK-017 is paused mid-Development by Founder direction. Its findings (ops/reviews/cto-risk3-milestone-architecture.md, security-risk3-milestone-threat-model.md, red-team-risk3-milestone-review.md, and the full TASK-016 investigation trail) are preserved, not discarded. risks.id=3 remains open, mitigation text updated to record the pause and point to the preserved findings. Company attention shifts to: (1) a CTO + Chief of Staff review of what remains before a complete, Founder-testable product architecture, (2) design (not implementation) of a Founder Work Progress capability sourced from the existing operational database, (3) a concrete Founder Test Readiness definition, (4) a corrected ROADMAP.md phase count plus a proposed, unapproved Phase 4 (Human AI Team Experience). Role-level and task-level least-privilege access remains the target architecture for when security work resumes -- not claimed as currently enforced.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> This is a prioritization decision by the Founder, not a technical judgment that the risk is acceptable or solved -- the Founder was explicit that security work returns before any broader unattended automation, external users, production credentials, production deployment automation, or multi-user access. Continuing an open-ended architecture-correction loop on one security mechanism, while the Founder still cannot see overall task progress or exercise the product end-to-end, was judged to provide less value right now than finishing the architecture the Founder needs to actually operate and test the company.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> risks.id=3&#x27;s practical consequence, as disclosed since Phase 3A, remains unreduced -- the approved TASK-017 design that would have started closing it is not yet built. This is an accepted, explicitly time-boxed tradeoff (a checkpoint before higher-risk operation), not an indefinite deferral -- see risks.id=3&#x27;s updated mitigation text and ROADMAP.md&#x27;s TASK-017 note for the explicit resume condition.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            
+          </div>
+        </div>
+        <div class="card" id="decision-10" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#10 — Phase 3A: automated Code Review invoked zero-tool with Python-assembled diff context, and automation runs as an in-process background poller</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-31</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> The Founder required the system to &#x27;recognize completion automatically&#x27; and route a completed Developer handoff to Code Review without a human click, without expanding risks.id=3&#x27;s (Bash-scoping) blast radius further than necessary, and without adding a second process/service to the Founder&#x27;s own operational surface.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> Implemented exactly as adopted -- AUTOMATED_REVIEW_ALLOWLIST invokes code-review with the same unconditional --tools &quot;&quot;/--strict-mcp-config every other invocation in this codebase has always used; automation.py&#x27;s poll loop lives inside server.py&#x27;s own process, started/stopped alongside it.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> Every existing invocation in this codebase has been deliberately zero-tool specifically because no human is watching a given call in real time -- that reasoning applies with equal or greater force to an invocation not even triggered by a Founder action. A single existing process is the smallest addition that satisfies &#x27;automatic.&#x27;</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> Does not resolve, narrow, or reduce risks.id=3 -- its practical consequence genuinely increases in two independently additive ways (an unattended actor; a data-driven filesystem/subprocess surface), disclosed in full in ops/SECURITY.md and risks.id=3&#x27;s own updated mitigation text, not hidden. Automated Code Review structurally cannot catch cross-file consistency/duplication defects a human-supervised session could. See ops/reviews/cto-phase3a-architecture.md section B.1, ops/reviews/security-phase3a-threat-model.md, ops/reviews/red-team-phase3a-architecture.md, ops/reviews/security-adversarial-phase3a.md.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by cto</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
+        <div class="card" id="decision-9" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#9 — Milestone 2B4: Founder authentication mechanism selection</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
@@ -73,7 +131,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-8" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#8 — Human-facing role rename: Orchestrator -&gt; Chief of Staff</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
@@ -87,7 +145,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-7" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#7 — TASK-011 Milestone 2B3B round 2: compound-failure reservation leak in add_meeting_participant() accepted as a known, non-blocking gap (no reconciliation sweep built)</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30</div>
@@ -101,7 +159,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-6" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#6 — Milestone 2B3B round 2: manually-requested meeting participants are not bound by MAX_MEETING_PARTICIPANTS</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29</div>
@@ -115,7 +173,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-5" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#5 — Phase 0 final approval</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29</div>
@@ -129,7 +187,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-4" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#4 — Control Center visual style: dark vs. light</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29</div>
@@ -143,7 +201,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-3" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#3 — Control Center mockup direction</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29</div>
@@ -157,7 +215,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-2" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#2 — Phase 1 Foundation: Founder approval</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28</div>
@@ -171,7 +229,7 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
             <span class="pill" style="background:var(--green-soft); color:var(--green);">Founder approval linked — #3</span>
           </div>
         </div>
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-1" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#1 — Pause/resume control: labeled switch (Concept B)</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-28</div>
