@@ -1,9 +1,9 @@
 # CURRENT_STATUS.md
 
-Generated 2026-09-01 12:08 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
+Generated 2026-09-01 13:04 UTC by `ops/db/report.py` from the live database — do not hand-edit; re-run the script instead.
 
-## Company Health: Fair
-2 task(s) blocked, 0 high-severity open risk(s)
+## Company Health: Good
+1 task(s) blocked, 0 high-severity open risk(s)
 
 ## Completed
 - TASK-001 — Verify Agent Pipeline
@@ -27,11 +27,10 @@ Generated 2026-09-01 12:08 UTC by `ops/db/report.py` from the live database — 
 - TASK-022 — Milestone D: Project / Phase Progress
 
 ## In progress
-- none
+- TASK-023 — risks.id=3 durable closure: OS-level/process-separation sandboxing for Developer (IN_DEVELOPMENT, owner: —, progress: not broken into steps)
 
 ## Blocked
 - TASK-017 — Risk id=3 reduction milestone: reviewer zero-tool rollout + self-immune Developer denylist: no reason recorded
-- TASK-023 — risks.id=3 durable closure: OS-level/process-separation sandboxing for Developer: no reason recorded
 
 ## Waiting (Backlog)
 - none
