@@ -208,18 +208,27 @@ raw `sqlite3` CLI/file access inside the sandbox")**:
    `ai-pipeline-broker` system account — never as `ai-developer`), listening
    on a fixed Unix domain socket (e.g. `/run/ai-pipeline/opsdb.sock`),
    started the same way DevOps already manages `server.py`'s own process
-   lifecycle. It exposes a small, closed, fixed set of RPC verbs mapped
-   1:1 onto `opsdb.py`'s own already-shipped, already-reviewed `cmd_*`
-   functions (`task-status`, `handoff`, `decision-record`, `risk-resolve`,
-   `review-result`, `qa-result`, the SELECT-only `query`, etc.) — **no raw
-   SQL passthrough verb**, ever, over the socket. This is a small refactor
-   of `opsdb.py` (expose the existing validated logic as plain callables the
-   broker can import and call directly, not a rewrite of any validation
-   logic) plus new, genuinely new, security-relevant code (the daemon
-   itself) that must go through this project's normal Code Review/QA/
-   Security gates like anything else — named explicitly here so it is not
-   waved through as "just reuse," even though it reuses 100% of the
-   existing validated write logic.
+   lifecycle. It exposes an **explicit, exhaustively enumerated allowlist
+   of exactly five RPC verbs** — `handoff`, `task-status`,
+   `task-step-status`, `task-progress`, `activity-log` — each individually
+   re-scoped beyond what `opsdb.py`'s own CLI accepts (task-id binding to
+   the invoking sandbox session, broker-injected agent identity, and, for
+   `handoff`/`task-status`, a restricted target-value allowlist). **See the
+   Correction section immediately below for the exhaustive verb table, the
+   exclusion list, and the session-binding/identity-pinning mechanism that
+   makes it enforceable** — a prior version of this document claimed this
+   set was already "small, closed, and fixed" while its own parenthetical
+   listed the unscoped `query` verb and other roles' governance-write verbs
+   inside that same "closed" set; Red Team's review (`review_results.id=73`)
+   found that self-contradiction and this section has been corrected
+   accordingly. This remains a small refactor of `opsdb.py` (expose the
+   existing validated logic as plain callables the broker can import and
+   call directly, not a rewrite of any validation logic) plus new,
+   genuinely new, security-relevant code (the daemon itself) that must go
+   through this project's normal Code Review/QA/Security gates like
+   anything else — named explicitly here so it is not waved through as
+   "just reuse," even though it reuses 100% of the existing validated write
+   logic.
 3. **`opsdb.py`, modified with one new client mode**: an
    `OPSDB_BROKER_SOCKET` environment variable — when set (only inside the
    sandbox), every command serializes its already-validated arguments and
@@ -244,6 +253,135 @@ of the content. That is a materially different problem (content
 truthfulness/provenance, not access scoping) than this task was scoped to
 solve, and this document does not manufacture a fix for it — it is named
 here, explicitly, as still open, not silently dropped. See §6.
+
+---
+
+## Correction (Red Team's TASK-023 review, `review_results.id=73`, REJECT) — exhaustive broker verb allowlist and empirically-verified PID-namespace containment
+
+Red Team rejected the version of this document that first went to review, on
+two findings. Both are narrow and both are fixed here without reopening
+anything else Red Team found sound: the bwrap namespace shape, the
+filesystem/network feasibility results (§1), the dedicated `ai-developer`
+OS account, Developer-only scoping, the invocation-model change (§4), and
+the TASK-017 fold-in reasoning (§5) are unchanged by this correction.
+
+### Finding 1 (blocking): the broker's verb set was not actually "small, closed, and fixed"
+
+The prior text in §3/§7 claimed a "small, closed, fixed set of RPC verbs ...
+no raw SQL passthrough verb, ever" while its own parenthetical listed the
+SELECT-only `query` verb and other roles' governance-write verbs
+(`decision-record`, `risk-resolve`, `review-result`, `qa-result`) inside
+that same "closed" set. Red Team read `cmd_query` directly and found it
+executes arbitrary free-text SQL constrained only by
+`stmt.lstrip().upper().startswith("SELECT")` — no table/row scoping —
+meaning a sandboxed Developer session could read the entire schema
+(`messages`, `approvals`, `decisions`, `deployments`, every other task's
+rows) through what this document called "closed." Red Team also found that
+none of `opsdb.py`'s write functions verify the caller-supplied
+`--by`/`--by-agent` argument against the actual caller's identity, so
+exposing other roles' write verbs over the broker would let a compromised
+Developer session forge a Red Team PASS, a QA PASS, a Founder decision
+record, or even resolve `risks.id=3` itself — through the very channel this
+document presented as the fix.
+
+**The corrected design, replacing the prior §3/§7 language in full:**
+
+The broker exposes exactly five RPC verbs, and no others. Every other
+`opsdb.py` subcommand — including `query` — is excluded from the
+Developer-facing socket entirely.
+
+| Verb | Client-supplied args accepted | Broker-enforced (never trusts a client-supplied value) | Additional scope restriction |
+|---|---|---|---|
+| `handoff` | `work_completed`, `files`, `tests_added`, `expected_behavior`, `known_limitations`, `checklist`, `base_commit_sha`, `head_commit_sha` | `task_id` forced to this session's bound task; `from_agent` forced to `"developer"` | `to_agent` allowlisted to `"code-review"` only — the only handoff target Developer's role doc (`.claude/agents/developer.md`) and this project's own handoff history (`handoffs` table: 12/12 rows are `developer` → `code-review`) ever show |
+| `task-status` | `owner` (optional), `note` (optional) | `task_id` forced to this session's bound task; `by` forced to `"developer"` | `to` allowlisted to `{IN_DEVELOPMENT, CODE_REVIEW, BACKLOG}` only — the only three statuses `task_status_history` shows Developer has ever set (`CODE_REVIEW` ×11, `IN_DEVELOPMENT` ×5, `BACKLOG` ×1); every other `VALID_STATUSES` value (`RED_TEAM_REVIEW`, `QA_REVIEW`, `SECURITY_REVIEW`, `DEPLOYED`, etc.) rejected |
+| `task-step-status` | `step_id`, `status` (`pending`/`in_progress`/`done`) | broker looks up `step_id`'s owning `task_id` before forwarding and rejects the request if it does not equal this session's bound task | none beyond the task binding |
+| `task-progress` | `task_id` (must equal the session's bound task; any other value rejected) | — | read-only; `opsdb.py`'s own implementation already sums only one task's own `task_steps` rows, no schema-wide exposure |
+| `activity-log` | `summary`, `detail` (optional) | `task_id` forced to this session's bound task; `agent` forced to `"developer"` | none beyond the task binding |
+
+**Explicitly and exhaustively excluded from the Developer-facing socket** —
+every other `opsdb.py` subcommand, with no exceptions: `init`, `query`
+(dropped entirely, not re-scoped — see below), `project-create`,
+`agent-upsert`, `task-create`, `task-update`, `task-step-add`, `run-start`,
+`run-heartbeat`, `run-end`, `run-reconcile`, `agent-status`, `risk-add`,
+`risk-resolve`, `phase-add`, `phase-set-status`, `message-send`,
+`qa-result`, `review-result`, `approval-create`, `approval-decide`,
+`decision-record`, `task-purge-scratch`, `deployment-record`. This list was
+produced by enumerating every `sub.add_parser(...)` call in `ops/db/opsdb.py`
+directly (29 subcommands total), not by patching only the four verbs Red
+Team happened to name in its review text — the five included above are the
+only ones with any support in Developer's own role doc or this project's
+actual historical write pattern (`.claude/agents/developer.md`'s single
+named write path, `handoff`; `task_status_history`/`agent_activity`/
+`task_steps` rows attributed to `developer` in the live database).
+
+**Why `query` is dropped entirely rather than re-scoped.** §4.1 step 1
+already has `launch_developer_session.py` assemble the full task record
+(task fields, architecture notes, mockup) into the prompt *before* the
+sandboxed process starts — Developer does not need a live read path into
+`operations.sqlite3` for anything in its normal workflow, and nothing in
+its role doc asks for one. Building a narrow, purpose-built read verb
+(e.g. "my own task's current row") would itself be new, security-relevant
+code requiring its own review, for a need this design has no evidence it
+actually has. If a real need for one surfaces later, adding it is a new,
+separately-reviewed decision — not something this correction pre-authorizes.
+
+**How task-binding and identity-pinning are actually enforced, not just
+asserted.** `launch_developer_session.py` generates a random per-session
+token (`secrets.token_hex(16)`) when it starts a Developer sandbox for a
+specific `task_id`, and registers `(token, task_id, agent="developer")`
+with `opsdb_broker.py` over the same socket *before* launching the
+sandbox — using a registration verb the broker only accepts from a
+connection whose peer credentials (`SO_PEERCRED`) resolve to the Founder's
+own UID or the broker's own trusted account, never `ai-developer`'s UID, so
+the sandboxed process itself can never call it. The token is passed into
+the sandbox as a new `OPSDB_BROKER_TOKEN` environment variable alongside
+the existing `OPSDB_BROKER_SOCKET` (§3 point 3); `opsdb.py`'s broker-client
+mode includes it on every RPC. The broker resolves `task_id`/`agent` from
+its own session table keyed by that token — never from a client-supplied
+field — for every one of the five verbs above, and the session entry is
+removed when `launch_developer_session.py` detects the sandboxed process
+has exited. This is what makes the per-verb "forced"/"bound" restrictions
+in the table above real enforcement rather than a documentation convention
+the broker's own code doesn't actually check.
+
+This closes both halves of Finding 1: `query`'s unscoped schema-wide read is
+gone, and the four other-roles' governance-write verbs are excluded
+outright — a sandboxed Developer session cannot construct a request the
+broker will forward for any of them, regardless of what its own
+compromised session claims about its identity.
+
+### Finding 2 (non-blocking): §6's PID-namespace claim was cited to a test §1 never ran — now actually run
+
+§6 previously claimed `ptrace`/`gdb`/`strace` containment was "closed
+structurally by the PID namespace ... verified in §1," but §1's own test
+list only ever covered filesystem containment, network isolation, and
+basic root/unprivileged exec — no test against a real host PID was run.
+Red Team caught the overclaim; the missing test has now actually been run,
+in this same environment, as part of this correction pass:
+
+- A real host process was started (`sleep 120`, host PID 2333, confirmed
+  live via `ps -p 2333`).
+- From inside a `bwrap --unshare-all` sandbox: `ps aux`/`ps -ef` list only
+  the sandbox's own remapped PIDs (1–4); PID 2333 does not appear anywhere
+  in the output. `ls /proc` inside the sandbox lists only `1, 2, 5, 6` —
+  PID 2333 is not present as an entry at all, not merely hidden by
+  permission.
+- `gdb -p 2333` from inside the sandbox: `ptrace: No such process.` — gdb
+  cannot even locate the target to attempt an attach.
+- `strace -p 2333` from inside the sandbox: `strace: attach:
+  ptrace(PTRACE_SEIZE, 2333): No such process` — same result.
+- Sanity check that the PID namespace itself is real (not merely `ps`
+  failing for an unrelated reason): the sandbox's own shell reports itself
+  as PID 2 (`echo $$`) / PID 3 (`/proc/self/status`), consistent with being
+  an early PID in a freshly unshared namespace, not the host's actual PID
+  for that same process.
+
+**§6's bullet is corrected accordingly** (see §6 below): PID-namespace
+containment is now empirically verified, the same evidentiary standard as
+the other bullets in that list, not inferred from `--unshare-all`'s
+documented flag semantics alone.
+
+---
 
 ## 4. How supervised invocation changes, and why Developer only
 
@@ -450,7 +588,12 @@ prompt convention):**
   permissions against the dedicated low-privilege `ai-developer` UID.
 - `ptrace`/`gdb`/`strace` against `server.py` or any host process — closed
   structurally by the PID namespace; the sandboxed process cannot see host
-  PIDs to target them at all.
+  PIDs to target them at all. **Empirically verified directly, not inferred
+  from `--unshare-all`'s flag semantics** — see the Correction after §3 for
+  the actual test (`ps aux`/`ps -ef`/`gdb -p`/`strace -p` against a live
+  host PID, all confirming the PID is unreachable). This bullet previously,
+  incorrectly, cited "verified in §1" for this specific claim; §1 never ran
+  this test — corrected per Red Team's review (`review_results.id=73`).
 - Outbound network/exfiltration/C2/unreviewed package installation — closed
   by `--unshare-net` under the "no network by default" policy (§2.3),
   verified directly in §1.
@@ -499,10 +642,14 @@ in this project, not softened:**
 
 1. **NEW** `ops/control-center/opsdb_broker.py` — Unix-socket daemon;
    imports `opsdb.py`'s existing validated command logic (small refactor of
-   `opsdb.py` to expose it as plain callables, not a rewrite); fixed,
-   closed RPC-verb set, 1:1 with `opsdb.py`'s existing subcommands; no raw
-   SQL passthrough. Runs as the Founder's own user or a new trusted
-   `ai-pipeline-broker` account — never as `ai-developer`.
+   `opsdb.py` to expose it as plain callables, not a rewrite); exhaustive
+   five-verb allowlist per the Correction after §3 (`handoff`,
+   `task-status`, `task-step-status`, `task-progress`, `activity-log`
+   only — **not** 1:1 with `opsdb.py`'s full subcommand set); session-token
+   task-id binding and broker-injected agent identity per the same
+   Correction; no `query`/`SELECT` verb of any kind exposed. Runs as the
+   Founder's own user or a new trusted `ai-pipeline-broker` account — never
+   as `ai-developer`.
 2. **MODIFIED** `ops/db/opsdb.py` — add `OPSDB_BROKER_SOCKET`-driven client
    mode (socket call instead of direct `connect()` when set); zero
    behavior change for every invocation where the variable is unset.
