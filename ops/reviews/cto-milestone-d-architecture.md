@@ -210,7 +210,7 @@ derivable as a fraction, and what must render as a status-only value.
 | Milestone A | `complete` | No sub-fraction — a milestone is the atomic unit here, not further decomposed. `task_id=19`. |
 | Milestone B | `complete` | Same. `task_id=20`. |
 | Milestone C | `complete` | Same. `task_id=21`. |
-| Milestone D | `in_progress` | Same. `task_id=22`. Set to `complete` at the very end of this milestone's own CTO final-conformance step (Part 7) — the last write this milestone's own lifecycle makes to its own row, a deliberately self-referential but entirely real update (the same way TASK-021's own row in `tasks` was itself marked DONE by the process it describes). |
+| Milestone D | `in_progress` | Same. `task_id=22`. Set to `complete` at the very end of this milestone's own CTO final-conformance step (Part 7) — the last write this milestone's own lifecycle makes to its own row, a deliberately self-referential but entirely real update (the same way TASK-021's own row in `tasks` was itself marked DONE by the process it describes). **See the "Correction (Red Team's TASK-022 milestone review...)" section after Part 5 for exactly who runs that final write and when — this row's own `phase-add` (status `in_progress`) is written by Development; the later `phase-set-status` to `complete` is not.** |
 
 ### 3.4 Two distinct readiness booleans — computed, not narrated (DEC-009's own requirement)
 
@@ -429,6 +429,118 @@ At that moment, and only at that moment, `founder_readiness_summary()`'s
 traceable, non-fabricated transition, not a sentence someone remembers
 to write.
 
+**See the correction immediately below for the exact split between what
+Development runs versus what these final 2 calls require — the two
+paragraphs above are correct as a description of *what* happens, but
+under-specify *who* runs the final 2 calls and *when*, which the
+correction makes explicit.**
+
+---
+
+## Correction (Red Team's TASK-022 milestone review, `review_results.id=68`, REJECT) — the final 2 status-flip calls are not part of Development's backfill batch; naming who runs them and when
+
+Red Team's review of this document (task_id=22) found a concrete
+internal inconsistency, blocking: Part 3.3 and the two paragraphs
+directly above both state the final `phase-set-status` writes
+(Milestone D → `complete`, "Founder UI Completeness" → `complete`,
+`milestones_complete=4`) happen at the very end of CTO final
+conformance, strictly after Development / Code Review / QA / Security /
+CTO conformance all pass. But Part 10's file list (below) originally
+attributed **all 12** `phase-add`/`phase-set-status` commands — including
+these final 2 — to being "run once by Development" as one undivided
+backfill sequence, with no separation from the other 10. Red Team also
+verified this is not just imprecise wording: `.claude/agents/cto.md`
+gives CTO read-only tools (no Bash/write capability), and
+`ops/reviews/cto-milestone-c-conformance.md` — this project's own
+precedent for what a CTO-conformance step actually *is* — is a
+read-only verification document, never an execution step. So Part 3.3's
+literal claim ("set to `complete` at the very end of this milestone's
+own CTO final-conformance step") is not actually executable by CTO
+either, while Part 10 pointed a literal-minded Development pass the
+opposite direction — toward running all 12 calls, including the final
+2, in its very first commit, marking `ui_100pct_complete=true` before
+any review gate has run. That is exactly the fabricated/premature-
+progress failure mode this whole four-milestone plan exists to prevent
+(the same class of bug as Milestone B's "four vs. five paths" copy and
+`risks.id=4`'s never-applied schema). This correction fixes that gap; it
+does not reopen the schema, the CLI shape, the page design, or the
+10-row backfill data itself, all of which Red Team confirmed sound.
+
+**1. Two disjoint batches, not one sequence of 12.**
+
+- **Batch 1 — 10 backfill calls, run once by Development**, as part of
+  this milestone's normal implementation commit(s), same as every other
+  file in Part 10's list: the 5 `phase-add` calls for Phase 0 / 1 / 2 /
+  3 / 4, the `phase-add` call for Phase 3A, the `phase-add` call for
+  "Founder UI Completeness" (status `in_progress`, `milestones_complete=3`),
+  and the `phase-add` calls for Milestones A / B / C (each status
+  `complete`), **plus** Milestone D's own `phase-add` (status
+  `in_progress`, not `complete` — Part 3.3, Part 5). All 10 (11 rows
+  counting Milestone D's own `in_progress` row, but 10 distinct
+  `phase-add` invocations excluding the 2 `phase-set-status` calls below)
+  describe already-genuinely-complete or accurately-in-progress
+  historical facts. Safe for Development to write immediately —
+  verified sound by Red Team, unchanged by this correction.
+- **Batch 2 — exactly 2 calls, withheld from Development's batch**:
+  `opsdb.py phase-set-status --name "Milestone D" --status complete ...`
+  and `opsdb.py phase-set-status --name "Founder UI Completeness"
+  --status complete --milestones-complete 4 ...`. These are **explicitly
+  not part of Development's implementation checklist** and must not be
+  run in the same commit/task as Batch 1.
+
+**2. Who runs Batch 2, and when.** CTO cannot execute this itself — CTO's
+tools are read-only, confirmed above, so Part 3.3's original phrasing
+("at the very end of this milestone's own CTO final-conformance step")
+is corrected here to state explicitly: **the orchestrating session/agent
+— the one dispatching each gate in Part 9's sequence (Design review →
+Red Team → Development → Code Review → QA → Security → CTO final
+conformance), which holds Bash/write access and has run every
+`opsdb.py task-status` / `review-result` command throughout this entire
+project — runs the 2 `phase-set-status` calls as the very last step,
+immediately after CTO final conformance formally returns CONFORMS for
+this milestone.** This is the same actor, and the same point in the
+sequence, that has flipped every other milestone's `tasks.status` to
+`DONE` after its own CTO conformance — not a new role or a new pattern,
+just this document naming the existing one explicitly instead of
+implying CTO does it.
+
+**3. This is enforced by process discipline, not by a code-level gate —
+stated honestly.** Nothing in the `phase-set-status` CLI (Part 6) or the
+`phases` schema (Part 2) technically prevents Batch 2 from being run
+early: there is no lock, check, or trigger tying a `phases.status`
+write to any `review_results` or `tasks.status` row's state. This
+matches how this project's `tasks.status → DONE` transitions have
+always worked — ordering discipline, not code enforcement — and is
+named here explicitly rather than left implied, per Red Team's required
+fix. If premature Batch-2 execution is ever observed to actually recur
+(not merely a theoretical risk), a future milestone could consider a
+technical gate (e.g. `phase-set-status` refusing to set `complete` on a
+`task_id`-linked row unless `tasks.status='DONE'` for that `task_id`) —
+named here as possible future work, not built by this milestone, the
+same "name it, don't build it" discipline Part 7 and Part 11 already
+apply elsewhere in this document.
+
+**4. Non-blocking suggestion folded in — one-time backfill-vs-ROADMAP.md
+spot check at CTO conformance.** Part 9's CTO final-conformance gate
+gains one explicit checklist item: **at conformance time, spot-check
+the 10 backfilled `phases` rows' `status`/`note` values against
+`ops/ROADMAP.md`'s current prose headings for Phase 0–4, Phase 3A, the
+"Founder UI Completeness" sub-plan, and Milestones A–C, confirming no
+drift between the backfilled table and the live `ROADMAP.md` text at
+the moment of conformance.** This is a **one-time verification
+performed once, during this milestone's own conformance step** — not a
+new automated or recurring check. Part 7's `phase-drift-check` remains
+named-but-not-built future work, unchanged by this addition.
+
+**Net effect on Part 10's file list, below**: the "Data (not code)"
+bullet's "10 real `phase-add` invocations plus 2 `phase-set-status`
+invocations ... run once by Development" is corrected by this section —
+Development runs the 10 `phase-add` calls (Milestone D's own row
+included, status `in_progress`) as part of its normal implementation;
+the 2 `phase-set-status` calls are run by the orchestrating
+session/agent, after CTO conformance returns CONFORMS, per point 2
+above.
+
 ---
 
 ## Part 6 — CLI: `opsdb.py phase-add` / `phase-set-status`
@@ -634,6 +746,32 @@ reference real rows (FK constraints plus explicit existence checks,
 matching `risk-add`'s own scope-validation discipline) rather than
 accepting an arbitrary integer.
 
+### 9.3 CTO final conformance — two items added by the correction below
+
+**Correction (Red Team's TASK-022 milestone review, `review_results.id=68`)**:
+CTO final conformance, the last gate before this milestone is DONE,
+explicitly includes two items not previously named in this Part:
+
+1. Confirm Batch 1 (the 10 `phase-add` backfill calls, including
+   Milestone D's own row at `status=in_progress`) is present and
+   correct, and confirm Batch 2 (the 2 `phase-set-status` calls that
+   would mark Milestone D and "Founder UI Completeness" `complete`) has
+   **not** been run yet at the time conformance is being evaluated — see
+   the correction section after Part 5 for the full Batch 1/Batch 2
+   split.
+2. A one-time spot check: the 10 backfilled `phases` rows'
+   `status`/`note` values against `ops/ROADMAP.md`'s current prose
+   headings for Phase 0–4, Phase 3A, "Founder UI Completeness," and
+   Milestones A–C, confirming no drift at the moment of conformance
+   (Red Team's non-blocking suggestion, folded in here — a one-time
+   check performed as part of this gate, not new ongoing automation).
+
+Once CTO conformance formally returns CONFORMS, the orchestrating
+session/agent runs Batch 2's 2 `phase-set-status` calls as the final
+step of this milestone's lifecycle (correction after Part 5, point 2) —
+CTO's own conformance output is a read-only verdict, not the execution
+of those calls.
+
 ---
 
 ## Part 10 — Files this milestone touches (complete list)
@@ -653,11 +791,19 @@ accepting an arbitrary integer.
 - `ops/control-center/server.py` — one new top-level GET route
   (`/progress.html`), same dispatch pattern as every other top-level page.
 
-**Data (not code) — the backfill sequence, Part 5**: 10 real
-`phase-add` invocations plus 2 `phase-set-status` invocations at the end
-of this milestone's own lifecycle, run once by Development, values
-sourced from the live `decisions`/`tasks` tables as shown in this
-document.
+**Data (not code) — the backfill sequence, Part 5, split per the
+correction after Part 5 (Red Team's TASK-022 milestone review,
+`review_results.id=68`)**: **Development runs 10 real `phase-add`
+invocations only** (Batch 1 — Phase 0/1/2/3/4, Phase 3A, "Founder UI
+Completeness," Milestones A/B/C, and Milestone D's own row at
+`status=in_progress`), values sourced from the live `decisions`/`tasks`
+tables as shown in this document, as part of its normal implementation
+commit(s). **The 2 `phase-set-status` calls that mark Milestone D and
+"Founder UI Completeness" `complete` (Batch 2) are explicitly excluded
+from Development's batch** — they are run by the orchestrating
+session/agent only after CTO final conformance returns CONFORMS (Part
+9.3), the same actor and timing already used for every other
+milestone's `tasks.status → DONE` transition.
 
 **Explicitly not touched:** `ops/ROADMAP.md` (stays hand-authored prose,
 Part 7's disclosed limitation, not auto-generated), `ops/DECISIONS.md`
