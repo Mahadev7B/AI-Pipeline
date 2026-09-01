@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Concept B &mdash; New Idea form with a full-page receipt</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+.help{ font-size:10.5px; color:var(--text3); line-height:1.5; margin-top:5px; }
+.inp{ width:100%; box-sizing:border-box; padding:9px 10px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); color:var(--text); font-size:13px; }
+.ph{ color:var(--text3); }
+.statehdr{ font-family:var(--disp); font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--blue); margin:0 0 3px; }
+.statesub{ font-size:11px; color:var(--text2); margin:0 0 14px; line-height:1.5; }
+  </style>
+</helmet>
+
+<div style="padding:26px; width:868px; box-sizing:border-box; background:var(--bg);">
+
+<div class="statehdr">Concept B &middot; State 1 &mdash; the form, and only the form</div>
+<div class="statesub">A narrow, single-purpose page. No list, no ledger, nothing else to read. Same fields as Concept A.</div>
+
+<div style="border:1px solid var(--border2); border-radius:16px; padding:22px; margin-bottom:34px;">
+  <h1>New Idea</h1>
+  <div class="sub" style="margin-top:-14px; max-width:620px; line-height:1.6;">Write it down. Saving puts it in the Backlog &mdash; it does not start it.</div>
+
+  <div class="panel" style="max-width:620px;">
+    <div class="label" style="margin-bottom:8px;">Title</div>
+    <div class="inp"><span class="ph">A short name for the idea</span></div>
+    <div class="help">This is the name you&rsquo;ll see on every other screen. Up to 160 characters.</div>
+
+    <div class="label" style="margin:16px 0 8px;">The idea &mdash; what do you want, and why does it matter?</div>
+    <div class="inp" style="height:120px;"><span class="ph">Say it the way you&rsquo;d say it out loud. A few sentences is plenty.</span></div>
+    <div class="help">Product turns this into a spec &mdash; you don&rsquo;t have to.</div>
+
+    <div class="label" style="margin:16px 0 8px;">Priority <span style="color:var(--text3); font-weight:600; letter-spacing:0;">(optional)</span></div>
+    <div style="display:flex; gap:6px;">
+      <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">High</div>
+      <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--accent); background:var(--accent-soft); font-size:12px; font-weight:600; color:var(--accent);">Medium</div>
+      <div style="padding:7px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">Low</div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+      <div style="padding:9px 20px; border-radius:8px; background:var(--accent); color:var(--bg); font-weight:600; font-size:13px;">Save to Backlog</div>
+      <div style="font-size:11px; color:var(--text3);">Saves the idea. Starts nothing.</div>
+    </div>
+  </div>
+</div>
+
+<div class="statehdr">Concept B &middot; State 2 &mdash; the receipt replaces the page</div>
+<div class="statesub">The distinguishing move: the whole screen becomes an itemised receipt that <i>counts the things that did not happen</i>. Real content &mdash; TASK-025 as actually created today.</div>
+
+<div style="border:1px solid var(--border2); border-radius:16px; padding:22px;">
+  <div style="max-width:620px;">
+
+    <div style="display:flex; align-items:center; gap:11px; margin-bottom:6px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--green)" stroke-width="1.7"/><path d="M8 12.4 L11 15.2 L16 9.2" stroke="var(--green)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1 style="margin:0;">Saved &mdash; <span class="mono" style="color:var(--green); font-size:17px;">TASK-025</span></h1>
+    </div>
+    <div class="sub" style="margin-bottom:18px;">Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills</div>
+
+    <div class="panel" style="margin-bottom:14px;">
+      <div class="label" style="margin-bottom:12px;">Exactly what this did</div>
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:9px 14px; align-items:baseline;">
+        <div class="mono" style="font-size:13px; color:var(--green); font-weight:700; text-align:right;">1</div>
+        <div style="font-size:12px; color:var(--text2);">task row written &mdash; status <span class="mono" style="color:var(--text);">BACKLOG</span>, owner: you</div>
+
+        <div class="mono" style="font-size:13px; color:var(--green); font-weight:700; text-align:right;">1</div>
+        <div style="font-size:12px; color:var(--text2);">history entry &mdash; <span class="mono" style="color:var(--text3);">&rarr; BACKLOG</span>, attributed to Founder</div>
+
+        <div class="mono" style="font-size:13px; color:var(--text3); font-weight:700; text-align:right;">0</div>
+        <div style="font-size:12px; color:var(--text2);">agents dispatched</div>
+
+        <div class="mono" style="font-size:13px; color:var(--text3); font-weight:700; text-align:right;">0</div>
+        <div style="font-size:12px; color:var(--text2);">model calls made</div>
+
+        <div class="mono" style="font-size:13px; color:var(--text3); font-weight:700; text-align:right;">$0.00</div>
+        <div style="font-size:12px; color:var(--text2);">spent</div>
+
+        <div class="mono" style="font-size:13px; color:var(--text3); font-weight:700; text-align:right;">0</div>
+        <div style="font-size:12px; color:var(--text2);">other tasks changed</div>
+      </div>
+    </div>
+
+    <div class="panel" style="border-color:var(--accent); background:var(--accent-soft); margin-bottom:16px;">
+      <div class="label" style="margin-bottom:6px; color:var(--accent);">What happens next</div>
+      <div style="font-size:12.5px; line-height:1.6;">
+        <b>Nothing &mdash; until you say so.</b> This idea is parked. The pipeline does not pick things up on its own, and there is
+        no &ldquo;start&rdquo; button anywhere in this product. When you want it built, ask the Chief of Staff to start TASK-025 and
+        the usual pipeline &mdash; Product, Design, CTO, Developer &mdash; begins.
+      </div>
+      <div style="margin-top:10px;"><a class="accentlink" style="font-size:11.5px;" href="#">Ask the Chief of Staff to start TASK-025 &rarr;</a></div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <div style="padding:8px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12.5px; font-weight:600;">Write another idea</div>
+      <div style="padding:8px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12.5px; color:var(--text2);">Open TASK-025</div>
+      <div style="padding:8px 16px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12.5px; color:var(--text2);">Back to Active Work</div>
+    </div>
+
+    <div style="font-size:10.5px; color:var(--text3); margin-top:14px; line-height:1.55;">
+      Critique note: this receipt is the clearest single moment in any of the three concepts &mdash; and it is gone the instant the
+      Founder navigates away. Three days later there is no surface still saying &ldquo;this is parked.&rdquo;
+    </div>
+  </div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
