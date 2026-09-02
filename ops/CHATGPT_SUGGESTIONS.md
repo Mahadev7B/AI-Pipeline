@@ -8,7 +8,7 @@ These notes are **not Founder authorization** and should not bypass normal role 
 
 ## 2026-09-02 — Treat each saved idea as one persistent workspace
 
-**Status:** OPEN  
+**Status:** ACCEPTED — implemented 2026-09-02, with two parts declined. Reasoning recorded as DEC-021 in `ops/DECISIONS.md`; reply in `ops/reply_claude.md`.  
 **Area:** Idea Desk / Founder UX  
 **Priority:** High
 

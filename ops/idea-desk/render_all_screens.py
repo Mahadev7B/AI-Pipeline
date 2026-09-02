@@ -104,6 +104,27 @@ def fetch(path, post=None, expect=200):
     except urllib.error.HTTPError as ex:
         return ex.code, ex.read().decode()
 
+def _leaked_none(text: str) -> bool:
+    """True only for a Python None that reached the page, not the English word.
+
+    Real evaluation answers say things like "not produced. None could change
+    whether we build it" — legitimate prose. A leak looks like "Round None" or
+    a text node that is nothing but "None". The difference is grammatical: prose
+    starts a sentence and continues into a lowercase word; a leak does neither.
+    Matching the bare substring made four honest screens fail, which trains you
+    to ignore the checker — worse than not having one.
+    """
+    for line in text.split("\n"):
+        for m in re.finditer(r"\bNone\b", line):
+            before = line[: m.start()].rstrip()
+            after = line[m.end() :]
+            sentence_start = before == "" or before.endswith((".", "!", "?"))
+            continues_as_prose = re.match(r"\s+[a-z]", after) is not None
+            if not (sentence_start and continues_as_prose):
+                return True
+    return False
+
+
 PROBLEMS = []
 def capture(name, path, post=None, expect=200):
     status, html = fetch(path, post)
@@ -117,8 +138,8 @@ def capture(name, path, post=None, expect=200):
     for tag in ("div", "main", "aside", "form"):
         if html.count(f"<{tag}") - html.count(f"</{tag}") not in (0,):
             issues.append(f"unbalanced <{tag}>: {html.count(f'<{tag}')} open, {html.count(f'</{tag}>')} close")
-    if "None" in re.sub(r"<[^>]*>", "", html):
-        issues.append("the literal text 'None' is visible on the page")
+    if _leaked_none(re.sub(r"<[^>]*>", "\\n", html)):
+        issues.append("a Python None leaked into the page text")
     if "{" in re.sub(r"<style>.*?</style>", "", html, flags=re.S).replace("&#", ""):
         stray = re.findall(r"\{[a-z_]+\}", html)
         if stray:

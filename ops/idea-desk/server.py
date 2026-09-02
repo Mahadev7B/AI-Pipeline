@@ -106,10 +106,21 @@ def load_ideas() -> list[dict]:
             item = dict(row)
             item.update(_current_text(conn, row["id"], row))
             last = conn.execute(
-                "SELECT recommendation, rehearsal FROM idea_rounds WHERE idea_id = ? "
-                "ORDER BY round_no DESC LIMIT 1", (row["id"],)).fetchone()
+                "SELECT recommendation, rehearsal, round_no, created_at FROM idea_rounds "
+                "WHERE idea_id = ? ORDER BY round_no DESC LIMIT 1", (row["id"],)).fetchone()
             item["recommendation"] = last["recommendation"] if last else None
             item["rehearsal"] = bool(last["rehearsal"]) if last else False
+            item["rounds"] = last["round_no"] if last else 0
+            item["last_round_at"] = last["created_at"] if last else None
+            # An idea whose ONLY readings were rehearsals is a test entry, not
+            # something the company has actually formed a view on. Worth saying
+            # so on the card rather than letting it sit among real work.
+            counts = conn.execute(
+                "SELECT COUNT(*) AS n, SUM(rehearsal) AS reh FROM idea_rounds WHERE idea_id = ?",
+                (row["id"],)).fetchone()
+            item["only_rehearsals"] = bool(counts["n"]) and counts["n"] == (counts["reh"] or 0)
+            item["edits"] = conn.execute(
+                "SELECT COUNT(*) FROM idea_edits WHERE idea_id = ?", (row["id"],)).fetchone()[0]
             out.append(item)
         return out
     finally:

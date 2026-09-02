@@ -105,14 +105,27 @@ h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;margin:
    status pill and date clean off the list page, and the stored-versions card
    ran off the right edge of a phone. Found by looking at the rendered pages,
    which no amount of HTTP-level testing had caught. */
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto 210px;gap:22px;align-items:center;
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,290px) auto;gap:22px;align-items:center;
      padding:18px 6px;border-bottom:1px solid var(--border);}
 .row:hover{background:var(--panel);}
 .row .t{font-size:15.5px;font-weight:600;color:var(--text);}
 .row .d{font-size:13px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;
         white-space:nowrap;}
 .row .when{font-size:12px;color:var(--text3);text-align:right;}
-.empty{padding:48px 0;color:var(--text3);font-size:14px;}
+.empty{padding:32px 0;color:var(--text3);font-size:13.5px;}
+h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0;}
+.row .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+.tag{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);
+     border:1px solid var(--border);border-radius:5px;padding:2px 7px;}
+.row .state{text-align:right;}
+.row .state .lastly{font-size:12.5px;color:var(--text2);margin-top:7px;max-width:40ch;
+                    margin-left:auto;line-height:1.5;}
+.row .state .when{font-size:11.5px;color:var(--dim);margin-top:4px;}
+.row .act{display:flex;justify-content:flex-end;}
+@media (max-width:760px){
+  .row .state{text-align:left;} .row .state .lastly{max-width:none;}
+  .row .act{justify-content:flex-start;}
+}
 .form{max-width:720px;display:flex;flex-direction:column;gap:22px;margin-top:28px;}
 .field label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;}
 .field .hint{font-size:12px;color:var(--text3);margin-top:7px;line-height:1.55;}
@@ -374,39 +387,114 @@ def error_page(status: int, title: str, detail: str) -> bytes:
 
 # --------------------------------------------------------------- the list ---
 
+def _lifecycle(i: dict) -> tuple[str, str, str, str]:
+    """Where this idea is, what happened last, and the one thing to do next.
+
+    Every state here is one the data can actually prove. There is deliberately
+    no "Building" or "Shipped" — Start Work is not built yet, and inventing a
+    stage the factory cannot reach would be exactly the fake progress this
+    company keeps promising not to show."""
+    if i["evaluating_since"]:
+        return ("working", "Being read",
+                "The company is reading it now. This takes a few minutes.",
+                "")
+    if i["last_error"]:
+        return ("working", "Didn't finish",
+                "The last reading failed. Nothing was saved, and your idea and its history are "
+                "untouched.",
+                "Retry evaluation")
+    if i["status"] == "approved":
+        return ("working", "Approved",
+                "You approved this brief. Nothing is being built yet.",
+                "Start work")
+    if i["status"] == "parked":
+        return ("backlog", "Parked",
+                i["close_reason"] or "Saved for later.", "Reopen")
+    if i["status"] == "dropped":
+        return ("archive", "Dropped",
+                i["close_reason"] or "Decided against.", "Reopen")
+    if i["rounds"]:
+        # The pill stays short so it scans; the verdict goes in the line below,
+        # where it has room. "READ — PROCEED WITH NARROWED SCOPE" as an
+        # uppercase letter-spaced pill wraps to two lines and reads worse.
+        rec = i["recommendation"] or "Read"
+        approvable = rec in APPROVABLE
+        return ("working", "Read",
+                f"Round {i['rounds']}: {rec}."
+                + ("" if approvable else " Not recommending you build it yet."),
+                "Approve the brief" if approvable else "Correct us")
+    return ("working", "Saved",
+            "Nobody has read it yet. Saving costs nothing.",
+            "Ask the company to read it")
+
+
+NEXT_HREF = {
+    "Retry evaluation": "/evaluate/{id}", "Ask the company to read it": "/evaluate/{id}",
+    "Correct us": "/correct/{id}", "Approve the brief": "/approve/{id}",
+    "Reopen": "/idea/{id}", "Start work": "/idea/{id}",
+}
+
+BUCKETS = (
+    ("working", "Working on",
+     "Ideas the company is reading, has read, or you have approved."),
+    ("backlog", "Idea backlog", "Parked on purpose. Reopen any of them."),
+    ("archive", "Archive", "Dropped, and kept. Nothing here is deleted."),
+)
+
+
 def list_page(ideas: list, build: str = "") -> bytes:
-    rows = []
+    grouped: dict[str, list] = {"working": [], "backlog": [], "archive": []}
     for i in ideas:
-        st = i["status"]
-        if st == "draft":
-            line = "Saved. Not evaluated yet."
-        elif st == "approved":
-            line = "Approved brief"
-        elif st in ("parked", "dropped"):
-            line = f"{st.capitalize()}"
-        else:
-            line = e(i["recommendation"] or "Evaluated")
-            if i.get("rehearsal"):
-                line = '<span style="color:var(--accent)">Rehearsal</span> &middot; ' + line
-        rows.append(f"""<div class="row">
-          <div><a class="t" href="/idea/{i['id']}">{e(i['title'] or 'Untitled idea')}</a>
-            <div class="d">{e(i['current_raw'])}</div></div>
-          <span class="st {e(st)}">{e(st)}</span>
-          <div class="when">{e(_ago(i['updated_at']))}<br>
-            <span style="color:var(--text3)">{line}</span></div></div>""")
+        bucket, state, last, nxt = _lifecycle(i)
+        grouped[bucket].append((i, state, last, nxt))
+
+    sections = []
+    for key, heading, blurb in BUCKETS:
+        items = grouped[key]
+        if not items and key != "working":
+            continue          # empty backlog and archive are noise, not information
+        rows = []
+        for i, state, last, nxt in items:
+            href = NEXT_HREF.get(nxt, "/idea/{id}").format(id=i["id"])
+            action = (f'<a class="btn sm" href="{href}">{e(nxt)}</a>' if nxt else
+                      '<span style="font-size:12px;color:var(--text3)">nothing to do</span>')
+            tags = []
+            if i.get("only_rehearsals"):
+                tags.append('<span class="tag">rehearsal only</span>')
+            if i.get("edits"):
+                tags.append(f'<span class="tag">edited {i["edits"]}&times;</span>')
+            if i["rounds"] > 1:
+                tags.append(f'<span class="tag">{i["rounds"]} rounds</span>')
+            rows.append(f"""<div class="row">
+              <div><a class="t" href="/idea/{i['id']}">{e(i['title'] or 'Untitled idea')}</a>
+                <div class="d">{e(i['current_raw'])}</div>
+                <div class="tags">{''.join(tags)}</div></div>
+              <div class="state"><span class="st {e(i['status'])}">{e(state)}</span>
+                <div class="lastly">{e(last)}</div>
+                <div class="when">{e(_ago(i['updated_at']))}</div></div>
+              <div class="act">{action}</div></div>""")
+        sections.append(f"""<section style="margin-top:34px">
+          <div style="display:flex;align-items:baseline;gap:12px">
+            <h2>{heading}</h2>
+            <span style="font-size:12.5px;color:var(--text3)">{len(items)}</span></div>
+          <p class="sub" style="margin:6px 0 0;font-size:13px;color:var(--text3)">{blurb}</p>
+          <div class="list">{''.join(rows) or
+            '<div class="empty">Nothing here yet. Every idea you save starts in this group.</div>'}</div>
+        </section>""")
+
     body = f"""
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:40px;
                 flex-wrap:wrap">
-      <div><h1>Bring an idea to the company</h1>
-        <p class="sub" style="margin:10px 0 0">You write it in your own words. The company works out what
-        you mean, tells you what it thinks of it, and asks only what it genuinely needs. Nothing gets
-        built until you approve the brief.</p></div>
+      <div><h1>Your ideas</h1>
+        <p class="sub" style="margin:10px 0 0">Each one stays here for good &mdash; your original
+        words, every reading the company gave it, every correction you made, and what you decided.
+        Editing or re-evaluating continues the same idea rather than starting another.</p></div>
       <a class="btn primary" href="/new">+ New idea</a>
     </div>
-    <div class="list">{''.join(rows) or '<div class="empty">No ideas saved yet.</div>'}</div>
-    <div class="foot">Your ideas are stored in the factory's own database, so they survive closing this
-    window. Saving an idea starts nothing and costs nothing. Evaluation is the step that asks the company
-    to actually read it &mdash; the only part that spends money.
+    {''.join(sections)}
+    <div class="foot">Stored in the factory's own database, so they survive closing this window.
+    Saving an idea and reading past evaluations are free; asking the company to read one is the
+    only step that uses anything.
     {f'<div style="margin-top:10px;color:var(--dim)">Running: {e(build)}</div>' if build else ''}</div>"""
     return shell("Idea Desk", body)
 
