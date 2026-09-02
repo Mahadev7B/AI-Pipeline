@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""ops/idea-desk/doctor.py — answers "why am I not seeing the new version?"
+
+Run it and paste the output. It checks, in one go, every reason the Idea Desk
+can show you something other than the code you just pulled:
+
+  * you are in a different folder than the one you pulled into
+  * you are on a different branch than the one the work was pushed to
+  * the pull did not actually bring the commits down
+  * the files on disk are older than the feature you expect
+  * an OLD server is still holding the port, so restarting appeared to work
+    while the browser kept talking to the process from before
+  * the `claude` command is missing, so evaluation cannot run
+
+    python3 ops/idea-desk/doctor.py        (macOS/Linux)
+    python ops\\idea-desk\\doctor.py         (Windows)
+"""
+from __future__ import annotations
+
+import shutil
+import socket
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parent.parent
+PORT = 8421
+
+
+def line(label: str, value: str, ok: bool | None = None) -> None:
+    mark = "  " if ok is None else ("OK" if ok else "!!")
+    print(f"{mark} {label:<34} {value}")
+
+
+def git(*args: str) -> str:
+    try:
+        out = subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, timeout=20)
+        return (out.stdout or out.stderr).strip()
+    except Exception as exc:  # git missing, or not a repo
+        return f"(could not run git: {exc})"
+
+
+def main() -> None:
+    print("\nIdea Desk — what is actually running here\n" + "=" * 52)
+
+    print("\nWHERE")
+    line("this file is in", str(HERE))
+    line("project folder", str(REPO))
+
+    print("\nGIT")
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    line("current branch", branch, ok=(branch == "claude/orchestrator-chief-of-staff-f35grl"))
+    if branch != "claude/orchestrator-chief-of-staff-f35grl":
+        print("     ^ the work is pushed to claude/orchestrator-chief-of-staff-f35grl.")
+        print("       On any other branch, `git pull` brings you none of it. Fix with:")
+        print("         git checkout claude/orchestrator-chief-of-staff-f35grl")
+        print("         git pull")
+    line("last commit here", git("log", "-1", "--format=%h %s")[:78])
+    dirty = git("status", "--porcelain")
+    line("uncommitted changes", "none" if not dirty else f"{len(dirty.splitlines())} file(s)")
+
+    print("\nFILES ON DISK")
+    server_py = HERE / "server.py"
+    evaluator_py = HERE / "evaluator.py"
+    line("server.py present", "yes" if server_py.exists() else "NO", ok=server_py.exists())
+    line("evaluator.py present", "yes" if evaluator_py.exists() else "NO — slice 2 was not pulled",
+         ok=evaluator_py.exists())
+    if server_py.exists():
+        text = server_py.read_text(encoding="utf-8", errors="replace")
+        has_eval = "evaluator.start(" in text
+        line("evaluate is wired in the file", "yes" if has_eval else "NO — this file is the old one",
+             ok=has_eval)
+        stamp = next((ln.split("=", 1)[1].strip().strip('"')
+                      for ln in text.splitlines() if ln.startswith("BUILD =")), "(no build stamp)")
+        line("build stamp in the file", stamp)
+
+    print("\nTHE PORT")
+    probe = socket.socket()
+    probe.settimeout(1.5)
+    in_use = probe.connect_ex(("127.0.0.1", PORT)) == 0
+    probe.close()
+    line(f"something listening on {PORT}", "yes" if in_use else "no")
+    if in_use:
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/login", timeout=5) as resp:
+                served = resp.read().decode("utf-8", errors="replace")
+            running_old = "Idea Desk" in served
+            line("it answers as the Idea Desk", "yes" if running_old else "no — something else",
+                 ok=running_old)
+        except urllib.error.URLError as exc:
+            line("could not talk to it", str(exc))
+        print("\n     A server is ALREADY RUNNING on this port. Starting a second one does not")
+        print("     replace it — the new one fails to take the port and your browser keeps")
+        print("     talking to the OLD process, which is still running the OLD code.")
+        print("     Stop every one of them first:")
+        print("       Windows      :  Get-Process python | Stop-Process")
+        print("       macOS/Linux  :  pkill -f idea-desk/server.py")
+        print("     then start it once, and watch for the startup line.")
+    else:
+        print("\n     Nothing is holding the port, so a fresh start will be the one you reach.")
+
+    print("\nEVALUATION REQUIREMENTS")
+    claude = shutil.which("claude")
+    line("`claude` command", claude or "NOT FOUND — evaluation cannot run", ok=bool(claude))
+    if not claude:
+        print("     Everything else works without it: writing ideas, reading past")
+        print("     evaluations, approving, parking. Only evaluation needs it.")
+    cred = REPO / "ops" / "control-center" / ".founder_credential.json"
+    line("your passphrase is set up", "yes" if cred.exists() else "NO — run founder_auth.py setup",
+         ok=cred.exists())
+    db = REPO / "ops" / "db" / "operations.sqlite3"
+    line("database present", "yes" if db.exists() else "NO — run opsdb.py init", ok=db.exists())
+
+    print("\n" + "=" * 52)
+    print("Paste all of the above if it still misbehaves.\n")
+
+
+if __name__ == "__main__":
+    main()

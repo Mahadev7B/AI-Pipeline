@@ -420,7 +420,27 @@ def main() -> None:
         sys.stderr.write(
             "[idea-desk] No Founder credential yet. Create one first:\n"
             "            python3 ops/control-center/founder_auth.py setup\n")
-    server = ThreadingHTTPServer((HOST, port), Handler)
+    try:
+        server = ThreadingHTTPServer((HOST, port), Handler)
+    except OSError as exc:
+        # Without this the failure is a raw traceback, and the browser keeps
+        # talking to whatever is already on the port — so a restart LOOKS like
+        # it worked while the old code keeps serving. That exact confusion cost
+        # a whole debugging session; say it plainly instead.
+        sys.stderr.write(
+            f"\n[idea-desk] Could not start: port {port} is already in use.\n"
+            f"[idea-desk] {exc}\n\n"
+            "  An Idea Desk is ALREADY RUNNING, and it is still serving the code it\n"
+            "  started with. Your browser is reaching that one, not this one, which is\n"
+            "  why a pull can look like it changed nothing.\n\n"
+            "  Stop every running copy first:\n"
+            "    Windows      :  Get-Process python | Stop-Process\n"
+            "    macOS/Linux  :  pkill -f idea-desk/server.py\n\n"
+            "  Then start it again. Or run it on another port to compare:\n"
+            "    Windows      :  $env:IDEA_DESK_PORT=8431; python ops\\idea-desk\\server.py\n"
+            "    macOS/Linux  :  IDEA_DESK_PORT=8431 python3 ops/idea-desk/server.py\n\n"
+            "  Not sure what is going on? Run:  python ops\\idea-desk\\doctor.py\n\n")
+        raise SystemExit(1)
     sys.stderr.write(f"[idea-desk] Idea Desk ({BUILD}) on http://{HOST}:{port}/\n")
     sys.stderr.write(f"[idea-desk] reading {DB_PATH} (read-only; opsdb.py does every write)\n")
     try:
