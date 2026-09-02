@@ -314,7 +314,7 @@ def error_page(status: int, title: str, detail: str) -> bytes:
 
 # --------------------------------------------------------------- the list ---
 
-def list_page(ideas: list) -> bytes:
+def list_page(ideas: list, build: str = "") -> bytes:
     rows = []
     for i in ideas:
         st = i["status"]
@@ -344,7 +344,8 @@ def list_page(ideas: list) -> bytes:
     <div class="list">{''.join(rows) or '<div class="empty">No ideas saved yet.</div>'}</div>
     <div class="foot">Your ideas are stored in the factory's own database, so they survive closing this
     window. Saving an idea starts nothing and costs nothing. Evaluation is the step that asks the company
-    to actually read it.</div>"""
+    to actually read it &mdash; the only part that spends money.
+    {f'<div style="margin-top:10px;color:var(--dim)">Running: {e(build)}</div>' if build else ''}</div>"""
     return shell("Idea Desk", body)
 
 

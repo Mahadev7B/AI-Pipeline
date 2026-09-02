@@ -55,6 +55,11 @@ IDLE_TIMEOUT_S = 60 * 60
 ABSOLUTE_TIMEOUT_S = 12 * 60 * 60
 SESSION_COOKIE = "idea_desk_session"
 
+# Bumped whenever what works changes. Shown in the footer and printed on start,
+# so "did my pull actually take effect" is a question you can answer by looking
+# rather than by guessing.
+BUILD = "slice 2 — evaluation is live"
+
 # Per-process, regenerated on every start. A form rendered by a previous run of
 # this server is refused by the next one — same reasoning as the Control Center.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -225,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if path == "/":
-                self._send(200, pages.list_page(load_ideas()))
+                self._send(200, pages.list_page(load_ideas(), build=BUILD))
                 return
             if path == "/new":
                 self._send(200, pages.new_page(SESSION_TOKEN))
@@ -395,10 +400,15 @@ class Handler(BaseHTTPRequestHandler):
             self._redirect(f"/idea/{idea_id}")
 
         elif prefix == "start":
+            # Deliberately NOT titled the same as any other unbuilt thing: when
+            # two walls share a title you cannot tell which one you hit, which
+            # is exactly how a stale server gets mistaken for a missing feature.
             self._send(200, pages.error_page(
-                501, "Not connected yet",
-                "Sending an approved brief into the factory is the last piece being built. "
-                "Your approved brief is safely stored in the meantime."))
+                501, "Start work is not built yet",
+                "This is the last piece: handing your approved brief to the factory so it actually "
+                "gets built. Your approved brief is stored and stays exactly as you approved it. "
+                "<br><br>Evaluating an idea, correcting the company and approving a brief all work "
+                "&mdash; this one button does not, yet."))
 
         else:
             self._send(404, pages.error_page(404, "Not found", "No such endpoint."))
@@ -411,7 +421,7 @@ def main() -> None:
             "[idea-desk] No Founder credential yet. Create one first:\n"
             "            python3 ops/control-center/founder_auth.py setup\n")
     server = ThreadingHTTPServer((HOST, port), Handler)
-    sys.stderr.write(f"[idea-desk] Idea Desk on http://{HOST}:{port}/\n")
+    sys.stderr.write(f"[idea-desk] Idea Desk ({BUILD}) on http://{HOST}:{port}/\n")
     sys.stderr.write(f"[idea-desk] reading {DB_PATH} (read-only; opsdb.py does every write)\n")
     try:
         server.serve_forever()
