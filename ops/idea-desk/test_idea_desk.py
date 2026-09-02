@@ -360,6 +360,63 @@ class SynthesisRecovery(unittest.TestCase):
         self.assertIsNone(self.stored())
 
 
+class AnswerShape(unittest.TestCase):
+    """A COMPLETE evaluation arriving in a different container was rejected as
+    if it were missing, discarding a paid-for multi-agent run. Shape is
+    normalised; completeness is not. Every one of the ten must still be there."""
+
+    @staticmethod
+    def ten(): return {str(n): [f"c{n}", f"x{n}"] for n in range(1, 11)}
+    VIEW = {"opp": "Medium", "why": "w", "merit": "m", "threat": "t", "diff": "d", "rec": "Proceed"}
+
+    def ok(self, result):
+        answers, view, _title = evaluator._validate(result)
+        self.assertEqual(len(answers), 10)
+        self.assertEqual(view["rec"], "Proceed")
+        return answers
+
+    def test_the_plain_shape_still_works(self):
+        self.ok({"answers": self.ten(), "view": self.VIEW})
+
+    def test_ten_answers_in_a_list(self):
+        got = self.ok({"answers": [[f"c{n}", f"x{n}"] for n in range(1, 11)], "view": self.VIEW})
+        self.assertEqual(got["1"][0], "c1")
+        self.assertEqual(got["10"][0], "c10")
+
+    def test_question_prefixed_keys(self):
+        got = self.ok({"answers": {f"Q{n}": [f"c{n}", ""] for n in range(1, 11)},
+                       "view": self.VIEW})
+        self.assertEqual(got["7"][0], "c7")
+        self.ok({"answers": {f"question {n}": [f"c{n}", ""] for n in range(1, 11)},
+                 "view": self.VIEW})
+        self.ok({"answers": {f"{n}.": [f"c{n}", ""] for n in range(1, 11)}, "view": self.VIEW})
+
+    def test_a_payload_wrapped_one_level_down(self):
+        self.ok({"evaluation": {"answers": self.ten(), "view": self.VIEW}})
+
+    # --- what normalisation must NOT rescue --------------------------------
+    def test_nine_answers_in_a_list_is_still_a_failure(self):
+        with self.assertRaises(evaluator.EvaluationError):
+            evaluator._validate({"answers": [[f"c{n}", ""] for n in range(1, 10)],
+                                 "view": self.VIEW})
+
+    def test_a_missing_numbered_answer_is_still_a_failure(self):
+        short = self.ten()
+        del short["4"]
+        with self.assertRaises(evaluator.EvaluationError):
+            evaluator._validate({"answers": short, "view": self.VIEW})
+
+    def test_two_candidate_wrappers_are_not_guessed_between(self):
+        with self.assertRaises(evaluator.EvaluationError):
+            evaluator._validate({"a": {"answers": self.ten(), "view": self.VIEW},
+                                 "b": {"answers": self.ten(), "view": self.VIEW}})
+
+    def test_an_invented_recommendation_is_not_rescued_by_a_wrapper(self):
+        with self.assertRaises(evaluator.EvaluationError):
+            evaluator._validate({"evaluation": {"answers": self.ten(),
+                                                "view": {**self.VIEW, "rec": "Ship it"}}})
+
+
 class RosterRecovery(unittest.TestCase):
     """Roster selection needs machine-readable JSON exactly as much as the
     final answer does, and used to have neither a repair attempt nor any

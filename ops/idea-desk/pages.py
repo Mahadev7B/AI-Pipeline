@@ -689,8 +689,15 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
     if "rehearsal" in shown.keys() and shown["rehearsal"]:
         banners += REHEARSAL_BANNER
     if idea.get("last_error"):
+        # safe_html, not e(). A failure message is written by our own evaluator
+        # and carries deliberate markup — the failing stage in <b>, the
+        # diagnostics path in <code>, line breaks between an explanation and
+        # the command that fixes it. e() escaped all of it, so every one of
+        # those arrived with the literal tags showing, in the message that most
+        # needs to be readable. safe_html still escapes everything first and
+        # restores only the allowlist, so nothing gains privileges here.
         banners += (f'<div class="banner red"><b>The last evaluation did not finish.</b> '
-                    f'{e(idea["last_error"])}</div>')
+                    f'{safe_html(idea["last_error"])}</div>')
     if closed:
         word = "Parked." if idea["status"] == "parked" else "Dropped."
         tail = ("Not being built now; you can come back to it." if idea["status"] == "parked"
@@ -759,8 +766,14 @@ def _draft_page(idea, token: str, flash: str = "", panel: str = "") -> bytes:
           <input type="hidden" name="token" value="{e(token)}">
           <button class="btn" type="submit">Reopen</button></form>"""
     else:
-        state = """<div class="banner blue">Nothing has been evaluated yet. When you are ready, the
-          company reads it and comes back with one answer.</div>"""
+        # Saying "nothing has been evaluated yet" directly beneath a banner
+        # describing a failed evaluation is true of the STORED rounds and false
+        # to the Founder, who just watched one run.
+        state = ("""<div class="banner blue">No completed evaluation has been saved yet &mdash; the
+          last attempt failed before it could be. Your idea and its history are untouched.</div>"""
+                 if idea.get("last_error") else
+                 """<div class="banner blue">Nothing has been evaluated yet. When you are ready, the
+          company reads it and comes back with one answer.</div>""")
         acts = f"""<div class="actions" style="margin-top:18px">
           <a class="btn primary" href="/evaluate/{idea['id']}">Ask the company to evaluate it</a>
           <a class="btn" href="/edit/{idea['id']}">Edit</a>
@@ -771,7 +784,7 @@ def _draft_page(idea, token: str, flash: str = "", panel: str = "") -> bytes:
       <div class="meta" style="margin-top:10px"><span class="st {e(idea['status'])}">{e(idea['status'])}</span>
         <span>{e(_ago(idea['created_at']))}</span></div></div></div>
     {flash_html}
-    {f'<div class="banner red"><b>The last evaluation did not finish.</b> {e(idea["last_error"])}</div>'
+    {f'<div class="banner red"><b>The last evaluation did not finish.</b> {safe_html(idea["last_error"])}</div>'
       if idea.get("last_error") else ""}
     <div class="cols"><aside class="side">
       <div class="you"><div class="k" style="color:var(--gray);margin-bottom:8px">You said &middot;

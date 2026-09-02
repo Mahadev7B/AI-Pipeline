@@ -602,14 +602,58 @@ REQUIRED_KEYS = ("opp", "why", "merit", "threat", "diff", "rec")
 VALID_RECS = ("Proceed", "Proceed with narrowed scope", "Investigate first", "Reconsider")
 
 
-def _validate(result: dict) -> tuple[dict, dict, str]:
-    answers = result.get("answers")
+_QNUM = re.compile(r"^\s*(?:q(?:uestion)?\s*)?(\d{1,2})\s*[.):]?\s*$", re.I)
+
+
+def _unwrap(result: dict) -> dict:
+    """Find the object that holds the answers when it arrived one level down.
+
+    Models wrap a correct payload in a container of their own naming —
+    {"evaluation": {...}}, {"result": {...}} — often enough that rejecting it
+    discards a COMPLETE evaluation over where it was put. Descends at most one
+    level, and only when there is exactly one candidate, so this can never pick
+    between two competing answers. Nothing is added or altered."""
+    if "answers" in result or "view" in result:
+        return result
+    nested = [v for v in result.values() if isinstance(v, dict) and ("answers" in v or "view" in v)]
+    return nested[0] if len(nested) == 1 else result
+
+
+def _locate_answers(answers):
+    """Return the ten answers keyed "1".."10", or None if they are not all here.
+
+    This is SHAPE normalisation and nothing else. Every one of the ten must be
+    present; a missing answer stays a hard failure, because the only way to fix
+    an absent answer is to invent one and this company does not invent. What it
+    does tolerate is the same ten answers arriving in a list, or under keys like
+    "Q1" or "question 3" — a complete evaluation in a different container is
+    still a complete evaluation, and rejecting it was throwing away a paid-for
+    run over punctuation."""
+    if isinstance(answers, (list, tuple)):
+        # Only an exact ten can be mapped to the ten questions without guessing
+        # which one is missing.
+        if len(answers) != 10:
+            return None
+        return {str(n): answers[n - 1] for n in range(1, 11)}
     if not isinstance(answers, dict):
+        return None
+    out = {}
+    for key, value in answers.items():
+        m = _QNUM.match(str(key))
+        if m and 1 <= int(m.group(1)) <= 10:
+            out.setdefault(str(int(m.group(1))), value)
+    return out or None
+
+
+def _validate(result: dict) -> tuple[dict, dict, str]:
+    result = _unwrap(result)
+    answers = _locate_answers(result.get("answers"))
+    if answers is None:
         raise EvaluationError("the company's answer arrived without its ten answers. Nothing was "
                               "saved.")
     clean: dict[str, list[str]] = {}
     for n in range(1, 11):
-        entry = answers.get(str(n)) or answers.get(n)
+        entry = answers.get(str(n))
         if isinstance(entry, str):
             entry = [entry, ""]
         if not isinstance(entry, (list, tuple)) or not entry:
