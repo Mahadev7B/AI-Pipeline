@@ -212,6 +212,12 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
         # (Code Review, catch-up).
         if "pending_note" not in ideas_cols:
             conn.execute("ALTER TABLE ideas ADD COLUMN pending_note TEXT")
+        # An approved investigation is not an approved brief — see schema.sql.
+        if "investigation_round_id" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN investigation_round_id INTEGER "
+                         "REFERENCES idea_rounds(id)")
+        if "investigation_approved_at" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN investigation_approved_at TEXT")
     rounds_exists = conn.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='idea_rounds'").fetchone() is not None
     if rounds_exists:
@@ -1899,6 +1905,72 @@ def cmd_idea_approve(args: argparse.Namespace) -> None:
     print(f"brief approved: idea={args.idea_id} round={rnd['round_no']} — frozen. No work has started.")
 
 
+def cmd_idea_approve_investigation(args: argparse.Namespace) -> None:
+    """Authorise the bounded work the company recommended — NOT a production brief.
+
+    "Investigate first" is a recommendation to do something real: build a
+    throwaway prototype, put it in front of five people, look something up. The
+    Idea Desk used to treat that as nothing to approve, which turned the
+    company's most honest recommendation into a dead end — the Founder could
+    only agree with it by doing nothing.
+
+    This authorises exactly that work and nothing more. It does NOT create
+    artifact 3, does not change the idea's status, and does not make the idea
+    approvable: approving a brief still requires the company's own
+    recommendation to be Proceed or Proceed with narrowed scope, with no
+    override, which is the Founder's own rule and is untouched here."""
+    if not args.confirm_founder_decision:
+        raise SystemExit("error: --confirm-founder-decision is required — only the Founder "
+                         "authorises work")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit(f"error: idea id={args.idea_id} already has an approved brief; there "
+                             "is nothing left to investigate first")
+        if row["status"] in ("parked", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}. Reopen it before "
+                             "authorising work on it.")
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: an evaluation of idea id={args.idea_id} is running right now. Authorising "
+                "work from a reading the company is in the middle of revising would approve advice "
+                "it may be about to withdraw. Wait for it to finish.")
+        rnd = conn.execute("SELECT * FROM idea_rounds WHERE id = ? AND idea_id = ?",
+                           (args.round_id, args.idea_id)).fetchone()
+        if rnd is None:
+            raise SystemExit(f"error: round id={args.round_id} does not belong to idea "
+                             f"id={args.idea_id}")
+        latest = conn.execute("SELECT MAX(round_no) FROM idea_rounds WHERE idea_id = ?",
+                              (args.idea_id,)).fetchone()[0]
+        if rnd["round_no"] != latest:
+            raise SystemExit(
+                f"error: round {rnd['round_no']} is not the company's current reading — round "
+                f"{latest} superseded it. Authorise work from the latest round.")
+        if "rehearsal" in rnd.keys() and rnd["rehearsal"]:
+            raise SystemExit(
+                "error: that round was a rehearsal — nobody read your idea and nothing was spent. "
+                "There is no real investigation to authorise. Turn rehearsal mode off and evaluate "
+                "for real first.")
+        if rnd["recommendation"] != "Investigate first":
+            raise SystemExit(
+                f"error: the company's recommendation on this round is '{rnd['recommendation']}', "
+                "not 'Investigate first'. This action authorises the investigation the company "
+                "asked for; there is no investigation on the table here.")
+        if row["investigation_round_id"] == args.round_id:
+            raise SystemExit(f"error: the investigation on round {rnd['round_no']} is already "
+                             "authorised. Nothing changed.")
+        conn.execute(
+            """UPDATE ideas SET investigation_round_id = ?,
+                   investigation_approved_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.round_id, args.idea_id),
+        )
+    print(f"investigation authorised: idea={args.idea_id} round={rnd['round_no']}. This is NOT an "
+          "approved brief and no production work is authorised. Nothing has started.")
+
+
 def cmd_idea_close(args: argparse.Namespace) -> None:
     """Park (may come back) or drop (decided against). Nothing is deleted —
     the idea and every round it collected stay on record."""
@@ -2257,6 +2329,14 @@ def main() -> None:
     ira.add_argument("--rehearsal", action="store_true",
                      help="no agent ran and nothing was spent; the round is marked as such forever")
     ira.set_defaults(func=cmd_idea_round_add)
+
+    iai = sub.add_parser("idea-approve-investigation",
+                         help="authorise the bounded work an 'Investigate first' round recommended "
+                              "(Founder-only; NOT a production brief)")
+    iai.add_argument("--idea-id", type=int, required=True)
+    iai.add_argument("--round-id", type=int, required=True)
+    iai.add_argument("--confirm-founder-decision", action="store_true")
+    iai.set_defaults(func=cmd_idea_approve_investigation)
 
     iap = sub.add_parser("idea-approve", help="freeze a round as the Founder-approved brief (Founder-only)")
     iap.add_argument("--idea-id", type=int, required=True, dest="idea_id")

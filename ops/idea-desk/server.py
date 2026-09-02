@@ -171,6 +171,30 @@ def _why_not_evaluate(idea: dict) -> str:
     return ""
 
 
+def _why_not_investigate(idea: dict, rounds: list) -> str:
+    """Refuse before offering, exactly as approve does. A button the database
+    will reject is a worse experience than no button."""
+    if idea["status"] == "approved":
+        return "This idea's brief is already approved — there is nothing left to investigate first."
+    if idea["status"] in ("parked", "dropped"):
+        return f"This idea is {idea['status']}. Reopen it before authorising work on it."
+    if idea.get("evaluating_since"):
+        return ("The company is reading this idea right now. Authorising work from a reading it is "
+                "in the middle of revising would approve advice it may be about to withdraw.")
+    if not rounds:
+        return "Nobody has read this idea yet, so there is no investigation to authorise."
+    last = rounds[-1]
+    if last.get("rehearsal"):
+        return ("That round was a rehearsal — nobody read your idea and nothing was spent. There "
+                "is no real investigation to authorise.")
+    if last["recommendation"] != "Investigate first":
+        return (f"The company's recommendation is '{last['recommendation']}', not 'Investigate "
+                "first'. There is no investigation on the table here.")
+    if idea.get("investigation_round_id") == last["id"]:
+        return "You have already authorised this investigation."
+    return ""
+
+
 def _why_not_approve(idea: dict, rounds: list) -> str:
     if not rounds:
         return "Nothing has been evaluated yet, so there is no brief to approve."
@@ -300,7 +324,8 @@ class Handler(BaseHTTPRequestHandler):
 
             for prefix, render in (("/idea/", "view"), ("/edit/", "edit"), ("/correct/", "correct"),
                                    ("/close/", "close"), ("/approve/", "approve"),
-                                   ("/evaluate/", "evaluate"), ("/share/", "share")):
+                                   ("/evaluate/", "evaluate"), ("/share/", "share"),
+                                   ("/investigate/", "investigate")):
                 if path.startswith(prefix):
                     rest = path[len(prefix):]
                     # str.isdigit() is True for superscripts and other unicode
@@ -350,6 +375,15 @@ class Handler(BaseHTTPRequestHandler):
                             panel=pages.share_panel(
                                 idea, SESSION_TOKEN, text, truncated, diag.name,
                                 already=incidents.already_shared(diag) is not None)))
+                    elif render == "investigate":
+                        blocked = _why_not_investigate(idea, rounds)
+                        if blocked:
+                            self._send(409, pages.error_page(
+                                409, "Nothing to authorise", blocked))
+                            return
+                        self._send(200, pages.idea_page(
+                            idea, rounds, SESSION_TOKEN,
+                            panel=pages.investigate_panel(idea, rounds, SESSION_TOKEN)))
                     elif render == "close":
                         self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
                                                         panel=pages.close_panel(idea, SESSION_TOKEN)))
@@ -508,6 +542,15 @@ class Handler(BaseHTTPRequestHandler):
 
         elif prefix == "reopen":
             opsdb("idea-reopen", "--idea-id", str(idea_id))
+            self._redirect(f"/idea/{idea_id}")
+
+        elif prefix == "investigate":
+            round_id = self._one(fields, "round_id")
+            if not (round_id.isascii() and round_id.isdigit()):
+                self._send(400, pages.error_page(400, "Bad request", "Which round?"))
+                return
+            opsdb("idea-approve-investigation", "--idea-id", str(idea_id), "--round-id", round_id,
+                  "--confirm-founder-decision")
             self._redirect(f"/idea/{idea_id}")
 
         elif prefix == "approve":

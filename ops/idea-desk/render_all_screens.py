@@ -33,6 +33,16 @@ import urllib.request
 REPO = "/home/user/AI-Pipeline"
 OUT = pathlib.Path(os.environ["OUT"])
 OUT.mkdir(exist_ok=True)
+
+# REFUSE to run without a scratch database. Without this the renderer silently
+# used ops/db/operations.sqlite3 — the real one — and seeded it again on every
+# run, so ids drifted and a screen that hardcoded one stopped meaning what it
+# said. The project's own rule is that nothing under test touches the live
+# database; this makes the rule enforceable rather than remembered.
+if not os.environ.get("OPSDB_PATH"):
+    sys.exit("refusing to run: set OPSDB_PATH to a scratch file first, e.g.\n"
+             "  OUT=/tmp/screens OPSDB_PATH=/tmp/screens.sqlite3 "
+             "python3 ops/idea-desk/render_all_screens.py")
 PASS = "not-a-real-passphrase-0000"
 PORT = 8493
 
@@ -52,6 +62,22 @@ def ops(*a):
 
 # --- seed content that exercises the layout, including awkward text ---------
 ops("init")
+
+# REFUSE to seed on top of existing data. The seed adds ideas rather than
+# replacing them, so a second run against the same file produces duplicate
+# ideas, shifted row ids, and screens asserting against the wrong rows —
+# which is exactly how two screens "failed" while the feature under test was
+# correct. Deleting the file is the caller's decision, never this script's.
+import sqlite3 as _sq
+_probe = _sq.connect(os.environ["OPSDB_PATH"])
+try:
+    _existing = _probe.execute("SELECT COUNT(*) FROM ideas").fetchone()[0]
+finally:
+    _probe.close()
+if _existing:
+    sys.exit(f"refusing to run: {os.environ['OPSDB_PATH']} already holds {_existing} idea(s). "
+             "This script seeds rather than resets, so a second run would duplicate them and "
+             "shift every row id. Delete the file and run again.")
 ops("idea-create", "--raw=a quiet place to write down half-thoughts before they escape",
     "--audience=me", "--trigger=I keep losing them in notes apps")
 ops("idea-create", "--raw=--dark-mode but for calendars <script>alert(1)</script> & \"quotes\" 😀 "
@@ -186,6 +212,32 @@ capture("20-evaluating", "/idea/1")
 capture("21-approve-refused-mid-eval", "/approve/1", expect=409)
 ops("idea-evaluation-end", "--idea-id", "1", "--error=Something went wrong reading this one.")
 capture("22-after-a-failed-evaluation", "/idea/1")
+
+# "Investigate first" is approvable WORK, not a dead end. Idea 2's round says
+# exactly that in the seed, so this is the real path, not a contrived one.
+capture("26-investigate-offered", "/idea/2")
+capture("27-authorise-investigation", "/investigate/2")
+# Read the round id rather than assuming it. Hardcoding "1" was right only
+# while the database was fresh, which is exactly the assumption the guard above
+# now enforces — but the id still belongs to the data, not to this script.
+_row = subprocess.run([sys.executable, "-c",
+                       "import sqlite3,os,sys;"
+                       "c=sqlite3.connect(os.environ['OPSDB_PATH']);"
+                       "print(c.execute('SELECT id FROM idea_rounds WHERE idea_id=2 "
+                       "ORDER BY round_no DESC LIMIT 1').fetchone()[0])"],
+                      capture_output=True, text=True)
+fetch("/api/investigate/2", {"round_id": _row.stdout.strip()})
+capture("28-after-authorising", "/idea/2")
+capture("29-authorising-twice-refused", "/investigate/2", expect=409)
+# The brief gate must be exactly as strict as it was before any of this.
+capture("30-brief-still-refused", "/approve/2", expect=409)
+with open(OUT / "28-after-authorising.html") as fh:
+    page = fh.read()
+    if "Investigation authorised" not in page:
+        PROBLEMS.append(("28-after-authorising", ["the page does not say the work was authorised"]))
+    if "Approve brief" in page:
+        PROBLEMS.append(("28-after-authorising",
+                         ["authorising an investigation must not offer to approve a brief"]))
 
 # The share flow needs a diagnostic to exist, so write one where the app looks.
 # Without it the button correctly does not appear, and the screen proves nothing.

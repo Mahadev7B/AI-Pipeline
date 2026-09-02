@@ -423,6 +423,14 @@ def _lifecycle(i: dict) -> tuple[str, str, str, str]:
     if i["status"] == "dropped":
         return ("archive", "Dropped",
                 i["close_reason"] or "Decided against.", "Reopen")
+    if i.get("investigation_round_id"):
+        # NOT a status: no brief is frozen and artifact 3 does not exist. But
+        # the Founder authorised real work, and a screen that looks identical
+        # afterwards is exactly the dead end this was built to remove.
+        return ("working", "Investigating",
+                f"Round {i['rounds']}: you authorised the investigation the company asked for. "
+                "No brief is approved and nothing is in production.",
+                "Start the investigation")
     if i["rounds"]:
         # The pill stays short so it scans; the verdict goes in the line below,
         # where it has room. "READ — PROCEED WITH NARROWED SCOPE" as an
@@ -432,7 +440,8 @@ def _lifecycle(i: dict) -> tuple[str, str, str, str]:
         return ("working", "Read",
                 f"Round {i['rounds']}: {rec}."
                 + ("" if approvable else " Not recommending you build it yet."),
-                "Approve the brief" if approvable else "Correct us")
+                "Approve the brief" if approvable
+                else ("Authorise the investigation" if rec == "Investigate first" else "Correct us"))
     return ("working", "Saved",
             "Nobody has read it yet. Saving costs nothing.",
             "Ask the company to read it")
@@ -442,6 +451,10 @@ NEXT_HREF = {
     "Retry evaluation": "/evaluate/{id}", "Ask the company to read it": "/evaluate/{id}",
     "Correct us": "/correct/{id}", "Approve the brief": "/approve/{id}",
     "Reopen": "/idea/{id}", "Start work": "/idea/{id}",
+    "Authorise the investigation": "/investigate/{id}",
+    # Start Work is still a wall, and so is this. It leads to the same honest
+    # 501 rather than to a page pretending work began.
+    "Start the investigation": "/api/start/{id}",
 }
 
 BUCKETS = (
@@ -834,6 +847,22 @@ def _action_bar(idea, shown, token: str) -> str:
         approve = f"""<a class="btn ok" href="/approve/{idea['id']}">Approve brief</a>"""
         why = (f"Four things you can do with round {shown['round_no']}. "
                f"Nothing is built by any of them.")
+    elif rec == "Investigate first" and not idea.get("investigation_round_id"):
+        # "Investigate first" is a recommendation to DO something — build a
+        # throwaway prototype, put it in front of five people. Offering no
+        # action at all made the company's most honest recommendation the one
+        # dead end on the screen, where agreeing with it meant doing nothing.
+        # This authorises that work and NOT a brief; the brief gate is
+        # unchanged and still refuses anything but Proceed.
+        approve = f"""<a class="btn ok" href="/investigate/{idea['id']}">Authorise investigation</a>"""
+        why = ('The company wants to <b>find something out first</b>, and says what in answer 7. '
+               'You can authorise that work &mdash; it is not a brief, and nothing goes into '
+               'production.')
+    elif idea.get("investigation_round_id"):
+        approve = ""
+        why = ('<b style="color:var(--text2)">Investigation authorised.</b> No brief is approved '
+               'and nothing is in production. When it comes back with evidence, correct us and the '
+               'company reads the idea again knowing something it does not know now.')
     else:
         # No Approve, and the reason takes the explanatory slot rather than
         # trailing after the buttons — otherwise it wraps under them and reads
@@ -904,6 +933,33 @@ def share_panel(idea, token: str, text: str, truncated: bool, name: str,
           placeholder="Anything you noticed when it failed. Optional, and appended to the file."></textarea>
         <div class="actions" style="margin-top:12px">
           <button class="btn primary" type="submit">Send it</button>
+          <a class="btn ghost" href="/idea/{idea['id']}">Cancel</a></div></form></div>"""
+
+
+def investigate_panel(idea, rounds, token: str) -> str:
+    """Authorising the work the company asked for — not a production brief.
+
+    "Investigate first" is a recommendation to DO something: build a throwaway
+    prototype, put it in front of five people. Treating it as "nothing to
+    approve" made the company's most honest recommendation the one dead end on
+    the screen, and left the Founder able to agree with it only by doing
+    nothing."""
+    r = rounds[-1]
+    return f"""<div class="panel"><h3>Authorise the investigation</h3>
+      <p>The company recommends <b>Investigate first</b> &mdash; it wants to find something out
+      before anyone builds the real thing. This authorises <b>that work and nothing else</b>.</p>
+      <div class="art" style="margin:14px 0"><span class="k">What it does not do</span>
+        <span>It does not approve a brief, and nothing goes into production. The idea stays where
+        it is; approving a brief still needs the company to recommend Proceed.</span>
+        <span class="m">unchanged</span></div>
+      <p style="color:var(--gray)">What the company wants to investigate is answer 7 on this
+      round. When the investigation comes back with evidence, the company reads the idea again
+      knowing something it does not know now.</p>
+      <form method="post" action="/api/investigate/{idea['id']}">
+        <input type="hidden" name="token" value="{e(token)}">
+        <input type="hidden" name="round_id" value="{e(r['id'])}">
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" type="submit">Authorise this investigation</button>
           <a class="btn ghost" href="/idea/{idea['id']}">Cancel</a></div></form></div>"""
 
 

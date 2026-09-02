@@ -473,6 +473,15 @@ CREATE TABLE IF NOT EXISTS ideas (
                       CHECK (status IN ('draft','evaluated','approved','parked','dropped')),
   approved_round_id INTEGER REFERENCES idea_rounds(id),  -- ARTIFACT 3 — the frozen brief
   approved_at       TEXT,
+  -- An approved INVESTIGATION is not an approved brief. When the company says
+  -- "Investigate first" it is recommending real, bounded work — a prototype, a
+  -- test with real users — and the Founder can authorise exactly that without
+  -- authorising a production build. Deliberately NOT a status: the idea is
+  -- still 'evaluated', because no brief has been frozen and artifact 3 does
+  -- not exist. Approving the brief remains gated on Proceed / Proceed with
+  -- narrowed scope, with no override, exactly as before.
+  investigation_round_id  INTEGER REFERENCES idea_rounds(id),
+  investigation_approved_at TEXT,
   close_reason      TEXT,               -- why parked or dropped, optional
   closed_at         TEXT,
   created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
