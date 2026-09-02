@@ -352,7 +352,15 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
         "--no-session-persistence",    # messages/agent_runs must be the only conversation store
         "--output-format", "json",
         "--max-budget-usd", MAX_BUDGET_USD,
-        "-p", transcript,
+        # The prompt goes on STDIN, never here. As a command-line argument it
+        # was silently TRUNCATED AT THE FIRST NEWLINE on Windows, where `claude`
+        # resolves to a .cmd shim and a batch command line ends at a line break.
+        # Every agent received only line one of its prompt and answered "your
+        # message got cut off mid-sentence" — which then failed as a JSON shape
+        # problem, sending three rounds of debugging at the parser instead. The
+        # same code works on macOS and Linux because argv there carries newlines
+        # untouched, so this was invisible to everyone not on Windows.
+        "-p",
     ]
 
     try:
@@ -370,16 +378,17 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
             # found" and lists only its built-ins. Pinning cwd makes every
             # invocation work regardless of where the server was launched.
             cwd=str(_REPO_ROOT),
-            # Without this the CLI waits 3s for piped stdin that is never
-            # coming, on every single invocation, and warns on stderr.
-            stdin=subprocess.DEVNULL,
+            # The prompt is written here rather than passed as an argument, so
+            # no shell, quoting rule or line-ending convention can alter it.
+            stdin=subprocess.PIPE,
         )
     except FileNotFoundError:
         return RuntimeResult(ok=False, error=f"the '{CLAUDE_BIN}' runtime is not available on this machine.",
                               error_kind="runtime_unavailable")
 
     try:
-        stdout_bytes, stderr_bytes = proc.communicate(timeout=timeout_s)
+        stdout_bytes, stderr_bytes = proc.communicate(
+            input=transcript.encode("utf-8"), timeout=timeout_s)
     except subprocess.TimeoutExpired:
         # The bool _kill_process_group() now returns is deliberately IGNORED
         # here (Code Review round-3 non-blocking item, made explicit rather

@@ -392,7 +392,7 @@ class SharingEvidence(unittest.TestCase):
             self.ran.append(args)
             class R:
                 returncode = codes.get(args[0], 0)
-                stdout = {"rev-parse": "claude/orchestrator-chief-of-staff-f35grl"}.get(args[0], "")
+                stdout = {"symbolic-ref": "claude/orchestrator-chief-of-staff-f35grl"}.get(args[0], "")
                 stderr = ""
             return R()
         self.inc._git = run
@@ -445,7 +445,7 @@ class SharingEvidence(unittest.TestCase):
         def run(*args, timeout=60):
             self.ran.append(args)
             class R:
-                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "rev-parse" else ""
+                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
                 stderr = ""
                 returncode = 0
             if args[0] == "push":
@@ -492,19 +492,76 @@ class SharingEvidence(unittest.TestCase):
             self.ran.append(args)
             class R:
                 returncode = 1 if args[0] == "commit" else 0
-                stdout = ("nothing to commit, working tree clean" if args[0] == "commit"
+                # The wording git actually used on the Founder's machine.
+                stdout = ("nothing added to commit but untracked files present"
+                          if args[0] == "commit"
                           else "claude/orchestrator-chief-of-staff-f35grl")
                 stderr = ""
             return R()
         self.inc._git = run
         self.assertIn("already sent", self.inc.share(9))
 
+    def test_a_branch_with_no_commits_is_not_mistaken_for_a_detached_head(self):
+        # rev-parse cannot resolve HEAD on an unborn branch and reports nothing,
+        # which read as "detached" and sent the Founder to fix a non-problem.
+        self.write_diag()
+        self.fake_git()
+        self.inc.share(9)
+        self.assertTrue(any(a[0] == "symbolic-ref" for a in self.ran),
+                        "the branch must be read with symbolic-ref")
+        self.assertFalse(any(a[0] == "rev-parse" for a in self.ran))
+
+    def test_git_setup_failures_are_explained_not_pasted(self):
+        # Handing someone raw git output is not an error message, it is a
+        # handoff of the problem. The Founder hit exactly this one.
+        identity = ("Author identity unknown\n*** Please tell me who you are.\n"
+                    "fatal: unable to auto-detect email address (got 'x@y.(none)')")
+        told = self.inc._explain(identity)
+        self.assertIsNotNone(told)
+        self.assertIn("git config --global user.name", told)
+        self.assertIn("Nothing was lost", told)
+        self.assertIsNotNone(self.inc._explain("fatal: Authentication failed for 'https://...'"))
+        self.assertIsNotNone(self.inc._explain("could not read Username for 'https://github.com'"))
+        self.assertIsNone(self.inc._explain("some failure nobody anticipated"),
+                          "an unrecognised failure must fall through, not be mislabelled")
+
+    def test_an_unsigned_commit_says_what_to_do(self):
+        self.write_diag()
+        def run(*args, timeout=60):
+            class R:
+                returncode = 1 if args[0] == "commit" else 0
+                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
+                stderr = "Author identity unknown" if args[0] == "commit" else ""
+            return R()
+        self.inc._git = run
+        with self.assertRaises(self.inc.ShareError) as caught:
+            self.inc.share(9)
+        self.assertIn("git config --global", str(caught.exception))
+
+    def test_a_signin_failure_is_not_treated_as_a_diverged_branch(self):
+        # Rebasing would not help, and would rewrite history for nothing.
+        self.write_diag()
+        pulls = []
+        def run(*args, timeout=60):
+            if args[0] == "pull":
+                pulls.append(args)
+            class R:
+                returncode = 1 if args[0] == "push" else 0
+                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
+                stderr = "fatal: Authentication failed" if args[0] == "push" else ""
+            return R()
+        self.inc._git = run
+        with self.assertRaises(self.inc.ShareError) as caught:
+            self.inc.share(9)
+        self.assertEqual(pulls, [], "a sign-in problem must not trigger a rebase")
+        self.assertIn("not signed in", str(caught.exception))
+
     def test_a_detached_head_refuses_rather_than_pushing_somewhere_odd(self):
         self.write_diag()
         def run(*args, timeout=60):
             class R:
                 returncode = 0
-                stdout = "HEAD" if args[0] == "rev-parse" else ""
+                stdout = "HEAD" if args[0] == "symbolic-ref" else ""
                 stderr = ""
             return R()
         self.inc._git = run

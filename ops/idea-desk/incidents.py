@@ -53,6 +53,31 @@ def _clean(text: str) -> str:
     return _CREDS.sub(r"\1", (text or "").strip())[:600]
 
 
+def _explain(out: str) -> str | None:
+    """Turn git's own words into something the Founder can act on.
+
+    Pasting raw git output at someone is not an error message, it is a
+    handoff of the problem. These are the failures that are about the
+    machine's setup rather than about this repository, and each has one fix."""
+    low = (out or "").lower()
+    if "author identity unknown" in low or "unable to auto-detect email" in low:
+        return ("Git on this machine does not know who you are yet, so it will not sign a commit. "
+                "This is a one-time setup and has nothing to do with your idea. In a terminal:"
+                "<br><br><code>git config --global user.name \"Your Name\"</code><br>"
+                "<code>git config --global user.email \"you@example.com\"</code>"
+                "<br><br>Then press Send again. Nothing was lost &mdash; the file is already "
+                "prepared and will go straight through.")
+    if "could not read username" in low or "authentication failed" in low or "403" in low:
+        return ("GitHub refused the push because this machine is not signed in to it. Your idea "
+                "and the evidence are safe here; only the send failed."
+                "<br><br>Sign in once with <code>gh auth login</code>, or set up a credential "
+                "helper, then press Send again.")
+    if "permission denied" in low and "publickey" in low:
+        return ("GitHub refused this machine's SSH key. Nothing was lost. Fix the key, or switch "
+                "the remote to HTTPS, then press Send again.")
+    return None
+
+
 def latest_for(idea_id: int) -> Path | None:
     """The most recent diagnostic for this idea, or None if it has none."""
     if not DIAGNOSTICS.is_dir():
@@ -87,7 +112,10 @@ def share(idea_id: int, note: str = "") -> str:
         raise ShareError("There is no saved evidence for this idea to send. A diagnostic file is "
                          "only written when an evaluation actually fails.")
 
-    branch = _git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    # symbolic-ref, not rev-parse: on a branch with no commits yet, rev-parse
+    # cannot resolve HEAD and reports nothing, which read as "detached" and
+    # sent the Founder to fix a problem they did not have.
+    branch = _git("symbolic-ref", "--short", "HEAD").stdout.strip()
     if not branch or branch == "HEAD":
         raise ShareError("This checkout is not on a branch, so there is nowhere to push. "
                          "Run <code>git checkout claude/orchestrator-chief-of-staff-f35grl</code> "
@@ -106,9 +134,14 @@ def share(idea_id: int, note: str = "") -> str:
     # feature meant to preserve it. The diagnostic body cannot change anyway:
     # it is written once, when the evaluation fails.
     if note.strip():
-        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-        with target.open("a", encoding="utf-8") as fh:
-            fh.write(f"\n\n----- what the Founder added, {stamp} -----\n{note.strip()}\n")
+        # A send that failed on setup has already appended the note, and the
+        # retry would append it again — the same sentence twice in the evidence
+        # for no reason.
+        existing = target.read_text(encoding="utf-8", errors="replace")
+        if note.strip() not in existing:
+            stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            with target.open("a", encoding="utf-8") as fh:
+                fh.write(f"\n\n----- what the Founder added, {stamp} -----\n{note.strip()}\n")
 
     rel = target.relative_to(REPO).as_posix()
     added = _git("add", "--", rel)
@@ -121,15 +154,25 @@ def share(idea_id: int, note: str = "") -> str:
     committed = _git("commit", "-m", subject, "--", rel)
     if committed.returncode != 0:
         out = (committed.stdout or "") + (committed.stderr or "")
-        if "nothing to commit" in out or "no changes added" in out:
+        # Git words this several ways depending on what else is in the tree
+        # ("nothing to commit", "nothing added to commit but untracked files
+        # present", "no changes added to commit"). Matching only one of them
+        # reported a harmless resend as a failure.
+        if any(p in out for p in ("nothing to commit", "nothing added to commit",
+                                  "no changes added", "working tree clean")):
             if not fresh:
                 return ("That evidence was already sent — nothing changed, so there was nothing new "
                         "to commit.")
-        raise ShareError(f"Could not commit the file: {_clean(out)}")
+        raise ShareError(_explain(out) or f"Could not commit the file: {_clean(out)}")
 
     pushed = _git("push", "origin", f"HEAD:refs/heads/{branch}", timeout=120)
     if pushed.returncode == 0:
         return f"Sent. <code>{rel}</code> is on GitHub, on branch <b>{branch}</b>."
+    told = _explain((pushed.stderr or "") + (pushed.stdout or ""))
+    if told:
+        # A sign-in problem is not a diverged branch. Rebasing would not help,
+        # and doing it anyway would rewrite the Founder's history for nothing.
+        raise ShareError(told)
 
     # Someone else pushed first. Rebase onto them and try once more — never
     # force, which would discard whatever they pushed.
@@ -143,8 +186,9 @@ def share(idea_id: int, note: str = "") -> str:
 
     pushed = _git("push", "origin", f"HEAD:refs/heads/{branch}", timeout=120)
     if pushed.returncode != 0:
-        raise ShareError(
+        out = (pushed.stderr or "") + (pushed.stdout or "")
+        raise ShareError(_explain(out) or (
             "The file is committed here but the push was refused. Nothing was lost — running "
             f"<code>git push</code> yourself will send it.<br><br>"
-            f"Git said: {_clean(pushed.stderr or pushed.stdout)}")
+            f"Git said: {_clean(out)}"))
     return f"Sent. <code>{rel}</code> is on GitHub, on branch <b>{branch}</b>."

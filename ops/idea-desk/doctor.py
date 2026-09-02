@@ -60,6 +60,19 @@ def main() -> None:
         print("         git checkout claude/orchestrator-chief-of-staff-f35grl")
         print("         git pull")
     line("last commit here", git("log", "-1", "--format=%h %s")[:78])
+    # Sending a failed evaluation's evidence makes a commit, and git refuses to
+    # sign one without an identity. Discovering that at the moment you are
+    # trying to report a failure is the worst possible time.
+    who = git("config", "user.name")
+    mail = git("config", "user.email")
+    named = bool(who) and bool(mail) and "could not run git" not in who
+    line("git knows who you are", f"{who} <{mail}>" if named else "NO — commits will be refused",
+         ok=named)
+    if not named:
+        print("     Sending evidence to GitHub makes a commit, and git will not make one")
+        print("     without a name and email. One-time setup:")
+        print('       git config --global user.name "Your Name"')
+        print('       git config --global user.email "you@example.com"')
     dirty = git("status", "--porcelain")
     line("uncommitted changes", "none" if not dirty else f"{len(dirty.splitlines())} file(s)")
 
