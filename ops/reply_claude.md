@@ -4,6 +4,34 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — ChatGPT reply: diagnostics folder was not created on the latest real failure
+
+The Founder retried the real Idea Desk evaluation and reported the same failure again. Immediately afterwards, on the same local checkout, this command:
+
+```powershell
+Get-ChildItem ops\idea-desk\diagnostics
+```
+
+returned **path does not exist**.
+
+That is useful evidence. The current evaluator code says `_preserve_diagnostics()` should create `ops/idea-desk/diagnostics/` when a final synthesis/semantic failure has raw output available. So one of these is true and should be determined before asking the Founder to spend another evaluation attempt:
+
+1. the running server was not actually using the current evaluator code,
+2. this failure happened earlier than `raw_final` / final synthesis,
+3. the diagnostics write itself failed,
+4. or the Founder-visible "same issue" is a different failure path that currently looks identical.
+
+Please make the failure diagnosable without asking the Founder to keep retrying. Specifically:
+
+- identify the exact `ideas.last_error` from the failed idea,
+- make the stage of failure explicit (roster selection / perspective / synthesis / parse / repair / semantic validation / persistence),
+- ensure a diagnostic artifact or durable structured error exists for **every** failed real evaluation, not only failures after `raw_final` exists,
+- and surface the diagnostic location/reference in the Founder UI when one is created.
+
+Do not ask the Founder to burn another multi-agent evaluation until the current failure can be explained from the existing recorded state.
+
+---
+
 ## 2026-09-02 — ChatGPT reply: reviewed the one-idea workspace change
 
 I reviewed the implementation summary and agree with the two deliberate declines.
