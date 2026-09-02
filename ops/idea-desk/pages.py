@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from datetime import datetime, timezone
 
 # The five voices of the journey (design review Revision 2). Colour carries
@@ -213,6 +214,39 @@ def e(s) -> str:
     return html.escape("" if s is None else str(s))
 
 
+# The ten answers are written by agents, and agent output is not trusted input
+# just because it came from our own company. Everything is escaped first, then
+# the small set of tags the answer format actually needs is put back. Nothing
+# else survives — no links, no scripts, no attributes but the class names below.
+_SIMPLE_TAGS = "b|i|em|strong|br"
+_DIV_CLASSES = "sk|two|dec"
+_SPAN_CLASSES = r"lab unk|lab|na"
+
+
+def safe_html(raw: str | None) -> str:
+    out = html.escape("" if raw is None else str(raw))
+    out = re.sub(rf"&lt;(/?)({_SIMPLE_TAGS})\s*/?&gt;", r"<\1\2>", out)
+    out = re.sub(rf"&lt;div class=(?:&quot;|&#x27;)({_DIV_CLASSES})(?:&quot;|&#x27;)&gt;",
+                 r'<div class="\1">', out)
+    out = re.sub(rf"&lt;span class=(?:&quot;|&#x27;)({_SPAN_CLASSES})(?:&quot;|&#x27;)&gt;",
+                 r'<span class="\1">', out)
+    out = out.replace("&lt;div&gt;", "<div>")
+    out = out.replace("&lt;/div&gt;", "</div>").replace("&lt;/span&gt;", "</span>")
+    # Balance the containers, so a stray closing tag can never escape the card
+    # it was written into and start eating the page.
+    depth = 0
+    balanced = []
+    for piece in re.split(r"(<div[^>]*>|</div>)", out):
+        if piece.startswith("<div"):
+            depth += 1
+        elif piece == "</div>":
+            if depth == 0:
+                continue
+            depth -= 1
+        balanced.append(piece)
+    return "".join(balanced) + "</div>" * depth
+
+
 def _ago(iso: str | None) -> str:
     if not iso:
         return ""
@@ -407,9 +441,61 @@ def _company_view(view: dict) -> str:
       Reconsider.</div></div>"""
 
 
-def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "") -> bytes:
+def evaluating_page(idea, steps) -> bytes:
+    """Shown while the company is actually reading the idea. Refreshes itself,
+    because the work is happening in another thread and takes minutes."""
+    lines = "".join(f"""<div class="h-item"><span class="dot" style="background:var(--accent)"></span>
+      <div><b>{e(who)}</b><br>{e(what)}</div></div>""" for who, what in steps) or (
+        '<div class="h-item"><span class="dot"></span><div>Starting&hellip;</div></div>')
+    body = f"""
+    <div style="max-width:660px;margin-top:40px">
+      <div class="k">Round {len(idea.get('rounds_so_far') or []) + 1}</div>
+      <h1 style="margin-top:8px">The company is considering your idea</h1>
+      <p class="sub" style="margin:12px 0 0">They read it separately. They may disagree. You will not
+      be handed the argument &mdash; the Chief of Staff brings you one answer.</p>
+      <div class="you" style="margin-top:24px"><div class="k" style="color:var(--gray);
+        margin-bottom:8px">You said</div><div class="q">&ldquo;{e(idea['current_raw'])}&rdquo;</div></div>
+      <div class="hist" style="margin-top:22px">{lines}</div>
+      <p class="note" style="margin-top:18px">This page refreshes itself. It takes a few minutes &mdash;
+      several people are reading it, one after another. You can close this and come back.</p>
+      <div class="actions" style="margin-top:14px"><a class="btn ghost" href="/">Back to your ideas</a></div>
+    </div>"""
+    page = shell("Idea Desk", body, crumb=f"/ <b>{e(idea.get('title') or 'Evaluating')}</b>")
+    return page.replace(b"<title>", b'<meta http-equiv="refresh" content="6"><title>', 1)
+
+
+def evaluate_panel(idea, token: str, *, correcting: bool = False) -> str:
+    """The disclosure that has to sit in front of the one expensive button."""
+    note_field = ("""<textarea name="note" style="min-height:90px" required
+        placeholder="What did we get wrong? One or two lines is enough."></textarea>""" if correcting
+        else "")
+    heading = ("Correct us, and evaluate again" if correcting
+               else "Ask the company to evaluate this idea")
+    lead = ("Your idea does not change. Your note is stored beside it, and the company re-reads both."
+            if correcting else
+            "The Chief of Staff picks who should read it, those people read it separately, and you "
+            "get back one answer.")
+    return f"""<div class="panel"><h3>{heading}</h3><p>{lead}</p>
+      <div class="banner" style="margin:0 0 14px;border-color:oklch(78% 0.14 75 / .4);
+           background:var(--accent-soft);color:var(--text)">
+        <b>This one spends money.</b> Several agents run, each a real model call, and it takes a few
+        minutes. Everything else in the Idea Desk is free; this is the step that is not. There is no
+        cost estimate available before the fact &mdash; the company cannot tell you in advance what a
+        given idea will cost to read.</div>
+      <form method="post" action="/api/{'correct' if correcting else 'evaluate'}/{idea['id']}">
+        <input type="hidden" name="token" value="{e(token)}">{note_field}
+        <div class="actions" style="margin-top:{'12' if correcting else '0'}px">
+          <button class="btn primary" type="submit">{'Send and re-evaluate' if correcting
+            else 'Yes, evaluate it'}</button>
+          <a class="btn ghost" href="/idea/{idea['id']}">Not now</a></div></form></div>"""
+
+
+def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
+              steps=None) -> bytes:
+    if idea.get("evaluating_since"):
+        return evaluating_page({**idea, "rounds_so_far": rounds}, steps or [])
     if not rounds:
-        return _draft_page(idea, token, flash)
+        return _draft_page(idea, token, flash, panel)
 
     r = rounds[-1]
     answers = json.loads(r["answers_json"] or "{}")
@@ -426,8 +512,8 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "") -> 
     qs = []
     for num, title, voice, expands in QUESTIONS:
         colour, vname = VOICES[voice]
-        pair = answers.get(str(num)) or ["<i>Not answered in this round.</i>", ""]
-        concise, expanded = (pair + ["", ""])[:2]
+        pair = answers.get(str(num)) or ["Not answered in this round.", ""]
+        concise, expanded = (safe_html(pair[0]), safe_html(pair[1] if len(pair) > 1 else ""))
         big = ' big' if num == 2 else ''
         exp = (f"""<details class="x"><summary>Expanded &middot; {e(expands)}</summary>
                 <div class="xin">{expanded}</div></details>""" if expanded else "")
@@ -450,6 +536,9 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "") -> 
     banners = ""
     if flash:
         banners += f'<div class="banner green">{flash}</div>'
+    if idea.get("last_error"):
+        banners += (f'<div class="banner red"><b>The last evaluation did not finish.</b> '
+                    f'{e(idea["last_error"])}</div>')
     if closed:
         word = "Parked." if idea["status"] == "parked" else "Dropped."
         tail = ("Not being built now; you can come back to it." if idea["status"] == "parked"
@@ -507,7 +596,7 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "") -> 
                  bar=_action_bar(idea, shown, token))
 
 
-def _draft_page(idea, token: str, flash: str = "") -> bytes:
+def _draft_page(idea, token: str, flash: str = "", panel: str = "") -> bytes:
     closed = idea["status"] in ("parked", "dropped")
     flash_html = f'<div class="banner green">{flash}</div>' if flash else ""
     if closed:
@@ -521,9 +610,7 @@ def _draft_page(idea, token: str, flash: str = "") -> bytes:
         state = """<div class="banner blue">Nothing has been evaluated yet. When you are ready, the
           company reads it and comes back with one answer.</div>"""
         acts = f"""<div class="actions" style="margin-top:18px">
-          <form method="post" action="/api/evaluate/{idea['id']}">
-            <input type="hidden" name="token" value="{e(token)}">
-            <button class="btn primary" type="submit">Ask the company to evaluate it</button></form>
+          <a class="btn primary" href="/evaluate/{idea['id']}">Ask the company to evaluate it</a>
           <a class="btn" href="/edit/{idea['id']}">Edit</a>
           <a class="btn ghost" href="/close/{idea['id']}">Not building this</a></div>"""
     body = f"""
@@ -532,10 +619,12 @@ def _draft_page(idea, token: str, flash: str = "") -> bytes:
       <div class="meta" style="margin-top:10px"><span class="st {e(idea['status'])}">{e(idea['status'])}</span>
         <span>{e(_ago(idea['created_at']))}</span></div></div></div>
     {flash_html}
+    {f'<div class="banner red"><b>The last evaluation did not finish.</b> {e(idea["last_error"])}</div>'
+      if idea.get("last_error") else ""}
     <div class="cols"><aside class="side">
       <div class="you"><div class="k" style="color:var(--gray);margin-bottom:8px">You said &middot;
         never edited</div><div class="q">&ldquo;{e(idea['raw_idea'])}&rdquo;</div></div>
-      </aside><main>{state}{acts}</main></div>"""
+      </aside><main>{state}{acts}{panel}</main></div>"""
     return shell("Idea Desk", body, crumb=f"/ <b>{e(idea['title'] or 'Idea')}</b>")
 
 
@@ -562,14 +651,18 @@ def _action_bar(idea, shown, token: str) -> str:
     can = rec in APPROVABLE
     if can:
         approve = f"""<a class="btn ok" href="/approve/{idea['id']}">Approve brief</a>"""
+        why = (f"Four things you can do with round {shown['round_no']}. "
+               f"Nothing is built by any of them.")
     else:
-        approve = (f'<span style="font-size:12.5px;color:var(--text3);align-self:center;max-width:34ch">'
-                   f'No Approve yet &mdash; the company\'s own recommendation is '
-                   f'<b style="color:var(--text2)">{e(rec)}</b>. Correct it or narrow the idea '
-                   f'first.</span>')
+        # No Approve, and the reason takes the explanatory slot rather than
+        # trailing after the buttons — otherwise it wraps under them and reads
+        # like a footnote to a decision the Founder cannot make yet.
+        approve = ""
+        why = (f'<b style="color:var(--text2)">No Approve on this round.</b> The company\'s own '
+               f'recommendation is <b style="color:var(--text2)">{e(rec)}</b>, so there is nothing '
+               f'to approve yet. Correct us, or narrow the idea, and let it read again.')
     return f"""<div class="bar"><div class="bar-in">
-      <span class="why">{'Four' if can else 'Three'} things you can do with round
-        {shown['round_no']}. Nothing is built by any of them.</span>
+      <span class="why">{why}</span>
       <a class="btn ghost" href="/close/{idea['id']}">Not building this</a>
       <a class="btn" href="/edit/{idea['id']}">Edit my idea</a>
       <a class="btn" href="/correct/{idea['id']}">Correct us</a>

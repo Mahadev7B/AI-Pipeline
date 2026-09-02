@@ -36,9 +36,13 @@ REPO = HERE.parent.parent
 CONTROL_CENTER = REPO / "ops" / "control-center"
 OPSDB = REPO / "ops" / "db" / "opsdb.py"
 
-sys.path.insert(0, str(CONTROL_CENTER))
+# This directory first, the Control Center appended after it: both contain a
+# server.py, so ordering decides which one `import server` would find.
 sys.path.insert(0, str(HERE))
+if str(CONTROL_CENTER) not in sys.path:
+    sys.path.append(str(CONTROL_CENTER))
 import founder_auth  # noqa: E402  — the one credential, shared not copied
+import evaluator  # noqa: E402
 import pages  # noqa: E402
 
 DB_PATH = (Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH")
@@ -228,7 +232,8 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             for prefix, render in (("/idea/", "view"), ("/edit/", "edit"), ("/correct/", "correct"),
-                                   ("/close/", "close"), ("/approve/", "approve")):
+                                   ("/close/", "close"), ("/approve/", "approve"),
+                                   ("/evaluate/", "evaluate")):
                 if path.startswith(prefix):
                     rest = path[len(prefix):]
                     if not rest.isdigit():
@@ -240,9 +245,13 @@ class Handler(BaseHTTPRequestHandler):
                         return
                     if render == "edit":
                         self._send(200, pages.new_page(SESSION_TOKEN, idea))
-                    elif render == "correct":
-                        self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
-                                                        panel=pages.correct_panel(idea, SESSION_TOKEN)))
+                    elif render in ("correct", "evaluate"):
+                        # Both go through the same disclosure: this is the one
+                        # action in the Idea Desk that spends real money.
+                        self._send(200, pages.idea_page(
+                            idea, rounds, SESSION_TOKEN,
+                            panel=pages.evaluate_panel(idea, SESSION_TOKEN,
+                                                       correcting=(render == "correct"))))
                     elif render == "close":
                         self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
                                                         panel=pages.close_panel(idea, SESSION_TOKEN)))
@@ -254,7 +263,9 @@ class Handler(BaseHTTPRequestHandler):
                             idea, rounds, SESSION_TOKEN,
                             panel=pages.approve_panel(idea, rounds, SESSION_TOKEN)))
                     else:
-                        self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN))
+                        self._send(200, pages.idea_page(
+                            idea, rounds, SESSION_TOKEN,
+                            steps=evaluator.progress_for(int(rest))))
                     return
 
             self._send(404, pages.error_page(404, "Not found", "No such page."))
@@ -366,17 +377,22 @@ class Handler(BaseHTTPRequestHandler):
             self._redirect(f"/idea/{idea_id}")
 
         elif prefix in ("evaluate", "correct"):
-            # Slice 2. The button exists and is honest about not being wired
-            # yet rather than pretending, and rather than being hidden.
             idea, rounds = load_idea(idea_id)
-            note = self._one(fields, "note")
-            what = ("re-evaluate with your correction" if prefix == "correct" else "evaluate this idea")
-            extra = (f'<br><br>Your note is not lost — it is still in the box on the previous page: '
-                     f'&ldquo;{pages.e(note)}&rdquo;' if note else "")
-            self._send(200, pages.error_page(
-                501, "Not connected yet",
-                f"Asking the company to {what} is the next piece being built. It is the step that "
-                f"actually runs agents and costs money, so it is deliberately not half-wired.{extra}"))
+            if idea is None:
+                self._send(404, pages.error_page(404, "Not found", "No such idea."))
+                return
+            note = self._one(fields, "note") or None
+            if prefix == "correct" and not note:
+                self._send(400, pages.error_page(
+                    400, "Nothing to correct",
+                    "Say what the company got wrong first, in a line or two."))
+                return
+            try:
+                evaluator.start(idea_id, idea, rounds, note)
+            except evaluator.EvaluationError as exc:
+                self._send(409, pages.error_page(409, "Could not start", pages.e(str(exc))))
+                return
+            self._redirect(f"/idea/{idea_id}")
 
         elif prefix == "start":
             self._send(200, pages.error_page(

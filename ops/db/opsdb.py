@@ -192,6 +192,21 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
     if "cost_usd" not in agent_runs_cols:
         conn.execute("ALTER TABLE agent_runs ADD COLUMN cost_usd REAL")
 
+    # TASK-024 slice 2. An evaluation runs several agents and takes minutes, so
+    # it cannot be a synchronous request. evaluating_since is the in-progress
+    # marker (NULL = not running) and last_error carries a failed run's reason
+    # forward so the Founder sees what happened instead of a silent revert.
+    # Deliberately NOT a new ideas.status value: status has a CHECK constraint,
+    # and SQLite cannot alter one without rebuilding the table.
+    ideas_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ideas'").fetchone() is not None
+    if ideas_exists:
+        ideas_cols = {row["name"] for row in conn.execute("PRAGMA table_info(ideas)").fetchall()}
+        if "evaluating_since" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN evaluating_since TEXT")
+        if "last_error" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN last_error TEXT")
+
 
 def cmd_init(args: argparse.Namespace) -> None:
     conn = connect(require_exists=False)
@@ -1777,7 +1792,8 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
             (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
              args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id),
         )
-        sets = ["status = 'evaluated'", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
+        sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
+                "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
         params: list = []
         if args.title:
             sets.append("title = ?")
@@ -1859,6 +1875,43 @@ def cmd_idea_reopen(args: argparse.Namespace) -> None:
             ("evaluated" if has_round else "draft", args.idea_id),
         )
     print(f"idea reopened: id={args.idea_id}")
+
+
+def cmd_idea_evaluation_start(args: argparse.Namespace) -> None:
+    """Mark an evaluation as running. Refuses to start a second one on the same
+    idea, which is what stops a double-clicked button spending twice."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] in ("approved", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}; it is not open for "
+                             "further evaluation")
+        if row["evaluating_since"]:
+            raise SystemExit(f"error: an evaluation of idea id={args.idea_id} is already running "
+                             f"(since {row['evaluating_since']})")
+        conn.execute(
+            """UPDATE ideas SET evaluating_since = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   last_error = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.idea_id,),
+        )
+    print(f"evaluation started: idea={args.idea_id}")
+
+
+def cmd_idea_evaluation_end(args: argparse.Namespace) -> None:
+    """Clear the in-progress marker. With --error the reason is kept so the
+    Founder is told what went wrong rather than seeing the state silently
+    snap back."""
+    conn = connect()
+    with conn:
+        _idea_row(conn, args.idea_id)
+        conn.execute(
+            """UPDATE ideas SET evaluating_since = NULL, last_error = ?,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.error, args.idea_id),
+        )
+    print(f"evaluation ended: idea={args.idea_id}" + (f" — {args.error}" if args.error else ""))
 
 
 def main() -> None:
@@ -2142,6 +2195,15 @@ def main() -> None:
     iro = sub.add_parser("idea-reopen", help="undo a park or a drop")
     iro.add_argument("--idea-id", type=int, required=True, dest="idea_id")
     iro.set_defaults(func=cmd_idea_reopen)
+
+    ies = sub.add_parser("idea-evaluation-start", help="mark an idea's evaluation as running")
+    ies.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ies.set_defaults(func=cmd_idea_evaluation_start)
+
+    iee = sub.add_parser("idea-evaluation-end", help="clear the running marker, optionally with an error")
+    iee.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iee.add_argument("--error")
+    iee.set_defaults(func=cmd_idea_evaluation_end)
 
     args = p.parse_args()
     if args.command != "init" and not DB_PATH.exists():

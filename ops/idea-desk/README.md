@@ -26,12 +26,24 @@ neither needs the other running.
   *Proceed with narrowed scope*. There is no approve-anyway path — that rule
   is enforced in `opsdb.py`, not just hidden in the page.
 
+- **Ask the company to evaluate it.** The Chief of Staff picks who should
+  read this particular idea and how deep to go, those roles read it
+  separately, and the Chief of Staff writes the single answer you see. Takes a
+  few minutes and spends real money — the only thing here that does, and it
+  says so before you click.
+- **Correct us** re-runs the evaluation with your note. Your words are not
+  changed; the note is stored beside them.
+
 ## What is not wired yet
 
-- **Asking the company to evaluate an idea.** This is the step that runs real
-  agents and costs real money, so it is deliberately not half-built. The
-  button says so rather than pretending.
 - **Start work.** Sending an approved brief into the factory.
+
+## Requirements for evaluation
+
+Evaluating needs the `claude` command available on this machine. Everything
+else — writing ideas, reading past evaluations, approving, parking — works
+without it, and if it is missing the Idea Desk says so plainly instead of
+failing strangely.
 
 ## How it is put together
 

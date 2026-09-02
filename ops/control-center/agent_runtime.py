@@ -41,6 +41,7 @@ from __future__ import annotations
 import json
 import os
 import signal
+import pathlib
 import subprocess
 import sys
 import threading
@@ -108,6 +109,22 @@ MEETING_FOLLOWUP_ACTIVITY_LABEL = "Meeting: follow-up reply"
 # route (POST /api/chief-of-staff/ask) and its own allowlist rather than
 # a silent special case bolted onto Ask-Agent's existing route.
 CHIEF_OF_STAFF_ALLOWLIST = ("orchestrator",)
+
+# TASK-024 slice 2 (DEC-015, DEC-018). The Idea Desk's evaluation stage. Its own
+# allowlist rather than a reuse of MEETING_PARTICIPANT_ALLOWLIST for two
+# reasons: `design` belongs here (DEC-015 puts Design on the roster when UX
+# materially affects the idea) and is deliberately absent from meetings, and an
+# idea evaluation must never be able to widen what a meeting can invoke.
+# `orchestrator` wears the Chief of Staff identity for roster selection and
+# synthesis, exactly as it does for meetings.
+IDEA_EVALUATION_ALLOWLIST = ("orchestrator", "product", "cto", "red-team", "ceo",
+                             "design", "financial", "security")
+IDEA_EVALUATION_ACTIVITY_LABEL = "Idea evaluation: reading a Founder idea"
+IDEA_EVALUATION_ACTIVITY_LIKE = "Idea evaluation:%"
+# An evaluation is several agents thinking about a whole idea, not one short
+# question, so it needs longer than DEFAULT_TIMEOUT_S. Measured against
+# REVIEW_TIMEOUT_S (120s), which is the closest existing comparable.
+IDEA_EVALUATION_TIMEOUT_S = 180.0
 CHIEF_OF_STAFF_ACTIVITY_LABEL = "Chief of Staff: answering a Founder question"
 CHIEF_OF_STAFF_ACTIVITY_LIKE = "Chief of Staff:%"
 
@@ -225,6 +242,9 @@ _MAX_CAPTURED_BYTES = 512_000  # cap on what we parse/use from stdout, not a tru
                                 # untrusted runtime — if the `claude` binary itself were compromised,
                                 # this cap would not be the relevant safeguard.
 
+# ops/control-center/agent_runtime.py -> ops/control-center -> ops -> repo root.
+_REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+
 CLAUDE_BIN = "claude"
 
 # Milestone 2B3A: bounds the number of `claude` subprocesses that may run
@@ -273,7 +293,8 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
             and agent_name not in MEETING_PARTICIPANT_ALLOWLIST
             and agent_name not in CHIEF_OF_STAFF_ALLOWLIST
             and agent_name not in AUTOMATED_REVIEW_ALLOWLIST
-            and agent_name not in REVIEWER_SYNC_ALLOWLIST):
+            and agent_name not in REVIEWER_SYNC_ALLOWLIST
+            and agent_name not in IDEA_EVALUATION_ALLOWLIST):
         return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for agent invocation.",
                               error_kind="invalid_agent")
 
@@ -316,6 +337,17 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
             stderr=subprocess.PIPE,
             env=os.environ.copy(),       # explicit, reviewable — not implicit inheritance
             start_new_session=True,      # own process group, so a timeout can kill the whole tree
+            # The agent definitions live in the repository's .claude/agents/,
+            # and the CLI discovers them relative to its working directory.
+            # Without this, `--agent orchestrator` resolves only when the
+            # calling process happens to have been started from the repo root
+            # — verified: from any other directory the CLI reports "agent not
+            # found" and lists only its built-ins. Pinning cwd makes every
+            # invocation work regardless of where the server was launched.
+            cwd=str(_REPO_ROOT),
+            # Without this the CLI waits 3s for piped stdin that is never
+            # coming, on every single invocation, and warns on stderr.
+            stdin=subprocess.DEVNULL,
         )
     except FileNotFoundError:
         return RuntimeResult(ok=False, error=f"the '{CLAUDE_BIN}' runtime is not available on this machine.",
