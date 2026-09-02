@@ -254,16 +254,27 @@ def run(*args: str) -> str:
 
 
 def main() -> None:
+    # A fresh clone has no database — it is deliberately not in git (DEC-019).
+    # Opening it read-only first died with a traceback (QA).
+    if not DB.exists():
+        print("No database yet — creating it.")
+        subprocess.run([sys.executable, str(OPSDB), "init"], check=True,
+                       capture_output=True, text=True)
     conn = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     try:
         existing = conn.execute("SELECT id FROM ideas WHERE raw_idea = ?", (RAW,)).fetchone()
+    except sqlite3.OperationalError:
+        # Database exists but predates the ideas tables.
+        subprocess.run([sys.executable, str(OPSDB), "init"], check=True,
+                       capture_output=True, text=True)
+        existing = None
     finally:
         conn.close()
     if existing:
         raise SystemExit(f"Already seeded as idea id={existing[0]} — nothing to do.")
 
     print("Seeding the Founder's first idea:")
-    out = run("idea-create", "--raw", RAW,
+    out = run("idea-create", f"--raw={RAW}",
               "--audience", "Me. The founder, on my own machine.",
               "--trigger", "I could not find the meetings page; thirteen tabs of text.")
     idea_id = out.rsplit("id=", 1)[-1].strip()

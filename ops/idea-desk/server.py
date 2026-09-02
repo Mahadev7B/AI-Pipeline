@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote
@@ -54,6 +55,8 @@ MAX_BODY_BYTES = 64 * 1024
 IDLE_TIMEOUT_S = 60 * 60
 ABSOLUTE_TIMEOUT_S = 12 * 60 * 60
 SESSION_COOKIE = "idea_desk_session"
+# An evaluation older than this is treated as abandoned by a dead process.
+STRANDED_AFTER_S = 60 * 60
 
 # Bumped whenever what works changes. Shown in the footer and printed on start,
 # so "did my pull actually take effect" is a question you can answer by looking
@@ -274,7 +277,9 @@ class Handler(BaseHTTPRequestHandler):
                     rest = path[len(prefix):]
                     # str.isdigit() is True for superscripts and other unicode
                     # digits that int() then refuses. Accept ASCII only.
-                    if not (rest.isascii() and rest.isdigit()):
+                    # Bound it too: SQLite refuses integers past 2**63 and the
+                    # raw OverflowError reached the browser as a traceback (QA).
+                    if not (rest.isascii() and rest.isdigit() and len(rest) <= 18):
                         self._send(404, pages.error_page(404, "Not found", "No such idea."))
                         return
                     idea, rounds = load_idea(int(rest))
@@ -379,6 +384,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, pages.error_page(500, "Something broke",
                                              "That is a bug in the Idea Desk, not something you did."))
 
+    @staticmethod
+    def _flag(name: str, value: str) -> str:
+        """`--flag=value` form. A Founder idea beginning with a dash — "--dark-mode
+        but for X" — was otherwise read by argparse as an option and answered
+        with a usage dump (QA, Security)."""
+        return f"{name}={value}"
+
     def _dispatch_write(self, path: str, fields: dict) -> None:
         if path == "/api/create":
             raw = self._one(fields, "raw")
@@ -386,7 +398,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, pages.error_page(400, "Nothing to save",
                                                  "Write the idea in your own words first."))
                 return
-            args = ["idea-create", "--raw", raw]
+            args = ["idea-create", self._flag("--raw", raw)]
             for flag, name in (("--audience", "audience"), ("--trigger", "trigger")):
                 if self._one(fields, name):
                     args += [flag, self._one(fields, name)]
@@ -401,7 +413,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         prefix, _, rest = path[len("/api/"):].partition("/")
-        if not (rest.isascii() and rest.isdigit()):
+        if not (rest.isascii() and rest.isdigit() and len(rest) <= 18):
             self._send(404, pages.error_page(404, "Not found", "No such endpoint."))
             return
         idea_id = int(rest)
@@ -411,7 +423,7 @@ class Handler(BaseHTTPRequestHandler):
             if not raw:
                 self._send(400, pages.error_page(400, "Nothing to save", "The idea cannot be empty."))
                 return
-            args = ["idea-edit", "--idea-id", str(idea_id), "--raw", raw]
+            args = ["idea-edit", "--idea-id", str(idea_id), self._flag("--raw", raw)]
             for flag, name in (("--audience", "audience"), ("--trigger", "trigger")):
                 if self._one(fields, name):
                     args += [flag, self._one(fields, name)]
@@ -425,7 +437,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             args = ["idea-close", "--idea-id", str(idea_id), "--how", how]
             if self._one(fields, "reason"):
-                args += ["--reason", self._one(fields, "reason")]
+                args += [self._flag("--reason", self._one(fields, "reason"))]
             opsdb(*args)
             self._redirect(f"/idea/{idea_id}")
 
@@ -512,25 +524,44 @@ def _recover_stranded_evaluations() -> None:
     CTO independently in the catch-up review."""
     if not DB_PATH.exists():
         return
+    # Only markers OLDER than this are considered abandoned. Without the age
+    # test, starting a second Idea Desk — which this program's own port-in-use
+    # message suggests doing — clears markers for evaluations genuinely running
+    # in the first process, and then tells the Founder nothing was charged.
+    # QA found that; it was introduced by the recovery itself. The longest
+    # honest evaluation is six calls at IDEA_EVALUATION_TIMEOUT_S, so this
+    # threshold sits well beyond any real run.
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=STRANDED_AFTER_S)
     try:
         conn = _connect()
         try:
-            stranded = [r["id"] for r in conn.execute(
-                "SELECT id FROM ideas WHERE evaluating_since IS NOT NULL").fetchall()]
+            rows = conn.execute(
+                "SELECT id, evaluating_since FROM ideas WHERE evaluating_since IS NOT NULL"
+            ).fetchall()
         finally:
             conn.close()
     except sqlite3.Error:
         return
-    for idea_id in stranded:
-        sys.stderr.write(f"[idea-desk] idea {idea_id} was left mid-evaluation by a previous run — "
-                         "clearing it so you can try again\n")
+
+    for row in rows:
         try:
-            opsdb("idea-evaluation-end", "--idea-id", str(idea_id),
-                  "--error", "The Idea Desk was stopped while the company was reading this. "
-                             "Nothing was saved, and nothing was charged for a round that never "
-                             "finished. You can evaluate it again.")
+            started = datetime.fromisoformat(row["evaluating_since"].replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            started = cutoff  # unreadable timestamp: treat as abandoned
+        if started > cutoff:
+            sys.stderr.write(
+                f"[idea-desk] idea {row['id']} is mid-evaluation and recent — leaving it alone. "
+                "If another Idea Desk is running it, that one still owns it.\n")
+            continue
+        sys.stderr.write(f"[idea-desk] idea {row['id']} has been mid-evaluation since "
+                         f"{row['evaluating_since']} — clearing it so you can try again\n")
+        try:
+            opsdb("idea-evaluation-end", "--idea-id", str(row["id"]),
+                  "--error", "This evaluation was interrupted and never finished, so no round was "
+                             "saved. Model calls that had already run may still have been charged "
+                             "for. You can evaluate it again.")
         except Exception as exc:
-            sys.stderr.write(f"[idea-desk] could not clear idea {idea_id}: {exc}\n")
+            sys.stderr.write(f"[idea-desk] could not clear idea {row['id']}: {exc}\n")
 
 
 def main() -> None:

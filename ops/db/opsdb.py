@@ -1882,6 +1882,16 @@ def cmd_idea_close(args: argparse.Namespace) -> None:
         row = _idea_row(conn, args.idea_id)
         if row["status"] == "approved":
             raise SystemExit("error: this idea's brief is approved; approved briefs are not parked or dropped")
+        # Without this the park is silently undone: the round still lands,
+        # sets status back to 'evaluated', and the "you parked it" record
+        # disappears while close_reason/closed_at linger orphaned in the row
+        # (QA). The evaluate->park direction was closed in fix pass 1; this is
+        # the park->evaluate direction it left open.
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: the company is reading idea id={args.idea_id} right now. Parking or "
+                "dropping it mid-read would be undone the moment that round arrives. Wait for it "
+                "to finish, then decide.")
         conn.execute(
             """UPDATE ideas SET status = ?, close_reason = ?,
                    closed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
@@ -1919,16 +1929,22 @@ def cmd_idea_evaluation_start(args: argparse.Namespace) -> None:
         if row["status"] in ("approved", "dropped"):
             raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}; it is not open for "
                              "further evaluation")
-        if row["evaluating_since"]:
-            raise SystemExit(f"error: an evaluation of idea id={args.idea_id} is already running "
-                             f"(since {row['evaluating_since']})")
-        conn.execute(
+        # The claim is a SINGLE conditional statement. Checking the column and
+        # then writing it are two operations, and a double-clicked button races
+        # between them — QA reproduced two paid evaluations from one click.
+        # SQLite serialises writers, so `WHERE evaluating_since IS NULL` lets
+        # exactly one caller win, across processes as well as threads.
+        cur = conn.execute(
             """UPDATE ideas SET evaluating_since = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
                    last_error = NULL, pending_note = ?,
                    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
-               WHERE id = ?""",
+               WHERE id = ? AND evaluating_since IS NULL""",
             (getattr(args, "note", None), args.idea_id),
         )
+        if cur.rowcount == 0:
+            raise SystemExit(f"error: an evaluation of idea id={args.idea_id} is already running "
+                             f"(since {row['evaluating_since']}). Nothing was started twice, and "
+                             "you have not been charged twice.")
     print(f"evaluation started: idea={args.idea_id}")
 
 
