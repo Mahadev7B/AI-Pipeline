@@ -52,15 +52,29 @@ h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
       </div>
     </div>
 <div style="padding:26px;">
-<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
+<div class="sub">Generated 2026-09-02 02:16 UTC from the live operational database. Not hand-edited; re-run this script to refresh.</div>
 
 <h1>Decisions <span style="font-size:11px; color:var(--text3); font-weight:400;">— read-only</span></h1>
 <div class="sub" style="margin-top:-14px;">
-  This is the operational decision log (20 records) — structured, queryable state from the
+  This is the operational decision log (21 records) — structured, queryable state from the
   <span class="mono">decisions</span> table. <code class="mono">DECISIONS.md</code> is the durable narrative record and may
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 
+        <div class="card" id="decision-21" style="margin-bottom:10px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
+            <div style="font-size:13px; font-weight:600;">#21 — Founder approves the TASK-024 idea-deciphering journey UX; intake becomes its own section and the first live test is the Founder&#x27;s own dashboard idea</div>
+            <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-02</div>
+          </div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Problem:</b> DEC-015 Part 3 s11 required the Founder to see and approve the revised visual/clickable journey before any Development. The Founder rejected a design canvas as the review medium (&#x27;I need UI so I can see clearly&#x27;), so the journey was built into the real Control Center as a UI-only shell (14 design artboards translated faithfully, zero backend, zero writes, proven across two full walks), run locally by the Founder on their own machine, and walked stage by stage.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Decision:</b> APPROVED, verbatim &#x27;approve&#x27;, 2026-09-02, after the Founder walked the shell at http://127.0.0.1:8420/ideas-preview/stage-1.html on their own machine. The approved rendering is the shipped shell (ops/control-center/generate_ideas_preview.py, from ops/mockups/task024/ Revision 2) and is the visual spec Development builds to. Scope decisions made by the Founder in the same exchange: (1) the idea journey ships as its own section -- own entry, own chrome, 13 tabs hidden inside the flow -- inside the same app, same login, same database; NOT a second app. (2) The Founder wants ONLY this idea capability made real and tested for now; the child-product build phase follows once it passes. TASK-026 (dashboard redesign) and TASK-023 (security lock) stay parked until then. (3) The first live test of the real intake is the Founder&#x27;s OWN dashboard idea (TASK-026&#x27;s raw text, already the shell&#x27;s sample) -- passing the test both proves the intake and produces the approved brief TASK-026 needs. (4) &#x27;Testing done&#x27; means, concretely: a raw idea goes in; the right agents actually run; one synthesis returns with the ten questions answered; the Founder corrects once and it re-evaluates; the Founder approves; a Founder-approved brief exists; and a downstream agent provably receives that brief, not the raw sentence (Product&#x27;s SOT-1). TASK-024 advances MOCKUP_REVIEW -&gt; ARCHITECTURE.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> The front door is not a detour before building child products -- per DEC-015 nothing downstream starts without an approved brief, so making the intake real first is the only coherent order. It also gives the factory its first real end-to-end run, which this project has never had. Keeping it inside the same app preserves the one login and the single database writer that the whole security posture rests on.</div>
+          <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> This is the first time the factory does the real thing end to end -- real agent dispatch triggered from the web, real cost, and the first work-creating write route -- so expect review rounds; today&#x27;s pattern is that things that looked finished were not until something ran. The Founder approved the shell knowing no browser existed where it was built and their walk was the first rendered look; visual defects found later are fixes, not re-approvals. TASK-026 and TASK-023 are explicitly parked, not abandoned. Competitor evaluation ships with no research capability, so every such claim is COMPANY INFERENCE or UNKNOWN with &#x27;research not performed&#x27; stated, per DEC-015 s6.</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by Chief of Staff</div>
+            <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>
+          </div>
+        </div>
         <div class="card" id="decision-20" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#20 — Five-voice visual grammar for the Founder idea journey (TASK-024)</div>
