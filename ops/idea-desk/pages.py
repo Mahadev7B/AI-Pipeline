@@ -278,7 +278,10 @@ def e(s) -> str:
 # just because it came from our own company. Everything is escaped first, then
 # the small set of tags the answer format actually needs is put back. Nothing
 # else survives — no links, no scripts, no attributes but the class names below.
-_SIMPLE_TAGS = "b|i|em|strong|br"
+# <code> is here because failure messages give the Founder a command to run
+# and a diagnostics file to look at. Escaped, those arrived with the literal
+# tags showing, which is the one moment the message most needs to be clear.
+_SIMPLE_TAGS = "b|i|em|strong|br|code"
 _DIV_CLASSES = "sk|two|dec"
 _SPAN_CLASSES = r"lab unk|lab|na"
 
@@ -300,7 +303,7 @@ def safe_html(raw: str | None) -> str:
     # otherwise).
     open_stack: list[str] = []
     balanced: list[str] = []
-    for piece in re.split(r"(</?(?:div|b|i|em|strong)(?:\s[^>]*)?>)", out):
+    for piece in re.split(r"(</?(?:div|b|i|em|strong|code)(?:\s[^>]*)?>)", out):
         m = re.fullmatch(r"</?([a-z]+)(?:\s[^>]*)?>", piece)
         if not m:
             balanced.append(piece)

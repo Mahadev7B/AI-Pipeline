@@ -88,6 +88,18 @@ class Sanitiser(unittest.TestCase):
         self.assertEqual(pages.safe_html('<div class="sk">a<b>b</div>c'),
                          '<div class="sk">a<b>b</b></div>c')
 
+    def test_code_survives_and_is_still_balanced(self):
+        # Failure messages name a command to run and a diagnostics file; those
+        # used to reach the Founder with the literal tags showing.
+        self.assertEqual(pages.safe_html("run <code>doctor.py</code> now"),
+                         "run <code>doctor.py</code> now")
+        self.assertEqual(pages.safe_html('<div class="sk">a<code>b</div>c'),
+                         '<div class="sk">a<code>b</code></div>c')
+        # An attribute form is not on the allowlist, so it stays escaped — and
+        # its now-orphaned closer is dropped rather than leaking out of the card.
+        self.assertEqual(pages.safe_html('<code onclick="x">a</code>'),
+                         '&lt;code onclick=&quot;x&quot;&gt;a')
+
     def test_none_and_empty(self):
         self.assertEqual(pages.safe_html(None), "")
         self.assertEqual(pages.safe_html(""), "")
@@ -101,7 +113,7 @@ class RosterParsing(unittest.TestCase):
         saved = evaluator._invoke
         evaluator._invoke = lambda *a, **k: __import__("json").dumps(data)
         try:
-            return evaluator._select_roster({"raw_idea": "x"}, [], None)
+            return evaluator._select_roster({"raw_idea": "x"}, [], None)[0]
         finally:
             evaluator._invoke = saved
 
@@ -319,8 +331,9 @@ class SynthesisRecovery(unittest.TestCase):
         self.assertEqual(self.calls.count("repair"), 1)
         self.assertTrue(self.preserved, "the raw answers must be preserved for diagnosis")
         blobs = self.preserved[-1]
-        self.assertIn("the Chief of Staff's answer", blobs)
-        self.assertIn("not json at all", blobs["the Chief of Staff's answer"])
+        self.assertIn("the Chief of Staff's final answer", blobs)
+        self.assertIn("not json at all", blobs["the Chief of Staff's final answer"])
+        self.assertIn("the stage that failed", blobs, "the file must name the stage")
         self.assertTrue(any("said" in k for k in blobs), "each role's reading is kept too")
         ended = [a for a in self.written if a and a[0] == "idea-evaluation-end"]
         self.assertTrue(any("--error" in a for a in ended), "the Founder must be told")
@@ -345,6 +358,137 @@ class SynthesisRecovery(unittest.TestCase):
         bad = self.good(rec="Ship it now")
         self.drive([json.dumps(bad)])
         self.assertIsNone(self.stored())
+
+
+class RosterRecovery(unittest.TestCase):
+    """Roster selection needs machine-readable JSON exactly as much as the
+    final answer does, and used to have neither a repair attempt nor any
+    preservation of what came back. A malformed roster therefore discarded the
+    raw response, wrote no diagnostics file at all, and surfaced the same
+    sentence a synthesis failure would — which is how several real, paid
+    evaluations were spent looking at the wrong stage."""
+
+    GOOD_ROSTER = json.dumps({"depth": "Light", "depth_reason": "internal",
+                              "in": [["cto", "records"]], "out": [["ceo", "no market"]]})
+
+    def setUp(self):
+        self._saved_invoke = evaluator._invoke
+        self._saved_opsdb = evaluator._opsdb
+        self._saved_diag = evaluator._preserve_diagnostics
+        self.calls: list[str] = []
+        self.written: list[list[str]] = []
+        self.preserved: list[dict] = []
+        evaluator._opsdb = lambda *a: (self.written.append(list(a)) or "ok")
+        evaluator._preserve_diagnostics = lambda i, blobs: (self.preserved.append(blobs)
+                                                            or Path("/tmp/diag.txt"))
+
+    def tearDown(self):
+        evaluator._invoke = self._saved_invoke
+        evaluator._opsdb = self._saved_opsdb
+        evaluator._preserve_diagnostics = self._saved_diag
+
+    @staticmethod
+    def _good_final():
+        return json.dumps({"title": "A title",
+                           "answers": {str(n): [f"concise {n}", f"expanded {n}"]
+                                       for n in range(1, 11)},
+                           "view": {"opp": "Medium", "why": "w", "merit": "m", "threat": "t",
+                                    "diff": "d", "rec": "Proceed"}})
+
+    def drive(self, roster_responses):
+        """roster_responses: the Chief of Staff's roster reply, then its repair
+        reply, in order. Everything downstream answers cleanly, so any failure
+        is unambiguously the roster stage."""
+        pending = list(roster_responses)
+        def fake(agent, transcript, idea_id=None):
+            if "FORMAT REPAIR ONLY" in transcript:
+                kind = "repair"
+            elif "decide WHO should read it" in transcript:
+                kind = "roster"
+            elif "answer these ten questions" in transcript:
+                kind = "synthesis"
+            else:
+                kind = "perspective"
+            self.calls.append(kind)
+            if kind in ("roster", "repair") and pending:
+                return pending.pop(0)
+            if kind == "perspective":
+                return "my reading of it"
+            return self._good_final()
+        evaluator._invoke = fake
+        evaluator.run_evaluation(1, {"raw_idea": "a thing", "current_raw": "a thing"}, [])
+
+    def stored(self):
+        return next((a for a in self.written if a and a[0] == "idea-round-add"), None)
+
+    def error(self) -> str:
+        for a in self.written:
+            if a and a[0] == "idea-evaluation-end" and "--error" in a:
+                return a[a.index("--error") + 1]
+        return ""
+
+    def test_a_clean_roster_costs_no_repair_call(self):
+        self.drive([self.GOOD_ROSTER])
+        self.assertIsNotNone(self.stored())
+        self.assertNotIn("repair", self.calls)
+
+    def test_malformed_roster_json_is_repaired_and_the_evaluation_survives(self):
+        self.drive([self.GOOD_ROSTER[:-3] + ",,,", self.GOOD_ROSTER])
+        self.assertIsNotNone(self.stored(), "a reformatted roster must not lose the evaluation")
+        self.assertEqual(self.calls.count("repair"), 1)
+        self.assertEqual(self.calls.count("roster"), 1, "the idea is not re-read to choose again")
+
+    def test_a_failed_roster_repair_keeps_the_evidence_and_names_the_stage(self):
+        self.drive(["not json at all", "still not json"])
+        self.assertIsNone(self.stored())
+        self.assertTrue(self.preserved, "a roster failure must write diagnostics too")
+        blobs = self.preserved[-1]
+        self.assertIn("not json at all",
+                      blobs["who should read it — the Chief of Staff's answer"])
+        self.assertIn("still not json", blobs["who should read it — the reformatting attempt"])
+        self.assertEqual(blobs["the stage that failed"], evaluator.ROSTER_STAGE)
+        self.assertIn(evaluator.ROSTER_STAGE, self.error(),
+                      "the Founder must be told WHICH stage failed")
+
+    def test_roster_repair_never_loops(self):
+        self.drive(["{bad", "{still bad"])
+        self.assertEqual(self.calls.count("repair"), 1, "exactly one repair attempt, ever")
+
+    def test_the_roster_repair_asks_for_the_roster_shape_not_the_synthesis_one(self):
+        seen: list[str] = []
+        def fake(agent, transcript, idea_id=None):
+            if "FORMAT REPAIR ONLY" in transcript:
+                seen.append(transcript)
+                return self.GOOD_ROSTER
+            if "decide WHO should read it" in transcript:
+                return "not json"
+            return "my reading of it" if "answer these ten questions" not in transcript \
+                else self._good_final()
+        evaluator._invoke = fake
+        evaluator.run_evaluation(1, {"raw_idea": "a thing", "current_raw": "a thing"}, [])
+        self.assertTrue(seen)
+        self.assertIn('"depth"', seen[0], "the repair must ask for the ROSTER shape")
+        self.assertNotIn("answers", seen[0], "and never for the synthesis shape")
+
+    def test_an_empty_answer_is_not_sent_for_repair(self):
+        # Nothing can be reformatted out of nothing. Asking would spend a real
+        # call for a certain failure, and the old message blamed the shape of
+        # an answer that was never given.
+        self.drive(["   "])
+        self.assertIsNone(self.stored())
+        self.assertNotIn("repair", self.calls)
+        self.assertIn("nothing at all", self.error())
+
+    def test_a_perspective_failure_still_preserves_what_was_already_said(self):
+        def fake(agent, transcript, idea_id=None):
+            if "decide WHO should read it" in transcript:
+                return self.GOOD_ROSTER
+            raise evaluator.EvaluationError("the agent gave up")
+        evaluator._invoke = fake
+        evaluator.run_evaluation(1, {"raw_idea": "a thing", "current_raw": "a thing"}, [])
+        self.assertIsNone(self.stored())
+        self.assertTrue(self.preserved, "the roster reply is evidence even when a role fails")
+        self.assertIn("reading the idea", self.error(), "the failing role must be named")
 
 
 if __name__ == "__main__":

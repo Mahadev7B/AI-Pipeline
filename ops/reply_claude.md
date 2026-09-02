@@ -4,6 +4,85 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — Fixed. The diagnosis was right, and no further evaluation was needed to confirm it
+
+**Both ChatGPT replies are correct.** I verified the roster hypothesis against the
+code rather than taking it on trust, and it holds — with one addition below.
+
+### It can be proved from the stored error alone
+
+The `last_error` on idea 10 is, word for word:
+
+> the company answered, but not in a shape this page could read. Nothing was saved. Trying again usually clears it.
+
+That exact sentence had **one** possible origin: a bare `_extract_json()` raise
+that was *not* wrapped by the repair path. The final-synthesis path, when it
+failed, produced a different sentence ("could not be read ... even after being
+asked to reformat it"). Perspectives return free text and never parse JSON. So
+roster selection was the only reachable source. That is why the diagnostics
+folder never appeared: `raw_final` did not exist yet, and the guard that wrote
+diagnostics required it.
+
+**Hypothesis 2 in your previous note was the right one, and no further real
+evaluation was needed to establish it.** You have not been asked to spend
+another.
+
+### One failure mode the report missed
+
+`_invoke()` returns `result.response_text or ""`. An agent that succeeds but
+returns **nothing** produced that same sentence — blaming the shape of an answer
+that was never given. That is a different fault with a different remedy, and
+reformatting an empty string would have spent a real call for a guaranteed
+failure. It is now its own message and is never sent for repair.
+
+### What changed
+
+| Requested | Status |
+|---|---|
+| Bounded structured-output handling on every JSON-requiring call | Done — roster and synthesis share one path |
+| One format-only repair for roster selection | Done |
+| Preserve the raw roster response before parsing | Done — recorded *before* `_extract_json` runs |
+| Max one repair, no loops | Done, and tested |
+| Repair is formatting only, never substance | Unchanged — same instruction, now with the **roster** shape |
+| Diagnostics for every failed stage | Done — roster, each perspective, synthesis, repair, semantic validation, and crashes |
+| Record and surface the failing stage | Done — stored in `last_error` and written into the file |
+
+The repair now asks for the shape that stage was actually asked for. Sending a
+malformed roster to the synthesis contract would have made a repair *worse* than
+no repair, so the roster shape is defined once and used by both the prompt and
+the repair.
+
+A real forced failure now stores this:
+
+```text
+it failed while <b>choosing who should read it</b>. the company answered, but not
+in a shape this page could read. ... What the company actually said is kept in
+<code>ops/idea-desk/diagnostics/idea-1-20260902T194127Z.txt</code>.
+```
+
+and the file (mode 0600, gitignored) contains the stage, the raw roster reply,
+and the reformatting attempt.
+
+### One bug I introduced and caught
+
+My first version recorded the reformatting attempt only when the repair
+**succeeded** — throwing away the evidence in the exact case anyone needs it.
+A test caught it. It is now recorded the moment the response arrives.
+
+### Also fixed on the way
+
+`<code>` was being escaped by the page sanitiser, so failure messages reached
+you with literal `<code>` tags showing — including the "claude is not on your
+PATH, here is how to install it" message, the one that most needs to be
+readable. Allowlisted and balanced, with a test.
+
+39 tests pass (8 new). All 22 screens render cleanly. Recorded as **DEC-022**.
+
+**The next real evaluation should either work or tell you exactly where it
+broke.** If it fails again, the error names the stage and points at a file —
+send me that file rather than retrying.
+
+
 ## 2026-09-02 — ChatGPT reply: repeated failure is likely in roster JSON parsing
 
 The Founder queried the live database after the latest retry. The newest failure is idea 10:

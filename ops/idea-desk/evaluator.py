@@ -126,7 +126,16 @@ def _rehearsal_result(idea: dict, rounds: list[dict]) -> dict:
 
 class EvaluationError(Exception):
     """Something went wrong that the Founder should be told about, in words
-    that mean something to them."""
+    that mean something to them.
+
+    `stage` names WHERE in the evaluation it happened. Without it every parse
+    failure looked identical from the outside, and a roster-selection failure
+    was indistinguishable from a final-synthesis one — which is exactly how
+    several real evaluations were spent chasing the wrong path."""
+
+    def __init__(self, message: str, *, stage: str | None = None) -> None:
+        super().__init__(message)
+        self.stage = stage
 
 
 # --------------------------------------------------------------- helpers ---
@@ -139,10 +148,18 @@ def _opsdb(*args: str) -> str:
     return proc.stdout.strip()
 
 
-def _extract_json(text: str) -> dict:
+def _extract_json(text: str, *, stage: str | None = None) -> dict:
     """Models wrap JSON in prose or fences more often than not. Take the
     outermost object and parse that; if it will not parse, say so plainly
     rather than storing something half-understood."""
+    if not (text or "").strip():
+        # An empty reply and a misformatted one produced the same sentence,
+        # and they are not the same problem: nothing can be reformatted out of
+        # nothing, so a repair attempt here would spend a real call for
+        # certain failure.
+        raise EvaluationError("the company was asked, but answered with nothing at all. Nothing "
+                              "was saved. This is usually a timed-out or interrupted agent rather "
+                              "than a bad answer.", stage=stage)
     fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.S)
     candidates = []
     if fenced:
@@ -158,7 +175,7 @@ def _extract_json(text: str) -> dict:
         except json.JSONDecodeError:
             continue
     raise EvaluationError("the company answered, but not in a shape this page could read. "
-                          "Nothing was saved. Trying again usually clears it.")
+                          "Nothing was saved. Trying again usually clears it.", stage=stage)
 
 
 # Every model call in an evaluation, so the Founder can see what a round cost.
@@ -257,8 +274,27 @@ HOUSE RULES, which matter more than sounding impressive:
 
 # ------------------------------------------------------- phase 1: roster ---
 
+# The shape asked for, kept OUT of the prompt string so that the prompt and the
+# reformatting request cannot drift apart. Asking for a repair against the
+# wrong contract is how a repair makes things worse.
+ROSTER_CONTRACT = """Reply with ONLY this JSON and nothing else:
+
+{
+  "depth": "Light" | "Standard" | "Full",
+  "depth_reason": "one sentence, in the Founder's terms, why this depth and not another",
+  "in":  [["product", "why THIS idea needs them, specifically"], ...],
+  "out": [["ceo, financial", "why they would add nothing here"], ...]
+}
+
+"out" is not optional: naming who you left out and why is how the Founder can
+tell you chose rather than defaulted."""
+
+ROSTER_STAGE = "choosing who should read it"
+
+
 def _select_roster(idea: dict, rounds: list[dict], founder_note: str | None,
-                   idea_id: int | None = None) -> dict:
+                   idea_id: int | None = None,
+                   evidence: dict[str, str] | None = None) -> tuple[dict, bool]:
     transcript = f"""You are the Chief of Staff of an AI software company. The Founder has brought
 in an idea. Your first job is to decide WHO should read it, and HOW DEEPLY the
 company should look — before anyone spends time on it.
@@ -283,20 +319,20 @@ HOW DEEP:
   Standard — real users beyond the Founder, but no market to compete in yet.
   Full     — something people outside would choose between this and an alternative.
 
-Reply with ONLY this JSON and nothing else:
-
-{{
-  "depth": "Light" | "Standard" | "Full",
-  "depth_reason": "one sentence, in the Founder's terms, why this depth and not another",
-  "in":  [["product", "why THIS idea needs them, specifically"], ...],
-  "out": [["ceo, financial", "why they would add nothing here"], ...]
-}}
-
-"out" is not optional: naming who you left out and why is how the Founder can
-tell you chose rather than defaulted.
+{ROSTER_CONTRACT}
 """
     raw = _invoke("orchestrator", transcript, idea_id)
-    data = _extract_json(raw)
+    # Recorded BEFORE parsing. This is the fix for the failure that kept
+    # costing real evaluations: roster selection needs machine-readable JSON
+    # exactly as much as the final answer does, but it had neither the repair
+    # attempt nor any preservation of what came back — so a malformed roster
+    # threw away the raw response, wrote no diagnostics file at all, and
+    # surfaced the same sentence a synthesis failure would.
+    if evidence is not None:
+        evidence["who should read it — the Chief of Staff's answer"] = raw
+    data, _raw_repair, repaired = _parse_with_one_repair(
+        raw, idea_id, ROSTER_CONTRACT, ROSTER_STAGE, evidence,
+        "who should read it — the reformatting attempt")
 
     # Everything below treats the model's JSON as hostile: an explicit null, a
     # three-element entry, a string where a list belongs. Two of these shapes
@@ -326,7 +362,7 @@ tell you chose rather than defaulted.
         # well-formed JSON and used to raise ValueError here.
         "out": [[str(e[0]), str(e[1])] for e in (data.get("out") or [])
                 if isinstance(e, (list, tuple)) and len(e) >= 2],
-    }
+    }, repaired
 
 
 # -------------------------------------------------- phase 2: perspectives ---
@@ -522,8 +558,14 @@ def _preserve_diagnostics(idea_id: int, blobs: dict[str, str]) -> Path | None:
         return None
 
 
-def _parse_with_one_repair(raw: str, idea_id: int | None) -> tuple[dict, str | None, bool]:
-    """Parse the Chief of Staff's answer, with exactly ONE repair attempt.
+def _parse_with_one_repair(raw: str, idea_id: int | None, contract: str, stage: str,
+                           evidence: dict[str, str] | None = None,
+                           label: str = "the reformatting attempt") -> tuple[dict, str | None, bool]:
+    """Parse a Chief of Staff answer, with exactly ONE repair attempt.
+
+    `contract` is the shape that answer was asked for, so the repair asks for
+    the SAME shape rather than assuming the final-synthesis one. `stage` names
+    the step for the error and the diagnostics file.
 
     Returns (parsed, raw_repair_or_None, was_repaired). Raises EvaluationError
     carrying nothing to save if both attempts fail.
@@ -537,15 +579,21 @@ def _parse_with_one_repair(raw: str, idea_id: int | None) -> tuple[dict, str | N
     One attempt, no loop. A model that cannot produce the shape twice will not
     produce it on the fifth try, and each try is real usage."""
     try:
-        return _extract_json(raw), None, False
+        return _extract_json(raw, stage=stage), None, False
     except EvaluationError:
-        pass
+        if not (raw or "").strip():
+            # Nothing came back. There is nothing to reformat, and asking would
+            # spend a real call to fail again.
+            raise
 
     _note(idea_id, "Chief of Staff", "That answer came back misformatted — asking for it again in "
                                      "the right shape. No rethinking, no extra reading.")
-    raw_repair = _invoke("orchestrator", REPAIR_INSTRUCTION + raw + "\n\n" + SYNTH_CONTRACT,
-                         idea_id)
-    return _extract_json(raw_repair), raw_repair, True
+    raw_repair = _invoke("orchestrator", REPAIR_INSTRUCTION + raw + "\n\n" + contract, idea_id)
+    # Recorded BEFORE parsing it. Recording it only on success would throw away
+    # the evidence in the one case anyone needs it — the repair that failed.
+    if evidence is not None:
+        evidence[label] = raw_repair
+    return _extract_json(raw_repair, stage=stage), raw_repair, True
 
 
 # ------------------------------------------------------------ the whole ---
@@ -587,46 +635,53 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
     exit path clears the running marker, so a failure never leaves an idea
     stuck saying it is being evaluated."""
     error: str | None = None
-    raw_final: str | None = None
-    raw_repair: str | None = None
     repaired = False
     perspectives: list[tuple[str, str]] = []
+    # Everything any agent actually said, recorded as it arrives rather than at
+    # the end. A failure at ANY stage can now write a diagnostics file, because
+    # the raw text is already in here by the time the exception is raised.
+    # Previously only the final synthesis was preserved, so the most common
+    # real failure — roster selection — left nothing behind at all.
+    evidence: dict[str, str] = {}
+    stage = "starting"
     try:
         if REHEARSAL:
             _note(idea_id, "Rehearsal mode", "No agent will be asked and nothing will be spent.")
             roster = _rehearsal_roster()
             result = _rehearsal_result(idea, rounds)
         else:
+            stage = ROSTER_STAGE
             _note(idea_id, "Chief of Staff", "Choosing who should weigh in on this idea.")
-            roster = _select_roster(idea, rounds, founder_note, idea_id)
+            roster, roster_repaired = _select_roster(idea, rounds, founder_note, idea_id, evidence)
+            if roster_repaired:
+                _note(idea_id, "Chief of Staff", "That came back misformatted; reformatted and "
+                                                 "readable. Who was chosen is unchanged.")
             names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
             _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
 
             for role, _why in roster["in"]:
+                stage = f"{ROLE_LABEL[role]} reading the idea"
                 _note(idea_id, ROLE_LABEL[role], "Reading it.")
-                perspectives.append((role, _perspective(role, idea, rounds, founder_note,
-                                                        roster["depth"], idea_id)))
+                said = _perspective(role, idea, rounds, founder_note, roster["depth"], idea_id)
+                evidence[f"{ROLE_LABEL[role]} said"] = said
+                perspectives.append((role, said))
 
+            stage = "writing the final answer"
             _note(idea_id, "Chief of Staff", "Writing one answer.")
             raw_final = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
+            evidence["the Chief of Staff's final answer"] = raw_final
             try:
-                result, raw_repair, repaired = _parse_with_one_repair(raw_final, idea_id)
-            except EvaluationError:
+                result, _raw_repair, repaired = _parse_with_one_repair(
+                    raw_final, idea_id, SYNTH_CONTRACT, stage, evidence)
+            except EvaluationError as exc:
                 # Both attempts failed. Everything the company said is kept —
                 # several real model calls produced it, and it is the only
                 # evidence of what went wrong.
-                saved = _preserve_diagnostics(idea_id, {
-                    "the Chief of Staff's answer": raw_final,
-                    "the reformatting attempt": raw_repair or "(not reached)",
-                    **{f"{ROLE_LABEL[role]} said": text for role, text in perspectives}})
                 raise EvaluationError(
                     "the company answered, but it could not be read as a result even after being "
                     "asked to reformat it. Nothing was saved, because a half-understood brief is "
-                    "worse than none."
-                    + (f"<br><br>Everything it actually said is kept in <code>{saved}</code> — "
-                       "the roles' readings are in there too, so nothing is lost, and that file is "
-                       "what to look at to find out why." if saved else "")
-                    + "<br><br>Evaluating again re-reads the idea from scratch.")
+                    "worse than none.<br><br>Evaluating again re-reads the idea from scratch.",
+                    stage=exc.stage or stage) from exc
         answers, view, title = _validate(result)
         if repaired:
             _note(idea_id, "Chief of Staff", "Reformatted and readable. Substance unchanged.")
@@ -653,22 +708,31 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
         _note(idea_id, "Chief of Staff", "Done.")
 
     except EvaluationError as exc:
-        error = str(exc)
-        # A semantic failure — valid JSON, but an answer genuinely missing — is
-        # NOT repaired, because the only way to "fix" a missing answer is to
-        # invent one. Its evidence is still kept.
-        if raw_final and "kept in" not in error:
-            saved = _preserve_diagnostics(idea_id, {
-                "the Chief of Staff's answer": raw_final,
-                "the reformatting attempt": raw_repair or "(not needed)",
-                **{f"{ROLE_LABEL[role]} said": text for role, text in perspectives}})
+        # ONE place that turns any evaluation failure into what the Founder
+        # reads and what a developer can debug from. A semantic failure — valid
+        # JSON, but an answer genuinely missing — is NOT repaired, because the
+        # only way to "fix" a missing answer is to invent one. Its evidence is
+        # still kept, exactly like every other stage's.
+        failed_at = exc.stage or stage
+        error = f"it failed while <b>{failed_at}</b>. " + str(exc)
+        if evidence:
+            saved = _preserve_diagnostics(idea_id, {"the stage that failed": failed_at, **evidence})
             if saved:
-                error += (f"<br><br>What the company actually said is kept in <code>{saved}</code>, "
-                          "including each role's reading.")
+                error += (f"<br><br>What the company actually said is kept in <code>{saved}</code>"
+                          + (", including each role's reading" if perspectives else "")
+                          + ".")
     except Exception:
         traceback.print_exc(file=sys.stderr)
-        error = ("something broke inside the evaluation. That is a bug on our side, not something "
-                 "you did. Nothing was saved.")
+        error = (f"something broke inside the evaluation while <b>{stage}</b>. That is a bug on "
+                 "our side, not something you did. Nothing was saved.")
+        # A crash used to leave nothing behind either, even when several agents
+        # had already answered.
+        saved = _preserve_diagnostics(idea_id, {
+            "the stage that failed": stage,
+            "the crash": traceback.format_exc(),
+            **evidence}) if evidence else None
+        if saved:
+            error += f"<br><br>What had been said so far is kept in <code>{saved}</code>."
     finally:
         try:
             if error:
