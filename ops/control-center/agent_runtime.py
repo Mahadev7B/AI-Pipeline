@@ -233,6 +233,13 @@ MAX_RETRIES_PER_PARTICIPANT = 2
 DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red Team condition 5 —
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"
+# The Idea Desk's final synthesis is now the largest single call in the system:
+# it reads every role's full reading, the Red Team's attack and the repair, and
+# must write ten answers with their working plus the closing view. $0.50 was
+# sized for a short Ask-Agent question and is a plausible cause of a non-zero
+# exit on a rich evaluation. Raised for THIS call only — the general cap is
+# unchanged, so nothing else in the system gains headroom.
+IDEA_SYNTHESIS_BUDGET_USD = "2.00"
 MAX_RESPONSE_CHARS = 16_000  # cap on what gets persisted, independent of any model-side output limit
 
 
@@ -311,7 +318,8 @@ class RuntimeResult:
 
 
 def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TIMEOUT_S,
-                  wait_for_slot: bool = False) -> RuntimeResult:
+                  wait_for_slot: bool = False,
+                  max_budget_usd: str | None = None) -> RuntimeResult:
     """wait_for_slot (Milestone 2B3B, default False): the Ask-Agent HTTP
     route never sets this — an ad-hoc single request still fails fast
     and honestly on capacity_exceeded, exactly the 2B3A behavior,
@@ -346,12 +354,13 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
             error_kind="capacity_exceeded",
         )
     try:
-        return _run_claude(agent_name, transcript, timeout_s)
+        return _run_claude(agent_name, transcript, timeout_s, max_budget_usd)
     finally:
         _INVOCATION_SEMAPHORE.release()
 
 
-def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeResult:
+def _run_claude(agent_name: str, transcript: str, timeout_s: float,
+                max_budget_usd: str | None = None) -> RuntimeResult:
     resolved = _resolve_claude()
     if resolved is None:
         return RuntimeResult(
@@ -364,7 +373,7 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
         "--strict-mcp-config",         # zero MCP-provided tools (no --mcp-config passed)
         "--no-session-persistence",    # messages/agent_runs must be the only conversation store
         "--output-format", "json",
-        "--max-budget-usd", MAX_BUDGET_USD,
+        "--max-budget-usd", max_budget_usd or MAX_BUDGET_USD,
         # The prompt goes on STDIN, never here. As a command-line argument it
         # was silently TRUNCATED AT THE FIRST NEWLINE on Windows, where `claude`
         # resolves to a .cmd shim and a batch command line ends at a line break.

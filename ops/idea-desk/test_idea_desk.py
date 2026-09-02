@@ -283,7 +283,7 @@ class SynthesisRecovery(unittest.TestCase):
         """Run one whole evaluation. final_responses are the Chief of Staff's
         synthesis reply and then its repair reply, in order."""
         pending = list(final_responses)
-        def fake(agent, transcript, idea_id=None):
+        def fake(agent, transcript, idea_id=None, **kw):
             self.calls.append("repair" if "FORMAT REPAIR ONLY" in transcript
                               else ("roster" if "decide WHO should read it" in transcript
                                     else ("synthesis" if "answer these ten questions" in transcript
@@ -388,7 +388,7 @@ class SharingEvidence(unittest.TestCase):
 
     def fake_git(self, **codes):
         """Record every git call; return the given code per subcommand."""
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             self.ran.append(args)
             class R:
                 returncode = codes.get(args[0], 0)
@@ -442,7 +442,7 @@ class SharingEvidence(unittest.TestCase):
     def test_a_rejected_push_is_rebased_once_and_retried(self):
         self.write_diag()
         pushes = []
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             self.ran.append(args)
             class R:
                 stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
@@ -488,7 +488,7 @@ class SharingEvidence(unittest.TestCase):
         self.write_diag()
         self.fake_git()
         self.inc.share(9)
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             self.ran.append(args)
             class R:
                 returncode = 1 if args[0] == "commit" else 0
@@ -527,7 +527,7 @@ class SharingEvidence(unittest.TestCase):
 
     def test_an_unsigned_commit_says_what_to_do(self):
         self.write_diag()
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             class R:
                 returncode = 1 if args[0] == "commit" else 0
                 stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
@@ -542,7 +542,7 @@ class SharingEvidence(unittest.TestCase):
         # Rebasing would not help, and would rewrite history for nothing.
         self.write_diag()
         pulls = []
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             if args[0] == "pull":
                 pulls.append(args)
             class R:
@@ -558,7 +558,7 @@ class SharingEvidence(unittest.TestCase):
 
     def test_a_detached_head_refuses_rather_than_pushing_somewhere_odd(self):
         self.write_diag()
-        def run(*args, timeout=60):
+        def run(*args, timeout=60, **kw):
             class R:
                 returncode = 0
                 stdout = "HEAD" if args[0] == "symbolic-ref" else ""
@@ -740,7 +740,7 @@ class RosterRecovery(unittest.TestCase):
         reply, in order. Everything downstream answers cleanly, so any failure
         is unambiguously the roster stage."""
         pending = list(roster_responses)
-        def fake(agent, transcript, idea_id=None):
+        def fake(agent, transcript, idea_id=None, **kw):
             if "FORMAT REPAIR ONLY" in transcript:
                 kind = "repair"
             elif "decide WHO should read it" in transcript:
@@ -796,7 +796,7 @@ class RosterRecovery(unittest.TestCase):
 
     def test_the_roster_repair_asks_for_the_roster_shape_not_the_synthesis_one(self):
         seen: list[str] = []
-        def fake(agent, transcript, idea_id=None):
+        def fake(agent, transcript, idea_id=None, **kw):
             if "FORMAT REPAIR ONLY" in transcript:
                 seen.append(transcript)
                 return self.GOOD_ROSTER
@@ -820,7 +820,7 @@ class RosterRecovery(unittest.TestCase):
         self.assertIn("nothing at all", self.error())
 
     def test_a_perspective_failure_still_preserves_what_was_already_said(self):
-        def fake(agent, transcript, idea_id=None):
+        def fake(agent, transcript, idea_id=None, **kw):
             if "decide WHO should read it" in transcript:
                 return self.GOOD_ROSTER
             raise evaluator.EvaluationError("the agent gave up")
