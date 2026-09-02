@@ -52,6 +52,9 @@
   .st.draft{color:var(--text2);border-color:var(--border2);}
   .st.evaluated{color:var(--violet);border-color:oklch(72% 0.13 300 / .5);background:var(--violet-soft);}
   .st.approved{color:var(--green);border-color:oklch(72% 0.15 150 / .5);background:var(--green-soft);}
+  .st.parked{color:var(--text2);border-color:var(--border2);background:var(--panel2);}
+  .st.dropped{color:var(--text3);border-color:var(--border);}
+  .banner.gray{border-color:var(--border2);background:var(--panel);color:var(--text2);}
   .st.working{color:var(--accent);border-color:oklch(78% 0.14 75 / .5);background:var(--accent-soft);}
 
   /* headings */
@@ -306,7 +309,7 @@ function genericEval(idea, roundNo, feedback){
                 : [['Product','always on the roster.'],['Red Team','someone has to try to break it before anyone builds it.']],
     left: ext ? [['Security','nothing sensitive named yet; joins later if the brief adds identity or payments.']] : [['CEO, Financial, Security','no market, no money, no sensitive data in play.']],
     q: {
-      1:[S+'<b>Here is what we read:</b> “'+esc(first)+(first.length<idea.raw.trim().length?'…':'')+'” in your words, which we take to mean a '+(ext?'product for people outside the company':'tool for your own use')+'. If that is already wrong, use <b>Reconsider</b> and tell us in one line.', '<div class="sk">1 · Original idea</div>Preserved verbatim on the left.<div class="sk">2 · What we think you mean</div>The interpretation is a few sentences, never a sentence-by-sentence paraphrase.'],
+      1:[S+'<b>Here is what we read:</b> “'+esc(first)+(first.length<idea.raw.trim().length?'…':'')+'” in your words, which we take to mean a '+(ext?'product for people outside the company':'tool for your own use')+'. If that is already wrong, use <b>Correct us</b> and tell us in one line.', '<div class="sk">1 · Original idea</div>Preserved verbatim on the left.<div class="sk">2 · What we think you mean</div>The interpretation is a few sentences, never a sentence-by-sentence paraphrase.'],
       2:[S+'The outcome behind the request, stated as a result you would notice, not a feature you asked for.', '<div class="sk">3 · What you are really trying to achieve</div>Written to the standard: “open it and know within seconds…”, never “you want a dashboard”.'],
       3:[S+'The genuine merits, and only those. <b>If the merits are weak the company says so here</b>; an idea is never praised because you proposed it.', '<div class="sk">4 · Why this may be valuable</div>User problem · convenience · speed · cost · underserved users · strategic value · new capability.'],
       4:[S+(ext?'<b>We don\'t know yet, and here is why.</b> Three to five relevant alternatives would be named here, each labelled. Today every label would read <span class="lab">COMPANY INFERENCE</span> or <span class="lab unk">UNKNOWN</span>, because no agent in this company can browse the web.':'<b>We don\'t know, and here is why.</b> Nothing outside the company chooses this, so what exists cannot change the recommendation. We did not look and cannot look.'), '<div class="sk">5 · Known competitors / alternatives'+(ext?'':' <span class="na">NOT PRODUCED</span>')+'</div>'+(ext?'What they offer · overlap · where stronger · where we could differ. Substitutes count.':'Depth is Light.')+'<div class="sk">6 · Competitor data freshness</div><b>Standing disclosure:</b> research has not been performed.'],
@@ -356,7 +359,7 @@ function render(){
 function viewList(){
   const rows = S.ideas.slice().sort((a,b)=>b.createdAt-a.createdAt).map(i=>{
     const r=lastRound(i);
-    const line = i.status==='draft' ? 'Saved, not evaluated yet.' : i.status==='approved' ? 'Approved brief · round '+i.approvedRound : 'Round '+r.n+' · '+r.evalv.view.rec;
+    const line = i.status==='draft' ? 'Saved, not evaluated yet.' : i.status==='approved' ? 'Approved brief · round '+i.approvedRound : i.status==='parked' ? 'Parked after round '+r.n : i.status==='dropped' ? 'Dropped after round '+r.n : 'Round '+r.n+' · '+r.evalv.view.rec;
     return `<button class="row" onclick="go('idea','${i.id}')">
       <div><div class="t">${esc(i.title||'(untitled)')}</div><div class="d">${esc(i.raw)}</div></div>
       <span class="st ${i.status}">${i.status}</span>
@@ -479,6 +482,7 @@ function viewIdea(i){
         <div class="meta" style="margin-top:10px"><span class="st ${i.status}">${i.status}</span><span class="chip">Depth: ${esc(ev.depth)}</span><span>${ago(r.at)}</span>${approved?`<span class="chip" style="color:var(--green)">Approved round ${i.approvedRound} · ${ago(i.approvedAt)}</span>`:''}</div></div>
       <div class="voices">${Object.values(VOICE).map(v=>`<span style="--c:${v.c}">${v.name}</span>`).join('')}</div>
     </div>
+    ${(i.status==='parked'||i.status==='dropped')?`<div class="banner gray"><b style="color:var(--text)">${i.status==='parked'?'Parked.':'Dropped.'}</b> ${i.status==='parked'?'Not being built now; you can come back to it.':'Not being built. Kept as a record, together with what the company said.'} ${i.closeReason?`Your reason: “${esc(i.closeReason)}”`:''}</div>`:''}
     ${approved?`<div class="banner green"><b>This is the approved brief.</b> Round ${i.approvedRound} is now the single source of truth for anything built from this idea. The original idea and every earlier round stay stored underneath it, unchanged.</div>`:''}
     ${ev.changed?`<div class="banner blue"><b>What changed since round ${r.n-1}:</b> ${ev.changed}</div>`:''}
     <div class="cols">
@@ -488,6 +492,7 @@ function viewIdea(i){
         <div class="hist"><div class="k">What is stored</div>
           <div class="h-item raw"><span class="dot"></span><div><b>Original idea</b> · ${ago(i.createdAt)}<br>Your words, verbatim. Artifact 1.</div></div>
           ${i.rounds.map(rr=>`<div class="h-item ${rr.n===r.n&&!approved?'cur':''} ${approved&&rr.n===i.approvedRound?'ok':''}"><span class="dot"></span><div><b>Round ${rr.n}</b> · company reading · ${ago(rr.at)}${rr.n===i.approvedRound?' · <span style="color:var(--green)">approved</span>':''}<br>${rr.evalv.view.rec}${rr.feedback?`<div class="fb">You: “${esc(rr.feedback)}”</div>`:''}</div></div>`).join('')}
+          ${(i.status==='parked'||i.status==='dropped')?`<div class="h-item"><span class="dot"></span><div><b>You ${i.status} it</b> · ${ago(i.closedAt)}<br>${i.closeReason?esc(i.closeReason):'No reason given.'}</div></div>`:''}
           ${approved?`<div class="h-item ok"><span class="dot"></span><div><b>Approved brief</b> · ${ago(i.approvedAt)}<br>Artifact 3. Downstream reads only this.</div></div>`:''}
         </div>
       </aside>
@@ -508,7 +513,7 @@ function viewIdea(i){
           </div>
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:11.5px;color:var(--dim)">Six fields, the same six every time. The four recommendations this company can give: Proceed · Proceed with narrowed scope · Investigate first · Reconsider.</div>
         </div>
-        <div id="panel">${S.panel==='reconsider'?panelReconsider(i):S.panel==='approve'?panelApprove(i):approved?panelApproved(i):''}</div>
+        <div id="panel">${S.panel==='reconsider'?panelReconsider(i):S.panel==='approve'?panelApprove(i):S.panel==='close'?panelClose(i):approved?panelApproved(i):''}</div>
       </main>
     </div>`;
 }
@@ -522,16 +527,25 @@ function viewBar(i){
   if(!i.rounds.length) return '';
   if(i.status==='approved') return `<div class="bar"><div class="bar-in"><span class="why">Approved. In the real version the next button hands this brief to the factory. Here it is deliberately not connected.</span>
     <button class="btn" onclick="go('list')">Back to ideas</button><button class="btn primary" onclick="toast('Not connected yet. If you like this, that is the next piece we add.')">Start work</button></div></div>`;
-  return `<div class="bar"><div class="bar-in"><span class="why">Three things you can do with round ${lastRound(i).n}. Nothing is built by any of them.</span>
+  if(i.status==='parked'||i.status==='dropped') return `<div class="bar"><div class="bar-in"><span class="why">${i.status==='parked'?'Parked. Reopening puts it back exactly where it was, at round '+lastRound(i).n+'.':'Dropped. It stays on record; reopening is allowed if you change your mind.'}</span>
+    <button class="btn" onclick="go('list')">Back to ideas</button><button class="btn" onclick="const x=idea(); x.status='evaluated'; x.closeReason=null; x.closedAt=null; save(); render(); toast('Reopened at round '+lastRound(x).n+'.')">Reopen</button></div></div>`;
+  return `<div class="bar"><div class="bar-in"><span class="why">Four things you can do with round ${lastRound(i).n}. Nothing is built by any of them.</span>
+    <button class="btn ghost" onclick="S.panel='close';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Not building this</button>
     <button class="btn" onclick="S.editing=S.cur;S.draft={raw:idea().raw,audience:idea().audience,trigger:idea().trigger};go('new')">Edit my idea</button>
-    <button class="btn" onclick="S.panel='reconsider';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Reconsider</button>
+    <button class="btn" onclick="S.panel='reconsider';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Correct us</button>
     <button class="btn ok" onclick="S.panel='approve';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Approve brief</button></div></div>`;
 }
 function panelReconsider(i){
-  return `<div class="panel"><h3>Tell the company what it got wrong</h3><p>One or two lines is enough. Your original idea is not changed by this; the note is stored beside it and the company re-reads both.</p>
+  return `<div class="panel"><h3>Correct us: what did the company get wrong?</h3><p>One or two lines is enough. This does not change your idea; the note is stored beside it and the company re-reads both and comes back with a new round. If it is your idea you want to change, use Edit my idea instead.</p>
     <textarea id="fb" style="min-height:90px" placeholder="${i.id==='ex1'?'e.g. the ellipse is a requirement, not a sketch':'almost there, but…'}"></textarea>
     <div class="actions" style="margin-top:12px"><button class="btn primary" onclick="const v=document.getElementById('fb').value.trim(); if(!v){toast('Say what was wrong first.');return;} idea().pendingFeedback=v; idea().pendingNote='reconsider'; go('evaluating')">Send and re-evaluate</button><button class="btn ghost" onclick="S.panel=null;save();render()">Cancel</button></div></div>`;
 }
+function panelClose(i){
+  return `<div class="panel"><h3>Not building this</h3><p>Nothing is deleted. Your idea and everything the company said about it stay on record. <b>Park</b> means you may come back to it; <b>Drop</b> means you have decided against it. Either can be reopened.</p>
+    <textarea id="why" style="min-height:70px" placeholder="Why, in a line. Optional, but the record is better with it."></textarea>
+    <div class="actions" style="margin-top:12px"><button class="btn" onclick="closeIdea('parked')">Park it</button><button class="btn" onclick="closeIdea('dropped')">Drop it</button><button class="btn ghost" onclick="S.panel=null;save();render()">Cancel</button></div></div>`;
+}
+function closeIdea(how){ const x=idea(); x.status=how; x.closeReason=(document.getElementById('why').value||'').trim()||null; x.closedAt=Date.now(); S.panel=null; save(); render(); toast(how==='parked'?'Parked. Nothing was built.':'Dropped. Kept on record.'); }
 function panelApprove(i){
   const r=lastRound(i);
   return `<div class="panel g"><h3>Approve round ${r.n} as the brief</h3><p>From this point on, anyone working on this idea reads the approved brief, never your raw words and never an earlier round. Both stay stored underneath it, unchanged. Approving does not start any work.</p>
