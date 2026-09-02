@@ -447,3 +447,69 @@ CREATE TABLE IF NOT EXISTS hook_denials (
 );
 CREATE INDEX IF NOT EXISTS idx_hook_denials_role ON hook_denials(role);
 CREATE INDEX IF NOT EXISTS idx_hook_denials_created ON hook_denials(created_at);
+
+-- ---------------------------------------------------------------- TASK-024 --
+-- Founder Idea Intake and Evaluation (DEC-013 → DEC-018).
+--
+-- Three artifacts, never overwritten (DEC-015):
+--   1. the raw Founder idea      -> ideas.raw_idea, written once at creation
+--   2. the company's evaluation  -> idea_rounds, one immutable row per round
+--   3. the Founder-approved brief-> ideas.approved_round_id, pointing at the
+--                                   exact round that was frozen
+--
+-- Immutability is structural, not a convention: opsdb.py provides NO command
+-- that updates ideas.raw_idea or any column of idea_rounds. A Founder edit
+-- writes a NEW idea_edits row and leaves the original standing; the current
+-- text is the newest edit, or the original when there are none.
+
+CREATE TABLE IF NOT EXISTS ideas (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  raw_idea          TEXT NOT NULL,      -- ARTIFACT 1 — the Founder's own words,
+                                        -- written once, never updated
+  audience          TEXT,               -- "who is it for", optional
+  trigger_note      TEXT,               -- "what made you think of it", optional
+  title             TEXT,               -- named by the evaluation; NULL until then
+  status            TEXT NOT NULL DEFAULT 'draft'
+                      CHECK (status IN ('draft','evaluated','approved','parked','dropped')),
+  approved_round_id INTEGER REFERENCES idea_rounds(id),  -- ARTIFACT 3 — the frozen brief
+  approved_at       TEXT,
+  close_reason      TEXT,               -- why parked or dropped, optional
+  closed_at         TEXT,
+  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
+
+-- A Founder edit of their own idea. Additive: the original in ideas.raw_idea
+-- is never touched, so "you said, never edited" stays literally true.
+CREATE TABLE IF NOT EXISTS idea_edits (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  idea_id      INTEGER NOT NULL REFERENCES ideas(id),
+  raw_idea     TEXT NOT NULL,
+  audience     TEXT,
+  trigger_note TEXT,
+  created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_idea_edits_idea ON idea_edits(idea_id);
+
+-- ARTIFACT 2 — one company evaluation. Append-only by construction: there is
+-- no opsdb.py command that updates a row here. "Correct us" adds a new round.
+CREATE TABLE IF NOT EXISTS idea_rounds (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  idea_id        INTEGER NOT NULL REFERENCES ideas(id),
+  round_no       INTEGER NOT NULL,
+  depth          TEXT,          -- Light | Standard | Full — how deep the company went
+  depth_reason   TEXT,          -- why that depth, in the Founder's terms
+  roster_json    TEXT,          -- [[role, why]] chosen, and [[role, why]] left out
+  answers_json   TEXT,          -- the ten concise answers + their expanded sections
+  view_json      TEXT,          -- the six-field Company View (no score, no meter)
+  recommendation TEXT
+                   CHECK (recommendation IN ('Proceed','Proceed with narrowed scope',
+                                             'Investigate first','Reconsider')),
+  changed_note   TEXT,          -- what changed since the previous round
+  founder_note   TEXT,          -- the "Correct us" note that PRODUCED this round
+  agent_run_id   INTEGER REFERENCES agent_runs(id),  -- NULL for a seeded round
+  created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (idea_id, round_no)
+);
+CREATE INDEX IF NOT EXISTS idx_idea_rounds_idea ON idea_rounds(idea_id);

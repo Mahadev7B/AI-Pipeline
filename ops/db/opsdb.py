@@ -1695,6 +1695,172 @@ def cmd_task_purge_scratch(args: argparse.Namespace) -> None:
           "(no approvals existed to protect)")
 
 
+# ------------------------------------------------------------- TASK-024 -----
+# Founder Idea Intake and Evaluation (DEC-013 through DEC-018).
+#
+# opsdb.py is the sole database writer, so the Idea Desk web layer shells out
+# to these commands rather than opening the database itself. The immutability
+# the three-artifact rule requires is enforced here by OMISSION: there is
+# deliberately no command that updates ideas.raw_idea, and none that updates
+# any column of idea_rounds. An edit appends to idea_edits; a correction
+# appends a new round. Nothing rewrites history.
+
+
+def _idea_row(conn: sqlite3.Connection, idea_id: int) -> sqlite3.Row:
+    row = conn.execute("SELECT * FROM ideas WHERE id = ?", (idea_id,)).fetchone()
+    if row is None:
+        raise SystemExit(f"error: no idea with id={idea_id}")
+    return row
+
+
+def cmd_idea_create(args: argparse.Namespace) -> None:
+    """Store a raw Founder idea. This writes ARTIFACT 1 and nothing else —
+    it starts no evaluation, dispatches no agent and costs nothing."""
+    raw = args.raw.strip()
+    if not raw:
+        raise SystemExit("error: --raw is empty; an idea needs the Founder's own words")
+    conn = connect()
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO ideas (raw_idea, audience, trigger_note) VALUES (?, ?, ?)",
+            (raw, args.audience, args.trigger),
+        )
+    print(f"idea created: id={cur.lastrowid}")
+
+
+def cmd_idea_edit(args: argparse.Namespace) -> None:
+    """The Founder changes their own wording. Appends to idea_edits; the
+    original in ideas.raw_idea is untouched, which is what lets the UI keep
+    saying 'you said, never edited' truthfully."""
+    raw = args.raw.strip()
+    if not raw:
+        raise SystemExit("error: --raw is empty")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit("error: this idea's brief is approved — the approved brief is frozen; "
+                             "raise a new idea instead of editing behind it")
+        conn.execute(
+            "INSERT INTO idea_edits (idea_id, raw_idea, audience, trigger_note) VALUES (?, ?, ?, ?)",
+            (args.idea_id, raw, args.audience, args.trigger),
+        )
+        conn.execute("UPDATE ideas SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
+                     (args.idea_id,))
+    print(f"idea edited: id={args.idea_id} (original preserved)")
+
+
+def cmd_idea_round_add(args: argparse.Namespace) -> None:
+    """Append ARTIFACT 2 — one company evaluation of the idea. Immutable
+    once written: there is no idea-round-update command, by design."""
+    for name, value in (("--answers", args.answers), ("--view", args.view), ("--roster", args.roster)):
+        if value is None:
+            continue
+        try:
+            json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"error: {name} is not valid JSON — {exc}") from None
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] in ("approved", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}; it is not open for "
+                             "further evaluation")
+        next_no = (conn.execute(
+            "SELECT COALESCE(MAX(round_no), 0) + 1 FROM idea_rounds WHERE idea_id = ?",
+            (args.idea_id,)).fetchone()[0])
+        cur = conn.execute(
+            """INSERT INTO idea_rounds
+                 (idea_id, round_no, depth, depth_reason, roster_json, answers_json,
+                  view_json, recommendation, changed_note, founder_note, agent_run_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
+             args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id),
+        )
+        sets = ["status = 'evaluated'", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
+        params: list = []
+        if args.title:
+            sets.append("title = ?")
+            params.append(args.title)
+        params.append(args.idea_id)
+        conn.execute(f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?", params)
+    print(f"round recorded: idea={args.idea_id} round={next_no} id={cur.lastrowid} "
+          f"recommendation={args.recommendation}")
+
+
+def cmd_idea_approve(args: argparse.Namespace) -> None:
+    """Freeze one round as ARTIFACT 3, the Founder-approved brief.
+
+    Two gates, both deliberate. --confirm-founder-decision asserts this is the
+    Founder and not an agent, matching approval-decide. And approval is refused
+    unless the company's OWN recommendation was Proceed or Proceed with narrowed
+    scope — the Founder's rule, decided 2026-09-02: there is no approve-anyway
+    path, because an evaluation you can always click past is ceremonial.
+
+    Approving starts no work. That is a separate, later action."""
+    if not args.confirm_founder_decision:
+        raise SystemExit("error: --confirm-founder-decision is required — only the Founder approves a brief")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit(f"error: idea id={args.idea_id} is already approved (round "
+                             f"{row['approved_round_id']}); an approved brief is frozen")
+        rnd = conn.execute("SELECT * FROM idea_rounds WHERE id = ? AND idea_id = ?",
+                           (args.round_id, args.idea_id)).fetchone()
+        if rnd is None:
+            raise SystemExit(f"error: round id={args.round_id} does not belong to idea id={args.idea_id}")
+        if rnd["recommendation"] not in ("Proceed", "Proceed with narrowed scope"):
+            raise SystemExit(
+                f"error: the company's recommendation on this round is '{rnd['recommendation']}', so "
+                "there is nothing to approve yet. Correct the company or narrow the idea and let it "
+                "re-evaluate. There is no approve-anyway path, by design.")
+        conn.execute(
+            """UPDATE ideas SET status = 'approved', approved_round_id = ?,
+                   approved_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.round_id, args.idea_id),
+        )
+    print(f"brief approved: idea={args.idea_id} round={rnd['round_no']} — frozen. No work has started.")
+
+
+def cmd_idea_close(args: argparse.Namespace) -> None:
+    """Park (may come back) or drop (decided against). Nothing is deleted —
+    the idea and every round it collected stay on record."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit("error: this idea's brief is approved; approved briefs are not parked or dropped")
+        conn.execute(
+            """UPDATE ideas SET status = ?, close_reason = ?,
+                   closed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.how, args.reason, args.idea_id),
+        )
+    print(f"idea {args.how}: id={args.idea_id}")
+
+
+def cmd_idea_reopen(args: argparse.Namespace) -> None:
+    """Undo a park or a drop, back to wherever the idea actually was."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] not in ("parked", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is '{row['status']}', not parked or dropped")
+        has_round = conn.execute("SELECT 1 FROM idea_rounds WHERE idea_id = ? LIMIT 1",
+                                 (args.idea_id,)).fetchone() is not None
+        conn.execute(
+            """UPDATE ideas SET status = ?, close_reason = NULL, closed_at = NULL,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            ("evaluated" if has_round else "draft", args.idea_id),
+        )
+    print(f"idea reopened: id={args.idea_id}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
@@ -1760,7 +1926,7 @@ def main() -> None:
     tss.add_argument("--status", required=True, choices=["pending", "in_progress", "done"])
     tss.set_defaults(func=cmd_task_step_status)
 
-    tp = sub.add_parser("task-progress", help="print a task's deterministic progress %")
+    tp = sub.add_parser("task-progress", help="print a task's deterministic progress %%")
     tp.add_argument("--task-id", type=int, required=True, dest="task_id")
     tp.set_defaults(func=cmd_task_progress)
 
@@ -1931,6 +2097,51 @@ def main() -> None:
     dep.add_argument("--by", required=True)
     dep.add_argument("--founder-authorized", action="store_true", dest="founder_authorized")
     dep.set_defaults(func=cmd_deployment_record)
+
+    ic = sub.add_parser("idea-create", help="store a raw Founder idea (starts nothing, costs nothing)")
+    ic.add_argument("--raw", required=True, help="the Founder's own words, stored verbatim")
+    ic.add_argument("--audience")
+    ic.add_argument("--trigger")
+    ic.set_defaults(func=cmd_idea_create)
+
+    ie = sub.add_parser("idea-edit", help="Founder rewords their own idea (original preserved)")
+    ie.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ie.add_argument("--raw", required=True)
+    ie.add_argument("--audience")
+    ie.add_argument("--trigger")
+    ie.set_defaults(func=cmd_idea_edit)
+
+    ira = sub.add_parser("idea-round-add", help="append one company evaluation of an idea (immutable)")
+    ira.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ira.add_argument("--recommendation", required=True,
+                     choices=["Proceed", "Proceed with narrowed scope", "Investigate first", "Reconsider"])
+    ira.add_argument("--title", help="the name the company gave the idea")
+    ira.add_argument("--depth", choices=["Light", "Standard", "Full"])
+    ira.add_argument("--depth-reason", dest="depth_reason")
+    ira.add_argument("--roster", help="JSON: who weighed in, who was left out, and why")
+    ira.add_argument("--answers", help="JSON: the ten concise answers and their expanded sections")
+    ira.add_argument("--view", help="JSON: the six-field Company View")
+    ira.add_argument("--changed-note", dest="changed_note", help="what changed since the previous round")
+    ira.add_argument("--founder-note", dest="founder_note", help="the correction that produced this round")
+    ira.add_argument("--agent-run-id", type=int, dest="agent_run_id")
+    ira.set_defaults(func=cmd_idea_round_add)
+
+    iap = sub.add_parser("idea-approve", help="freeze a round as the Founder-approved brief (Founder-only)")
+    iap.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iap.add_argument("--round-id", type=int, required=True, dest="round_id")
+    iap.add_argument("--confirm-founder-decision", action="store_true", dest="confirm_founder_decision",
+                     help="required — asserts this is the Founder approving, not an agent")
+    iap.set_defaults(func=cmd_idea_approve)
+
+    icl = sub.add_parser("idea-close", help="park or drop an idea (nothing is deleted)")
+    icl.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    icl.add_argument("--how", required=True, choices=["parked", "dropped"])
+    icl.add_argument("--reason")
+    icl.set_defaults(func=cmd_idea_close)
+
+    iro = sub.add_parser("idea-reopen", help="undo a park or a drop")
+    iro.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iro.set_defaults(func=cmd_idea_reopen)
 
     args = p.parse_args()
     if args.command != "init" and not DB_PATH.exists():
