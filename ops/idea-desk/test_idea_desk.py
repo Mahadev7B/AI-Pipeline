@@ -13,6 +13,7 @@ file, per ops/db/README.md.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -225,6 +226,125 @@ class SynthesisValidation(unittest.TestCase):
     def test_unparseable_output_is_refused_rather_than_guessed_at(self):
         with self.assertRaises(evaluator.EvaluationError):
             evaluator._extract_json("I could not answer that.")
+
+
+class SynthesisRecovery(unittest.TestCase):
+    """A formatting slip in the LAST model response used to discard a completed
+    multi-agent evaluation. One bounded repair attempt now rescues it — without
+    loosening what a stored round must contain."""
+
+    def setUp(self):
+        self.db = Path(tempfile.mkdtemp()) / "recover.sqlite3"
+        self.env = {**os.environ, "OPSDB_PATH": str(self.db)}
+        self._ops("init")
+        self._ops("idea-create", "--raw=a thing worth evaluating")
+        self._saved_invoke = evaluator._invoke
+        self._saved_opsdb = evaluator._opsdb
+        self._saved_diag = evaluator._preserve_diagnostics
+        self.calls: list[str] = []
+        self.written: list[list[str]] = []
+        self.preserved: list[dict] = []
+        evaluator._opsdb = lambda *a: (self.written.append(list(a)) or "ok")
+        evaluator._preserve_diagnostics = lambda i, blobs: (self.preserved.append(blobs)
+                                                            or Path("/tmp/diag.txt"))
+
+    def tearDown(self):
+        evaluator._invoke = self._saved_invoke
+        evaluator._opsdb = self._saved_opsdb
+        evaluator._preserve_diagnostics = self._saved_diag
+
+    def _ops(self, *args):
+        return subprocess.run([sys.executable, str(OPSDB), *args],
+                              capture_output=True, text=True, env=self.env)
+
+    ROSTER = json.dumps({"depth": "Light", "depth_reason": "internal",
+                         "in": [["cto", "records"]], "out": [["ceo", "no market"]]})
+
+    @staticmethod
+    def good(rec="Proceed"):
+        return {"title": "A title",
+                "answers": {str(n): [f"concise {n}", f"expanded {n}"] for n in range(1, 11)},
+                "view": {"opp": "Medium", "why": "w", "merit": "m", "threat": "t", "diff": "d",
+                         "rec": rec}}
+
+    def drive(self, final_responses):
+        """Run one whole evaluation. final_responses are the Chief of Staff's
+        synthesis reply and then its repair reply, in order."""
+        pending = list(final_responses)
+        def fake(agent, transcript, idea_id=None):
+            self.calls.append("repair" if "FORMAT REPAIR ONLY" in transcript
+                              else ("roster" if "decide WHO should read it" in transcript
+                                    else ("synthesis" if "answer these ten questions" in transcript
+                                          else "perspective")))
+            if self.calls[-1] == "roster":
+                return self.ROSTER
+            if self.calls[-1] == "perspective":
+                return "my reading of it"
+            return pending.pop(0)
+        evaluator._invoke = fake
+        evaluator.run_evaluation(1, {"raw_idea": "a thing worth evaluating",
+                                     "current_raw": "a thing worth evaluating"}, [])
+
+    def stored(self):
+        return next((a for a in self.written if a and a[0] == "idea-round-add"), None)
+
+    # --- the seven cases the Founder asked for -----------------------------
+    def test_valid_json_first_try(self):
+        self.drive([json.dumps(self.good())])
+        self.assertIsNotNone(self.stored(), "a clean answer must be stored")
+        self.assertNotIn("--repaired", self.stored())
+        self.assertNotIn("repair", self.calls)
+
+    def test_json_inside_a_markdown_fence(self):
+        self.drive(["Here you go:\n```json\n" + json.dumps(self.good()) + "\n```"])
+        self.assertIsNotNone(self.stored())
+        self.assertNotIn("repair", self.calls, "a fence is not a failure and must not cost a call")
+
+    def test_prose_before_and_after_valid_json(self):
+        self.drive(["Sure. " + json.dumps(self.good()) + " Hope that helps!"])
+        self.assertIsNotNone(self.stored())
+        self.assertNotIn("repair", self.calls)
+
+    def test_malformed_json_is_repaired_and_the_evaluation_survives(self):
+        broken = json.dumps(self.good())[:-3] + ",,,"          # trailing garbage, unparseable
+        self.drive([broken, json.dumps(self.good())])
+        stored = self.stored()
+        self.assertIsNotNone(stored, "the repaired evaluation must be saved, not discarded")
+        self.assertIn("--repaired", stored, "the repair must be recorded")
+        self.assertEqual(self.calls.count("repair"), 1)
+
+    def test_when_repair_also_fails_nothing_is_saved_and_the_evidence_is_kept(self):
+        self.drive(["not json at all", "still not json"])
+        self.assertIsNone(self.stored(), "a half-understood brief must never be stored")
+        self.assertEqual(self.calls.count("repair"), 1)
+        self.assertTrue(self.preserved, "the raw answers must be preserved for diagnosis")
+        blobs = self.preserved[-1]
+        self.assertIn("the Chief of Staff's answer", blobs)
+        self.assertIn("not json at all", blobs["the Chief of Staff's answer"])
+        self.assertTrue(any("said" in k for k in blobs), "each role's reading is kept too")
+        ended = [a for a in self.written if a and a[0] == "idea-evaluation-end"]
+        self.assertTrue(any("--error" in a for a in ended), "the Founder must be told")
+
+    def test_valid_json_missing_a_required_answer_is_refused_and_not_repaired(self):
+        missing = self.good()
+        del missing["answers"]["7"]
+        self.drive([json.dumps(missing)])
+        self.assertIsNone(self.stored())
+        # Repairing this could only mean inventing answer 7. The company does
+        # not invent, so this stays a hard failure.
+        self.assertNotIn("repair", self.calls,
+                         "a genuinely missing answer must not be 'repaired' into existence")
+        self.assertTrue(self.preserved, "the evidence is still kept")
+
+    def test_repair_never_loops(self):
+        self.drive(["{bad", "{still bad"])
+        self.assertEqual(self.calls.count("repair"), 1, "exactly one repair attempt, ever")
+        self.assertEqual(self.calls.count("synthesis"), 1, "and the idea is not re-read")
+
+    def test_an_invented_recommendation_survives_neither_path(self):
+        bad = self.good(rec="Ship it now")
+        self.drive([json.dumps(bad)])
+        self.assertIsNone(self.stored())
 
 
 if __name__ == "__main__":

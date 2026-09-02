@@ -28,3 +28,7 @@ __pycache__/
 # ops/reviews/cto-milestone2b4-architecture.md §3/§13 and
 # ops/control-center/founder_auth.py.
 ops/control-center/.founder_credential*
+
+# Raw agent output kept when an evaluation could not be read (TASK-024).
+# Contains the Founder's idea and the agents' words — local diagnosis only.
+ops/idea-desk/diagnostics/

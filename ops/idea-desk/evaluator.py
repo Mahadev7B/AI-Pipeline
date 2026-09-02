@@ -29,6 +29,7 @@ import subprocess
 import sys
 import threading
 import traceback
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -468,7 +469,83 @@ honest recommendation is "Investigate first", not "Proceed".
 This is round {round_no}.{" Say what changed since the last round — the Founder should see the "
  "difference, not reread everything." if rounds else ""}
 {SYNTH_CONTRACT}"""
-    return _extract_json(_invoke("orchestrator", transcript, idea_id))
+    # Returns RAW text, deliberately. Parsing happens in run_evaluation, where
+    # the raw is still in scope if it needs preserving — the old shape parsed
+    # here and threw the evidence away on failure, taking a completed
+    # multi-agent evaluation with it.
+    return _invoke("orchestrator", transcript, idea_id)
+
+
+DIAGNOSTICS = HERE / "diagnostics"
+
+REPAIR_INSTRUCTION = """You wrote the answer below, and it could not be parsed as JSON.
+
+THIS IS A FORMAT REPAIR ONLY. It is not a chance to think again.
+
+  * Do NOT reconsider the idea.
+  * Do NOT change the recommendation, the opportunity, or any judgement.
+  * Do NOT add, remove, soften or improve any answer.
+  * Keep every word of substance exactly as you wrote it.
+
+Your ONLY job is to return the same content as valid JSON in the required
+shape. If your original was truncated mid-sentence, close that sentence
+minimally and keep everything else; do not invent content that is not there.
+
+If some required field is genuinely absent from your original — not merely
+malformed, but never written — say so in plain text instead of inventing it.
+Fabricating an answer the company never gave is worse than failing.
+
+Reply with ONLY the JSON object. No preface, no explanation, no code fence.
+
+--- YOUR ORIGINAL ANSWER, VERBATIM ---
+"""
+
+
+def _preserve_diagnostics(idea_id: int, blobs: dict[str, str]) -> Path | None:
+    """Keep what the company actually returned when it could not be used.
+
+    A failed evaluation used to vanish entirely — several real model calls, and
+    nothing left to look at afterwards. Written next to the code but gitignored:
+    it contains the Founder's idea and the agents' words, which are theirs."""
+    try:
+        DIAGNOSTICS.mkdir(exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        path = DIAGNOSTICS / f"idea-{idea_id}-{stamp}.txt"
+        parts = [f"Idea {idea_id} — evaluation failed at {stamp}", "=" * 70, ""]
+        for name, text in blobs.items():
+            parts += [f"----- {name} -----", (text or "(empty)"), ""]
+        path.write_text("\n".join(parts), encoding="utf-8")
+        path.chmod(0o600)
+        return path
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        return None
+
+
+def _parse_with_one_repair(raw: str, idea_id: int | None) -> tuple[dict, str | None, bool]:
+    """Parse the Chief of Staff's answer, with exactly ONE repair attempt.
+
+    Returns (parsed, raw_repair_or_None, was_repaired). Raises EvaluationError
+    carrying nothing to save if both attempts fail.
+
+    Repair fires on a PARSE failure only — never on a valid JSON that is missing
+    a required answer. That distinction is the whole point: malformed text with
+    the content present can be honestly reformatted, whereas a genuinely absent
+    answer could only be "repaired" by inventing one, and this company does not
+    invent. A missing answer stays a hard failure.
+
+    One attempt, no loop. A model that cannot produce the shape twice will not
+    produce it on the fifth try, and each try is real usage."""
+    try:
+        return _extract_json(raw), None, False
+    except EvaluationError:
+        pass
+
+    _note(idea_id, "Chief of Staff", "That answer came back misformatted — asking for it again in "
+                                     "the right shape. No rethinking, no extra reading.")
+    raw_repair = _invoke("orchestrator", REPAIR_INSTRUCTION + raw + "\n\n" + SYNTH_CONTRACT,
+                         idea_id)
+    return _extract_json(raw_repair), raw_repair, True
 
 
 # ------------------------------------------------------------ the whole ---
@@ -510,6 +587,10 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
     exit path clears the running marker, so a failure never leaves an idea
     stuck saying it is being evaluated."""
     error: str | None = None
+    raw_final: str | None = None
+    raw_repair: str | None = None
+    repaired = False
+    perspectives: list[tuple[str, str]] = []
     try:
         if REHEARSAL:
             _note(idea_id, "Rehearsal mode", "No agent will be asked and nothing will be spent.")
@@ -521,15 +602,34 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
             names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
             _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
 
-            perspectives = []
             for role, _why in roster["in"]:
                 _note(idea_id, ROLE_LABEL[role], "Reading it.")
                 perspectives.append((role, _perspective(role, idea, rounds, founder_note,
                                                         roster["depth"], idea_id)))
 
             _note(idea_id, "Chief of Staff", "Writing one answer.")
-            result = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
+            raw_final = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
+            try:
+                result, raw_repair, repaired = _parse_with_one_repair(raw_final, idea_id)
+            except EvaluationError:
+                # Both attempts failed. Everything the company said is kept —
+                # several real model calls produced it, and it is the only
+                # evidence of what went wrong.
+                saved = _preserve_diagnostics(idea_id, {
+                    "the Chief of Staff's answer": raw_final,
+                    "the reformatting attempt": raw_repair or "(not reached)",
+                    **{f"{ROLE_LABEL[role]} said": text for role, text in perspectives}})
+                raise EvaluationError(
+                    "the company answered, but it could not be read as a result even after being "
+                    "asked to reformat it. Nothing was saved, because a half-understood brief is "
+                    "worse than none."
+                    + (f"<br><br>Everything it actually said is kept in <code>{saved}</code> — "
+                       "the roles' readings are in there too, so nothing is lost, and that file is "
+                       "what to look at to find out why." if saved else "")
+                    + "<br><br>Evaluating again re-reads the idea from scratch.")
         answers, view, title = _validate(result)
+        if repaired:
+            _note(idea_id, "Chief of Staff", "Reformatted and readable. Substance unchanged.")
 
         args = ["idea-round-add", "--idea-id", str(idea_id),
                 "--recommendation", view["rec"],
@@ -541,6 +641,8 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                 "--view", json.dumps(view)]
         if REHEARSAL:
             args.append("--rehearsal")
+        if repaired:
+            args.append("--repaired")
         if title:
             args += ["--title", title]
         if founder_note:
@@ -552,6 +654,17 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
 
     except EvaluationError as exc:
         error = str(exc)
+        # A semantic failure — valid JSON, but an answer genuinely missing — is
+        # NOT repaired, because the only way to "fix" a missing answer is to
+        # invent one. Its evidence is still kept.
+        if raw_final and "kept in" not in error:
+            saved = _preserve_diagnostics(idea_id, {
+                "the Chief of Staff's answer": raw_final,
+                "the reformatting attempt": raw_repair or "(not needed)",
+                **{f"{ROLE_LABEL[role]} said": text for role, text in perspectives}})
+            if saved:
+                error += (f"<br><br>What the company actually said is kept in <code>{saved}</code>, "
+                          "including each role's reading.")
     except Exception:
         traceback.print_exc(file=sys.stderr)
         error = ("something broke inside the evaluation. That is a bug on our side, not something "

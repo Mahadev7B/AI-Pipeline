@@ -221,6 +221,12 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
         # should be able to pass itself off as the company's real opinion.
         if "rehearsal" not in cols:
             conn.execute("ALTER TABLE idea_rounds ADD COLUMN rehearsal INTEGER NOT NULL DEFAULT 0")
+        # Whether the Chief of Staff's answer needed a format-repair pass before
+        # it could be read. Recorded so the reliability problem can be MEASURED
+        # rather than argued about: if this is set on most rounds, the output
+        # contract is too hard to hit and should change.
+        if "repaired" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN repaired INTEGER NOT NULL DEFAULT 0")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -1812,11 +1818,13 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
         cur = conn.execute(
             """INSERT INTO idea_rounds
                  (idea_id, round_no, depth, depth_reason, roster_json, answers_json,
-                  view_json, recommendation, changed_note, founder_note, agent_run_id, rehearsal)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  view_json, recommendation, changed_note, founder_note, agent_run_id, rehearsal,
+                  repaired)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
              args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id,
-             1 if getattr(args, "rehearsal", False) else 0),
+             1 if getattr(args, "rehearsal", False) else 0,
+             1 if getattr(args, "repaired", False) else 0),
         )
         sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
                 "pending_note = NULL", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
@@ -1828,7 +1836,8 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
         conn.execute(f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?", params)
     print(f"round recorded: idea={args.idea_id} round={next_no} id={cur.lastrowid} "
           f"recommendation={args.recommendation}"
-          + ("  [REHEARSAL — no agent ran]" if getattr(args, "rehearsal", False) else ""))
+          + ("  [REHEARSAL — no agent ran]" if getattr(args, "rehearsal", False) else "")
+          + ("  [format-repaired]" if getattr(args, "repaired", False) else ""))
 
 
 def cmd_idea_approve(args: argparse.Namespace) -> None:
@@ -2243,6 +2252,8 @@ def main() -> None:
     ira.add_argument("--changed-note", dest="changed_note", help="what changed since the previous round")
     ira.add_argument("--founder-note", dest="founder_note", help="the correction that produced this round")
     ira.add_argument("--agent-run-id", type=int, dest="agent_run_id")
+    ira.add_argument("--repaired", action="store_true",
+                     help="the answer needed a format-repair pass before it could be read")
     ira.add_argument("--rehearsal", action="store_true",
                      help="no agent ran and nothing was spent; the round is marked as such forever")
     ira.set_defaults(func=cmd_idea_round_add)
