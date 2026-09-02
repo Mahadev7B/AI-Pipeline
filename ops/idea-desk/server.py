@@ -414,24 +414,34 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, pages.error_page(404, "Not found", "No such endpoint."))
 
 
-def _ensure_database() -> None:
-    """The database is deliberately not in git (it is live state, not source),
-    so a fresh clone has none. Create it rather than making the Founder read an
-    error and run a command to get an empty file."""
-    if DB_PATH.exists():
-        return
-    sys.stderr.write(f"[idea-desk] No database yet — creating {DB_PATH}\n")
+def _ensure_schema() -> None:
+    """Run `opsdb.py init` on EVERY start, not only when the database is
+    missing.
+
+    It is idempotent by design — CREATE TABLE IF NOT EXISTS plus guarded
+    ALTERs — so running it always costs nothing and closes a real hole: a
+    database that exists but predates a migration. That is not a hypothetical.
+    The Founder restored a backup taken before slice 2 added
+    ideas.evaluating_since, the old code only migrated when the file was
+    absent, and the first evaluation died on `No item with that key`. A
+    database being present is not the same as being current."""
+    fresh = not DB_PATH.exists()
+    if fresh:
+        sys.stderr.write(f"[idea-desk] No database yet — creating {DB_PATH}\n")
     try:
         subprocess.run([sys.executable, str(OPSDB), "init"], check=True,
                        capture_output=True, text=True, timeout=60)
+        if not fresh:
+            sys.stderr.write("[idea-desk] Database schema is up to date\n")
     except Exception as exc:
-        sys.stderr.write(f"[idea-desk] Could not create it: {exc}\n"
+        detail = getattr(exc, "stderr", "") or exc
+        sys.stderr.write(f"[idea-desk] Could not prepare the database: {detail}\n"
                          f"[idea-desk] Run this yourself:  python3 {OPSDB} init\n")
 
 
 def main() -> None:
     port = int(os.environ.get("IDEA_DESK_PORT", DEFAULT_PORT))
-    _ensure_database()
+    _ensure_schema()
     if not founder_auth.credential_exists():
         sys.stderr.write(
             "[idea-desk] No Founder credential yet. Create one first:\n"

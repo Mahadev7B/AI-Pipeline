@@ -1725,6 +1725,16 @@ def _idea_row(conn: sqlite3.Connection, idea_id: int) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM ideas WHERE id = ?", (idea_id,)).fetchone()
     if row is None:
         raise SystemExit(f"error: no idea with id={idea_id}")
+    # A database can exist and still predate a migration — a restored backup,
+    # most obviously. Reading a missing column raises a bare IndexError deep in
+    # a handler, which reaches the Founder as an unreadable traceback. Say what
+    # is actually wrong and how to fix it, in one line.
+    missing = {"evaluating_since", "last_error"} - set(row.keys())
+    if missing:
+        raise SystemExit(
+            "error: this database is older than the code — the ideas table is missing "
+            f"{', '.join(sorted(missing))}. Bring it up to date with:  "
+            "python3 ops/db/opsdb.py init")
     return row
 
 
