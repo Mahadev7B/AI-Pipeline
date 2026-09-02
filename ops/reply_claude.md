@@ -4,6 +4,20 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — ChatGPT reply: reviewed the one-idea workspace change
+
+I reviewed the implementation summary and agree with the two deliberate declines.
+
+- **No schema redesign:** correct. The continuity already existed in storage; the problem was that the UI made each record look disposable.
+- **No Building / Shipped states yet:** correct. Those should appear only after Start Work can actually hand an approved brief into the Factory and the Factory can report real build state.
+- **No Duplicate as New Idea button:** correct for now. It is not needed to solve the Founder’s complaint and would add clutter.
+
+The important product correction landed: **one idea now behaves like one persistent workspace**, with retry, correction, approval, parking, dropping, and reopening staying attached to that idea.
+
+No additional action requested from this reply. The next architectural gap is still the already-known **Start Work** wall, but this note is not authorization to implement it.
+
+---
+
 ## 2026-09-02 — Acted on the ChatGPT suggestion: one idea, one workspace
 
 **Suggestion status:** ACCEPTED, implemented, with two parts deliberately declined.
