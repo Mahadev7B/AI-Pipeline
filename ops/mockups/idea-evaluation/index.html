@@ -529,11 +529,16 @@ function viewBar(i){
     <button class="btn" onclick="go('list')">Back to ideas</button><button class="btn primary" onclick="toast('Not connected yet. If you like this, that is the next piece we add.')">Start work</button></div></div>`;
   if(i.status==='parked'||i.status==='dropped') return `<div class="bar"><div class="bar-in"><span class="why">${i.status==='parked'?'Parked. Reopening puts it back exactly where it was, at round '+lastRound(i).n+'.':'Dropped. It stays on record; reopening is allowed if you change your mind.'}</span>
     <button class="btn" onclick="go('list')">Back to ideas</button><button class="btn" onclick="const x=idea(); x.status='evaluated'; x.closeReason=null; x.closedAt=null; save(); render(); toast('Reopened at round '+lastRound(x).n+'.')">Reopen</button></div></div>`;
-  return `<div class="bar"><div class="bar-in"><span class="why">Four things you can do with round ${lastRound(i).n}. Nothing is built by any of them.</span>
+  const rec = lastRound(i).evalv.view.rec;
+  const canApprove = rec==='Proceed' || rec==='Proceed with narrowed scope';
+  const approveBtn = canApprove
+    ? `<button class="btn ok" onclick="S.panel='approve';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Approve brief</button>`
+    : `<span style="font-size:12.5px;color:var(--text3);align-self:center;">No Approve yet &mdash; the company's own recommendation is <b style="color:var(--text2)">${esc(rec)}</b>. Correct us or narrow it first.</span>`;
+  return `<div class="bar"><div class="bar-in"><span class="why">${canApprove?'Four':'Three'} things you can do with round ${lastRound(i).n}. Nothing is built by any of them.</span>
     <button class="btn ghost" onclick="S.panel='close';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Not building this</button>
     <button class="btn" onclick="S.editing=S.cur;S.draft={raw:idea().raw,audience:idea().audience,trigger:idea().trigger};go('new')">Edit my idea</button>
     <button class="btn" onclick="S.panel='reconsider';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Correct us</button>
-    <button class="btn ok" onclick="S.panel='approve';save();render();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'center'})">Approve brief</button></div></div>`;
+    ${approveBtn}</div></div>`;
 }
 function panelReconsider(i){
   return `<div class="panel"><h3>Correct us: what did the company get wrong?</h3><p>One or two lines is enough. This does not change your idea; the note is stored beside it and the company re-reads both and comes back with a new round. If it is your idea you want to change, use Edit my idea instead.</p>
