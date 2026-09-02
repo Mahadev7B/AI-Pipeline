@@ -233,6 +233,28 @@ details.x .xin{margin-top:12px;padding:14px 16px;background:var(--panel2);border
 """
 
 
+REHEARSAL_BANNER = (
+    '<div class="banner" style="border-color:oklch(78% 0.14 75 / .5);background:var(--accent-soft)">'
+    '<b>This was a rehearsal.</b> No agent read your idea and nothing was spent &mdash; the answers '
+    'below are placeholders so the screens can be walked for free. Evaluate again with rehearsal '
+    'mode off for the company&rsquo;s real reading. A brief cannot be approved from a rehearsal.'
+    '</div>')
+
+COST_DISCLOSURE = (
+    '<div class="banner" style="margin:0 0 14px;border-color:oklch(78% 0.14 75 / .4);'
+    'background:var(--accent-soft);color:var(--text)"><b>This one spends money.</b> Several agents '
+    'run, each a real model call, and it takes a few minutes. Everything else in the Idea Desk is '
+    'free; this is the step that is not. There is no cost estimate available before the fact '
+    '&mdash; the company cannot tell you in advance what a given idea will cost to read.</div>')
+
+REHEARSAL_DISCLOSURE = (
+    '<div class="banner" style="margin:0 0 14px;border-color:oklch(72% 0.15 150 / .5);'
+    'background:var(--green-soft);color:var(--text)"><b>Rehearsal mode is on, so this costs '
+    'nothing.</b> No agent will be asked and no model call will be made. You get placeholder '
+    'answers so every screen can be walked for free. The round is marked as a rehearsal and cannot '
+    'be approved.</div>')
+
+
 def e(s) -> str:
     return html.escape("" if s is None else str(s))
 
@@ -362,6 +384,8 @@ def list_page(ideas: list, build: str = "") -> bytes:
             line = f"{st.capitalize()}"
         else:
             line = e(i["recommendation"] or "Evaluated")
+            if i.get("rehearsal"):
+                line = '<span style="color:var(--accent)">Rehearsal</span> &middot; ' + line
         rows.append(f"""<div class="row">
           <div><a class="t" href="/idea/{i['id']}">{e(i['title'] or 'Untitled idea')}</a>
             <div class="d">{e(i['current_raw'])}</div></div>
@@ -501,7 +525,8 @@ def evaluating_page(idea, steps) -> bytes:
     return page.replace(b"<title>", b'<meta http-equiv="refresh" content="6"><title>', 1)
 
 
-def evaluate_panel(idea, token: str, *, correcting: bool = False) -> str:
+def evaluate_panel(idea, token: str, *, correcting: bool = False,
+                   rehearsal: bool = False) -> str:
     """The disclosure that has to sit in front of the one expensive button."""
     note_field = ("""<textarea name="note" style="min-height:90px" required
         placeholder="What did we get wrong? One or two lines is enough."></textarea>""" if correcting
@@ -513,12 +538,7 @@ def evaluate_panel(idea, token: str, *, correcting: bool = False) -> str:
             "The Chief of Staff picks who should read it, those people read it separately, and you "
             "get back one answer.")
     return f"""<div class="panel"><h3>{heading}</h3><p>{lead}</p>
-      <div class="banner" style="margin:0 0 14px;border-color:oklch(78% 0.14 75 / .4);
-           background:var(--accent-soft);color:var(--text)">
-        <b>This one spends money.</b> Several agents run, each a real model call, and it takes a few
-        minutes. Everything else in the Idea Desk is free; this is the step that is not. There is no
-        cost estimate available before the fact &mdash; the company cannot tell you in advance what a
-        given idea will cost to read.</div>
+      {REHEARSAL_DISCLOSURE if rehearsal else COST_DISCLOSURE}
       <form method="post" action="/api/{'correct' if correcting else 'evaluate'}/{idea['id']}">
         <input type="hidden" name="token" value="{e(token)}">{note_field}
         <div class="actions" style="margin-top:{'12' if correcting else '0'}px">
@@ -573,6 +593,8 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
     banners = ""
     if flash:
         banners += f'<div class="banner green">{flash}</div>'
+    if "rehearsal" in shown.keys() and shown["rehearsal"]:
+        banners += REHEARSAL_BANNER
     if idea.get("last_error"):
         banners += (f'<div class="banner red"><b>The last evaluation did not finish.</b> '
                     f'{e(idea["last_error"])}</div>')

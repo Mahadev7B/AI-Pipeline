@@ -124,6 +124,45 @@ def main() -> None:
     db = REPO / "ops" / "db" / "operations.sqlite3"
     line("database present", "yes" if db.exists() else "NO — run opsdb.py init", ok=db.exists())
 
+    print("\nCAN IT ACTUALLY ASK AN AGENT?")
+    if not claude:
+        line("live check", "skipped — no claude command to try")
+    else:
+        # Existing on disk and WORKING are different questions, and only this
+        # one matters. Checking the first and reporting the second is how the
+        # Founder ends up staring at a failure the doctor called healthy.
+        # One tiny call, a few cents at most.
+        sys.stdout.write("   asking the Chief of Staff to reply 'OK' (up to 2 min)... ")
+        sys.stdout.flush()
+        try:
+            sys.path.insert(0, str(REPO / "ops" / "control-center"))
+            import agent_runtime
+            result = agent_runtime.invoke_agent("orchestrator", "Reply with exactly: OK",
+                                                timeout_s=120)
+            print()
+            if result.ok:
+                line("agent replied", repr((result.response_text or "")[:40]), ok=True)
+                line("model", result.model_used or "(not reported)")
+                line("this call cost", f"${result.cost_usd:.4f}" if result.cost_usd is not None
+                     else "(not reported)")
+                print("\n     Evaluation will work. Cost above is for ONE call; an evaluation is")
+                print("     four to six of them.")
+            else:
+                line("agent FAILED", f"[{result.error_kind}] {result.error}"[:200], ok=False)
+                if result.error_kind == "runtime_unavailable":
+                    print("     claude is on PATH but could not be launched.")
+                elif result.error_kind == "timeout":
+                    print("     It did not answer in 120s. Usually a sign-in prompt waiting")
+                    print("     unseen, or a slow first run. Try `claude` in a terminal first.")
+                else:
+                    print("\n     This is the real reason evaluation fails. The most common causes:")
+                    print("       * not signed in — run `claude` then /login, and check /status")
+                    print("       * no billing set up on the account it signed in as")
+                    print("       * the agent files are missing — this repo needs .claude/agents/")
+        except Exception as exc:
+            print()
+            line("live check crashed", f"{type(exc).__name__}: {exc}"[:160], ok=False)
+
     print("\n" + "=" * 52)
     print("Paste all of the above if it still misbehaves.\n")
 

@@ -34,6 +34,25 @@ neither needs the other running.
 - **Correct us** re-runs the evaluation with your note. Your words are not
   changed; the note is stored beside them.
 
+## Testing without spending anything
+
+Rehearsal mode runs the whole journey — save, evaluate, read the ten answers,
+correct, park, reopen — with **no model call and no cost at all**:
+
+```
+Windows      :  $env:IDEA_DESK_REHEARSAL = "1";  python ops\idea-desk\server.py
+macOS/Linux  :  IDEA_DESK_REHEARSAL=1 python3 ops/idea-desk/server.py
+```
+
+The startup line and the ideas list both say `REHEARSAL MODE`, the disclosure
+before evaluating says it costs nothing instead of warning you about money, and
+every round it produces is labelled a rehearsal on the page and in the list.
+The answers are visibly placeholders — it never pretends to be the company's
+opinion. **A brief cannot be approved from a rehearsal round**; the database
+refuses it, not just the page.
+
+Start the server without that variable and you are back to real evaluations.
+
 ## What is not wired yet
 
 - **Start work.** Sending an approved brief into the factory.

@@ -63,6 +63,12 @@ STRANDED_AFTER_S = 60 * 60
 # rather than by guessing.
 BUILD = "slice 2 — evaluation is live"
 
+
+def _build_line() -> str:
+    """What is running, including whether it will spend anything."""
+    return BUILD + ("  ·  REHEARSAL MODE — nothing will be spent"
+                    if evaluator.REHEARSAL else "")
+
 # Per-process, regenerated on every start. A form rendered by a previous run of
 # this server is refused by the next one — same reasoning as the Control Center.
 SESSION_TOKEN = secrets.token_urlsafe(32)
@@ -100,9 +106,10 @@ def load_ideas() -> list[dict]:
             item = dict(row)
             item.update(_current_text(conn, row["id"], row))
             last = conn.execute(
-                "SELECT recommendation FROM idea_rounds WHERE idea_id = ? ORDER BY round_no DESC LIMIT 1",
-                (row["id"],)).fetchone()
+                "SELECT recommendation, rehearsal FROM idea_rounds WHERE idea_id = ? "
+                "ORDER BY round_no DESC LIMIT 1", (row["id"],)).fetchone()
             item["recommendation"] = last["recommendation"] if last else None
+            item["rehearsal"] = bool(last["rehearsal"]) if last else False
             out.append(item)
         return out
     finally:
@@ -264,7 +271,7 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             if path == "/":
-                self._send(200, pages.list_page(load_ideas(), build=BUILD))
+                self._send(200, pages.list_page(load_ideas(), build=_build_line()))
                 return
             if path == "/new":
                 self._send(200, pages.new_page(SESSION_TOKEN))
@@ -301,7 +308,8 @@ class Handler(BaseHTTPRequestHandler):
                         self._send(200, pages.idea_page(
                             idea, rounds, SESSION_TOKEN,
                             panel=pages.evaluate_panel(idea, SESSION_TOKEN,
-                                                       correcting=(render == "correct"))))
+                                                       correcting=(render == "correct"),
+                                                       rehearsal=evaluator.REHEARSAL)))
                     elif render == "close":
                         self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
                                                         panel=pages.close_panel(idea, SESSION_TOKEN)))
@@ -593,7 +601,7 @@ def main() -> None:
             "    macOS/Linux  :  IDEA_DESK_PORT=8431 python3 ops/idea-desk/server.py\n\n"
             "  Not sure what is going on? Run:  python ops\\idea-desk\\doctor.py\n\n")
         raise SystemExit(1)
-    sys.stderr.write(f"[idea-desk] Idea Desk ({BUILD}) on http://{HOST}:{port}/\n")
+    sys.stderr.write(f"[idea-desk] Idea Desk ({_build_line()}) on http://{HOST}:{port}/\n")
     sys.stderr.write(f"[idea-desk] reading {DB_PATH} (read-only; opsdb.py does every write)\n")
     try:
         server.serve_forever()

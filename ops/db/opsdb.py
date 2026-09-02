@@ -212,6 +212,15 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
         # (Code Review, catch-up).
         if "pending_note" not in ideas_cols:
             conn.execute("ALTER TABLE ideas ADD COLUMN pending_note TEXT")
+    rounds_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='idea_rounds'").fetchone() is not None
+    if rounds_exists:
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(idea_rounds)").fetchall()}
+        # A rehearsal round is stored like any other so the journey can be
+        # walked for free, but it is marked forever. Nothing that costs nothing
+        # should be able to pass itself off as the company's real opinion.
+        if "rehearsal" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN rehearsal INTEGER NOT NULL DEFAULT 0")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -1803,10 +1812,11 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
         cur = conn.execute(
             """INSERT INTO idea_rounds
                  (idea_id, round_no, depth, depth_reason, roster_json, answers_json,
-                  view_json, recommendation, changed_note, founder_note, agent_run_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  view_json, recommendation, changed_note, founder_note, agent_run_id, rehearsal)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
-             args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id),
+             args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id,
+             1 if getattr(args, "rehearsal", False) else 0),
         )
         sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
                 "pending_note = NULL", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
@@ -1817,7 +1827,8 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
         params.append(args.idea_id)
         conn.execute(f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?", params)
     print(f"round recorded: idea={args.idea_id} round={next_no} id={cur.lastrowid} "
-          f"recommendation={args.recommendation}")
+          f"recommendation={args.recommendation}"
+          + ("  [REHEARSAL — no agent ran]" if getattr(args, "rehearsal", False) else ""))
 
 
 def cmd_idea_approve(args: argparse.Namespace) -> None:
@@ -1859,6 +1870,11 @@ def cmd_idea_approve(args: argparse.Namespace) -> None:
                 f"error: round {rnd['round_no']} is not the company's current reading — round "
                 f"{latest} superseded it. Approving a withdrawn round would build from advice the "
                 "company has already replaced. Approve the latest round, or correct it again.")
+        if "rehearsal" in rnd.keys() and rnd["rehearsal"]:
+            raise SystemExit(
+                "error: that round was a rehearsal — placeholder text, no agent read your idea and "
+                "nothing was spent. It exists so the journey can be walked for free. Turn rehearsal "
+                "mode off and evaluate for real before approving a brief anything gets built from.")
         if rnd["recommendation"] not in ("Proceed", "Proceed with narrowed scope"):
             raise SystemExit(
                 f"error: the company's recommendation on this round is '{rnd['recommendation']}', so "
@@ -2227,6 +2243,8 @@ def main() -> None:
     ira.add_argument("--changed-note", dest="changed_note", help="what changed since the previous round")
     ira.add_argument("--founder-note", dest="founder_note", help="the correction that produced this round")
     ira.add_argument("--agent-run-id", type=int, dest="agent_run_id")
+    ira.add_argument("--rehearsal", action="store_true",
+                     help="no agent ran and nothing was spent; the round is marked as such forever")
     ira.set_defaults(func=cmd_idea_round_add)
 
     iap = sub.add_parser("idea-approve", help="freeze a round as the Founder-approved brief (Founder-only)")

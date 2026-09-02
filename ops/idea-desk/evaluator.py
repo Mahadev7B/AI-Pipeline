@@ -23,6 +23,7 @@ told so. A gate that always says Proceed is a gate that does nothing.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -71,6 +72,55 @@ def progress_for(idea_id: int) -> list[tuple[str, str]]:
 def _clear(idea_id: int) -> None:
     with _PROGRESS_LOCK:
         PROGRESS.pop(idea_id, None)
+
+
+# --------------------------------------------------------------- rehearsal ---
+# Set IDEA_DESK_REHEARSAL=1 and no model is called and nothing is spent. The
+# whole journey still runs — roster, per-role reading, synthesis, a stored
+# round, correct, park, reopen — so the Founder can exercise every screen for
+# free while testing. What it will NOT do is pretend: the answers say plainly
+# that they are placeholders, the round is marked `rehearsal` in the database
+# forever, the page says so, and opsdb refuses to approve a brief built on one.
+REHEARSAL = os.environ.get("IDEA_DESK_REHEARSAL", "").strip().lower() in ("1", "true", "yes", "on")
+
+_REHEARSAL_NOTE = ("<b>Rehearsal.</b> No agent read your idea and nothing was spent. This text is a "
+                   "placeholder so the screen can be walked for free.")
+
+
+def _rehearsal_roster() -> dict:
+    return {"depth": "Light",
+            "depth_reason": "Rehearsal mode — depth was not judged, because nobody read the idea.",
+            "in": [["product", "would always be on the roster"],
+                   ["cto", "would be asked what the records can support"]],
+            "out": [["ceo, financial, security", "would be left out unless the idea reached "
+                                                 "outside the company"]]}
+
+
+def _rehearsal_result(idea: dict, rounds: list[dict]) -> dict:
+    words = (idea.get("current_raw") or idea["raw_idea"]).split()
+    title = " ".join(words[:5])[:60] or "Rehearsal idea"
+    answers = {}
+    for num, question, _voice, expands in (
+            (1, "understood", None, None), (2, "achieve", None, None), (3, "worth", None, None),
+            (4, "exists", None, None), (5, "different", None, None), (6, "fail", None, None),
+            (7, "recommend", None, None), (8, "assumptions", None, None),
+            (9, "decisions", None, None), (10, "success", None, None)):
+        answers[str(num)] = [
+            f"{_REHEARSAL_NOTE} In a real evaluation, answer {num} would be the company's actual "
+            f"reading, a few sentences long.",
+            "<div class='sk'>Rehearsal</div>The expanded working would be here. Nothing on this "
+            "page came from an agent."]
+    return {"title": f"{title} (rehearsal)", "answers": answers,
+            "view": {"opp": "Unclear",
+                     "why": "Rehearsal mode. Nobody read this idea, so there is no judgement to "
+                            "report. This exists to let the screens be walked without spending "
+                            "anything.",
+                     "merit": "Not assessed — rehearsal.",
+                     "threat": "Not assessed — rehearsal.",
+                     "diff": "Not assessed — rehearsal.",
+                     "rec": "Investigate first"},
+            "changed": ("Rehearsal round — your correction was stored, but nobody re-read the idea."
+                        if rounds else None)}
 
 
 class EvaluationError(Exception):
@@ -461,19 +511,24 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
     stuck saying it is being evaluated."""
     error: str | None = None
     try:
-        _note(idea_id, "Chief of Staff", "Choosing who should weigh in on this idea.")
-        roster = _select_roster(idea, rounds, founder_note, idea_id)
-        names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
-        _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
+        if REHEARSAL:
+            _note(idea_id, "Rehearsal mode", "No agent will be asked and nothing will be spent.")
+            roster = _rehearsal_roster()
+            result = _rehearsal_result(idea, rounds)
+        else:
+            _note(idea_id, "Chief of Staff", "Choosing who should weigh in on this idea.")
+            roster = _select_roster(idea, rounds, founder_note, idea_id)
+            names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
+            _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
 
-        perspectives = []
-        for role, _why in roster["in"]:
-            _note(idea_id, ROLE_LABEL[role], "Reading it.")
-            perspectives.append((role, _perspective(role, idea, rounds, founder_note,
-                                                    roster["depth"], idea_id)))
+            perspectives = []
+            for role, _why in roster["in"]:
+                _note(idea_id, ROLE_LABEL[role], "Reading it.")
+                perspectives.append((role, _perspective(role, idea, rounds, founder_note,
+                                                        roster["depth"], idea_id)))
 
-        _note(idea_id, "Chief of Staff", "Writing one answer.")
-        result = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
+            _note(idea_id, "Chief of Staff", "Writing one answer.")
+            result = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
         answers, view, title = _validate(result)
 
         args = ["idea-round-add", "--idea-id", str(idea_id),
@@ -484,6 +539,8 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                                         "out": roster["out"]}),
                 "--answers", json.dumps(answers),
                 "--view", json.dumps(view)]
+        if REHEARSAL:
+            args.append("--rehearsal")
         if title:
             args += ["--title", title]
         if founder_note:
