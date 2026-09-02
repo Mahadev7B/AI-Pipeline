@@ -828,7 +828,10 @@ class RosterRecovery(unittest.TestCase):
         evaluator.run_evaluation(1, {"raw_idea": "a thing", "current_raw": "a thing"}, [])
         self.assertIsNone(self.stored())
         self.assertTrue(self.preserved, "the roster reply is evidence even when a role fails")
-        self.assertIn("reading the idea", self.error(), "the failing role must be named")
+        # Assert the ROLE is named, not one particular phrasing of the stage —
+        # the wording moved when the pipeline became invent/attack/improve, and
+        # a test pinned to prose fails on a rename rather than on a defect.
+        self.assertIn("Product", self.error(), "the failing role must be named")
 
 
 if __name__ == "__main__":

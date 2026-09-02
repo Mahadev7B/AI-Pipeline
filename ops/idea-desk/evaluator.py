@@ -302,18 +302,34 @@ company should look — before anyone spends time on it.
 
 {_idea_block(idea, rounds, founder_note)}
 
+HOW THIS COMPANY WORKS: invent first, attack second, improve third. Product,
+Design and CTO BUILD a direction — in that order, each seeing the last. Red Team
+then attacks THAT direction, not the Founder's rough sentence. Then it gets
+repaired. You are choosing who builds, not who comments.
+
 WHO YOU MAY CHOOSE FROM:
-  product   — the problem, the scope, what belongs in a first version. ALWAYS on the roster.
-  cto       — what is technically true, what the existing records can support.
-  red-team  — how this fails, what breaks, what is being assumed.
+  product   — the outcome the Founder actually wants, stated so another implementation could serve
+              it. ALWAYS on the roster.
+  cto       — invents the way to build it with the least human effort: 3-5 workable architectures,
+              compared, one recommended. Include whenever automation, hardware, sensors, AI, APIs,
+              integrations or data flow could materially improve the answer. Do NOT leave the CTO
+              out just because the Founder's sentence sounds technically simple — the fridge idea
+              said nothing about cameras, and system design turned out to be the whole question.
+  red-team  — attacks the direction the others designed. Include whenever there is a real direction
+              to attack, which is nearly always.
   ceo       — positioning and market direction. Only when someone OUTSIDE the company chooses this.
-  design    — only when the experience or the shape of the thing materially decides the answer.
+  design    — the lowest-friction experience that delivers the outcome. Include when what the
+              person has to DO decides whether this is worth using.
   financial — only when money genuinely changes hands or the cost structure decides it.
   security  — only when identity, payments or sensitive data are actually in play.
 
-Choose ONLY the perspectives that could materially change how this idea is
-read. Choosing everyone is the failure mode, not the safe option. Product plus
-one or two others is a good roster. Four others is the maximum.
+Choose ONLY the perspectives that could materially change the SOLUTION. Choosing
+everyone is the failure mode, not the safe option. Product plus one or two
+others is a good roster. Four others is the maximum.
+
+The question is never "is this idea any good as written" — it is rough on
+purpose. The question is "who do we need in the room to turn this into the
+strongest thing we could actually build".
 
 HOW DEEP:
   Light    — internal tooling, one user, nothing outside the company changes. No competitor work.
@@ -369,16 +385,29 @@ HOW DEEP:
 # -------------------------------------------------- phase 2: perspectives ---
 
 ROLE_BRIEF = {
-    "product": "the problem behind the request, who it is for, what belongs in a first useful "
-               "version and what should wait. Name the scope you would cut.",
-    "cto": "what is technically true here. What would this actually require, what in our existing "
-           "system supports or contradicts it, and what would make it dishonest to build as asked.",
+    "product": "the OUTCOME the Founder is actually after, stated so plainly that a different "
+               "implementation could serve it. Who it is for, what belongs in a first useful "
+               "version, what should wait. Name the scope you would cut. Do not treat the "
+               "Founder's wording as the specification — it is the signal, not the design.",
+    # The Founder's correction: the CTO's job during idea formation is to
+    # INVENT the way around the hard part, not to certify that the hard part is
+    # hard. "Manual entry is the weakness, so investigate first" was the failure
+    # this rewrites — nobody had asked whether the manual entry could be
+    # engineered away.
+    "cto": "how to actually BUILD this with the least human effort. Generate three to five "
+           "genuinely different workable architectures — software, AI, hardware, sensors, cameras, "
+           "APIs, integrations, edge or cloud, hybrids. For each: what it would take, what it costs "
+           "in user friction, how fast it is to prototype, how reliable, how reversible. Then say "
+           "which ONE you would build and why. Attack the constraint rather than accepting it: if "
+           "a step is tedious for the user, your job is to design it away or make it degrade "
+           "gracefully, not to report that it is tedious.",
     "red-team": "how this fails. The assumption that would sink it, the thing being decided too "
                 "early, the version of this that quietly becomes a huge project.",
     "ceo": "whether this should exist, and for whom. Positioning, and whether anyone outside would "
            "choose it. Say plainly if there is no outside audience.",
-    "design": "whether the experience the Founder is imagining is the right one, and whether the "
-              "shape they named is a requirement or a sketch.",
+    "design": "the LOWEST-FRICTION experience that would deliver the outcome. Not whether the "
+              "Founder's shape is right — what shape would ask least of the person using it. Name "
+              "the interaction that has to disappear for this to be worth using at all.",
     "financial": "the money. What it costs to build and run, what it could return, and whether the "
                  "economics change the recommendation.",
     "security": "identity, secrets, personal data, and what could go wrong with them. Only raise "
@@ -386,10 +415,24 @@ ROLE_BRIEF = {
 }
 
 
+# The order the Founder set: invent first, attack second, improve third. These
+# roles BUILD the direction, in this sequence, each seeing what came before.
+INVENTORS = ("product", "design", "cto")
+ATTACKER = "red-team"
+
+
 def _perspective(role: str, idea: dict, rounds: list[dict], founder_note: str | None,
-                 depth: str, idea_id: int | None = None) -> str:
+                 depth: str, idea_id: int | None = None, earlier: str = "") -> str:
+    prior = (f"""
+WHAT YOUR COLLEAGUES HAVE ALREADY WORKED OUT — build on it, do not repeat it:
+
+{earlier}
+""" if earlier else "")
     transcript = f"""You are the {ROLE_LABEL[role]} of an AI software company. The Founder has brought
-in an idea and the Chief of Staff has asked specifically for your reading of it.
+in a rough idea. Your job is NOT to judge whether their wording is a good
+specification — it is not one, and it was never meant to be. Your job is to help
+turn it into the strongest workable thing the company could actually build.
+{prior}
 
 {_idea_block(idea, rounds, founder_note)}
 
@@ -399,12 +442,76 @@ HOW DEEP THE COMPANY IS GOING: {depth}.
 
 YOUR ANGLE — answer from it and not from everyone else's: {ROLE_BRIEF[role]}
 {COMMON_RULES}
-Write at most 400 words of plain prose. No headings, no JSON, no bullet
+Write at most 450 words of plain prose. No headings, no JSON, no bullet
 theatre. The Chief of Staff reads this and writes the single answer the Founder
 sees, so write for a colleague who will disagree with you, not for the Founder.
 
-If your honest view is that this idea should not be built, or should be built
-much smaller, say so in your first sentence.
+Saying "this has a weakness, so it is risky" is not your job and is not useful
+on its own. If you name a weakness, name what you would DO about it. If after
+genuinely trying you believe the outcome cannot be reached workably, say that
+plainly and say what would have to be true for it to become reachable.
+"""
+    return _invoke(role, transcript, idea_id)
+
+
+def _attack(direction: str, idea: dict, rounds: list[dict], founder_note: str | None,
+            idea_id: int | None = None) -> str:
+    """Red Team attacks the DIRECTION the company designed, not the Founder's
+    rough sentence. Attacking a one-line pitch only ever produces "it is
+    underspecified", which is true of every one-line pitch and helps nobody."""
+    transcript = f"""You are the Red Team of an AI software company. Your colleagues have taken the
+Founder's rough idea and designed a specific direction they want to build. That
+DIRECTION is what you attack — not the Founder's original wording, which was
+only a starting signal.
+
+{_idea_block(idea, rounds, founder_note)}
+
+THE DIRECTION THE COMPANY IS PROPOSING:
+
+{direction}
+
+Go after THIS proposal. What is the assumption that sinks it? Where does it
+quietly become a much larger project? What breaks when it meets a real person?
+What did they design around that cannot actually be designed around?
+{COMMON_RULES}
+Be specific enough that someone could act on each objection. "It is
+underspecified" is not an objection to a proposal — it is an observation about
+a sentence, and the proposal above is not a sentence.
+
+Rank your objections, hardest first. At most 400 words.
+"""
+    return _invoke(ATTACKER, transcript, idea_id)
+
+
+def _repair(role: str, direction: str, attack: str, idea: dict, rounds: list[dict],
+            founder_note: str | None, idea_id: int | None = None) -> str:
+    """One pass to answer the attack. This is where a weakness gets engineered
+    away rather than merely recorded — the specific thing the Founder said was
+    missing."""
+    transcript = f"""You are the {ROLE_LABEL[role]} of an AI software company. The company designed a
+direction for the Founder's idea, and the Red Team has attacked it. Your job now
+is to REPAIR it where repair is honest.
+
+{_idea_block(idea, rounds, founder_note)}
+
+THE DIRECTION:
+
+{direction}
+
+WHAT THE RED TEAM SAID:
+
+{attack}
+
+For each objection, in order: can it be designed away, reduced, or made to fail
+gracefully? If yes, say exactly how, and what the direction becomes. If no, say
+so plainly — an objection you cannot answer is the most useful thing on this
+page, and pretending otherwise is worse than losing the argument.
+{COMMON_RULES}
+End with the direction as it now stands after your repairs, in a few sentences,
+so the Chief of Staff can quote it. If the attack was fatal and no repair
+survives, say that instead and say what the company should do about it.
+
+At most 450 words.
 """
     return _invoke(role, transcript, idea_id)
 
@@ -451,7 +558,9 @@ describe what to write, they are not text to reuse.
     "why":    "two to four sentences",
     "merit":  "the single biggest merit",
     "threat": "the single biggest threat",
-    "diff":   "the best differentiation, or 'none we can see yet'",
+    "diff":   "what makes the DESIGNED solution better than the obvious version of this idea — the "
+              "approach the company chose and what it beats. 'none we can see yet' only if the "
+              "company genuinely found no better approach than the obvious one",
     "rec":    "Proceed" | "Proceed with narrowed scope" | "Investigate first" | "Reconsider"
   },
   "changed": "what changed since the previous round — omit entirely if this is round 1"
@@ -459,9 +568,22 @@ describe what to write, they are not text to reuse.
 """
 
 
+def _voice_label(role: str) -> str:
+    """Who is speaking, for the synthesis transcript.
+
+    The repair pass arrives as "cto-repair" — a stage, not a role, with no
+    entry in ROLE_LABEL. Naming it properly matters: the Chief of Staff has to
+    be able to tell the CTO's first architecture from the same CTO's answer
+    after the Red Team attacked it, or it will synthesise the superseded one."""
+    if role.endswith("-repair"):
+        base = role[: -len("-repair")]
+        return f"{ROLE_LABEL.get(base, base)}, after repairing the direction"
+    return ROLE_LABEL.get(role, role)
+
+
 def _synthesise(idea: dict, rounds: list[dict], founder_note: str | None, roster: dict,
                 perspectives: list[tuple[str, str]], idea_id: int | None = None) -> dict:
-    voices = "\n\n".join(f"--- {ROLE_LABEL[role]} said ---\n{text}" for role, text in perspectives)
+    voices = "\n\n".join(f"--- {_voice_label(role)} ---\n{text}" for role, text in perspectives)
     round_no = len(rounds) + 1
     transcript = f"""You are the Chief of Staff of an AI software company. Your colleagues have each
 read the Founder's idea. They may disagree with each other. The Founder never
@@ -488,9 +610,21 @@ Rules that are easy to get wrong, and matter:
 * Question 2 is the one that proves you understood. Not "you want a
   dashboard" — that is their own word handed back. Say what they are actually
   trying to end up with.
-* Question 7 is ONE recommendation, not a menu. What we build first, and what
-  we deliberately postpone. If a smaller version has a better chance, say that
+* Question 5 is where the company's DESIGN goes. Not "we would execute well" —
+  the specific approach the CTO landed on and why it beats the alternatives
+  they compared it against. Name the approaches that were considered and
+  dropped, and why. If the company found a way to remove the hardest manual
+  step, that IS the answer to this question.
+* Question 7 is ONE recommendation, not a menu, and it is a recommendation of
+  the SOLUTION THE COMPANY DESIGNED — not a verdict on the Founder's sentence.
+  Say what we build first, what we deliberately postpone, and what the
+  direction survived. If a smaller version has a better chance, say that
   instead.
+* "Investigate first" is still a legitimate answer, but ONLY after the company
+  has formed the best workable concept it can — and then it must say WHAT
+  PROPOSED SOLUTION the investigation is validating, and what result would kill
+  it. "This has a weakness, therefore investigate" is not an answer; the
+  company's job was to try to engineer the weakness away first.
 * Question 9: only decisions where two honest answers would produce two
   DIFFERENT briefs, and say what changes for each. ZERO questions is a passing
   score. One or two beats eight. Never invent one to look thorough. Cap: three.
@@ -753,37 +887,70 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
             # N times longer for the same result. Bounded by the runtime's own
             # MAX_CONCURRENT_INVOCATIONS, so this asks for concurrency rather
             # than assuming it.
-            stage = "the roles reading the idea"
+            # INVENT, then ATTACK, then IMPROVE — the Founder's order. The
+            # roles that BUILD the direction run in sequence, each reading what
+            # the previous one worked out, because a technical architecture that
+            # has not seen the product outcome or the intended experience is
+            # just a guess. Everyone else still runs alongside them.
             chosen = [role for role, _why in roster["in"]]
-            for role in chosen:
-                _note(idea_id, ROLE_LABEL[role], "Reading it.")
+            builders = [r for r in INVENTORS if r in chosen]
+            others = [r for r in chosen if r not in builders and r != ATTACKER]
             said_by: dict[str, str] = {}
             failed: list[EvaluationError] = []
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(chosen) or 1) as pool:
-                running = {pool.submit(_perspective, role, idea, rounds, founder_note,
-                                       roster["depth"], idea_id): role
-                           for role in chosen}
-                for future in concurrent.futures.as_completed(running):
-                    role = running[future]
-                    try:
-                        said_by[role] = future.result()
-                        _note(idea_id, ROLE_LABEL[role], "Done.")
-                    except EvaluationError as exc:
-                        # Collected, not raised here: raising would abandon the
-                        # roles still running and lose readings already paid
-                        # for. Every one finishes, then we decide.
-                        failed.append(EvaluationError(f"{ROLE_LABEL[role]} could not answer. "
-                                                      + str(exc), stage=f"{ROLE_LABEL[role]} "
-                                                      "reading the idea"))
-                        _note(idea_id, ROLE_LABEL[role], "Could not answer.")
-            # Roster order, not finishing order — who answered fastest is not
-            # a fact about the idea and must not reorder the record.
-            for role in chosen:
-                if role in said_by:
+
+            def _run(role, earlier=""):
+                _note(idea_id, ROLE_LABEL[role], "Working on it.")
+                try:
+                    said_by[role] = _perspective(role, idea, rounds, founder_note,
+                                                 roster["depth"], idea_id, earlier)
                     evidence[f"{ROLE_LABEL[role]} said"] = said_by[role]
-                    perspectives.append((role, said_by[role]))
+                    _note(idea_id, ROLE_LABEL[role], "Done.")
+                except EvaluationError as exc:
+                    failed.append(EvaluationError(f"{ROLE_LABEL[role]} could not answer. "
+                                                  + str(exc),
+                                                  stage=f"{ROLE_LABEL[role]} working on the idea"))
+                    _note(idea_id, ROLE_LABEL[role], "Could not answer.")
+
+            stage = "designing a direction"
+            # The roles with no dependency on each other still run alongside.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=(len(others) or 1)) as pool:
+                side = [pool.submit(_run, r) for r in others]
+                for role in builders:                      # sequential, by design
+                    _run(role, "\n\n".join(
+                        f"--- {ROLE_LABEL[r]} said ---\n{said_by[r]}"
+                        for r in builders if r in said_by))
+                for f in side:
+                    f.result()
             if failed:
                 raise failed[0]
+            for role in chosen:
+                if role in said_by:
+                    perspectives.append((role, said_by[role]))
+
+            # The direction the company now proposes — what Red Team attacks.
+            direction = "\n\n".join(f"--- {ROLE_LABEL[r]} ---\n{said_by[r]}"
+                                     for r in builders if r in said_by)
+            if direction and ATTACKER in chosen:
+                stage = "the Red Team attacking that direction"
+                _note(idea_id, ROLE_LABEL[ATTACKER],
+                      "Attacking the direction the company designed.")
+                attack = _attack(direction, idea, rounds, founder_note, idea_id)
+                evidence["Red Team attacked the direction"] = attack
+                perspectives.append((ATTACKER, attack))
+                said_by[ATTACKER] = attack
+
+                # IMPROVE. One repair pass, by whichever builder owns the
+                # objections most directly. This is the step the Founder said
+                # was missing: a weakness gets engineered away here, or is
+                # honestly declared unfixable — not merely recorded and used as
+                # a reason to stop.
+                mender = "cto" if "cto" in builders else (builders[-1] if builders else None)
+                if mender:
+                    stage = f"{ROLE_LABEL[mender]} repairing the direction"
+                    _note(idea_id, ROLE_LABEL[mender], "Repairing what survived the attack.")
+                    fixed = _repair(mender, direction, attack, idea, rounds, founder_note, idea_id)
+                    evidence[f"{ROLE_LABEL[mender]} repaired the direction"] = fixed
+                    perspectives.append((f"{mender}-repair", fixed))
 
             stage = "writing the final answer"
             _note(idea_id, "Chief of Staff", "Writing one answer.")
