@@ -100,8 +100,13 @@ h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;margin:
 .k{font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);}
 .sub{color:var(--text2);font-size:14px;max-width:62ch;}
 .list{display:flex;flex-direction:column;border-top:1px solid var(--border);margin-top:22px;}
-.row{display:grid;grid-template-columns:1fr auto 210px;gap:22px;align-items:center;padding:18px 6px;
-     border-bottom:1px solid var(--border);}
+/* Every grid column below uses minmax(0,1fr), never a bare 1fr: a bare 1fr
+   track refuses to shrink below its content, so one long idea pushed the
+   status pill and date clean off the list page, and the stored-versions card
+   ran off the right edge of a phone. Found by looking at the rendered pages,
+   which no amount of HTTP-level testing had caught. */
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto 210px;gap:22px;align-items:center;
+     padding:18px 6px;border-bottom:1px solid var(--border);}
 .row:hover{background:var(--panel);}
 .row .t{font-size:15.5px;font-weight:600;color:var(--text);}
 .row .d{font-size:13px;color:var(--text2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;
@@ -122,13 +127,31 @@ h1{font-size:28px;font-weight:600;letter-spacing:-0.02em;line-height:1.2;margin:
 .voices span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;
                      margin-right:6px;vertical-align:-1px;background:var(--c);}
 .cols{display:grid;grid-template-columns:330px minmax(0,1fr);gap:34px;margin-top:26px;align-items:start;}
-@media (max-width:900px){.cols{grid-template-columns:1fr;} .side{position:static !important;}}
+@media (max-width:900px){
+  .cols{grid-template-columns:minmax(0,1fr);gap:24px;}
+  .side{position:static !important;}
+}
+/* A pasted URL or an unbroken run of characters must wrap rather than widen
+   its container — everything here renders text the Founder or an agent wrote. */
+.you .q,.banner,.hist,.qa .a,.xin,.cvg .val,.h-item,.row .t{overflow-wrap:anywhere;}
+@media (max-width:760px){
+  .wrap{padding:0 18px 140px;}
+  .row{grid-template-columns:minmax(0,1fr);gap:8px;padding:16px 4px;}
+  .row .when{text-align:left;}
+  .topright{display:none;}          /* the tagline is the first thing to go */
+  .brand{white-space:nowrap;}
+  .crumb{display:none;}
+  .top-in,.bar-in{padding:12px 18px;}
+  .head{gap:12px;}
+  .voices{gap:10px;}
+  h1{font-size:24px;}
+}
 .side{position:sticky;top:64px;display:flex;flex-direction:column;gap:18px;}
 .you{border-left:3px solid var(--gray);padding:2px 0 2px 14px;}
 .you .q{white-space:pre-wrap;font-size:14px;line-height:1.6;color:var(--text);}
 .you .aud{margin-top:10px;font-size:12.5px;color:var(--text2);}
 .hist{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
-.h-item{display:grid;grid-template-columns:18px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--hair);
+.h-item{display:grid;grid-template-columns:18px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--hair);
         font-size:12.5px;color:var(--text2);align-items:start;}
 .h-item:first-of-type{border-top:0;}
 .h-item .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--border2);}
@@ -173,8 +196,8 @@ details.x .xin{margin-top:12px;padding:14px 16px;background:var(--panel2);border
 .lab{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:4px;
      border:1px solid var(--border2);color:var(--text2);}
 .lab.unk{color:var(--red);border-color:oklch(66% 0.17 25 / .5);}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-@media (max-width:640px){.two{grid-template-columns:1fr;}}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;}
+@media (max-width:640px){.two{grid-template-columns:minmax(0,1fr);}}
 .dec{border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-top:10px;
      background:var(--panel2);}
 .cv{margin-top:22px;border-radius:14px;border:1px solid oklch(72% 0.13 300 / .55);background:var(--panel);
@@ -182,13 +205,13 @@ details.x .xin{margin-top:12px;padding:14px 16px;background:var(--panel2);border
 .cv .cvh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;
          align-items:baseline;}
 .cv .cvh .k{color:var(--violet);}
-.cvg{display:grid;grid-template-columns:150px 1fr;gap:13px 20px;align-items:baseline;}
+.cvg{display:grid;grid-template-columns:150px minmax(0,1fr);gap:13px 20px;align-items:baseline;}
 .cvg .k{text-align:right;}
 .cvg .val{font-size:13.5px;line-height:1.65;color:var(--text);}
 .cvg .opp{font-size:15px;font-weight:700;}
 .rec{display:inline-block;padding:6px 14px;border-radius:8px;border:1px solid var(--accent);
      background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;}
-@media (max-width:640px){.cvg{grid-template-columns:1fr;} .cvg .k{text-align:left;}}
+@media (max-width:640px){.cvg{grid-template-columns:minmax(0,1fr);} .cvg .k{text-align:left;}}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:30;
      background:color-mix(in oklab, var(--bg) 92%, transparent);backdrop-filter:blur(10px);
      border-top:1px solid var(--border);}
@@ -201,7 +224,7 @@ details.x .xin{margin-top:12px;padding:14px 16px;background:var(--panel2);border
 .panel p{margin:0 0 12px;color:var(--text2);font-size:13.5px;line-height:1.6;}
 .panel.g{border-color:oklch(72% 0.15 150 / .5);}
 .arts{display:flex;flex-direction:column;gap:8px;margin:12px 0 16px;}
-.art{display:grid;grid-template-columns:130px 1fr auto;gap:12px;align-items:baseline;padding:9px 12px;
+.art{display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:9px 12px;
      border-radius:8px;background:var(--panel2);font-size:13px;}
 .art .m{font-family:var(--mono);font-size:11.5px;color:var(--text3);}
 .foot{margin-top:60px;padding-top:18px;border-top:1px dashed var(--border2);font-size:12px;
