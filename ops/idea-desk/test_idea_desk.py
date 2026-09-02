@@ -644,6 +644,38 @@ class AnswerShape(unittest.TestCase):
                                                 "view": {**self.VIEW, "rec": "Ship it"}}})
 
 
+class LateRosterAddition(unittest.TestCase):
+    """The roster is chosen from the Founder's raw sentence, before anyone knows
+    what the company will design. A kids' coding toy that acquires share links,
+    resume identifiers and telemetry is handling children's data — and Security
+    was left out when none of that existed yet."""
+
+    def test_a_named_role_is_picked_up(self):
+        text = ("...direction as it stands: browser-only, share links, resume codes.\n"
+                "NEEDS: security — under-13 data, share links and telemetry now exist")
+        self.assertEqual(evaluator._late_addition(text, ["product", "cto"]), "security")
+
+    def test_none_means_none(self):
+        self.assertIsNone(evaluator._late_addition("...\nNEEDS: none", ["product"]))
+
+    def test_a_role_already_present_is_not_re_added(self):
+        self.assertIsNone(evaluator._late_addition("NEEDS: cto — more architecture",
+                                                   ["product", "cto"]))
+
+    def test_an_invented_role_is_ignored(self):
+        self.assertIsNone(evaluator._late_addition("NEEDS: lawyer — we need counsel", ["product"]))
+
+    def test_silence_is_not_an_addition(self):
+        # A repair that simply forgets the line must not add anybody.
+        self.assertIsNone(evaluator._late_addition("a repair with no NEEDS line at all", ["product"]))
+        self.assertIsNone(evaluator._late_addition("", ["product"]))
+
+    def test_only_the_first_valid_name_is_taken(self):
+        # One extra call, never a cascade.
+        text = "NEEDS: security — data\nNEEDS: financial — pricing"
+        self.assertEqual(evaluator._late_addition(text, ["product"]), "security")
+
+
 class ExpandedWorking(unittest.TestCase):
     """A real run stored ten expanded sections of 19-31 characters: the model
     had pasted back the contract's own placeholder ("expanded: section 7").

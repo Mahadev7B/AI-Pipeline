@@ -398,11 +398,19 @@ ROLE_BRIEF = {
     # engineered away.
     "cto": "how to actually BUILD this with the least human effort. Generate three to five "
            "genuinely different workable architectures — software, AI, hardware, sensors, cameras, "
-           "APIs, integrations, edge or cloud, hybrids. For each: what it would take, what it costs "
-           "in user friction, how fast it is to prototype, how reliable, how reversible. Then say "
-           "which ONE you would build and why. Attack the constraint rather than accepting it: if "
-           "a step is tedious for the user, your job is to design it away or make it degrade "
-           "gracefully, not to report that it is tedious.",
+           "APIs, integrations, edge or cloud, hybrids. They must differ in KIND, not in detail: "
+           "'ours, but tuned' is not a second option. Compare them explicitly and in one place, on "
+           "fidelity to what the Founder actually asked for, time to the first moment that works, "
+           "performance on modest hardware and slow networks, quality of the failure experience, "
+           "engineering time, maintenance burden, and reversibility. Then say which ONE you would "
+           "build and why it beats each of the others.\n"
+           "  Mark any ONE-WAY DOOR explicitly: a choice that would take a rewrite rather than a "
+           "week to undo. Building our own version of something that already exists — a language, "
+           "a runtime, a parser, an engine — is nearly always a one-way door, and choosing one "
+           "needs more justification than 'it gives a better first experience'.\n"
+           "  Attack the constraint rather than accepting it: if a step is tedious for the user, "
+           "your job is to design it away or make it degrade gracefully, not to report that it is "
+           "tedious.",
     "red-team": "how this fails. The assumption that would sink it, the thing being decided too "
                 "early, the version of this that quietly becomes a huge project.",
     "ceo": "whether this should exist, and for whom. Positioning, and whether anyone outside would "
@@ -513,9 +521,42 @@ End with the direction as it now stands after your repairs, in a few sentences,
 so the Chief of Staff can quote it. If the attack was fatal and no repair
 survives, say that instead and say what the company should do about it.
 
+Then, on its own final line, exactly one of:
+
+  NEEDS: none
+  NEEDS: <one role> — <why, in a few words>
+
+...naming a role NOT already in this evaluation whose absence would now be a
+real gap, because the direction has moved into their territory. Choose from:
+product, design, cto, red-team, ceo, financial, security. A direction that
+started as a simple tool and now handles children's data, payments, or someone
+else's platform has changed domain, and the roster was chosen before that was
+known. Name at most one, and only if their absence would genuinely weaken the
+answer — this costs a real call.
+
 At most 450 words.
 """
     return _invoke(role, transcript, idea_id)
+
+
+_NEEDS = re.compile(r"^NEEDS:\s*([a-z-]+)", re.I | re.M)
+
+
+def _late_addition(repair_text: str, already: list[str]) -> str | None:
+    """A role the direction turned out to need, that the roster could not have
+    known to include.
+
+    The roster is chosen from the Founder's raw sentence. By the time the
+    company has designed something, the domain may have moved — a kids' coding
+    toy that acquires share links, resume identifiers and telemetry is handling
+    children's data, and Security was left out when none of that existed. This
+    reopens the roster once, for one role, rather than freezing a decision made
+    before the facts."""
+    for match in _NEEDS.finditer(repair_text or ""):
+        role = match.group(1).strip().lower()
+        if role in SELECTABLE and role not in already:
+            return role
+    return None
 
 
 # ---------------------------------------------------- phase 3: synthesis ---
@@ -627,9 +668,25 @@ Rules that are easy to get wrong, and matter:
   PROPOSED SOLUTION the investigation is validating, and what result would kill
   it. "This has a weakness, therefore investigate" is not an answer; the
   company's job was to try to engineer the weakness away first.
-* Question 9: only decisions where two honest answers would produce two
-  DIFFERENT briefs, and say what changes for each. ZERO questions is a passing
-  score. One or two beats eight. Never invent one to look thorough. Cap: three.
+* Question 9: the company DECIDES FIRST, then escalates only what it genuinely
+  cannot. For every fork, state the answer WE recommend and the consequence of
+  it, then say what would make the Founder overrule us. A fork the company
+  could have settled from the Founder's own stated goal is not a Founder
+  decision — it is work we did not do. Only decisions where two honest answers
+  produce two DIFFERENT briefs, and say what changes for each. ZERO questions
+  is a passing score. One or two beats eight. Never invent one to look
+  thorough. Cap: three.
+* If the company NARROWED what the Founder asked for — read "learn X" as
+  "feel successful at something X-like", or an audience as a slice of it — say
+  so in Question 1 and say how and when the full thing is reached. Quietly
+  redefining the Founder's words into something easier to deliver is the most
+  expensive mistake on this page, because it is the one they cannot see.
+* Where an unknown could change the ARCHITECTURE — what exists today, what a
+  law requires, what a platform allows — do not leave it as a disclaimer.
+  Question 7 names it as a bounded piece of work: what would be looked up, by
+  whom, and what answer would change the recommendation. Nobody here can browse
+  the web; saying so is honest, but "unknown because nobody looked" must not be
+  the permanent operating model of a Full-depth reading.
 * Question 4: if research was not performed — and it was not — say so.
 * Answer all ten. One you cannot answer well is answered "we don't know, and
   here is why", in the concise layer, never dropped.
@@ -958,6 +1015,34 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                     fixed = _repair(mender, direction, attack, idea, rounds, founder_note, idea_id)
                     evidence[f"{ROLE_LABEL[mender]} repaired the direction"] = fixed
                     perspectives.append((f"{mender}-repair", fixed))
+
+                    # The roster was chosen from the Founder's raw sentence,
+                    # before anyone knew what the company would design. If the
+                    # direction has since moved into somebody else's territory
+                    # — children's data, payments, another platform's rules —
+                    # bring them in now. ONCE, for ONE role: reopening a
+                    # decision beats freezing it, but an evaluation that keeps
+                    # discovering new roles never finishes.
+                    late = _late_addition(fixed, chosen)
+                    if late:
+                        stage = f"{ROLE_LABEL[late]} joining late"
+                        _note(idea_id, ROLE_LABEL[late],
+                              "Brought in — the direction moved into their territory.")
+                        try:
+                            said = _perspective(late, idea, rounds, founder_note,
+                                                roster["depth"], idea_id,
+                                                direction + "\n\n--- what it became after the "
+                                                "Red Team attacked it ---\n" + fixed)
+                            evidence[f"{ROLE_LABEL[late]} said (joined late)"] = said
+                            perspectives.append((late, said))
+                            roster["in"].append([late, "brought in after the direction moved into "
+                                                       "their territory"])
+                            _note(idea_id, ROLE_LABEL[late], "Done.")
+                        except EvaluationError:
+                            # A late addition is a bonus, not a dependency. The
+                            # evaluation already has everything it needs.
+                            _note(idea_id, ROLE_LABEL[late],
+                                  "Could not answer — continuing without them.")
 
             stage = "writing the final answer"
             _note(idea_id, "Chief of Staff", "Writing one answer.")
