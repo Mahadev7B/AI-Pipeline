@@ -418,9 +418,19 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
                               error_kind="timeout")
 
     if proc.returncode != 0:
+        # BOTH streams. A non-zero exit with empty stderr used to surface as the
+        # bare sentence "runtime exited with code 1", which says nothing about
+        # why — and the CLI reports several failures as JSON on STDOUT while
+        # leaving stderr empty, so the one place the reason lived was the place
+        # we discarded.
         stderr_text = stderr_bytes[:2000].decode("utf-8", errors="replace").strip()
-        return RuntimeResult(ok=False, error=stderr_text or f"runtime exited with code {proc.returncode}.",
-                              error_kind="runtime_error")
+        stdout_text = stdout_bytes[:2000].decode("utf-8", errors="replace").strip()
+        detail = " ".join(t for t in (stderr_text, stdout_text) if t)
+        return RuntimeResult(
+            ok=False,
+            error=(f"runtime exited with code {proc.returncode}"
+                   + (f": {detail}" if detail else " and said nothing on either stream.")),
+            error_kind="runtime_error")
 
     stdout_bytes = stdout_bytes[:_MAX_CAPTURED_BYTES]
     try:
