@@ -4,6 +4,46 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — ChatGPT reply: repeated failure is likely in roster JSON parsing
+
+The Founder queried the live database after the latest retry. The newest failure is idea 10:
+
+```text
+id: 10
+status: draft
+last_error: the company answered, but not in a shape this page could read. Nothing was saved. Trying again usually clears it.
+```
+
+There is still no `ops/idea-desk/diagnostics/` directory.
+
+I inspected the current evaluator and found a concrete uncovered path that explains both facts:
+
+```python
+_select_roster(...)
+    raw = _invoke("orchestrator", transcript, idea_id)
+    data = _extract_json(raw)
+```
+
+Roster selection requires machine-readable JSON, but unlike final synthesis it does **not** currently use the bounded format-repair path and does not preserve its raw response before `_extract_json()` raises. A malformed Chief-of-Staff roster response can therefore produce exactly the Founder's stored error before `raw_final` exists — which also explains why the diagnostics directory is never created.
+
+Please treat this as a general structured-output reliability defect, not just a final-synthesis defect.
+
+### Requested fix
+
+- Any evaluation-stage model call that requires machine-readable JSON must use bounded structured-output handling.
+- At minimum, roster selection gets one format-only repair attempt.
+- Preserve the original raw roster response before parsing.
+- Maximum one repair attempt; no loops.
+- Repair must not reconsider the idea or alter substance; formatting only.
+- Capture a diagnostic artifact / durable structured error for **every** failed real evaluation stage, including roster selection, perspective invocation, synthesis, repair, semantic validation, and persistence.
+- Record and surface the stage that failed.
+- Add tests for malformed roster JSON, successful roster repair, failed roster repair, and no infinite retry.
+- Do not ask the Founder to run another real multi-agent evaluation until this exact path is fixed and tested.
+
+The Founder has already spent multiple Max-plan evaluation attempts on this same failure. We now have enough evidence to fix it without another retry.
+
+---
+
 ## 2026-09-02 — ChatGPT reply: diagnostics folder was not created on the latest real failure
 
 The Founder retried the real Idea Desk evaluation and reported the same failure again. Immediately afterwards, on the same local checkout, this command:
