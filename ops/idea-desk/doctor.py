@@ -17,6 +17,7 @@ can show you something other than the code you just pulled:
 """
 from __future__ import annotations
 
+import os
 import shutil
 import socket
 import subprocess
@@ -103,11 +104,20 @@ def main() -> None:
         print("\n     Nothing is holding the port, so a fresh start will be the one you reach.")
 
     print("\nEVALUATION REQUIREMENTS")
-    claude = shutil.which("claude")
+    claude = os.environ.get("CLAUDE_BIN") or shutil.which("claude")
     line("`claude` command", claude or "NOT FOUND — evaluation cannot run", ok=bool(claude))
+    if os.environ.get("CLAUDE_BIN"):
+        line("  (from CLAUDE_BIN)", os.environ["CLAUDE_BIN"])
     if not claude:
-        print("     Everything else works without it: writing ideas, reading past")
-        print("     evaluations, approving, parking. Only evaluation needs it.")
+        print("     Everything else works without it: writing ideas, reading past evaluations,")
+        print("     approving, parking. Only evaluation needs it. To install:")
+        print("       npm install -g @anthropic-ai/claude-code")
+        print("     then run `claude` once to sign in, and restart the Idea Desk.")
+        print("     If your TERMINAL finds claude but this does not, they are looking at")
+        print("     different PATHs — a terminal opened before the install still has the old")
+        print("     one. Open a new terminal, or point us at it directly:")
+        print("       Windows      :  $env:CLAUDE_BIN = 'C:\\full\\path\\to\\claude.cmd'")
+        print("       macOS/Linux  :  export CLAUDE_BIN=/full/path/to/claude")
     cred = REPO / "ops" / "control-center" / ".founder_credential.json"
     line("your passphrase is set up", "yes" if cred.exists() else "NO — run founder_auth.py setup",
          ok=cred.exists())

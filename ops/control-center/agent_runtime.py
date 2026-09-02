@@ -42,6 +42,7 @@ import json
 import os
 import signal
 import pathlib
+import shutil
 import subprocess
 import sys
 import threading
@@ -247,6 +248,25 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 
 CLAUDE_BIN = "claude"
 
+
+def _resolve_claude() -> str | None:
+    """Full path to the `claude` executable, or None.
+
+    Windows matters here. Claude Code installs through npm as `claude.cmd`,
+    and Python's subprocess uses CreateProcess, which searches PATH but only
+    appends `.exe` — it does NOT resolve `.cmd` or `.bat` the way a shell does.
+    So passing the bare name "claude" fails with FileNotFoundError on a Windows
+    machine that has Claude Code perfectly well installed, and the Founder is
+    told the runtime is missing when it is not. shutil.which() honours PATHEXT,
+    so it finds claude.cmd and hands back a path CreateProcess can launch.
+
+    Resolved per call rather than cached: the Founder may install it while the
+    server is running, and should not have to restart to be believed."""
+    override = os.environ.get("CLAUDE_BIN")
+    if override:
+        return override if (shutil.which(override) or pathlib.Path(override).exists()) else None
+    return shutil.which(CLAUDE_BIN)
+
 # Milestone 2B3A: bounds the number of `claude` subprocesses that may run
 # at once, regardless of how many HTTP threads exist — GET/read traffic
 # is not bounded at all (SQLite handles concurrent readers cheaply; a
@@ -319,8 +339,13 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
 
 
 def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeResult:
+    resolved = _resolve_claude()
+    if resolved is None:
+        return RuntimeResult(
+            ok=False, error_kind="runtime_unavailable",
+            error=f"the '{CLAUDE_BIN}' command was not found on this machine's PATH.")
     cmd = [
-        CLAUDE_BIN,
+        resolved,
         "--agent", agent_name,
         "--tools", "",                 # zero built-in tools — see module docstring
         "--strict-mcp-config",         # zero MCP-provided tools (no --mcp-config passed)

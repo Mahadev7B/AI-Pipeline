@@ -150,8 +150,16 @@ def _invoke(agent: str, transcript: str, idea_id: int | None = None) -> str:
     if not result.ok:
         if result.error_kind == "runtime_unavailable":
             raise EvaluationError(
-                "the `claude` command is not available on this machine, so no agent could be "
-                "asked. The Idea Desk can store and show ideas without it; evaluating one needs it.")
+                "no agent could be asked, because the <b>claude</b> command is not on this "
+                "machine's PATH. Everything else in the Idea Desk works without it &mdash; writing "
+                "ideas, reading past evaluations, approving, parking. Only evaluation needs it."
+                "<br><br>To install it:<br>"
+                "<code>npm install -g @anthropic-ai/claude-code</code><br>"
+                "then run <code>claude</code> once to sign in, and restart the Idea Desk."
+                "<br><br>Already installed? Run <code>python ops\\idea-desk\\doctor.py</code> "
+                "&mdash; it reports whether Python can find it, which is a different question from "
+                "whether your terminal can. If your terminal finds it and the doctor does not, "
+                "point us straight at it: set <code>CLAUDE_BIN</code> to its full path.")
         raise EvaluationError(f"{ROLE_LABEL.get(agent, agent)} could not answer — {result.error}")
     return result.response_text or ""
 
