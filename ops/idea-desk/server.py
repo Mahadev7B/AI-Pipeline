@@ -43,7 +43,8 @@ sys.path.insert(0, str(HERE))
 if str(CONTROL_CENTER) not in sys.path:
     sys.path.append(str(CONTROL_CENTER))
 import founder_auth  # noqa: E402  — the one credential, shared not copied
-import evaluator  # noqa: E402
+import evaluator
+import incidents  # noqa: E402
 import pages  # noqa: E402
 
 DB_PATH = (Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH")
@@ -127,6 +128,11 @@ def load_ideas() -> list[dict]:
         conn.close()
 
 
+# What to say after a share, shown once on the next page. A local single-user
+# app, so a module-level dict is the whole mechanism it needs.
+_SHARED: dict[int, str] = {}
+
+
 def load_idea(idea_id: int):
     conn = _connect()
     try:
@@ -134,6 +140,10 @@ def load_idea(idea_id: int):
         if row is None:
             return None, []
         idea = dict(row)
+        # Whether there is evidence to send. Read from disk rather than stored,
+        # so deleting a diagnostic file removes the button rather than leaving
+        # one that leads nowhere.
+        idea["has_diagnostic"] = incidents.latest_for(idea_id) is not None
         idea.update(_current_text(conn, idea_id, row))
         idea["edits"] = [dict(r) for r in conn.execute(
             "SELECT * FROM idea_edits WHERE idea_id = ? ORDER BY id", (idea_id,)).fetchall()]
@@ -290,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
 
             for prefix, render in (("/idea/", "view"), ("/edit/", "edit"), ("/correct/", "correct"),
                                    ("/close/", "close"), ("/approve/", "approve"),
-                                   ("/evaluate/", "evaluate")):
+                                   ("/evaluate/", "evaluate"), ("/share/", "share")):
                 if path.startswith(prefix):
                     rest = path[len(prefix):]
                     # str.isdigit() is True for superscripts and other unicode
@@ -321,6 +331,25 @@ class Handler(BaseHTTPRequestHandler):
                             panel=pages.evaluate_panel(idea, SESSION_TOKEN,
                                                        correcting=(render == "correct"),
                                                        rehearsal=evaluator.REHEARSAL)))
+                    elif render == "share":
+                        # Same posture as the evaluate disclosure: say what the
+                        # action really does before offering the button. Here it
+                        # publishes the Founder's own words to GitHub, where git
+                        # history keeps them permanently — so they read the whole
+                        # file first, not a summary of it.
+                        diag = incidents.latest_for(int(rest))
+                        if diag is None:
+                            self._send(409, pages.error_page(
+                                409, "Nothing to send",
+                                "There is no saved evidence for this idea. A diagnostic file is "
+                                "only written when an evaluation actually fails."))
+                            return
+                        text, truncated = incidents.preview(diag)
+                        self._send(200, pages.idea_page(
+                            idea, rounds, SESSION_TOKEN,
+                            panel=pages.share_panel(
+                                idea, SESSION_TOKEN, text, truncated, diag.name,
+                                already=incidents.already_shared(diag) is not None)))
                     elif render == "close":
                         self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
                                                         panel=pages.close_panel(idea, SESSION_TOKEN)))
@@ -336,6 +365,7 @@ class Handler(BaseHTTPRequestHandler):
                     else:
                         self._send(200, pages.idea_page(
                             idea, rounds, SESSION_TOKEN,
+                            flash=_SHARED.pop(int(rest), ""),
                             steps=evaluator.progress_for(int(rest))))
                     return
 
@@ -458,6 +488,22 @@ class Handler(BaseHTTPRequestHandler):
             if self._one(fields, "reason"):
                 args += [self._flag("--reason", self._one(fields, "reason"))]
             opsdb(*args)
+            self._redirect(f"/idea/{idea_id}")
+
+        elif prefix == "share":
+            try:
+                _SHARED[idea_id] = incidents.share(idea_id, self._one(fields, "note") or "")
+            except incidents.ShareError as exc:
+                self._send(409, pages.error_page(409, "Could not send it", str(exc)))
+                return
+            except Exception:
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+                self._send(500, pages.error_page(
+                    500, "Could not send it",
+                    "Sending the evidence broke, which is a bug on our side. Nothing was "
+                    "published, and the file is still on this machine, unchanged."))
+                return
             self._redirect(f"/idea/{idea_id}")
 
         elif prefix == "reopen":

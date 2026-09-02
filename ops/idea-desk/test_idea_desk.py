@@ -360,6 +360,176 @@ class SynthesisRecovery(unittest.TestCase):
         self.assertIsNone(self.stored())
 
 
+class SharingEvidence(unittest.TestCase):
+    """Sending a failed evaluation's evidence to GitHub. It publishes the
+    Founder's own words permanently, so the rules that matter are: only when
+    they ask, only the one file, never a force-push, and never a button that
+    leads nowhere."""
+
+    def setUp(self):
+        import incidents
+        self.inc = incidents
+        self.tmp = Path(tempfile.mkdtemp())
+        self._saved = (incidents.DIAGNOSTICS, incidents.INCIDENTS, incidents.REPO, incidents._git)
+        incidents.REPO = self.tmp
+        incidents.DIAGNOSTICS = self.tmp / "diagnostics"
+        incidents.INCIDENTS = self.tmp / "incidents"
+        incidents.DIAGNOSTICS.mkdir()
+        self.ran: list[tuple] = []
+
+    def tearDown(self):
+        (self.inc.DIAGNOSTICS, self.inc.INCIDENTS,
+         self.inc.REPO, self.inc._git) = self._saved
+
+    def write_diag(self, idea_id=9, stamp="20260902T195129Z", body="the evidence"):
+        p = self.inc.DIAGNOSTICS / f"idea-{idea_id}-{stamp}.txt"
+        p.write_text(body, encoding="utf-8")
+        return p
+
+    def fake_git(self, **codes):
+        """Record every git call; return the given code per subcommand."""
+        def run(*args, timeout=60):
+            self.ran.append(args)
+            class R:
+                returncode = codes.get(args[0], 0)
+                stdout = {"rev-parse": "claude/orchestrator-chief-of-staff-f35grl"}.get(args[0], "")
+                stderr = ""
+            return R()
+        self.inc._git = run
+
+    # --- picking the right file -------------------------------------------
+    def test_no_diagnostic_means_no_button_and_no_send(self):
+        self.assertIsNone(self.inc.latest_for(9))
+        self.fake_git()
+        with self.assertRaises(self.inc.ShareError):
+            self.inc.share(9)
+        self.assertEqual(self.ran, [], "nothing should touch git when there is nothing to send")
+
+    def test_the_newest_diagnostic_for_that_idea_is_chosen(self):
+        self.write_diag(9, "20260902T100000Z", "old")
+        newest = self.write_diag(9, "20260902T195129Z", "new")
+        self.write_diag(11, "20260902T230000Z", "another idea")
+        self.assertEqual(self.inc.latest_for(9), newest)
+
+    def test_one_idea_does_not_see_anothers_evidence(self):
+        self.write_diag(11)
+        self.assertIsNone(self.inc.latest_for(9))
+
+    # --- what it does to git ----------------------------------------------
+    def test_a_successful_send_commits_only_that_one_file(self):
+        self.write_diag()
+        self.fake_git()
+        msg = self.inc.share(9)
+        self.assertIn("Sent", msg)
+        commit = next(a for a in self.ran if a[0] == "commit")
+        self.assertIn("--", commit, "the commit must be limited to a pathspec")
+        path = commit[commit.index("--") + 1]
+        self.assertTrue(path.endswith("idea-9-20260902T195129Z.txt"))
+        self.assertNotIn("-a", commit, "never commit everything in the working tree")
+
+    def test_it_never_force_pushes(self):
+        self.write_diag()
+        self.fake_git(push=1, pull=0)
+        # Both pushes are refused, so this ends in a ShareError. What matters is
+        # what it did NOT reach for on the way there.
+        with self.assertRaises(self.inc.ShareError):
+            self.inc.share(9)
+        for call in self.ran:
+            self.assertNotIn("--force", call)
+            self.assertNotIn("-f", call)
+            self.assertNotIn("--force-with-lease", call)
+
+    def test_a_rejected_push_is_rebased_once_and_retried(self):
+        self.write_diag()
+        pushes = []
+        def run(*args, timeout=60):
+            self.ran.append(args)
+            class R:
+                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "rev-parse" else ""
+                stderr = ""
+                returncode = 0
+            if args[0] == "push":
+                pushes.append(args)
+                R.returncode = 1 if len(pushes) == 1 else 0
+            return R()
+        self.inc._git = run
+        self.assertIn("Sent", self.inc.share(9))
+        self.assertEqual(len(pushes), 2, "one retry, not a loop")
+        self.assertTrue(any(a[0] == "pull" and "--rebase" in a for a in self.ran))
+
+    def test_a_failed_push_says_nothing_was_lost(self):
+        self.write_diag()
+        self.fake_git(push=1, pull=1)
+        with self.assertRaises(self.inc.ShareError) as caught:
+            self.inc.share(9)
+        self.assertIn("Nothing was lost", str(caught.exception))
+
+    def test_the_founders_note_is_appended_to_what_is_sent(self):
+        self.write_diag(body="the evidence")
+        self.fake_git()
+        self.inc.share(9, "it hung for a minute first")
+        sent = (self.inc.INCIDENTS / "idea-9-20260902T195129Z.txt").read_text()
+        self.assertIn("the evidence", sent)
+        self.assertIn("it hung for a minute first", sent)
+
+    def test_resending_never_erases_a_note_added_the_first_time(self):
+        # Copying over an existing incident destroyed the Founder's earlier
+        # note — the feature meant to preserve evidence deleting some of it.
+        self.write_diag(body="the evidence")
+        self.fake_git()
+        self.inc.share(9, "it hung first")
+        self.inc.share(9, "and the fan spun up")
+        sent = (self.inc.INCIDENTS / "idea-9-20260902T195129Z.txt").read_text()
+        self.assertIn("it hung first", sent, "the first note must survive a resend")
+        self.assertIn("and the fan spun up", sent)
+        self.assertEqual(sent.count("the evidence"), 1, "the body is not duplicated")
+
+    def test_resending_with_nothing_new_says_so_instead_of_committing_again(self):
+        self.write_diag()
+        self.fake_git()
+        self.inc.share(9)
+        def run(*args, timeout=60):
+            self.ran.append(args)
+            class R:
+                returncode = 1 if args[0] == "commit" else 0
+                stdout = ("nothing to commit, working tree clean" if args[0] == "commit"
+                          else "claude/orchestrator-chief-of-staff-f35grl")
+                stderr = ""
+            return R()
+        self.inc._git = run
+        self.assertIn("already sent", self.inc.share(9))
+
+    def test_a_detached_head_refuses_rather_than_pushing_somewhere_odd(self):
+        self.write_diag()
+        def run(*args, timeout=60):
+            class R:
+                returncode = 0
+                stdout = "HEAD" if args[0] == "rev-parse" else ""
+                stderr = ""
+            return R()
+        self.inc._git = run
+        with self.assertRaises(self.inc.ShareError):
+            self.inc.share(9)
+
+    def test_credentials_in_git_output_are_never_echoed_back(self):
+        leak = "fatal: https://user:ghp_secrettoken@github.com/x/y.git rejected"
+        self.assertNotIn("ghp_secrettoken", self.inc._clean(leak))
+        self.assertIn("https://github.com", self.inc._clean(leak))
+
+    def test_already_shared_is_detectable(self):
+        d = self.write_diag()
+        self.assertIsNone(self.inc.already_shared(d))
+        self.inc.INCIDENTS.mkdir(parents=True)
+        (self.inc.INCIDENTS / d.name).write_text("x")
+        self.assertIsNotNone(self.inc.already_shared(d))
+
+    # --- the button ---------------------------------------------------------
+    def test_no_button_without_evidence(self):
+        self.assertEqual(pages._share_link({"id": 9, "has_diagnostic": False}), "")
+        self.assertEqual(pages._share_link({"id": 9}), "")
+        self.assertIn("/share/9", pages._share_link({"id": 9, "has_diagnostic": True}))
+
+
 class AnswerShape(unittest.TestCase):
     """A COMPLETE evaluation arriving in a different container was rejected as
     if it were missing, discarding a paid-for multi-agent run. Shape is

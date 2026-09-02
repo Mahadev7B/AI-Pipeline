@@ -697,7 +697,7 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
         # needs to be readable. safe_html still escapes everything first and
         # restores only the allowlist, so nothing gains privileges here.
         banners += (f'<div class="banner red"><b>The last evaluation did not finish.</b> '
-                    f'{safe_html(idea["last_error"])}</div>')
+                    f'{safe_html(idea["last_error"])}{_share_link(idea)}</div>')
     if closed:
         word = "Parked." if idea["status"] == "parked" else "Dropped."
         tail = ("Not being built now; you can come back to it." if idea["status"] == "parked"
@@ -784,7 +784,8 @@ def _draft_page(idea, token: str, flash: str = "", panel: str = "") -> bytes:
       <div class="meta" style="margin-top:10px"><span class="st {e(idea['status'])}">{e(idea['status'])}</span>
         <span>{e(_ago(idea['created_at']))}</span></div></div></div>
     {flash_html}
-    {f'<div class="banner red"><b>The last evaluation did not finish.</b> {safe_html(idea["last_error"])}</div>'
+    {f'<div class="banner red"><b>The last evaluation did not finish.</b> '
+      f'{safe_html(idea["last_error"])}{_share_link(idea)}</div>'
       if idea.get("last_error") else ""}
     <div class="cols"><aside class="side">
       <div class="you"><div class="k" style="color:var(--gray);margin-bottom:8px">You said &middot;
@@ -847,6 +848,47 @@ def correct_panel(idea, token: str) -> str:
           placeholder="almost there, but&hellip;"></textarea>
         <div class="actions" style="margin-top:12px">
           <button class="btn primary" type="submit">Send and re-evaluate</button>
+          <a class="btn ghost" href="/idea/{idea['id']}">Cancel</a></div></form></div>"""
+
+
+def _share_link(idea) -> str:
+    """Offered only when there is actually a file to send. A button that leads
+    to "there is nothing here" is worse than no button."""
+    if not idea.get("has_diagnostic"):
+        return ""
+    return (f'<div style="margin-top:12px"><a class="btn" href="/share/{idea["id"]}">'
+            'Send this to the build side</a></div>')
+
+
+def share_panel(idea, token: str, text: str, truncated: bool, name: str,
+                already: bool) -> str:
+    """Show the Founder EXACTLY what would be published, before publishing it.
+
+    This file holds their idea in their own words and every agent's full
+    reading. Git history does not forget, so a summary of what is in it would
+    not be good enough — they read the thing itself, then decide."""
+    warn = ("<b>This was already sent.</b> Sending it again changes nothing." if already else
+            "Once this is on GitHub it is in the repository's history <b>permanently</b>. "
+            "There is no unsend.")
+    return f"""<div class="panel"><h3>Send this evidence to the build side</h3>
+      <p>This commits one file &mdash; <code>ops/incidents/{e(name)}</code> &mdash; and pushes it,
+      so whoever fixes the defect can read what actually happened without you having to find it,
+      describe it, or carry it anywhere.</p>
+      <p><b>It contains your idea in your own words and every role's full reading.</b> {warn}</p>
+      <p style="color:var(--gray)">Nothing else is committed. Whatever else is in your working
+      folder stays where it is.</p>
+      <details open><summary>Everything that would be published, in full</summary>
+        <pre style="white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto;
+             font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--bg2);
+             padding:12px;border-radius:8px">{e(text)}</pre>
+        {'<p style="color:var(--gray)">Shown up to 20,000 characters; the whole file is sent.</p>'
+         if truncated else ''}</details>
+      <form method="post" action="/api/share/{idea['id']}" style="margin-top:14px">
+        <input type="hidden" name="token" value="{e(token)}">
+        <textarea name="note" style="min-height:70px"
+          placeholder="Anything you noticed when it failed. Optional, and appended to the file."></textarea>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn primary" type="submit">Send it</button>
           <a class="btn ghost" href="/idea/{idea['id']}">Cancel</a></div></form></div>"""
 
 

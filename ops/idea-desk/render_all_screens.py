@@ -187,6 +187,34 @@ capture("21-approve-refused-mid-eval", "/approve/1", expect=409)
 ops("idea-evaluation-end", "--idea-id", "1", "--error=Something went wrong reading this one.")
 capture("22-after-a-failed-evaluation", "/idea/1")
 
+# The share flow needs a diagnostic to exist, so write one where the app looks.
+# Without it the button correctly does not appear, and the screen proves nothing.
+capture("23-no-evidence-nothing-to-send", "/share/1", expect=409)
+import incidents
+incidents.DIAGNOSTICS.mkdir(parents=True, exist_ok=True)
+_diag = incidents.DIAGNOSTICS / "idea-1-20260902T195129Z.txt"
+_diag.write_text("Idea 1 — evaluation failed\n" + "=" * 70 +
+                 "\n\n----- the stage that failed -----\nwriting the final answer\n"
+                 "\n----- the Chief of Staff's final answer -----\n"
+                 '{"view": {"rec": "Proceed"}}  <script>alert(1)</script>\n', encoding="utf-8")
+try:
+    capture("24-failure-offers-to-send", "/idea/1")
+    capture("25-send-evidence-disclosure", "/share/1")
+    with open(OUT / "24-failure-offers-to-send.html") as fh:
+        if "/share/1" not in fh.read():
+            PROBLEMS.append(("24-failure-offers-to-send",
+                             ["the send button is missing when evidence exists"]))
+    with open(OUT / "25-send-evidence-disclosure.html") as fh:
+        page = fh.read()
+        if "writing the final answer" not in page:
+            PROBLEMS.append(("25-send-evidence-disclosure",
+                             ["the file's contents are not shown before publishing"]))
+        if "<script>alert(1)</script>" in page:
+            PROBLEMS.append(("25-send-evidence-disclosure",
+                             ["agent output in the preview was not escaped"]))
+finally:
+    _diag.unlink(missing_ok=True)
+
 print("\n" + "=" * 70)
 if PROBLEMS:
     print(f"{len(PROBLEMS)} SCREEN(S) WITH PROBLEMS:")
