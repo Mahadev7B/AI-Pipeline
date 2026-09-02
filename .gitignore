@@ -1,3 +1,17 @@
+# The LIVE operational database. Tracked for the project's first 200-odd
+# commits, which worked only while one machine ever wrote to it. The moment
+# the Founder started using the app on their own machine, their copy diverged
+# and `git pull` began aborting with "local changes would be overwritten" —
+# silently stranding them three releases behind while every restart looked
+# fine. A file that changes every time the program runs is state, not source.
+# It is created on first run (opsdb.py init) and seeded by
+# ops/idea-desk/seed_founder_idea.py; the decisions that matter are mirrored
+# in git as ops/DECISIONS.md.
+ops/db/operations.sqlite3
+ops/db/operations.sqlite3-journal
+ops/db/operations.sqlite3-wal
+ops/db/operations.sqlite3-shm
+
 # Scratch/test databases and reports — real test runs should use
 # OPSDB_PATH pointed outside the repo (e.g. /tmp), but this is defense
 # in depth in case one ever lands here by mistake. See ops/db/README.md.

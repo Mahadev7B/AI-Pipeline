@@ -414,8 +414,24 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, pages.error_page(404, "Not found", "No such endpoint."))
 
 
+def _ensure_database() -> None:
+    """The database is deliberately not in git (it is live state, not source),
+    so a fresh clone has none. Create it rather than making the Founder read an
+    error and run a command to get an empty file."""
+    if DB_PATH.exists():
+        return
+    sys.stderr.write(f"[idea-desk] No database yet — creating {DB_PATH}\n")
+    try:
+        subprocess.run([sys.executable, str(OPSDB), "init"], check=True,
+                       capture_output=True, text=True, timeout=60)
+    except Exception as exc:
+        sys.stderr.write(f"[idea-desk] Could not create it: {exc}\n"
+                         f"[idea-desk] Run this yourself:  python3 {OPSDB} init\n")
+
+
 def main() -> None:
     port = int(os.environ.get("IDEA_DESK_PORT", DEFAULT_PORT))
+    _ensure_database()
     if not founder_auth.credential_exists():
         sys.stderr.write(
             "[idea-desk] No Founder credential yet. Create one first:\n"
