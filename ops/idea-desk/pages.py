@@ -244,8 +244,10 @@ COST_DISCLOSURE = (
     '<div class="banner" style="margin:0 0 14px;border-color:oklch(78% 0.14 75 / .4);'
     'background:var(--accent-soft);color:var(--text)"><b>This one spends money.</b> Several agents '
     'run, each a real model call, and it takes a few minutes. Everything else in the Idea Desk is '
-    'free; this is the step that is not. There is no cost estimate available before the fact '
-    '&mdash; the company cannot tell you in advance what a given idea will cost to read.</div>')
+    'free; this is the step that is not. Whether that is an actual charge or a draw on a '
+    'subscription depends on how the account behind your <code>claude</code> command is '
+    'billed &mdash; either way it is real usage, and there is no estimate available '
+    'beforehand.</div>')
 
 REHEARSAL_DISCLOSURE = (
     '<div class="banner" style="margin:0 0 14px;border-color:oklch(72% 0.15 150 / .5);'

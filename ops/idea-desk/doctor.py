@@ -143,10 +143,18 @@ def main() -> None:
             if result.ok:
                 line("agent replied", repr((result.response_text or "")[:40]), ok=True)
                 line("model", result.model_used or "(not reported)")
-                line("this call cost", f"${result.cost_usd:.4f}" if result.cost_usd is not None
-                     else "(not reported)")
-                print("\n     Evaluation will work. Cost above is for ONE call; an evaluation is")
-                print("     four to six of them.")
+                # Deliberately NOT called "cost". The runtime reports the token
+                # value of the call; whether that is a charge depends on how the
+                # account is billed. On a subscription nothing is billed per
+                # call — it draws down usage limits instead. Printing "$0.02
+                # cost" to someone on a subscription is simply untrue.
+                line("token value of this call",
+                     f"${result.cost_usd:.4f}" if result.cost_usd is not None else "(not reported)")
+                print("\n     Evaluation will work. That figure is the token value of ONE call;")
+                print("     an evaluation is four to six. Whether it is an actual charge depends")
+                print("     on your account: with no ANTHROPIC_API_KEY set, Claude Code uses the")
+                print("     account you signed into, and usage draws on that plan rather than")
+                print("     being billed per call. Check with /status inside `claude`.")
             else:
                 line("agent FAILED", f"[{result.error_kind}] {result.error}"[:200], ok=False)
                 if result.error_kind == "runtime_unavailable":
