@@ -4,6 +4,74 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — Founder direction: transform the raw idea into the best workable solution before critiquing it
+
+The Founder reviewed the completed fridge-vegetable evaluation and does **not** like the current reasoning order.
+
+The company correctly identified manual logging as the biggest failure mode, but then recommended a manual list / two-week manual test. The Founder expected the company to go one step further: **if manual entry is the weakness, actively engineer that weakness away before judging the idea.**
+
+For the fridge example, the company should have explored approaches such as a door- or drawer-triggered camera, computer vision, receipt ingestion, lightweight confirmation, sensors, or hybrids — then compared those options and recommended the strongest practical direction. The point is not that the camera idea is automatically correct; the point is that the company should search the solution space rather than critique the Founder's rough first wording as though it were the final implementation.
+
+### Required reasoning order
+
+Treat the Founder's raw idea as the starting signal, not the proposed final architecture:
+
+`raw Founder idea → infer desired outcome → generate workable solution approaches → choose strongest practical direction → critique that improved direction → repair weaknesses → Chief of Staff presents the best surviving recommendation`
+
+In plain terms: **invent first, attack second, improve third.**
+
+### CTO / system-design role needs to change
+
+The Founder specifically wants the CTO involved earlier when system design could materially improve the idea.
+
+The CTO is not only an architecture reviewer or a late conformance gate. During idea formation, the CTO should act as a **system-design inventor** and ask things such as:
+
+- How can we automate the manual parts?
+- What software, AI, hardware, cameras, sensors, APIs, integrations, edge/cloud components, or hybrid approaches could achieve the outcome?
+- What are 3–5 technically workable architectures?
+- Which approach has the lowest user friction?
+- Which is simplest, cheapest, fastest to prototype, most reliable, and easiest to reverse?
+- What apparently hard constraint can be designed around rather than accepted?
+- What graceful fallback handles imperfect automation?
+
+Do not exclude CTO merely because the Founder's raw sentence sounds technically simple. In the fridge evaluation, once the real goal became “know what vegetables are present with minimal human effort,” system design became central even though the original sentence did not mention hardware or computer vision.
+
+### Role order
+
+A better default for idea evaluation is:
+
+1. **Product** — infer the real outcome / problem worth solving.
+2. **Design** — define the lowest-friction useful experience.
+3. **CTO / System Design** — generate and compare workable technical architectures that could produce that experience.
+4. **Select a strongest provisional direction.**
+5. **Red Team** — attack that improved direction, not merely the raw Founder wording.
+6. **Product + Design + CTO** — repair the strongest criticisms where possible.
+7. **Chief of Staff** — synthesize one recommended solution, meaningful alternatives, assumptions, remaining risks, and only the Founder decisions that truly change direction.
+
+Dynamic involvement still applies; this is not a request to mechanically invoke every role on every idea. But CTO should be included whenever automation, architecture, integrations, AI capabilities, hardware, data flows, or system design could materially change the quality of the solution.
+
+### Important behavior change
+
+Do **not** stop at:
+
+> “This implementation has a weakness, therefore investigate first.”
+
+First ask:
+
+> “Can the company remove or substantially reduce that weakness with a better implementation?”
+
+Only after reasonable solution alternatives have been generated and challenged should the company recommend Proceed / Proceed with narrowed scope / Investigate first / Reconsider.
+
+“Investigate first” may still be correct, but it should come after the company has formed the best workable concept and should say exactly what proposed solution the investigation is validating.
+
+### Founder intent
+
+The Founder wants the AI company to behave like a capable product-and-engineering organization that **turns an incomplete idea into the strongest workable product concept**, rather than a committee that primarily finds reasons the rough idea might fail.
+
+Please treat this as a Founder product-direction correction for the Idea Desk evaluation behavior. It is not authorization to bypass existing independent review gates, production-deploy approval, or other standing safety/authority boundaries.
+
+---
+
 ## 2026-09-02 — Three fixes shipped. The completion pass is declined; here is the evidence I need instead
 
 ### The escaped markup was my miss, and it was worse than you guessed
