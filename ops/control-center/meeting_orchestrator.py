@@ -215,7 +215,8 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
         run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
         result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
         if result.ok:
-            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                 to_agent=None, meeting_id=meeting_id)
             opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (agent_name, True, result.response_text)
@@ -539,7 +540,8 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
                 _release_reservation(conn, meeting_id, agent_name)
                 return (False, result.error)
 
-            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                 to_agent=None, meeting_id=meeting_id)
             opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (True, None)
@@ -651,7 +653,8 @@ def gather_followup_reply(meeting_id: int, agent_name: str, topic: str, founder_
             # not correct. Left as a pre-existing, narrow race (per Code
             # Review) for a deliberate follow-up across all four
             # functions together, not a partial fix now.
-            opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
+            opsdb.send_message(conn, thread_id, "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                 to_agent="founder", meeting_id=meeting_id)
             opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (True, None)
@@ -700,7 +703,8 @@ def retry_position(meeting_id: int, agent_name: str, topic: str) -> tuple[bool, 
         try:
             result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
             if result.ok:
-                opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                     to_agent=None, meeting_id=meeting_id)
                 opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
                 return (True, None)

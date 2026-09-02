@@ -856,7 +856,9 @@ class Handler(BaseHTTPRequestHandler):
                 result = agent_runtime.invoke_agent(agent_name, transcript)
 
                 if result.ok:
-                    opsdb.send_message(conn, thread_id, "agent", agent_name, result.response_text, to_agent="founder")
+                    opsdb.send_message(conn, thread_id, "agent", agent_name,
+                                       agent_runtime.clip_for_storage(result.response_text),
+                                       to_agent="founder")
                     opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
                 else:
                     # No response message on failure — never fabricate an

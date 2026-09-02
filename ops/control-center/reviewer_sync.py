@@ -274,7 +274,7 @@ def _invoke_and_record(task_id: int, kind: str, agent_name: str, transcript: str
                                      skip_reason="review reply had no parseable VERDICT: line")
             return None
 
-        findings = [result.response_text or ""]
+        findings = [agent_runtime.clip_for_storage(result.response_text)]
         review_type = _REVIEW_KIND_TO_REVIEW_TYPE[kind]
         conn = opsdb.connect()
         try:

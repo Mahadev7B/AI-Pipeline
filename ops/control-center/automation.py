@@ -514,7 +514,7 @@ def _invoke_and_record(event_id: int, task_id: int, transcript: str, truncated: 
                    skip_reason="automated review reply had no parseable VERDICT: line")
         return
 
-    findings = [result.response_text or ""]
+    findings = [agent_runtime.clip_for_storage(result.response_text)]
     conn = opsdb.connect()
     try:
         opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)

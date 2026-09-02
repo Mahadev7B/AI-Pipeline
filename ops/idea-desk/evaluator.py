@@ -22,6 +22,7 @@ told so. A gate that always says Proceed is a gate that does nothing.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import re
@@ -703,12 +704,43 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
             names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
             _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
 
-            for role, _why in roster["in"]:
-                stage = f"{ROLE_LABEL[role]} reading the idea"
+            # The roles read AT THE SAME TIME. Each one reads the same idea
+            # from its own angle and none of them sees another's answer, so
+            # running them one after another only ever made the Founder wait
+            # N times longer for the same result. Bounded by the runtime's own
+            # MAX_CONCURRENT_INVOCATIONS, so this asks for concurrency rather
+            # than assuming it.
+            stage = "the roles reading the idea"
+            chosen = [role for role, _why in roster["in"]]
+            for role in chosen:
                 _note(idea_id, ROLE_LABEL[role], "Reading it.")
-                said = _perspective(role, idea, rounds, founder_note, roster["depth"], idea_id)
-                evidence[f"{ROLE_LABEL[role]} said"] = said
-                perspectives.append((role, said))
+            said_by: dict[str, str] = {}
+            failed: list[EvaluationError] = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(chosen) or 1) as pool:
+                running = {pool.submit(_perspective, role, idea, rounds, founder_note,
+                                       roster["depth"], idea_id): role
+                           for role in chosen}
+                for future in concurrent.futures.as_completed(running):
+                    role = running[future]
+                    try:
+                        said_by[role] = future.result()
+                        _note(idea_id, ROLE_LABEL[role], "Done.")
+                    except EvaluationError as exc:
+                        # Collected, not raised here: raising would abandon the
+                        # roles still running and lose readings already paid
+                        # for. Every one finishes, then we decide.
+                        failed.append(EvaluationError(f"{ROLE_LABEL[role]} could not answer. "
+                                                      + str(exc), stage=f"{ROLE_LABEL[role]} "
+                                                      "reading the idea"))
+                        _note(idea_id, ROLE_LABEL[role], "Could not answer.")
+            # Roster order, not finishing order — who answered fastest is not
+            # a fact about the idea and must not reorder the record.
+            for role in chosen:
+                if role in said_by:
+                    evidence[f"{ROLE_LABEL[role]} said"] = said_by[role]
+                    perspectives.append((role, said_by[role]))
+            if failed:
+                raise failed[0]
 
             stage = "writing the final answer"
             _note(idea_id, "Chief of Staff", "Writing one answer.")

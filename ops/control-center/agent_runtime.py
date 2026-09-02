@@ -234,6 +234,19 @@ DEFAULT_TIMEOUT_S = 30.0  # measured real latency in testing was ~3-13s; see Red
                           # the whole single-threaded server blocks for the duration of this call
 MAX_BUDGET_USD = "0.50"
 MAX_RESPONSE_CHARS = 16_000  # cap on what gets persisted, independent of any model-side output limit
+
+
+def clip_for_storage(text: str | None) -> str:
+    """Bound a response before it becomes a database row.
+
+    Apply this AT THE POINT OF WRITING, never to the value a caller parses.
+    Clipping on the way out of the runtime is what silently cut a Full-depth
+    evaluation's answer mid-JSON and threw the whole run away — a storage
+    limit deciding the fate of a computation."""
+    text = text or ""
+    if len(text) <= MAX_RESPONSE_CHARS:
+        return text
+    return text[:MAX_RESPONSE_CHARS] + f"\n\n[response truncated at {MAX_RESPONSE_CHARS:,} characters]"
 _MAX_CAPTURED_BYTES = 512_000  # cap on what we parse/use from stdout, not a true read-time ceiling —
                                 # proc.communicate() reads all of stdout before this slice is applied.
                                 # Accepted (Code Review, TASK-007): --output-format json bounds a real
@@ -420,10 +433,16 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float) -> RuntimeRe
         return RuntimeResult(ok=False, error=str(data.get("result") or "the runtime reported an error."),
                               error_kind="runtime_error")
 
+    # Returned WHOLE. MAX_RESPONSE_CHARS is a cap on what gets written to a
+    # database row, and it used to be applied here — which silently corrupted
+    # the value every caller has to parse. A Full-depth evaluation's final
+    # answer is legitimately larger than 16,000 characters (ten questions, each
+    # with a concise and an expanded form), so it arrived cut off mid-JSON, the
+    # parse failed, the bounded repair was handed the same truncated text and
+    # failed identically, and a complete five-agent evaluation was discarded.
+    # Callers that persist a response clip it with clip_for_storage() at the
+    # point of writing, where the limit actually belongs.
     response_text = data.get("result") or ""
-    truncated = len(response_text) > MAX_RESPONSE_CHARS
-    if truncated:
-        response_text = response_text[:MAX_RESPONSE_CHARS] + "\n\n[response truncated at 16,000 characters]"
 
     # The substantive completion is whichever entry produced the most output
     # tokens; a cheap classifier pass (if any) shows up with a much smaller
