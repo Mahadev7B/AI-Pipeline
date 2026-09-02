@@ -48,6 +48,7 @@ import os
 import secrets
 import sys
 import time
+import threading
 from pathlib import Path
 
 CREDENTIAL_PATH = Path(__file__).resolve().parent / ".founder_credential.json"
@@ -145,6 +146,62 @@ def load_credential(path: Path = CREDENTIAL_PATH) -> dict:
         "salt": salt, "hash": stored_hash,
         "created_at": data.get("created_at"),
     }
+
+
+# --------------------------------------------------------------- TASK-024 ---
+# Brute-force lockout and scrypt serialisation, lifted out of
+# ops/control-center/server.py so that a second front door cannot be built
+# without them — which is exactly what happened: the Idea Desk shipped a login
+# route with neither, reopening Security's Milestone 2B4 fix C1. Living here,
+# any door that calls verify_passphrase_guarded() inherits both.
+#
+# Honest limitation: the counter is per PROCESS. The Control Center and the
+# Idea Desk are separate processes guarding the same passphrase, so an attacker
+# gets MAX_FAILED_ATTEMPTS per running door rather than five in total. Making
+# that a single budget needs cross-process state, which is more machinery than
+# a loopback-only single-user tool warrants — so it is disclosed rather than
+# hidden. See ops/SECURITY.md.
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_SECONDS = 30
+_LOGIN_LOCK = threading.Lock()
+_failed_count = 0
+_locked_until = 0.0
+
+
+class LockedOut(Exception):
+    """Too many failed attempts. Carries the seconds left, for the message."""
+
+    def __init__(self, seconds_remaining: int) -> None:
+        super().__init__(f"locked for about {seconds_remaining}s")
+        self.seconds_remaining = seconds_remaining
+
+
+def verify_passphrase_guarded(passphrase: str, path: Path = CREDENTIAL_PATH) -> bool:
+    """verify_passphrase(), serialised and rate-limited.
+
+    The lock is held across the WHOLE check-lockout -> verify -> count
+    critical section, not just the counter update. That is what closes both
+    the attempt cap (a concurrent flood cannot race past the check before any
+    one request registers its failure) and the concurrent-scrypt memory
+    exhaustion — each call allocates ~134 MiB, and an unbounded threaded
+    server will happily run fifty at once. hashlib.scrypt releases the GIL, so
+    this serialises logins against each other and nothing else.
+
+    Raises LockedOut while locked; returns True/False otherwise."""
+    global _failed_count, _locked_until
+    with _LOGIN_LOCK:
+        now = time.monotonic()
+        if now < _locked_until:
+            raise LockedOut(max(1, int(_locked_until - now) + 1))
+        ok = verify_passphrase(passphrase, path)
+        if ok:
+            _failed_count = 0
+            return True
+        _failed_count += 1
+        if _failed_count >= MAX_FAILED_ATTEMPTS:
+            _locked_until = time.monotonic() + LOCKOUT_SECONDS
+            _failed_count = 0
+        return False
 
 
 def verify_passphrase(passphrase: str, path: Path = CREDENTIAL_PATH) -> bool:

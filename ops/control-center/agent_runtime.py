@@ -110,7 +110,7 @@ MEETING_FOLLOWUP_ACTIVITY_LABEL = "Meeting: follow-up reply"
 # a silent special case bolted onto Ask-Agent's existing route.
 CHIEF_OF_STAFF_ALLOWLIST = ("orchestrator",)
 
-# TASK-024 slice 2 (DEC-015, DEC-018). The Idea Desk's evaluation stage. Its own
+# TASK-024 slice 2 (DEC-015, DEC-020). The Idea Desk's evaluation stage. Its own
 # allowlist rather than a reuse of MEETING_PARTICIPANT_ALLOWLIST for two
 # reasons: `design` belongs here (DEC-015 puts Design on the roster when UX
 # materially affects the idea) and is deliberately absent from meetings, and an

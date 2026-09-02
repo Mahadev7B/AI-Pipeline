@@ -110,11 +110,43 @@ def _extract_json(text: str) -> dict:
                           "Nothing was saved. Trying again usually clears it.")
 
 
-def _invoke(agent: str, transcript: str) -> str:
+# Every model call in an evaluation, so the Founder can see what a round cost.
+# Previously dropped entirely: the one action the UI headlines as "This one
+# spends money" was the only one invisible to the costs page, while the
+# constants and the agent_run_id column added for exactly this sat unused.
+_SPEND: dict[int, list[dict]] = {}
+_SPEND_LOCK = threading.Lock()
+
+
+def _record_spend(idea_id: int | None, agent: str, result) -> None:
+    if idea_id is None:
+        return
+    with _SPEND_LOCK:
+        _SPEND.setdefault(idea_id, []).append({
+            "agent": agent,
+            "cost_usd": result.cost_usd,
+            "duration_ms": result.duration_ms,
+            "model": result.model_used,
+            "ok": result.ok,
+        })
+
+
+def spend_for(idea_id: int) -> tuple[float | None, int]:
+    """Total dollars and call count for an in-flight or just-finished run.
+    None for the total when no call reported a cost, rather than 0.00 —
+    an unknown cost and a free one are different things."""
+    with _SPEND_LOCK:
+        calls = list(_SPEND.get(idea_id, []))
+    known = [c["cost_usd"] for c in calls if c["cost_usd"] is not None]
+    return (sum(known) if known else None), len(calls)
+
+
+def _invoke(agent: str, transcript: str, idea_id: int | None = None) -> str:
     result = agent_runtime.invoke_agent(
         agent, transcript,
         timeout_s=agent_runtime.IDEA_EVALUATION_TIMEOUT_S,
         wait_for_slot=True)
+    _record_spend(idea_id, agent, result)
     if not result.ok:
         if result.error_kind == "runtime_unavailable":
             raise EvaluationError(
@@ -166,7 +198,8 @@ HOUSE RULES, which matter more than sounding impressive:
 
 # ------------------------------------------------------- phase 1: roster ---
 
-def _select_roster(idea: dict, rounds: list[dict], founder_note: str | None) -> dict:
+def _select_roster(idea: dict, rounds: list[dict], founder_note: str | None,
+                   idea_id: int | None = None) -> dict:
     transcript = f"""You are the Chief of Staff of an AI software company. The Founder has brought
 in an idea. Your first job is to decide WHO should read it, and HOW DEEPLY the
 company should look — before anyone spends time on it.
@@ -203,11 +236,15 @@ Reply with ONLY this JSON and nothing else:
 "out" is not optional: naming who you left out and why is how the Founder can
 tell you chose rather than defaulted.
 """
-    raw = _invoke("orchestrator", transcript)
+    raw = _invoke("orchestrator", transcript, idea_id)
     data = _extract_json(raw)
 
+    # Everything below treats the model's JSON as hostile: an explicit null, a
+    # three-element entry, a string where a list belongs. Two of these shapes
+    # crashed the whole evaluation and discarded a completed, paid-for run
+    # (Code Review, catch-up).
     chosen, seen = [], set()
-    for entry in data.get("in", []):
+    for entry in (data.get("in") or []):
         if not isinstance(entry, (list, tuple)) or len(entry) < 2:
             continue
         role = str(entry[0]).strip().lower()
@@ -226,8 +263,10 @@ tell you chose rather than defaulted.
         "depth": depth if depth in ("Light", "Standard", "Full") else "Standard",
         "depth_reason": str(data.get("depth_reason") or ""),
         "in": chosen,
-        "out": [[str(a), str(b)] for a, b in
-                (e for e in data.get("out", []) if isinstance(e, (list, tuple)) and len(e) >= 2)],
+        # Take the first two elements, never unpack — a three-element entry is
+        # well-formed JSON and used to raise ValueError here.
+        "out": [[str(e[0]), str(e[1])] for e in (data.get("out") or [])
+                if isinstance(e, (list, tuple)) and len(e) >= 2],
     }
 
 
@@ -252,7 +291,7 @@ ROLE_BRIEF = {
 
 
 def _perspective(role: str, idea: dict, rounds: list[dict], founder_note: str | None,
-                 depth: str) -> str:
+                 depth: str, idea_id: int | None = None) -> str:
     transcript = f"""You are the {ROLE_LABEL[role]} of an AI software company. The Founder has brought
 in an idea and the Chief of Staff has asked specifically for your reading of it.
 
@@ -271,7 +310,7 @@ sees, so write for a colleague who will disagree with you, not for the Founder.
 If your honest view is that this idea should not be built, or should be built
 much smaller, say so in your first sentence.
 """
-    return _invoke(role, transcript)
+    return _invoke(role, transcript, idea_id)
 
 
 # ---------------------------------------------------- phase 3: synthesis ---
@@ -312,7 +351,7 @@ No other HTML, no links, no scripts.
 
 
 def _synthesise(idea: dict, rounds: list[dict], founder_note: str | None, roster: dict,
-                perspectives: list[tuple[str, str]]) -> dict:
+                perspectives: list[tuple[str, str]], idea_id: int | None = None) -> dict:
     voices = "\n\n".join(f"--- {ROLE_LABEL[role]} said ---\n{text}" for role, text in perspectives)
     round_no = len(rounds) + 1
     transcript = f"""You are the Chief of Staff of an AI software company. Your colleagues have each
@@ -371,7 +410,7 @@ honest recommendation is "Investigate first", not "Proceed".
 This is round {round_no}.{" Say what changed since the last round — the Founder should see the "
  "difference, not reread everything." if rounds else ""}
 {SYNTH_CONTRACT}"""
-    return _extract_json(_invoke("orchestrator", transcript))
+    return _extract_json(_invoke("orchestrator", transcript, idea_id))
 
 
 # ------------------------------------------------------------ the whole ---
@@ -415,7 +454,7 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
     error: str | None = None
     try:
         _note(idea_id, "Chief of Staff", "Choosing who should weigh in on this idea.")
-        roster = _select_roster(idea, rounds, founder_note)
+        roster = _select_roster(idea, rounds, founder_note, idea_id)
         names = ", ".join(ROLE_LABEL[r] for r, _ in roster["in"])
         _note(idea_id, "Chief of Staff", f"Asked {names}. Depth: {roster['depth']}.")
 
@@ -423,10 +462,10 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
         for role, _why in roster["in"]:
             _note(idea_id, ROLE_LABEL[role], "Reading it.")
             perspectives.append((role, _perspective(role, idea, rounds, founder_note,
-                                                    roster["depth"])))
+                                                    roster["depth"], idea_id)))
 
         _note(idea_id, "Chief of Staff", "Writing one answer.")
-        result = _synthesise(idea, rounds, founder_note, roster, perspectives)
+        result = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
         answers, view, title = _validate(result)
 
         args = ["idea-round-add", "--idea-id", str(idea_id),
@@ -467,7 +506,10 @@ def start(idea_id: int, idea: dict, rounds: list[dict], founder_note: str | None
     """Mark it running, then hand off to a thread. The marker is written BEFORE
     the thread starts, so a double-clicked button is refused by the database
     rather than racing."""
-    _opsdb("idea-evaluation-start", "--idea-id", str(idea_id))
+    args = ["idea-evaluation-start", "--idea-id", str(idea_id)]
+    if founder_note:
+        args += ["--note", founder_note]
+    _opsdb(*args)
     _clear(idea_id)
     _note(idea_id, "Chief of Staff", "Reading your idea.")
     threading.Thread(target=run_evaluation, args=(idea_id, idea, rounds, founder_note),

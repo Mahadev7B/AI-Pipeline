@@ -2,7 +2,7 @@
 """ops/idea-desk/server.py — the Idea Desk.
 
 Its own program, on its own port, so opening it shows your ideas and nothing
-else. That separateness is the Founder's own instruction (DEC-018): the factory
+else. That separateness is the Founder's own instruction, recorded as DEC-020: the factory
 Control Center is a different thing you open separately.
 
 What is deliberately NOT duplicated, because duplicating it would quietly
@@ -125,6 +125,37 @@ def load_idea(idea_id: int):
 
 # ------------------------------------------------------------- writing ------
 
+def _why_not_evaluate(idea: dict) -> str:
+    """Empty when evaluating is legal, otherwise the reason in the Founder's
+    terms. Mirrors what opsdb.py enforces, so an illegal action is never
+    offered — only ever refused after the click, which is worse."""
+    if idea["evaluating_since"]:
+        return "The company is reading this one right now."
+    if idea["status"] == "approved":
+        return ("This idea's brief is approved and frozen. Raise a new idea rather than re-reading "
+                "behind an approved brief.")
+    if idea["status"] in ("parked", "dropped"):
+        return (f"You {idea['status']} this idea. Reopen it first &mdash; evaluating from here would "
+                "quietly reverse that and erase the record of it.")
+    return ""
+
+
+def _why_not_approve(idea: dict, rounds: list) -> str:
+    if not rounds:
+        return "Nothing has been evaluated yet, so there is no brief to approve."
+    if idea["evaluating_since"]:
+        return "The company is re-reading this right now. Wait for the new round."
+    if idea["status"] == "approved":
+        return "This brief is already approved, and an approved brief is frozen."
+    if idea["status"] in ("parked", "dropped"):
+        return f"You {idea['status']} this idea. Reopen it first."
+    rec = rounds[-1]["recommendation"]
+    if rec not in pages.APPROVABLE:
+        return (f"The company's own recommendation is <b>{pages.e(rec)}</b>, so there is nothing to "
+                "approve yet. Correct it, or narrow the idea, and let it read again.")
+    return ""
+
+
 class WriteError(Exception):
     """opsdb.py refused the write. Its message is written for the Founder, so
     it is shown as-is rather than replaced with something vaguer."""
@@ -241,7 +272,9 @@ class Handler(BaseHTTPRequestHandler):
                                    ("/evaluate/", "evaluate")):
                 if path.startswith(prefix):
                     rest = path[len(prefix):]
-                    if not rest.isdigit():
+                    # str.isdigit() is True for superscripts and other unicode
+                    # digits that int() then refuses. Accept ASCII only.
+                    if not (rest.isascii() and rest.isdigit()):
                         self._send(404, pages.error_page(404, "Not found", "No such idea."))
                         return
                     idea, rounds = load_idea(int(rest))
@@ -252,7 +285,14 @@ class Handler(BaseHTTPRequestHandler):
                         self._send(200, pages.new_page(SESSION_TOKEN, idea))
                     elif render in ("correct", "evaluate"):
                         # Both go through the same disclosure: this is the one
-                        # action in the Idea Desk that spends real money.
+                        # action in the Idea Desk that spends real money. Refuse
+                        # to even OFFER it where it is not legal — evaluating a
+                        # parked idea silently un-parked it and erased the "you
+                        # parked it" record (Red Team and CTO, catch-up).
+                        blocked = _why_not_evaluate(idea)
+                        if blocked:
+                            self._send(409, pages.error_page(409, "Not right now", blocked))
+                            return
                         self._send(200, pages.idea_page(
                             idea, rounds, SESSION_TOKEN,
                             panel=pages.evaluate_panel(idea, SESSION_TOKEN,
@@ -261,8 +301,10 @@ class Handler(BaseHTTPRequestHandler):
                         self._send(200, pages.idea_page(idea, rounds, SESSION_TOKEN,
                                                         panel=pages.close_panel(idea, SESSION_TOKEN)))
                     elif render == "approve":
-                        if not rounds:
-                            self._redirect(f"/idea/{rest}")
+                        # Never render a green button the database will refuse.
+                        blocked = _why_not_approve(idea, rounds)
+                        if blocked:
+                            self._send(409, pages.error_page(409, "Nothing to approve", blocked))
                             return
                         self._send(200, pages.idea_page(
                             idea, rounds, SESSION_TOKEN,
@@ -295,7 +337,21 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/login":
             passphrase = fields.get("passphrase", [""])[0]
-            if not passphrase or not founder_auth.verify_passphrase(passphrase):
+            try:
+                ok = bool(passphrase) and founder_auth.verify_passphrase_guarded(passphrase)
+            except founder_auth.LockedOut as locked:
+                self.log_message("sign-in rejected — locked out")
+                self._send(429, pages.login_page(
+                    SESSION_TOKEN,
+                    f"Too many failed attempts. Try again in about {locked.seconds_remaining}s."))
+                return
+            except founder_auth.CredentialError as exc:
+                # The credential became unreadable between the gate check and
+                # here. Treat it as "not set up", never as an unhandled 500.
+                sys.stderr.write(f"[idea-desk] could not read the credential: {type(exc).__name__}\n")
+                self._send(503, pages.setup_required_page())
+                return
+            if not ok:
                 self.log_message("failed sign-in attempt")
                 self._send(401, pages.login_page(SESSION_TOKEN, "That passphrase was not recognised."))
                 return
@@ -336,11 +392,16 @@ class Handler(BaseHTTPRequestHandler):
                     args += [flag, self._one(fields, name)]
             out = opsdb(*args)
             new_id = out.rsplit("id=", 1)[-1].strip()
+            if not (new_id.isascii() and new_id.isdigit()):
+                # Never put unvalidated text in a Location header.
+                self._send(500, pages.error_page(500, "Saved, but could not open it",
+                                                 "The idea was saved. Go back to your ideas to find it."))
+                return
             self._redirect(f"/idea/{new_id}")
             return
 
         prefix, _, rest = path[len("/api/"):].partition("/")
-        if not rest.isdigit():
+        if not (rest.isascii() and rest.isdigit()):
             self._send(404, pages.error_page(404, "Not found", "No such endpoint."))
             return
         idea_id = int(rest)
@@ -374,7 +435,7 @@ class Handler(BaseHTTPRequestHandler):
 
         elif prefix == "approve":
             round_id = self._one(fields, "round_id")
-            if not round_id.isdigit():
+            if not (round_id.isascii() and round_id.isdigit()):
                 self._send(400, pages.error_page(400, "Bad request", "Which round?"))
                 return
             opsdb("idea-approve", "--idea-id", str(idea_id), "--round-id", round_id,
@@ -439,9 +500,43 @@ def _ensure_schema() -> None:
                          f"[idea-desk] Run this yourself:  python3 {OPSDB} init\n")
 
 
+def _recover_stranded_evaluations() -> None:
+    """Clear in-progress markers left by a process that died mid-evaluation.
+
+    A killed process never runs the worker's `finally`, so `evaluating_since`
+    stays set. Every screen for that idea then short-circuits to the
+    self-refreshing wait page — no Approve, no Correct, no Park — and starting
+    a fresh evaluation is refused, with no way out from the UI. The Control
+    Center already solved this shape for agent runs (`reconcile_orphaned_runs`);
+    this is the same idea for evaluations. Found by Red Team, Code Review and
+    CTO independently in the catch-up review."""
+    if not DB_PATH.exists():
+        return
+    try:
+        conn = _connect()
+        try:
+            stranded = [r["id"] for r in conn.execute(
+                "SELECT id FROM ideas WHERE evaluating_since IS NOT NULL").fetchall()]
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return
+    for idea_id in stranded:
+        sys.stderr.write(f"[idea-desk] idea {idea_id} was left mid-evaluation by a previous run — "
+                         "clearing it so you can try again\n")
+        try:
+            opsdb("idea-evaluation-end", "--idea-id", str(idea_id),
+                  "--error", "The Idea Desk was stopped while the company was reading this. "
+                             "Nothing was saved, and nothing was charged for a round that never "
+                             "finished. You can evaluate it again.")
+        except Exception as exc:
+            sys.stderr.write(f"[idea-desk] could not clear idea {idea_id}: {exc}\n")
+
+
 def main() -> None:
     port = int(os.environ.get("IDEA_DESK_PORT", DEFAULT_PORT))
     _ensure_schema()
+    _recover_stranded_evaluations()
     if not founder_auth.credential_exists():
         sys.stderr.write(
             "[idea-desk] No Founder credential yet. Create one first:\n"

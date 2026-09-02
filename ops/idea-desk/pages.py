@@ -232,19 +232,32 @@ def safe_html(raw: str | None) -> str:
                  r'<span class="\1">', out)
     out = out.replace("&lt;div&gt;", "<div>")
     out = out.replace("&lt;/div&gt;", "</div>").replace("&lt;/span&gt;", "</span>")
-    # Balance the containers, so a stray closing tag can never escape the card
-    # it was written into and start eating the page.
-    depth = 0
-    balanced = []
-    for piece in re.split(r"(<div[^>]*>|</div>)", out):
-        if piece.startswith("<div"):
-            depth += 1
-        elif piece == "</div>":
-            if depth == 0:
-                continue
-            depth -= 1
-        balanced.append(piece)
-    return "".join(balanced) + "</div>" * depth
+    # Balance every container we allow, so a stray tag can never escape the card
+    # it was written into. Divs AND the inline formatting tags: b/i/em/strong
+    # are active-formatting elements, which the HTML parser reconstructs past a
+    # closing </div>, so an unclosed <b> really does leak out (Code Review,
+    # catch-up — the earlier version balanced divs only while claiming
+    # otherwise).
+    open_stack: list[str] = []
+    balanced: list[str] = []
+    for piece in re.split(r"(</?(?:div|b|i|em|strong)(?:\s[^>]*)?>)", out):
+        m = re.fullmatch(r"</?([a-z]+)(?:\s[^>]*)?>", piece)
+        if not m:
+            balanced.append(piece)
+            continue
+        tag = m.group(1)
+        if piece.startswith("</"):
+            if tag not in open_stack:
+                continue  # a closer with no opener — drop it
+            while open_stack and open_stack[-1] != tag:
+                balanced.append(f"</{open_stack.pop()}>")
+            open_stack.pop()
+            balanced.append(piece)
+        else:
+            open_stack.append(tag)
+            balanced.append(piece)
+    balanced.extend(f"</{tag}>" for tag in reversed(open_stack))
+    return "".join(balanced)
 
 
 def _ago(iso: str | None) -> str:

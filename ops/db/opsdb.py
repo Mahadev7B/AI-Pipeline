@@ -206,6 +206,12 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
             conn.execute("ALTER TABLE ideas ADD COLUMN evaluating_since TEXT")
         if "last_error" not in ideas_cols:
             conn.execute("ALTER TABLE ideas ADD COLUMN last_error TEXT")
+        # The Founder's correction, held from the moment they send it until the
+        # round it produced is written. Without this it lived only in the
+        # worker's memory, so a failed evaluation silently ate what they typed
+        # (Code Review, catch-up).
+        if "pending_note" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN pending_note TEXT")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -1729,7 +1735,7 @@ def _idea_row(conn: sqlite3.Connection, idea_id: int) -> sqlite3.Row:
     # most obviously. Reading a missing column raises a bare IndexError deep in
     # a handler, which reaches the Founder as an unreadable traceback. Say what
     # is actually wrong and how to fix it, in one line.
-    missing = {"evaluating_since", "last_error"} - set(row.keys())
+    missing = {"evaluating_since", "last_error", "pending_note"} - set(row.keys())
     if missing:
         raise SystemExit(
             "error: this database is older than the code — the ideas table is missing "
@@ -1803,7 +1809,7 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
              args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id),
         )
         sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
-                "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
+                "pending_note = NULL", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
         params: list = []
         if args.title:
             sets.append("title = ?")
@@ -1832,10 +1838,27 @@ def cmd_idea_approve(args: argparse.Namespace) -> None:
         if row["status"] == "approved":
             raise SystemExit(f"error: idea id={args.idea_id} is already approved (round "
                              f"{row['approved_round_id']}); an approved brief is frozen")
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: an evaluation of idea id={args.idea_id} is running right now. Approving "
+                "mid-flight would freeze a reading the company is in the middle of revising, and "
+                "would throw away the round being paid for. Wait for it to finish.")
         rnd = conn.execute("SELECT * FROM idea_rounds WHERE id = ? AND idea_id = ?",
                            (args.round_id, args.idea_id)).fetchone()
         if rnd is None:
             raise SystemExit(f"error: round id={args.round_id} does not belong to idea id={args.idea_id}")
+        # Only the CURRENT reading is approvable. Without this the whole rule is
+        # ornamental: round 1 says Proceed, the Founder corrects, round 2 says
+        # Reconsider, and round 1 remains approvable forever — an approve-anyway
+        # path reachable by pointing at an older round. Found by CTO in the
+        # catch-up review and reproduced before this guard was written.
+        latest = conn.execute(
+            "SELECT MAX(round_no) FROM idea_rounds WHERE idea_id = ?", (args.idea_id,)).fetchone()[0]
+        if rnd["round_no"] != latest:
+            raise SystemExit(
+                f"error: round {rnd['round_no']} is not the company's current reading — round "
+                f"{latest} superseded it. Approving a withdrawn round would build from advice the "
+                "company has already replaced. Approve the latest round, or correct it again.")
         if rnd["recommendation"] not in ("Proceed", "Proceed with narrowed scope"):
             raise SystemExit(
                 f"error: the company's recommendation on this round is '{rnd['recommendation']}', so "
@@ -1901,9 +1924,10 @@ def cmd_idea_evaluation_start(args: argparse.Namespace) -> None:
                              f"(since {row['evaluating_since']})")
         conn.execute(
             """UPDATE ideas SET evaluating_since = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
-                   last_error = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+                   last_error = NULL, pending_note = ?,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
                WHERE id = ?""",
-            (args.idea_id,),
+            (getattr(args, "note", None), args.idea_id),
         )
     print(f"evaluation started: idea={args.idea_id}")
 
@@ -2208,6 +2232,8 @@ def main() -> None:
 
     ies = sub.add_parser("idea-evaluation-start", help="mark an idea's evaluation as running")
     ies.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ies.add_argument("--note", help="the Founder correction that triggered this round, held "
+                                    "durably so a failed run cannot lose it")
     ies.set_defaults(func=cmd_idea_evaluation_start)
 
     iee = sub.add_parser("idea-evaluation-end", help="clear the running marker, optionally with an error")
