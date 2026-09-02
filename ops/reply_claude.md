@@ -4,6 +4,97 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-02 — ChatGPT suggestions after reviewing the Python-game evaluation
+
+The latest **Code-only Python arcade for kids** evaluation is a major improvement over the earlier fridge evaluation. The company actually followed the new pattern: it formed a product direction, CTO proposed technical approaches, Red Team killed one of them, CTO withdrew it, and the company redesigned around the criticism. **Keep that behavior.** The important next step is not more agents; it is a stronger solution-selection protocol.
+
+### 1. Require an architecture tournament before committing to a clever technical bet
+
+The evaluation moved too quickly from “we need kid-readable, instant feedback” to **“our own small Python parser is the product.”** That is an expensive and hard-to-reverse choice, especially when the Founder’s stated outcome is learning Python.
+
+Before one architecture becomes the recommendation, CTO should generate and compare several materially different ways to achieve the same experience. For this idea, examples could include:
+
+- real Python in-browser + translated errors,
+- real Python + AST/lint constraints around the taught subset,
+- a Python-compatible teaching subset/transpiler,
+- custom parser + evaluator,
+- a hybrid where a real Python runtime executes code but a constrained lesson API / preflight layer provides kid-readable feedback.
+
+Compare them explicitly on: real-Python fidelity, time-to-first-motion, Chromebook/school-network performance, error quality, engineering time, maintenance burden, reversibility/escape hatch, and whether learning transfers to ordinary Python later.
+
+The goal is not to force one of those answers. The goal is to make **solution breadth mandatory before convergence**, particularly when CTO is proposing a one-way-door architecture.
+
+### 2. Treat transfer-to-the-real-skill as a product requirement when the Founder says “learn Python”
+
+A custom Python subset may create a better first experience, but the evaluation itself admits that v1 may teach causality more than debugging. That creates a load-bearing question: **does the child learn something that transfers to normal Python, or only how to operate our environment?**
+
+The company should not silently redefine “learn Python” into “feel successful typing something Python-like.” If it recommends a constrained language/runtime, it should state how and when the child graduates to ordinary Python syntax, errors, debugging, libraries, and execution.
+
+### 3. Research should become a work item, not just a disclaimer
+
+The evaluation repeatedly says no competitor or legal research was performed, while also making claims about a crowded category, structural gaps, and likely alternatives.
+
+When a Full-depth evaluation reaches a point where current competitor capability, pricing, child-safety law, platform limits, or an external technical fact could materially change the recommended architecture, the company should either:
+
+- use an available research capability, or
+- explicitly create a bounded research task as part of the recommendation.
+
+“Unknown because nobody browsed” is acceptable evidence handling, but it should not become the permanent operating model for Full-depth product formation.
+
+### 4. Chief of Staff should recommend answers before escalating strategic forks to Founder
+
+The evaluation asks the Founder:
+
+- parent vs school vs nobody-yet,
+- “learns programming” vs “falls in love with making things.”
+
+Those are real strategic forks, but before escalating them, the company should make its own recommendation and explain the consequence. For example:
+
+> “We recommend nobody-yet / parent-first and optimizing the first version for making kids love creating with code. That gives the fastest path to validating engagement. Choose school-first only if school procurement is already a Founder goal.”
+
+Then ask the Founder only if that choice truly cannot be made from the stated goal or existing project context.
+
+The desired pattern is: **company resolves internally → company recommends → Founder overrides or decides only where genuinely necessary.**
+
+### 5. “Investigate first” should be approvable work, not a dead-end state
+
+The proposed five-kid throwaway prototype is legitimate work. The current UI still says “No Approve on this round” because the recommendation is Investigate first. That turns a good recommendation into a workflow wall.
+
+The lifecycle should distinguish **approval of an investigation/prototype** from **approval of the production brief**. A Founder-facing action could be conceptually:
+
+- Approve investigation / prototype,
+- Proceed to smallest MVP anyway,
+- Correct the company,
+- Stop.
+
+If the Founder approves the investigation, the Factory should be able to execute that bounded work and return with evidence before a production brief is approved. “Investigate first” is a kind of work, not “nothing to approve.”
+
+### 6. Dynamic role involvement should be able to change after the architecture changes
+
+Security was initially left out because there was no settled direction. Later the proposed direction introduced under-13 users, shareable links, resume identifiers, and telemetry, and the evaluation itself recognized children’s privacy as a blocker before public sharing.
+
+That is the moment dynamic involvement should re-evaluate the roster and bring Security/Privacy into the second pass. Role selection should not be frozen at the beginning of the evaluation if the emerging solution crosses into a materially different risk domain.
+
+### 7. Preserve the strongest behavior from this run
+
+The best part of the evaluation was not any specific architecture. It was this behavior:
+
+`invent → challenge → concede a weakness → redesign → continue`
+
+Replay-to-current-moment was proposed, Red Team attacked it, CTO withdrew it, and the company replaced it with deterministic short rounds/restart-on-edit. That is exactly the kind of internal disagreement and resolution the Founder wants.
+
+Also preserve the principle expressed in the evaluation: **“Everything else we disagreed about, we resolved internally — that is our job, not yours.”** That should become a general operating norm.
+
+### Suggested stronger Idea Desk loop
+
+A stronger default loop would be:
+
+`Founder outcome → Product/Design framing → CTO generates 3–5 materially different workable architectures → compare/rank → select provisional best → Red Team attacks → relevant roles re-enter if the solution creates new domains/risks → Product/Design/CTO repair → re-rank → Chief of Staff recommends one solution and a default answer to remaining forks → Founder decides only true strategic exceptions`
+
+These are advisory product/protocol suggestions based on the latest evaluation. They are **not** authorization in this note to bypass existing gates or start new automation; if accepted, please record what you changed or why you declined it.
+
+---
+
 ## 2026-09-02 — Founder direction: transform the raw idea into the best workable solution before critiquing it
 
 The Founder reviewed the completed fridge-vegetable evaluation and does **not** like the current reasoning order.
