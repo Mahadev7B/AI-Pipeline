@@ -419,19 +419,32 @@ to label which of the fifteen sections you are answering from, and
 <div class="two"><div>...</div><div>...</div></div> for a two-column split.
 No other HTML, no links, no scripts.
 
+EVERY answer is a PAIR: [concise, expanded]. The second string is the WORKING
+behind the first — the part someone opens to check your reasoning. It is not a
+label, not a cross-reference, and never a copy of anything below. Write it, or,
+if an idea genuinely has no further working behind an answer, put exactly this
+sentence and nothing else:
+
+  No further working — the concise answer is the whole of it.
+
+Saying that honestly is fine. Echoing the &lt;&lt;...&gt;&gt; slots below is not: they
+describe what to write, they are not text to reuse.
+
 {
   "title": "a short name for this idea, 3-7 words, how the company would refer to it",
   "answers": {
-    "1":  ["Did the company understand my idea? — a few sentences",  "expanded: sections 1 and 2"],
-    "2":  ["What am I really trying to achieve? — the outcome, not the feature", "expanded: section 3"],
-    "3":  ["Why might this be worth building?",  "expanded: section 4"],
-    "4":  ["What already exists?",               "expanded: sections 5 and 6"],
-    "5":  ["What could make ours different?",    "expanded: section 7"],
-    "6":  ["What could make it fail?",           "expanded: section 8"],
-    "7":  ["What does the company recommend?",   "expanded: sections 9, 10 and 12"],
-    "8":  ["What assumptions did the company make?", "expanded: section 11"],
-    "9":  ["What decisions do you need from me?",    "expanded: section 13"],
-    "10": ["How will we know we succeeded?",         "expanded: section 14"]
+    "1":  ["Did the company understand my idea? — a few sentences",
+           "<<your working for answer 1, drawing on sections 1 and 2 of the fifteen>>"],
+    "2":  ["What am I really trying to achieve? — the outcome, not the feature",
+           "<<your working, from section 3>>"],
+    "3":  ["Why might this be worth building?",       "<<your working, from section 4>>"],
+    "4":  ["What already exists?",                    "<<your working, sections 5 and 6>>"],
+    "5":  ["What could make ours different?",         "<<your working, section 7>>"],
+    "6":  ["What could make it fail?",                "<<your working, section 8>>"],
+    "7":  ["What does the company recommend?",        "<<your working, sections 9, 10 and 12>>"],
+    "8":  ["What assumptions did the company make?",  "<<your working, section 11>>"],
+    "9":  ["What decisions do you need from me?",     "<<your working, section 13>>"],
+    "10": ["How will we know we succeeded?",          "<<your working, section 14>>"]
   },
   "view": {
     "opp":    "High" | "Medium" | "Low" | "Unclear",
@@ -646,6 +659,34 @@ def _locate_answers(answers):
     return out or None
 
 
+# What an answer's expanded half must clear to count as working rather than a
+# label. The failures seen in a real run were 19-31 characters — "expanded:
+# section 7", the contract's own placeholder pasted back.
+MIN_EXPANDED_CHARS = 90
+NO_WORKING = "No further working — the concise answer is the whole of it."
+_PLACEHOLDER = re.compile(r"^\s*(?:<<.*>>|expanded\s*[:\-].{0,60}|section[s]?\s+[\d,\sand]+)\s*$",
+                          re.I | re.S)
+
+
+def _expanded_or_note(expanded: str, concise: str) -> str:
+    """The expanded half, or an honest sentence saying there isn't one.
+
+    A real run stored ten expanded sections of ~20 characters each: the model
+    had echoed the contract's own placeholder text. Nothing caught it, so the
+    page offered ten expanders that opened onto a fragment. This is NOT a hard
+    failure — the concise layer is intact and the evaluation was paid for, and
+    discarding it would cost more than it saves. It is relabelling an absence
+    as an absence, which is the one thing the company must always do rather
+    than let a stub pass for working."""
+    text = re.sub(r"<[^>]+>", "", expanded or "").strip()
+    if not text or _PLACEHOLDER.match(text) or len(text) < MIN_EXPANDED_CHARS:
+        return NO_WORKING
+    if text == re.sub(r"<[^>]+>", "", concise or "").strip():
+        # Restating the concise answer is not working either.
+        return NO_WORKING
+    return expanded
+
+
 def _validate(result: dict) -> tuple[dict, dict, str]:
     result = _unwrap(result)
     answers = _locate_answers(result.get("answers"))
@@ -660,7 +701,9 @@ def _validate(result: dict) -> tuple[dict, dict, str]:
         if not isinstance(entry, (list, tuple)) or not entry:
             raise EvaluationError(f"the company did not answer question {n}. All ten are required, "
                                   "so nothing was saved.")
-        clean[str(n)] = [str(entry[0]), str(entry[1]) if len(entry) > 1 else ""]
+        concise = str(entry[0])
+        clean[str(n)] = [concise,
+                         _expanded_or_note(str(entry[1]) if len(entry) > 1 else "", concise)]
 
     view = result.get("view")
     if not isinstance(view, dict) or any(k not in view for k in REQUIRED_KEYS):

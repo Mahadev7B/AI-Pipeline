@@ -42,6 +42,12 @@ QUESTIONS = [
 
 APPROVABLE = ("Proceed", "Proceed with narrowed scope")
 
+# Kept in step with evaluator.NO_WORKING. When an answer has no working behind
+# it the page says so once, quietly, instead of offering an empty expander.
+# NOTE the literal em dash: safe_html() escapes &<>"' and leaves it alone, so
+# writing &mdash; here would never match what actually arrives.
+NO_WORKING_HTML = "No further working \u2014 the concise answer is the whole of it."
+
 CSS = """
 :root{
   --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --panel3:#20252d;
@@ -193,6 +199,7 @@ h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0;}
 .qa .a b{color:var(--text);font-weight:600;}
 .qa .a.big{font-size:16px;color:var(--text);line-height:1.55;}
 details.x{margin-top:10px;}
+.nowork{margin-top:10px;font-size:12.5px;color:var(--gray);font-style:italic;}
 details.x > summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;
                     display:inline-flex;align-items:center;gap:6px;}
 details.x > summary::-webkit-details-marker{display:none;}
@@ -665,8 +672,16 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
         pair = answers.get(str(num)) or ["Not answered in this round.", ""]
         concise, expanded = (safe_html(pair[0]), safe_html(pair[1] if len(pair) > 1 else ""))
         big = ' big' if num == 2 else ''
-        exp = (f"""<details class="x"><summary>Expanded &middot; {e(expands)}</summary>
-                <div class="xin">{expanded}</div></details>""" if expanded else "")
+        # An answer with no working behind it says so in a plain line. It used
+        # to get an expander like every other, which opened onto a stub — the
+        # screen promising depth that was never written.
+        if expanded == NO_WORKING_HTML:
+            exp = f'<div class="nowork">{NO_WORKING_HTML}</div>'
+        elif expanded:
+            exp = (f"""<details class="x"><summary>Expanded &middot; {e(expands)}</summary>
+                <div class="xin">{expanded}</div></details>""")
+        else:
+            exp = ""
         qs.append(f"""<div class="qa {'need' if voice == 'need' else ''}" style="--v:{colour}">
           <div class="qh"><span class="n">Q{num}</span><span class="qt">{e(title)}</span>
             <span class="v">{e(vname)}</span></div>

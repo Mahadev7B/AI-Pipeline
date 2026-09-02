@@ -644,6 +644,62 @@ class AnswerShape(unittest.TestCase):
                                                 "view": {**self.VIEW, "rec": "Ship it"}}})
 
 
+class ExpandedWorking(unittest.TestCase):
+    """A real run stored ten expanded sections of 19-31 characters: the model
+    had pasted back the contract's own placeholder ("expanded: section 7").
+    Nothing caught it, so the page offered ten expanders that opened onto a
+    label. An absence must be shown as an absence, never dressed as working."""
+
+    VIEW = {"opp": "Medium", "why": "w", "merit": "m", "threat": "t", "diff": "d", "rec": "Proceed"}
+    REAL = ("<div class=\"sk\">1. What we heard</div>A browser-based way for children to learn "
+            "Python where the learning and the making are the same activity, prompted by wanting "
+            "kids to actually improve rather than just be exposed to it.")
+
+    def answers(self, expanded):
+        return {str(n): [f"concise answer {n}, long enough to be real", expanded]
+                for n in range(1, 11)}
+
+    def test_real_working_is_kept_exactly(self):
+        a, _v, _t = evaluator._validate({"answers": self.answers(self.REAL), "view": self.VIEW})
+        self.assertEqual(a["3"][1], self.REAL)
+
+    def test_the_placeholder_the_model_actually_echoed(self):
+        # Verbatim from the stored round that exposed this.
+        for stub in ("expanded: sections 1 and 2", "expanded: section 7",
+                     "expanded: sections 9, 10 and 12"):
+            a, _v, _t = evaluator._validate({"answers": self.answers(stub), "view": self.VIEW})
+            self.assertEqual(a["1"][1], evaluator.NO_WORKING, f"{stub!r} must not pass as working")
+
+    def test_the_new_slot_syntax_is_not_stored_either(self):
+        a, _v, _t = evaluator._validate(
+            {"answers": self.answers("<<your working, section 7>>"), "view": self.VIEW})
+        self.assertEqual(a["1"][1], evaluator.NO_WORKING)
+
+    def test_empty_and_whitespace_and_markup_only(self):
+        for stub in ("", "   ", "<div class=\"sk\"></div>"):
+            a, _v, _t = evaluator._validate({"answers": self.answers(stub), "view": self.VIEW})
+            self.assertEqual(a["1"][1], evaluator.NO_WORKING)
+
+    def test_restating_the_concise_answer_is_not_working(self):
+        same = "concise answer 1, long enough to be real"
+        a, _v, _t = evaluator._validate(
+            {"answers": {**self.answers(self.REAL), "1": [same, same]}, "view": self.VIEW})
+        self.assertEqual(a["1"][1], evaluator.NO_WORKING)
+
+    def test_a_thin_answer_never_discards_the_paid_evaluation(self):
+        # The concise layer is what the Founder decides on. Failing the whole
+        # round over missing working would cost more than it saves.
+        a, v, _t = evaluator._validate({"answers": self.answers("expanded: section 3"),
+                                        "view": self.VIEW})
+        self.assertEqual(len(a), 10)
+        self.assertEqual(v["rec"], "Proceed")
+
+    def test_the_page_shows_a_plain_line_not_an_empty_expander(self):
+        rendered = pages.safe_html(evaluator.NO_WORKING)
+        self.assertEqual(rendered, pages.NO_WORKING_HTML,
+                         "the page constant must match what safe_html actually produces")
+
+
 class RosterRecovery(unittest.TestCase):
     """Roster selection needs machine-readable JSON exactly as much as the
     final answer does, and used to have neither a repair attempt nor any
