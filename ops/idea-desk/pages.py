@@ -198,6 +198,8 @@ h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0;}
 .qa .a{font-size:14px;line-height:1.65;color:var(--text2);}
 .qa .a b{color:var(--text);font-weight:600;}
 .qa .a.big{font-size:16px;color:var(--text);line-height:1.55;}
+.q ul,.xin ul{margin:8px 0 0;padding-left:18px;}
+.q li,.xin li{margin:4px 0;}
 details.x{margin-top:10px;}
 .nowork{margin-top:10px;font-size:12.5px;color:var(--gray);font-style:italic;}
 details.x > summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;
@@ -288,7 +290,10 @@ def e(s) -> str:
 # <code> is here because failure messages give the Founder a command to run
 # and a diagnostics file to look at. Escaped, those arrived with the literal
 # tags showing, which is the one moment the message most needs to be clear.
-_SIMPLE_TAGS = "b|i|em|strong|br|code"
+# <ul>/<li> so a list of three things can BE a list. Without them the
+# answers ran everything together into one block, and the Founder said
+# plainly that the writing was hard to pay attention to.
+_SIMPLE_TAGS = "b|i|em|strong|br|code|ul|li"
 _DIV_CLASSES = "sk|two|dec"
 _SPAN_CLASSES = r"lab unk|lab|na"
 
@@ -310,7 +315,7 @@ def safe_html(raw: str | None) -> str:
     # otherwise).
     open_stack: list[str] = []
     balanced: list[str] = []
-    for piece in re.split(r"(</?(?:div|b|i|em|strong|code)(?:\s[^>]*)?>)", out):
+    for piece in re.split(r"(</?(?:div|b|i|em|strong|code|ul|li)(?:\s[^>]*)?>)", out):
         m = re.fullmatch(r"</?([a-z]+)(?:\s[^>]*)?>", piece)
         if not m:
             balanced.append(piece)
