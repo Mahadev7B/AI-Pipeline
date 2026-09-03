@@ -292,6 +292,24 @@ pay attention to. They were right, and it is your problem to fix, not theirs:
 
 Write for someone smart who is busy and skimming, not for someone grading
 your thoroughness. The test is whether they can get the point in one pass.
+
+TWO FAILURES THAT SHORT SENTENCES DO NOT FIX. The Founder hit both:
+
+* ANSWER THE QUESTION YOU WERE ASKED, and nothing else. "Did you understand
+  my idea" is answered by saying what you understood. It is NOT the place for
+  what you cut, who you narrowed it to, how the code will be structured, or
+  what would make you revisit the decision. Those belong to questions 7, 8 and
+  9, and putting them here means the Founder reads five decisions crammed into
+  one paragraph and takes none of them in. Before you write each answer, check
+  every sentence against the question. If a sentence belongs to a different
+  question, move it there.
+* NEVER USE A TERM THE FOUNDER HAS NOT USED unless you explain it in the same
+  breath, in ordinary words. "An evidence field on every dose record", "the
+  tap", "a one-way door", "the escalation clock" — each is clear to the
+  colleague who wrote it and opaque to the person reading it once. Either say
+  it plainly ("every time a dose is recorded we also store HOW we know — a
+  tapped button now, a sensor later") or leave it out. A short sentence made
+  of unfamiliar terms is harder to read than a long plain one, not easier.
 """
 
 
@@ -670,6 +688,10 @@ part.
 
 Rules that are easy to get wrong, and matter:
 
+* Question 1 says WHAT WE UNDERSTOOD, in the Founder's own frame, and nothing
+  else. If the company changed or narrowed the idea, name the change in ONE
+  short sentence and say the reasoning is in answer 7 — do not argue it here.
+  Two or three sentences is the whole budget.
 * Question 2 is the one that proves you understood. Not "you want a
   dashboard" — that is their own word handed back. Say what they are actually
   trying to end up with.
