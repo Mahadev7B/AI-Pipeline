@@ -4,6 +4,148 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-03 — Founder feedback: preserve the physical-sensing insight, and make market research broad enough to challenge the whole solution space
+
+The Founder compared the latest **Proof-of-dose medication reminder** evaluation with an independent ChatGPT evaluation. The latest company run is materially better than the earlier Idea Desk behavior — it generated alternatives, dynamically brought Security in, and resolved more forks internally — but the Founder wants one important correction in how the company protects the core insight of an idea while transforming it.
+
+### 1. Do not optimize away the most distinctive part of the Founder’s idea before proving it is impractical
+
+The Founder’s original insight was not simply “send a stronger medication reminder.” It was:
+
+`remind → detect a real-world medication interaction → respond when that interaction does not happen`
+
+The bottle-cap / physical-sensing concept matters because a normal reminder app only knows that a notification was delivered. The Founder is trying to create independent evidence that the person actually went to the medication.
+
+The latest evaluation moved quickly toward a thin app + social escalation and postponed physical sensing. That may eventually be the right decision, but the company should not remove the physical-action differentiator before CTO has seriously tried to make it cheap, simple, and reversible.
+
+A better product framing is:
+
+> **A medication reminder that watches for real-world evidence that the user interacted with the medication container, and acts when that evidence does not appear.**
+
+Be precise about the evidence: a cap opening does **not** prove ingestion. Store and communicate the event honestly as something like “bottle opened at 8:04 AM,” and only derive a qualified state such as “likely taken” if the product chooses to infer it.
+
+### 2. Run a genuine architecture tournament around physical evidence
+
+For this idea, CTO should compare materially different evidence architectures before converging. At minimum, consider categories such as:
+
+- ordinary app self-report,
+- NFC / tap-to-confirm,
+- Bluetooth smart cap,
+- reusable retrofit bottle sensor,
+- smart pillbox / compartment sensing,
+- camera / computer vision,
+- hybrid designs where automatic sensing is primary and NFC/manual confirmation is fallback.
+
+Do not treat these as a checklist with a preselected winner. Compare them on:
+
+- automatic vs manual user effort,
+- evidence quality,
+- false-positive / false-negative behavior,
+- hardware cost,
+- setup burden,
+- battery life,
+- compatibility with common medication containers,
+- reliability when the phone is unavailable,
+- time to prototype,
+- manufacturability / certification burden,
+- reversibility,
+- privacy exposure,
+- scalability,
+- and whether the architecture keeps a path open to better evidence later.
+
+A particularly important candidate to investigate is a **reusable retrofit sensor** rather than immediately assuming a custom manufactured cap. The company should ask whether a small sensor using cap separation, rotation, acceleration, magnetic/Hall sensing, or another simple physical signal can attach to existing bottles and report events over Bluetooth. This is not a direction to preselect that design; it is a direction to search harder for ways to preserve the Founder’s core insight without prematurely turning the company into a nine-month hardware program.
+
+### 3. Design the system around evidence levels, not a single “Taken” boolean
+
+The data model and product reasoning should be able to distinguish evidence sources such as:
+
+`self-report → NFC interaction → bottle-open event → caregiver confirmation → stronger future evidence`
+
+That makes hardware evolution additive rather than a rewrite and avoids dishonest claims.
+
+The product should also understand context. A bottle opening near a scheduled dose window is different from a bottle opening hours later to refill an organizer. Architecture and Product should reason about confidence, not collapse all activity into “taken.”
+
+### 4. The interesting user outcome may include duplicate-dose uncertainty, not only missed doses
+
+The Founder’s idea may solve two problems:
+
+- “I forgot to take it.”
+- “I cannot remember whether I already took it.”
+
+The second can be a powerful wedge. The company should test whether reducing **dose uncertainty** is as important as reducing missed doses, rather than assuming reminder adherence is the only outcome.
+
+### 5. Recommendation quality: preserve the sensing direction unless evidence defeats it
+
+For this evaluation, ChatGPT’s alternative recommendation was closer to:
+
+**Proceed with narrowed scope** — prototype software + automatic bottle-interaction sensing using inexpensive/off-the-shelf hardware or a simple retrofit sensor before committing to custom manufacturing.
+
+Suggested progression:
+
+`software simulation → off-the-shelf / retrofit sensor prototype → small user test → custom-hardware decision`
+
+Fallbacks can remain progressive:
+
+`automatic sensor → NFC confirmation → manual confirmation`
+
+The company does not have to adopt that recommendation. The important protocol correction is: **when the Founder’s differentiator is physical evidence, prove that a simple physical-evidence architecture is not viable before replacing the product with a primarily social-accountability architecture.**
+
+### 6. Market research must broaden the search, not stop after a few obvious competitors
+
+The Founder explicitly wants market research to **broaden the search and check every meaningful possibility** before making a market-based recommendation.
+
+Do not interpret “market research” as “search the product name and inspect the first few reminder apps.” For a Full-depth evaluation, research should systematically explore the entire solution landscape relevant to the outcome, including direct competitors, substitutes, adjacent products, alternative technologies, and evidence that similar ideas failed or succeeded for unexpected reasons.
+
+For this medication idea, the research sweep should include at least:
+
+- medication reminder apps,
+- adherence / compliance apps,
+- smart pill caps and connected bottles,
+- smart pillboxes and dispensers,
+- NFC / QR / barcode medication workflows,
+- pharmacy-connected adherence tools,
+- caregiver monitoring products,
+- remote patient monitoring solutions,
+- products sold through insurers / health systems / pharmacies rather than app stores,
+- simple non-app substitutes people actually use,
+- relevant consumer hardware / sensor products that could be repurposed,
+- reviews and complaints showing why existing products are abandoned,
+- pricing and recurring-cost models,
+- battery/setup/pairing complaints,
+- privacy / consent constraints,
+- platform limitations,
+- and, where relevant, failed/discontinued products that reveal why a seemingly good architecture did not survive.
+
+Search from multiple angles and terminology, not one keyword. Follow references discovered during research into adjacent categories. Look for counterexamples that could invalidate the company’s preferred direction. The purpose is not to produce a giant list; the purpose is to avoid false confidence caused by a narrow search.
+
+The practical standard should be:
+
+> **Broad enough that the company can explain the major classes of existing solutions, what each class gets right and wrong, where users still struggle, and why the recommended architecture has a credible opening.**
+
+“Every possibility” should be pursued as a **systematic category sweep with diminishing-return stopping criteria**, not a claim that the entire internet has literally been exhausted. If a new category or technology is discovered that could materially change the answer, expand the search before synthesizing.
+
+For this idea specifically, the most important market question is not merely “does a smart cap exist?” It is:
+
+> **If connected medication containers already exist, why have they not made this problem effortless and mainstream?**
+
+Possible answers — cost, battery, pairing, refill workflow, pharmacy integration, false signals, hardware distribution, user stigma, caregiver friction, business model, clinical workflow — may reveal the actual product opportunity.
+
+### 7. Preserve what the latest evaluation got right
+
+Keep the improvements already visible in this run:
+
+- CTO considered multiple technical directions rather than only reviewing feasibility.
+- Security was dynamically brought in after the emerging design crossed into sensitive-data territory.
+- Q9 gave the company’s recommended answer first and asked the Founder to overrule only if necessary.
+- Unknown external facts were identified rather than fabricated.
+- “Investigate first” now represents authorisable work instead of a dead-end screen.
+
+The correction is not “undo all of that.” It is: **protect the strongest original product insight long enough for the company to seriously engineer around it, and make external research broad enough to challenge both the Founder’s idea and the company’s preferred alternative.**
+
+No request here to bypass existing approval, review, privacy, or production gates. This is Founder product-direction feedback for future Idea Desk evaluation behavior.
+
+---
+
 ## 2026-09-02 — ChatGPT suggestions after reviewing the Python-game evaluation
 
 The latest **Code-only Python arcade for kids** evaluation is a major improvement over the earlier fridge evaluation. The company actually followed the new pattern: it formed a product direction, CTO proposed technical approaches, Red Team killed one of them, CTO withdrew it, and the company redesigned around the criticism. **Keep that behavior.** The important next step is not more agents; it is a stronger solution-selection protocol.
