@@ -361,44 +361,51 @@ class SynthesisRecovery(unittest.TestCase):
 
 
 class SharingEvidence(unittest.TestCase):
-    """Sending a failed evaluation's evidence to GitHub. It publishes the
-    Founder's own words permanently, so the rules that matter are: only when
-    they ask, only the one file, never a force-push, and never a button that
-    leads nowhere."""
+    """Sending a failed evaluation's evidence to GitHub.
+
+    The rule that shapes all of this: a send must change NOTHING in the
+    Founder's working repository. An earlier version staged and committed on
+    their branch, and both bit — a staged file that failed to commit blocked
+    every later `git pull`, and a commit on their branch made the next pull
+    demand a merge and an editor. They are the person using the app, not
+    someone maintaining a branch."""
 
     def setUp(self):
         import incidents
         self.inc = incidents
         self.tmp = Path(tempfile.mkdtemp())
-        self._saved = (incidents.DIAGNOSTICS, incidents.INCIDENTS, incidents.REPO, incidents._git)
+        self._saved = (incidents.DIAGNOSTICS, incidents.REPO, incidents._git)
         incidents.REPO = self.tmp
         incidents.DIAGNOSTICS = self.tmp / "diagnostics"
-        incidents.INCIDENTS = self.tmp / "incidents"
         incidents.DIAGNOSTICS.mkdir()
         self.ran: list[tuple] = []
 
     def tearDown(self):
-        (self.inc.DIAGNOSTICS, self.inc.INCIDENTS,
-         self.inc.REPO, self.inc._git) = self._saved
+        self.inc.DIAGNOSTICS, self.inc.REPO, self.inc._git = self._saved
 
     def write_diag(self, idea_id=9, stamp="20260902T195129Z", body="the evidence"):
         p = self.inc.DIAGNOSTICS / f"idea-{idea_id}-{stamp}.txt"
         p.write_text(body, encoding="utf-8")
         return p
 
-    def fake_git(self, **codes):
-        """Record every git call; return the given code per subcommand."""
-        def run(*args, timeout=60, **kw):
+    def fake_git(self, fail_on=None, parent=""):
+        """Record every git call. `fail_on` is a subcommand that returns 1."""
+        outs = {"hash-object": "b10b" * 10, "write-tree": "7ee0" * 10,
+                "commit-tree": "c0ff" * 10, "rev-parse": parent}
+        def run(*args, timeout=60, env=None, stdin=None):
             self.ran.append(args)
             class R:
-                returncode = codes.get(args[0], 0)
-                stdout = {"symbolic-ref": "claude/orchestrator-chief-of-staff-f35grl"}.get(args[0], "")
-                stderr = ""
+                returncode = 1 if args[0] == fail_on else 0
+                stdout = outs.get(args[0], "")
+                stderr = "something went wrong" if args[0] == fail_on else ""
             return R()
         self.inc._git = run
 
+    def called(self, sub):
+        return [a for a in self.ran if a and a[0] == sub]
+
     # --- picking the right file -------------------------------------------
-    def test_no_diagnostic_means_no_button_and_no_send(self):
+    def test_no_diagnostic_means_no_send(self):
         self.assertIsNone(self.inc.latest_for(9))
         self.fake_git()
         with self.assertRaises(self.inc.ShareError):
@@ -415,197 +422,113 @@ class SharingEvidence(unittest.TestCase):
         self.write_diag(11)
         self.assertIsNone(self.inc.latest_for(9))
 
-    # --- what it does to git ----------------------------------------------
-    def test_a_successful_send_commits_only_that_one_file(self):
+    # --- the working repository is never touched --------------------------
+    def test_it_never_stages_commits_or_moves_head(self):
         self.write_diag()
         self.fake_git()
-        msg = self.inc.share(9)
-        self.assertIn("Sent", msg)
-        commit = next(a for a in self.ran if a[0] == "commit")
-        self.assertIn("--", commit, "the commit must be limited to a pathspec")
-        path = commit[commit.index("--") + 1]
-        self.assertTrue(path.endswith("idea-9-20260902T195129Z.txt"))
-        self.assertNotIn("-a", commit, "never commit everything in the working tree")
+        self.inc.share(9)
+        for forbidden in ("add", "commit", "checkout", "reset", "stash", "merge"):
+            self.assertFalse(self.called(forbidden),
+                             f"a send must never run `git {forbidden}` in the Founder's repo")
+
+    def test_it_builds_the_commit_in_a_temporary_index(self):
+        self.write_diag()
+        self.fake_git()
+        self.inc.share(9)
+        # update-index and write-tree must both be given their own index file,
+        # or they would rewrite the Founder's staged changes.
+        self.assertTrue(self.called("update-index"))
+        self.assertTrue(self.called("write-tree"))
+        self.assertTrue(self.called("commit-tree"))
+
+    def test_it_pushes_to_its_own_branch_never_the_founders(self):
+        self.write_diag()
+        self.fake_git()
+        self.inc.share(9)
+        push = self.called("push")[0]
+        self.assertIn(f"refs/heads/{self.inc.INCIDENT_BRANCH}", push[-1])
+        self.assertNotIn("orchestrator-chief-of-staff", push[-1])
 
     def test_it_never_force_pushes(self):
         self.write_diag()
-        self.fake_git(push=1, pull=0)
-        # Both pushes are refused, so this ends in a ShareError. What matters is
-        # what it did NOT reach for on the way there.
-        with self.assertRaises(self.inc.ShareError):
-            self.inc.share(9)
-        for call in self.ran:
-            self.assertNotIn("--force", call)
-            self.assertNotIn("-f", call)
-            self.assertNotIn("--force-with-lease", call)
-
-    def test_a_rejected_push_is_rebased_once_and_retried(self):
-        self.write_diag()
-        pushes = []
-        def run(*args, timeout=60, **kw):
-            self.ran.append(args)
-            class R:
-                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
-                stderr = ""
-                returncode = 0
-            if args[0] == "push":
-                pushes.append(args)
-                R.returncode = 1 if len(pushes) == 1 else 0
-            return R()
-        self.inc._git = run
-        self.assertIn("Sent", self.inc.share(9))
-        self.assertEqual(len(pushes), 2, "one retry, not a loop")
-        self.assertTrue(any(a[0] == "pull" and "--rebase" in a for a in self.ran))
-
-    def test_a_failed_commit_leaves_nothing_staged(self):
-        # A staged-but-uncommitted file reads to git as "your local changes",
-        # and aborts every later pull. The Founder hit exactly this, days after
-        # a send that failed because git had no identity yet.
-        self.write_diag()
-        def run(*args, timeout=60, **kw):
-            self.ran.append(args)
-            class R:
-                returncode = 1 if args[0] == "commit" else 0
-                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
-                stderr = "Author identity unknown" if args[0] == "commit" else ""
-            return R()
-        self.inc._git = run
-        with self.assertRaises(self.inc.ShareError):
-            self.inc.share(9)
-        restores = [a for a in self.ran if a[0] == "restore" and "--staged" in a]
-        self.assertTrue(restores, "a failed commit must unstage what it staged")
-        # The path is relative to the repo root, which under test is a tmp dir.
-        self.assertTrue(restores[0][-1].endswith("idea-9-20260902T195129Z.txt"))
-
-    def test_a_successful_commit_leaves_nothing_to_unstage(self):
-        self.write_diag()
         self.fake_git()
         self.inc.share(9)
-        self.assertFalse([a for a in self.ran if a[0] == "restore"],
-                         "nothing to undo when the commit worked")
+        for call in self.ran:
+            for flag in ("--force", "-f", "--force-with-lease"):
+                self.assertNotIn(flag, call)
 
-    def test_a_failed_push_says_nothing_was_lost(self):
+    def test_incidents_accumulate_rather_than_replacing_each_other(self):
         self.write_diag()
-        self.fake_git(push=1, pull=1)
+        self.fake_git(parent="9999" * 10)
+        self.inc.share(9)
+        self.assertTrue(self.called("read-tree"), "an existing incident branch must be read first")
+        self.assertIn("-p", self.called("commit-tree")[0], "and become the parent commit")
+
+    def test_the_first_incident_has_no_parent(self):
+        self.write_diag()
+        self.fake_git(parent="")
+        self.inc.share(9)
+        self.assertFalse(self.called("read-tree"))
+        self.assertNotIn("-p", self.called("commit-tree")[0])
+
+    # --- failures ----------------------------------------------------------
+    def test_a_refused_push_says_nothing_on_your_machine_changed(self):
+        self.write_diag()
+        self.fake_git(fail_on="push")
         with self.assertRaises(self.inc.ShareError) as caught:
             self.inc.share(9)
-        self.assertIn("Nothing was lost", str(caught.exception))
-
-    def test_the_founders_note_is_appended_to_what_is_sent(self):
-        self.write_diag(body="the evidence")
-        self.fake_git()
-        self.inc.share(9, "it hung for a minute first")
-        sent = (self.inc.INCIDENTS / "idea-9-20260902T195129Z.txt").read_text()
-        self.assertIn("the evidence", sent)
-        self.assertIn("it hung for a minute first", sent)
-
-    def test_resending_never_erases_a_note_added_the_first_time(self):
-        # Copying over an existing incident destroyed the Founder's earlier
-        # note — the feature meant to preserve evidence deleting some of it.
-        self.write_diag(body="the evidence")
-        self.fake_git()
-        self.inc.share(9, "it hung first")
-        self.inc.share(9, "and the fan spun up")
-        sent = (self.inc.INCIDENTS / "idea-9-20260902T195129Z.txt").read_text()
-        self.assertIn("it hung first", sent, "the first note must survive a resend")
-        self.assertIn("and the fan spun up", sent)
-        self.assertEqual(sent.count("the evidence"), 1, "the body is not duplicated")
-
-    def test_resending_with_nothing_new_says_so_instead_of_committing_again(self):
-        self.write_diag()
-        self.fake_git()
-        self.inc.share(9)
-        def run(*args, timeout=60, **kw):
-            self.ran.append(args)
-            class R:
-                returncode = 1 if args[0] == "commit" else 0
-                # The wording git actually used on the Founder's machine.
-                stdout = ("nothing added to commit but untracked files present"
-                          if args[0] == "commit"
-                          else "claude/orchestrator-chief-of-staff-f35grl")
-                stderr = ""
-            return R()
-        self.inc._git = run
-        self.assertIn("already sent", self.inc.share(9))
-
-    def test_a_branch_with_no_commits_is_not_mistaken_for_a_detached_head(self):
-        # rev-parse cannot resolve HEAD on an unborn branch and reports nothing,
-        # which read as "detached" and sent the Founder to fix a non-problem.
-        self.write_diag()
-        self.fake_git()
-        self.inc.share(9)
-        self.assertTrue(any(a[0] == "symbolic-ref" for a in self.ran),
-                        "the branch must be read with symbolic-ref")
-        self.assertFalse(any(a[0] == "rev-parse" for a in self.ran))
+        self.assertIn("Nothing on your machine changed", str(caught.exception))
 
     def test_git_setup_failures_are_explained_not_pasted(self):
-        # Handing someone raw git output is not an error message, it is a
-        # handoff of the problem. The Founder hit exactly this one.
         identity = ("Author identity unknown\n*** Please tell me who you are.\n"
                     "fatal: unable to auto-detect email address (got 'x@y.(none)')")
         told = self.inc._explain(identity)
         self.assertIsNotNone(told)
         self.assertIn("git config --global user.name", told)
-        self.assertIn("Nothing was lost", told)
         self.assertIsNotNone(self.inc._explain("fatal: Authentication failed for 'https://...'"))
-        self.assertIsNotNone(self.inc._explain("could not read Username for 'https://github.com'"))
         self.assertIsNone(self.inc._explain("some failure nobody anticipated"),
                           "an unrecognised failure must fall through, not be mislabelled")
 
-    def test_an_unsigned_commit_says_what_to_do(self):
-        self.write_diag()
-        def run(*args, timeout=60, **kw):
-            class R:
-                returncode = 1 if args[0] == "commit" else 0
-                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
-                stderr = "Author identity unknown" if args[0] == "commit" else ""
-            return R()
-        self.inc._git = run
-        with self.assertRaises(self.inc.ShareError) as caught:
-            self.inc.share(9)
-        self.assertIn("git config --global", str(caught.exception))
-
-    def test_a_signin_failure_is_not_treated_as_a_diverged_branch(self):
-        # Rebasing would not help, and would rewrite history for nothing.
-        self.write_diag()
-        pulls = []
-        def run(*args, timeout=60, **kw):
-            if args[0] == "pull":
-                pulls.append(args)
-            class R:
-                returncode = 1 if args[0] == "push" else 0
-                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
-                stderr = "fatal: Authentication failed" if args[0] == "push" else ""
-            return R()
-        self.inc._git = run
-        with self.assertRaises(self.inc.ShareError) as caught:
-            self.inc.share(9)
-        self.assertEqual(pulls, [], "a sign-in problem must not trigger a rebase")
-        self.assertIn("not signed in", str(caught.exception))
-
-    def test_a_detached_head_refuses_rather_than_pushing_somewhere_odd(self):
-        self.write_diag()
-        def run(*args, timeout=60, **kw):
-            class R:
-                returncode = 0
-                stdout = "HEAD" if args[0] == "symbolic-ref" else ""
-                stderr = ""
-            return R()
-        self.inc._git = run
-        with self.assertRaises(self.inc.ShareError):
-            self.inc.share(9)
+    def test_a_missing_identity_cannot_stop_a_send(self):
+        # The first real send failed with "Author identity unknown" and left a
+        # staged file that blocked pulls for days. commit-tree is now given an
+        # identity of its own, so the machine's git config cannot decide this.
+        self.assertIn("GIT_AUTHOR_NAME", self.inc._FALLBACK_WHO)
+        self.assertIn("GIT_COMMITTER_EMAIL", self.inc._FALLBACK_WHO)
 
     def test_credentials_in_git_output_are_never_echoed_back(self):
         leak = "fatal: https://user:ghp_secrettoken@github.com/x/y.git rejected"
         self.assertNotIn("ghp_secrettoken", self.inc._clean(leak))
         self.assertIn("https://github.com", self.inc._clean(leak))
 
-    def test_already_shared_is_detectable(self):
+    # --- what the Founder added, and what was already sent -----------------
+    def test_the_founders_note_is_included_in_what_is_sent(self):
+        self.write_diag(body="the evidence")
+        sent = {}
+        def run(*args, timeout=60, env=None, stdin=None):
+            self.ran.append(args)
+            if args[0] == "hash-object":
+                sent["content"] = stdin
+            class R:
+                returncode = 0
+                stdout = {"hash-object": "b10b" * 10, "write-tree": "7ee0" * 10,
+                          "commit-tree": "c0ff" * 10}.get(args[0], "")
+                stderr = ""
+            return R()
+        self.inc._git = run
+        self.inc.share(9, "it hung for a minute first")
+        self.assertIn("the evidence", sent["content"])
+        self.assertIn("it hung for a minute first", sent["content"])
+
+    def test_already_sent_is_recorded_outside_the_repository(self):
         d = self.write_diag()
         self.assertIsNone(self.inc.already_shared(d))
-        self.inc.INCIDENTS.mkdir(parents=True)
-        (self.inc.INCIDENTS / d.name).write_text("x")
-        self.assertIsNotNone(self.inc.already_shared(d))
+        self.fake_git()
+        self.inc.share(9)
+        marker = self.inc.already_shared(d)
+        self.assertIsNotNone(marker, "a sent diagnostic must be remembered")
+        self.assertTrue(str(marker).startswith(str(self.inc.DIAGNOSTICS)),
+                        "the marker belongs in the gitignored folder, not in the repository")
 
     # --- the button ---------------------------------------------------------
     def test_no_button_without_evidence(self):

@@ -24,9 +24,10 @@ Making it automatic afterwards is a small change; making a push un-happen is not
 """
 from __future__ import annotations
 
+import os
 import re
-import shutil
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,9 +45,27 @@ class ShareError(Exception):
     """Something stopped the share, said in words the Founder can act on."""
 
 
-def _git(*args: str, timeout: int = 60) -> subprocess.CompletedProcess:
+# The branch incidents are pushed to. Deliberately NOT the branch the Founder
+# works on: a commit there diverges their history from the build side's, and the
+# next `git pull` then demands a merge, opens an editor, and asks the person
+# using the app to write a commit message. That is developer work, and it was
+# being handed to the Founder as the price of pressing one button.
+INCIDENT_BRANCH = "idea-desk-incidents"
+
+# Used only when this machine's git has no identity of its own. Supplying it
+# here means a send can never fail with "Author identity unknown" — the failure
+# that stranded a staged file and blocked pulls for days.
+_FALLBACK_WHO = {"GIT_AUTHOR_NAME": "Idea Desk", "GIT_AUTHOR_EMAIL": "idea-desk@localhost",
+                 "GIT_COMMITTER_NAME": "Idea Desk", "GIT_COMMITTER_EMAIL": "idea-desk@localhost"}
+
+
+def _git(*args: str, timeout: int = 60, env: dict | None = None,
+         stdin: str | None = None) -> subprocess.CompletedProcess:
+    full = None
+    if env:
+        full = {**os.environ, **env}
     return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True,
-                          timeout=timeout)
+                          timeout=timeout, env=full, input=stdin)
 
 
 def _clean(text: str) -> str:
@@ -95,110 +114,83 @@ def preview(path: Path, limit: int = 20000) -> tuple[str, bool]:
 
 
 def already_shared(path: Path) -> Path | None:
-    """The copy in ops/incidents/, if this diagnostic was already sent. Sharing
-    twice would make two commits saying the same thing."""
-    target = INCIDENTS / path.name
-    return target if target.exists() else None
+    """Whether this diagnostic has been sent. Recorded as a marker file NEXT TO
+    the diagnostic, inside the gitignored folder — not by leaving a copy in the
+    repository, because the whole point is that a send changes nothing in the
+    Founder's working tree."""
+    marker = path.with_suffix(path.suffix + ".sent")
+    return marker if marker.exists() else None
 
 
 def share(idea_id: int, note: str = "") -> str:
-    """Copy the newest diagnostic into ops/incidents/, commit it, push it.
+    """Put the evidence on GitHub WITHOUT touching the Founder's branch.
 
-    Returns a sentence naming what happened. Raises ShareError with something
-    the Founder can act on. Never force-pushes, never touches another file, and
-    never commits anything the Founder did not ask to send."""
+    This uses git's plumbing deliberately. A normal add-commit-push would:
+      * stage a file — and a staged file that fails to commit blocks every
+        later `git pull` (it did, for days);
+      * put a commit on the Founder's branch — which diverges their history
+        from the build side's, so the next pull demands a merge and an editor.
+
+    Instead the file is turned straight into a blob, a tree is built in a
+    TEMPORARY index, a commit is made with commit-tree, and that commit is
+    pushed to its own branch. HEAD does not move. The index is untouched. The
+    working tree is untouched. `git pull` stays a fast-forward, forever.
+    """
     src = latest_for(idea_id)
     if src is None:
         raise ShareError("There is no saved evidence for this idea to send. A diagnostic file is "
                          "only written when an evaluation actually fails.")
-
-    # symbolic-ref, not rev-parse: on a branch with no commits yet, rev-parse
-    # cannot resolve HEAD and reports nothing, which read as "detached" and
-    # sent the Founder to fix a problem they did not have.
-    branch = _git("symbolic-ref", "--short", "HEAD").stdout.strip()
-    if not branch or branch == "HEAD":
-        raise ShareError("This checkout is not on a branch, so there is nowhere to push. "
-                         "Run <code>git checkout claude/orchestrator-chief-of-staff-f35grl</code> "
-                         "and try again.")
     if _git("remote", "get-url", "origin").returncode != 0:
         raise ShareError("This checkout has no <b>origin</b> remote, so there is no GitHub to send "
                          "it to.")
 
-    INCIDENTS.mkdir(parents=True, exist_ok=True)
-    target = INCIDENTS / src.name
-    fresh = not target.exists()
-    if fresh:
-        shutil.copy2(src, target)
-    # A resend must only ever ADD. Copying over an existing incident erased any
-    # note the Founder had added the first time — evidence destroyed by the very
-    # feature meant to preserve it. The diagnostic body cannot change anyway:
-    # it is written once, when the evaluation fails.
+    content = src.read_text(encoding="utf-8", errors="replace")
     if note.strip():
-        # A send that failed on setup has already appended the note, and the
-        # retry would append it again — the same sentence twice in the evidence
-        # for no reason.
-        existing = target.read_text(encoding="utf-8", errors="replace")
-        if note.strip() not in existing:
-            stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            with target.open("a", encoding="utf-8") as fh:
-                fh.write(f"\n\n----- what the Founder added, {stamp} -----\n{note.strip()}\n")
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        content += f"\n\n----- what the Founder added, {stamp} -----\n{note.strip()}\n"
 
-    rel = target.relative_to(REPO).as_posix()
-    added = _git("add", "--", rel)
-    if added.returncode != 0:
-        raise ShareError(f"Could not stage the file: {_clean(added.stderr)}")
+    blob = _git("hash-object", "-w", "--stdin", stdin=content)
+    if blob.returncode != 0:
+        raise ShareError(_explain(blob.stderr) or f"Could not store the file: {_clean(blob.stderr)}")
+    blob_sha = blob.stdout.strip()
 
-    # A pathspec on commit means ONLY this file goes, whatever else is sitting
-    # in the working tree or the index. The Founder asked to send one file.
-    subject = f"Idea Desk incident: {src.name}"
-    committed = _git("commit", "-m", subject, "--", rel)
-    if committed.returncode != 0:
-        # UNSTAGE on failure. Leaving a staged-but-uncommitted file behind made
-        # every later `git pull` abort with "your local changes would be
-        # overwritten" — the Founder hit exactly this, days after a send that
-        # failed for an unrelated reason (git had no identity yet). A failed
-        # action must leave the repository exactly as it found it; the evidence
-        # file itself stays on disk, untracked, so nothing is lost.
-        _git("restore", "--staged", "--", rel)
-        out = (committed.stdout or "") + (committed.stderr or "")
-        # Git words this several ways depending on what else is in the tree
-        # ("nothing to commit", "nothing added to commit but untracked files
-        # present", "no changes added to commit"). Matching only one of them
-        # reported a harmless resend as a failure.
-        if any(p in out for p in ("nothing to commit", "nothing added to commit",
-                                  "no changes added", "working tree clean")):
-            if not fresh:
-                return ("That evidence was already sent — nothing changed, so there was nothing new "
-                        "to commit.")
-        raise ShareError(_explain(out) or f"Could not commit the file: {_clean(out)}")
+    # Build on whatever is already on the incident branch, so incidents
+    # accumulate rather than replacing each other.
+    _git("fetch", "origin", INCIDENT_BRANCH, timeout=120)
+    parent = _git("rev-parse", "--verify", "--quiet", "FETCH_HEAD").stdout.strip()
 
-    pushed = _git("push", "origin", f"HEAD:refs/heads/{branch}", timeout=120)
-    if pushed.returncode == 0:
-        return f"Sent. <code>{rel}</code> is on GitHub, on branch <b>{branch}</b>."
-    # NOTE: past this point the commit exists locally. That is not the same
-    # hazard as a staged file — a commit does not block a pull — and undoing it
-    # would throw away evidence the Founder asked to keep. It stays.
-    told = _explain((pushed.stderr or "") + (pushed.stdout or ""))
-    if told:
-        # A sign-in problem is not a diverged branch. Rebasing would not help,
-        # and doing it anyway would rewrite the Founder's history for nothing.
-        raise ShareError(told)
+    with tempfile.TemporaryDirectory() as tmp:
+        env = {"GIT_INDEX_FILE": str(Path(tmp) / "index")}
+        if parent:
+            read = _git("read-tree", parent, env=env)
+            if read.returncode != 0:
+                raise ShareError(f"Could not read the incident branch: {_clean(read.stderr)}")
+        upd = _git("update-index", "--add", "--cacheinfo",
+                   f"100644,{blob_sha},ops/incidents/{src.name}", env=env)
+        if upd.returncode != 0:
+            raise ShareError(f"Could not prepare the file: {_clean(upd.stderr)}")
+        tree = _git("write-tree", env=env)
+        if tree.returncode != 0:
+            raise ShareError(f"Could not prepare the file: {_clean(tree.stderr)}")
+        tree_sha = tree.stdout.strip()
 
-    # Someone else pushed first. Rebase onto them and try once more — never
-    # force, which would discard whatever they pushed.
-    rebased = _git("pull", "--rebase", "--autostash", "origin", branch, timeout=120)
-    if rebased.returncode != 0:
-        raise ShareError(
-            "The file is committed here, but GitHub has changes this checkout does not, and they "
-            "could not be merged automatically. Nothing was lost and nothing was overwritten. "
-            f"Run <code>git pull --rebase</code> then <code>git push</code>.<br><br>"
-            f"Git said: {_clean(rebased.stderr or rebased.stdout)}")
+    args = ["commit-tree", tree_sha, "-m", f"Idea Desk incident: {src.name}"]
+    if parent:
+        args += ["-p", parent]
+    made = _git(*args, env=_FALLBACK_WHO)
+    if made.returncode != 0:
+        raise ShareError(_explain(made.stderr) or f"Could not record it: {_clean(made.stderr)}")
+    commit_sha = made.stdout.strip()
 
-    pushed = _git("push", "origin", f"HEAD:refs/heads/{branch}", timeout=120)
+    pushed = _git("push", "origin", f"{commit_sha}:refs/heads/{INCIDENT_BRANCH}", timeout=120)
     if pushed.returncode != 0:
         out = (pushed.stderr or "") + (pushed.stdout or "")
         raise ShareError(_explain(out) or (
-            "The file is committed here but the push was refused. Nothing was lost — running "
-            f"<code>git push</code> yourself will send it.<br><br>"
+            "GitHub refused the push. <b>Nothing on your machine changed</b> &mdash; your branch, "
+            "your files and your history are exactly as they were.<br><br>"
             f"Git said: {_clean(out)}"))
-    return f"Sent. <code>{rel}</code> is on GitHub, on branch <b>{branch}</b>."
+
+    (src.with_suffix(src.suffix + ".sent")).write_text(commit_sha, encoding="utf-8")
+    return (f"Sent. <code>ops/incidents/{src.name}</code> is on GitHub, on branch "
+            f"<b>{INCIDENT_BRANCH}</b>.<br><br>Your own branch was not touched &mdash; nothing to "
+            "merge, nothing to commit, and <code>git pull</code> still just works.")
