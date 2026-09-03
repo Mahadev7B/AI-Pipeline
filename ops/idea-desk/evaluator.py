@@ -666,13 +666,20 @@ describe what to write, they are not text to reuse.
     "10": ["How will we know we succeeded?",          "<<your working, section 14>>"]
   },
   "view": {
-    "opp":    "High" | "Medium" | "Low" | "Unclear",
+    "opp":    "High" | "Medium" | "Low" | "Unclear"  — this rates THE PROBLEM, never the
+              architecture the company happened to choose. See the rule below,
+
     "why":    "two to four sentences",
     "merit":  "the single biggest merit",
-    "threat": "the single biggest threat",
+    "threat": "the single biggest threat, and WHAT IT THREATENS: write 'to the opportunity:' if it "
+              "would sink any version of this idea, or 'to this approach:' if it would only sink "
+              "the one we chose",
     "diff":   "what makes the DESIGNED solution better than the obvious version of this idea — the "
-              "approach the company chose and what it beats. 'none we can see yet' only if the "
-              "company genuinely found no better approach than the obvious one",
+              "approach the company chose and what it beats. SAY WHOSE IT IS: if this is the "
+              "Founder's own distinctive idea, say so; if the company replaced it, say that "
+              "plainly and in the same breath say what the Founder's was and why ours is being "
+              "recommended instead. 'none we can see yet' only if the company genuinely found no "
+              "better approach than the obvious one",
     "rec":    "Proceed" | "Proceed with narrowed scope" | "Investigate first" | "Reconsider"
   },
   "changed": "what changed since the previous round — omit entirely if this is round 1"
@@ -777,6 +784,33 @@ Rules that are easy to get wrong, and matter:
 {COMMON_RULES}
 THE COMPANY VIEW is a judgement, not a score. No numbers, no percentages, no
 confidence figures, no meters. Six fields, exactly the six.
+
+FOUR JUDGEMENTS THAT MUST NOT BE COLLAPSED INTO ONE. The Company View grades
+THE FOUNDER'S IDEA, not the architecture the company happened to pick:
+
+  1. Is the problem worth solving?          -> this is what "opp" rates.
+  2. Are there several credible ways at it?  -> solution space.
+  3. Which one do we recommend?              -> answers 5 and 7.
+  4. What could kill THAT ONE?               -> "threat", labelled as such.
+
+A risk to the architecture WE chose is not a verdict on the Founder's idea. The
+failure to avoid, seen in a real round: the company invented a tactic, called
+that tactic "the entire differentiator", found a legal risk in it, and lowered
+the opportunity to Medium — grading its own invention while appearing to grade
+the Founder's idea. If a blocker only threatens the approach we picked, and
+other credible approaches were not explored, "opp" does not move. Say instead
+that this approach is at risk and name what else remains open.
+
+AND IF WE REPLACED THE FOUNDER'S THESIS, SAY SO IN ONE PLAIN SENTENCE, in
+"diff", with the bridge: what theirs was, that we took it seriously, and why
+ours is recommended instead. Improving or replacing their implementation is
+your job. Doing it silently, so the Company View describes a different product
+than the one they brought in, is not.
+
+CHECK THE VIEW AGAINST ITSELF before you finish. If "merit" says a signal is
+weak evidence and the recommended approach relies on that same signal, you have
+contradicted yourself — say the trade out loud rather than presenting the
+replacement as though it solved the problem you just named.
 
 Your recommendation is the one thing on this page with consequences: it decides
 whether the Founder is even offered the choice to approve. There is no
