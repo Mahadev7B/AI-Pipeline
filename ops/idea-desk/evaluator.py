@@ -998,15 +998,24 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                     _note(idea_id, ROLE_LABEL[role], "Could not answer.")
 
             stage = "designing a direction"
-            # The roles with no dependency on each other still run alongside.
-            with concurrent.futures.ThreadPoolExecutor(max_workers=(len(others) or 1)) as pool:
-                side = [pool.submit(_run, r) for r in others]
-                for role in builders:                      # sequential, by design
-                    _run(role, "\n\n".join(
-                        f"--- {ROLE_LABEL[r]} said ---\n{said_by[r]}"
-                        for r in builders if r in said_by))
-                for f in side:
+            # Product and Design have no dependency on each other: one states
+            # the outcome, the other the lowest-friction experience, and both
+            # read the same raw idea. Running them one after the other cost the
+            # Founder a whole model call of waiting for nothing. The CTO still
+            # runs LAST and sees both, which is the dependency that actually
+            # matters — an architecture that has not seen the outcome or the
+            # intended experience is a guess.
+            first = [r for r in builders if r != "cto"]
+            last = [r for r in builders if r == "cto"]
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=(len(others) + len(first)) or 1) as pool:
+                running = [pool.submit(_run, r) for r in others + first]
+                for f in running:
                     f.result()
+            for role in last:
+                _run(role, "\n\n".join(
+                    f"--- {ROLE_LABEL[r]} said ---\n{said_by[r]}"
+                    for r in builders if r in said_by))
             if failed:
                 raise failed[0]
             for role in chosen:
