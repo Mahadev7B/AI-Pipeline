@@ -27,6 +27,8 @@ OPSDB = REPO / "ops" / "db" / "opsdb.py"
 sys.path.insert(0, str(HERE))
 import pages  # noqa: E402
 import evaluator  # noqa: E402
+# AFTER evaluator: importing it is what puts ops/control-center on the path.
+import agent_runtime  # noqa: E402
 
 
 class Sanitiser(unittest.TestCase):
@@ -602,6 +604,56 @@ class AnswerShape(unittest.TestCase):
         with self.assertRaises(evaluator.EvaluationError):
             evaluator._validate({"evaluation": {"answers": self.ten(),
                                                 "view": {**self.VIEW, "rec": "Ship it"}}})
+
+
+class TimeoutOnWindows(unittest.TestCase):
+    """The timeout handler itself crashed on Windows. os.killpg does not exist
+    there, so a plain "the agent took too long" became an AttributeError and a
+    traceback in the Founder's face — the error path failing louder than the
+    error it was reporting."""
+
+    def test_the_kill_path_does_not_assume_posix(self):
+        import agent_runtime, os as _os
+        killed = []
+
+        class FakeProc:
+            pid = 4321
+            args = ["claude.CMD"]
+            def kill(self): killed.append(True)
+
+        real = getattr(_os, "killpg", None)
+        try:
+            if hasattr(_os, "killpg"):
+                del _os.killpg                      # pretend to be Windows
+            self.assertTrue(agent_runtime._kill_process_group(FakeProc()))
+            self.assertEqual(killed, [True], "it must fall back to killing the process")
+        finally:
+            if real is not None:
+                _os.killpg = real
+
+    def test_the_synthesis_gets_longer_than_a_role_reading(self):
+        import agent_runtime
+        self.assertGreater(agent_runtime.IDEA_SYNTHESIS_TIMEOUT_S,
+                           agent_runtime.IDEA_EVALUATION_TIMEOUT_S,
+                           "the synthesis reads everything and writes the most; 180s lost a "
+                           "complete five-agent evaluation")
+
+    def test_the_synthesis_actually_asks_for_that_timeout(self):
+        # No blanket except here. Swallowing the exception made this test pass
+        # over a KeyError in its own fixture, asserting nothing.
+        seen = {}
+        saved = evaluator._invoke
+        try:
+            evaluator._invoke = lambda *a, **k: seen.update(k) or "{}"
+            evaluator._synthesise(
+                {"raw_idea": "x", "current_raw": "x"}, [], None,
+                {"depth": "Light", "depth_reason": "internal", "in": [["product", "w"]],
+                 "out": []},
+                [("product", "said")], 1)
+        finally:
+            evaluator._invoke = saved
+        self.assertEqual(seen.get("timeout_s"), agent_runtime.IDEA_SYNTHESIS_TIMEOUT_S)
+        self.assertEqual(seen.get("budget"), agent_runtime.IDEA_SYNTHESIS_BUDGET_USD)
 
 
 class LateRosterAddition(unittest.TestCase):

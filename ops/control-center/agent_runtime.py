@@ -126,6 +126,13 @@ IDEA_EVALUATION_ACTIVITY_LIKE = "Idea evaluation:%"
 # question, so it needs longer than DEFAULT_TIMEOUT_S. Measured against
 # REVIEW_TIMEOUT_S (120s), which is the closest existing comparable.
 IDEA_EVALUATION_TIMEOUT_S = 180.0
+# The final synthesis reads every role's full reading, the Red Team's attack,
+# the repair, and any late addition — then writes the largest output in the
+# system. On a Full-depth idea with five voices that does not fit in 180s, and
+# the Founder lost a complete five-agent evaluation to exactly that. Its own
+# ceiling, so a slow synthesis does not discard work the rest of the pipeline
+# already did.
+IDEA_SYNTHESIS_TIMEOUT_S = 600.0
 CHIEF_OF_STAFF_ACTIVITY_LABEL = "Chief of Staff: answering a Founder question"
 CHIEF_OF_STAFF_ACTIVITY_LIKE = "Chief of Staff:%"
 
@@ -391,7 +398,11 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             env=os.environ.copy(),       # explicit, reviewable — not implicit inheritance
-            start_new_session=True,      # own process group, so a timeout can kill the whole tree
+            # Own process group, so a timeout can kill the whole tree.
+            # start_new_session is POSIX-only and silently does nothing on
+            # Windows; CREATE_NEW_PROCESS_GROUP is that platform's equivalent.
+            **({"start_new_session": True} if hasattr(os, "killpg") else
+               {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}),
             # The agent definitions live in the repository's .claude/agents/,
             # and the CLI discovers them relative to its working directory.
             # Without this, `--agent orchestrator` resolves only when the
@@ -491,6 +502,18 @@ def _kill_process_group(proc: subprocess.Popen) -> bool:
     Existing callers may ignore the return value (nothing changes for them);
     launch_developer_session.py's timeout backstop uses it.
     """
+    # WINDOWS: os.killpg and os.getpgid do not exist there. Calling them raised
+    # AttributeError from inside the timeout handler, so a plain "the agent took
+    # too long" turned into a crash and a traceback in the Founder's face — the
+    # error path failing louder than the error. Kill the process directly
+    # instead; Popen.kill() is TerminateProcess, which is the platform's own
+    # answer, and CREATE_NEW_PROCESS_GROUP (set at spawn) keeps it contained.
+    if not hasattr(os, "killpg"):
+        try:
+            proc.kill()
+            return True
+        except OSError:
+            return True  # already gone — the desired end state either way
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         return True

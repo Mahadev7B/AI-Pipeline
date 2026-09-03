@@ -211,10 +211,10 @@ def spend_for(idea_id: int) -> tuple[float | None, int]:
 
 
 def _invoke(agent: str, transcript: str, idea_id: int | None = None,
-            budget: str | None = None) -> str:
+            budget: str | None = None, timeout_s: float | None = None) -> str:
     result = agent_runtime.invoke_agent(
         agent, transcript,
-        timeout_s=agent_runtime.IDEA_EVALUATION_TIMEOUT_S,
+        timeout_s=timeout_s or agent_runtime.IDEA_EVALUATION_TIMEOUT_S,
         wait_for_slot=True,
         max_budget_usd=budget)
     _record_spend(idea_id, agent, result)
@@ -740,7 +740,8 @@ This is round {round_no}.{" Say what changed since the last round — the Founde
     # The one call that gets its own budget: it reads every role's reading, the
     # attack and the repair, and writes the largest output in the system.
     return _invoke("orchestrator", transcript, idea_id,
-                   budget=agent_runtime.IDEA_SYNTHESIS_BUDGET_USD)
+                   budget=agent_runtime.IDEA_SYNTHESIS_BUDGET_USD,
+                   timeout_s=agent_runtime.IDEA_SYNTHESIS_TIMEOUT_S)
 
 
 DIAGNOSTICS = HERE / "diagnostics"
@@ -820,7 +821,8 @@ def _parse_with_one_repair(raw: str, idea_id: int | None, contract: str, stage: 
     _note(idea_id, "Chief of Staff", "That answer came back misformatted — asking for it again in "
                                      "the right shape. No rethinking, no extra reading.")
     raw_repair = _invoke("orchestrator", REPAIR_INSTRUCTION + raw + "\n\n" + contract, idea_id,
-                         budget=agent_runtime.IDEA_SYNTHESIS_BUDGET_USD)
+                         budget=agent_runtime.IDEA_SYNTHESIS_BUDGET_USD,
+                         timeout_s=agent_runtime.IDEA_SYNTHESIS_TIMEOUT_S)
     # Recorded BEFORE parsing it. Recording it only on success would throw away
     # the evidence in the one case anyone needs it — the repair that failed.
     if evidence is not None:
