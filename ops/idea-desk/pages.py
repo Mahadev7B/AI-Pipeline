@@ -417,7 +417,7 @@ def _lifecycle(i: dict) -> tuple[str, str, str, str]:
         return ("working", "Didn't finish",
                 "The last reading failed. Nothing was saved, and your idea and its history are "
                 "untouched.",
-                "Retry evaluation")
+                "Ask the company to read it again")
     if i["status"] == "approved":
         return ("working", "Approved",
                 "You approved this brief. Nothing is being built yet.",
@@ -453,7 +453,8 @@ def _lifecycle(i: dict) -> tuple[str, str, str, str]:
 
 
 NEXT_HREF = {
-    "Retry evaluation": "/evaluate/{id}", "Ask the company to read it": "/evaluate/{id}",
+    "Ask the company to read it again": "/evaluate/{id}",
+    "Ask the company to read it": "/evaluate/{id}",
     "Correct us": "/correct/{id}", "Approve the brief": "/approve/{id}",
     "Reopen": "/idea/{id}", "Start work": "/idea/{id}",
     "Authorise the investigation": "/investigate/{id}",
@@ -873,10 +874,17 @@ def _action_bar(idea, shown, token: str) -> str:
         why = (f'<b style="color:var(--text2)">No Approve on this round.</b> The company\'s own '
                f'recommendation is <b style="color:var(--text2)">{e(rec)}</b>, so there is nothing '
                f'to approve yet. Correct us, or narrow the idea, and let it read again.')
+    # "Read it again" was missing entirely. Once an idea had been read, the
+    # only route to another reading was "Correct us", which requires writing
+    # what the company got wrong. Sometimes there is nothing to correct and you
+    # simply want it looked at again — after the company itself changed, or
+    # because the first read was thin. The capability already existed at
+    # /evaluate/<id>; nothing offered it.
     return f"""<div class="bar"><div class="bar-in">
       <span class="why">{why}</span>
       <a class="btn ghost" href="/close/{idea['id']}">Not building this</a>
       <a class="btn" href="/edit/{idea['id']}">Edit my idea</a>
+      <a class="btn" href="/evaluate/{idea['id']}">Read it again</a>
       <a class="btn" href="/correct/{idea['id']}">Correct us</a>
       {approve}</div></div>"""
 
