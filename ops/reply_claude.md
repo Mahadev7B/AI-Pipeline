@@ -4,6 +4,155 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-03 — Company View correction: do not let an agent-invented differentiator redefine the opportunity
+
+The Founder reviewed the **Company view** from the latest medication evaluation and sees a deeper synthesis problem that should be corrected in future Idea Desk runs.
+
+The Company view says:
+
+> “the differentiator and the biggest risk are the same thing: telling another person you missed a dose.”
+
+That is a coherent description of the company’s **chosen social-accountability architecture**, but it is not a neutral description of the Founder’s original product opportunity. The Founder’s distinctive insight was physical/action evidence: a reminder should know whether the person actually interacted with the medication, rather than merely whether a notification was delivered or a button was tapped.
+
+### 1. Do not silently promote an internally invented tactic into “the differentiator”
+
+The evaluation moved through this chain:
+
+`Founder insight: notification is not evidence of action`
+
+→ company invents social escalation
+
+→ company calls social escalation “the entire differentiator”
+
+→ company rates the opportunity Medium because that internally invented differentiator may be legally constrained.
+
+That is too much conceptual drift.
+
+A company is allowed — and expected — to improve or even replace the Founder’s proposed implementation. But if it changes the **product thesis**, the synthesis must say so explicitly and justify the change.
+
+For example:
+
+> “The Founder’s original differentiator is physical evidence of medication interaction. We considered that seriously. We are recommending social accountability instead because A/B/C evidence shows physical sensing is inferior on user friction, feasibility and market opportunity.”
+
+Without that explicit bridge, the Company view can end up grading a different idea from the one the Founder brought in.
+
+### 2. There is an internal contradiction in the current Company view
+
+The evaluation correctly says, under **Biggest merit**, that the Founder’s cap instinct identified a real problem because:
+
+> a tap on a screen proves nothing.
+
+But the chosen “Best differentiation” then returns to a lock-screen **Taken / Not yet tap** and makes social escalation the main mechanism.
+
+In simplified form:
+
+`diagnosis: a tap is weak evidence`
+
+`chosen product: use a tap, then add social pressure`
+
+That may still be a useful architecture, but it does **not** solve the evidence problem the company itself identified. The Company view should surface that trade honestly rather than present the replacement as though it preserved the same differentiator.
+
+### 3. Do not manufacture a single point of failure and then use it to downgrade the whole opportunity
+
+The company says legal restrictions on third-party escalation could “kill” the project because escalation is “the entire differentiator.” But escalation became load-bearing only because the company chose to make it load-bearing.
+
+That creates a bad evaluation pattern:
+
+`choose one architecture → make one feature essential → discover that feature is risky → lower the opportunity rating`
+
+Instead, separate these judgments:
+
+- **Problem / outcome opportunity:** is there a meaningful unmet need around missed doses, uncertain doses, and evidence of medication interaction?
+- **Solution-space quality:** are there multiple credible ways to address it?
+- **Recommended architecture:** which solution currently looks strongest?
+- **Architecture-specific blocker:** what could kill this particular implementation?
+
+A blocker to one architecture should not automatically become a blocker to the underlying opportunity when other credible architectures remain unexplored.
+
+### 4. “Reminders that carry no consequence” is not the same problem framing as the Founder’s
+
+The current Company view reframes the gap as:
+
+> reminders that carry no consequence.
+
+That pushes the product toward **pressure / accountability**.
+
+The Founder’s framing is closer to:
+
+> reminders that are not aware of whether the real-world action occurred.
+
+That pushes the product toward **action-awareness / evidence**.
+
+Those are different product philosophies:
+
+`social-accountability framing: no response → increase pressure`
+
+`action-aware framing: no physical evidence → continue helping / escalate appropriately`
+
+The company should be very careful when changing an outcome-level framing, because every later architecture choice follows from it.
+
+### 5. “Connected cap = nine months and a different company” is too broad unless the tournament and research prove it
+
+That statement may be reasonable for **designing, manufacturing, certifying and supporting a custom connected medical cap from scratch**.
+
+It does not establish that **physical sensing generally** is a nine-month hardware-company commitment.
+
+CTO and market research must distinguish at least:
+
+- custom manufactured smart cap,
+- existing commercial smart-cap integration,
+- off-the-shelf BLE sensor,
+- reusable retrofit sensor,
+- Hall/magnetic open-close sensing,
+- accelerometer / rotation sensing,
+- NFC interaction,
+- smart pillbox / compartment sensing,
+- weight or presence sensing,
+- hybrid automatic + manual evidence.
+
+The architecture tournament should determine whether physical sensing is actually impractical before the Company view writes it off as a different company.
+
+### 6. Opportunity rating should survive architecture changes
+
+A useful Company view should be able to say something like:
+
+> **Opportunity: Medium–High, pending market research and evidence-sensing feasibility.** The underlying gap is between digital reminders and trustworthy evidence of real-world medication interaction. Several architecture classes may address it. Social escalation is one candidate, not the definition of the opportunity.
+
+Then separately:
+
+> **Current recommended architecture:** [X]
+
+> **Biggest architecture-specific threat:** [Y]
+
+That prevents the opportunity score from being held hostage by whichever implementation happened to win one internal round.
+
+### 7. Add a synthesis check before writing the Company view
+
+Before Chief of Staff writes **Opportunity / Biggest merit / Biggest threat / Best differentiation / Recommendation**, it should explicitly verify:
+
+1. What was the Founder’s original core insight?
+2. What is the company’s improved product thesis?
+3. Are those still the same thesis?
+4. If not, why did the company change it?
+5. Did CTO seriously explore architectures that preserve the original insight?
+6. Did market research broadly test both the Founder’s direction and the company’s alternative?
+7. Is the stated “biggest threat” a threat to the **opportunity**, or only to the **chosen architecture**?
+8. Does “Best differentiation” actually solve the problem described under “Biggest merit,” or did the company quietly substitute a different mechanism?
+
+If those cannot be answered cleanly, the Company view is converging too early.
+
+### Desired standard
+
+The strongest version of this Company view would say something closer to:
+
+> **The opportunity is not simply better medication reminders or notifying a family member. The opportunity is closing the gap between a digital reminder and evidence that a real-world medication interaction occurred. We evaluated multiple ways of obtaining that evidence and multiple ways of responding when it is absent. Here is the architecture that survived, why it beat the others, and what still has to be proven.**
+
+That is the standard the Founder wants: improve the idea aggressively, but do not lose track of which problem and differentiator are being evaluated.
+
+This is additional Founder product-direction feedback for the Idea Desk synthesis behavior. It reinforces the prior directions on **invent first → challenge → improve**, architecture tournaments, and broad market research. It is not authorization to bypass any standing approval, privacy, review, or production gates.
+
+---
+
 ## 2026-09-03 — Founder feedback: preserve the physical-sensing insight, and make market research broad enough to challenge the whole solution space
 
 The Founder compared the latest **Proof-of-dose medication reminder** evaluation with an independent ChatGPT evaluation. The latest company run is materially better than the earlier Idea Desk behavior — it generated alternatives, dynamically brought Security in, and resolved more forks internally — but the Founder wants one important correction in how the company protects the core insight of an idea while transforming it.
