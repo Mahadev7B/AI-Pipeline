@@ -457,6 +457,33 @@ class SharingEvidence(unittest.TestCase):
         self.assertEqual(len(pushes), 2, "one retry, not a loop")
         self.assertTrue(any(a[0] == "pull" and "--rebase" in a for a in self.ran))
 
+    def test_a_failed_commit_leaves_nothing_staged(self):
+        # A staged-but-uncommitted file reads to git as "your local changes",
+        # and aborts every later pull. The Founder hit exactly this, days after
+        # a send that failed because git had no identity yet.
+        self.write_diag()
+        def run(*args, timeout=60, **kw):
+            self.ran.append(args)
+            class R:
+                returncode = 1 if args[0] == "commit" else 0
+                stdout = "claude/orchestrator-chief-of-staff-f35grl" if args[0] == "symbolic-ref" else ""
+                stderr = "Author identity unknown" if args[0] == "commit" else ""
+            return R()
+        self.inc._git = run
+        with self.assertRaises(self.inc.ShareError):
+            self.inc.share(9)
+        restores = [a for a in self.ran if a[0] == "restore" and "--staged" in a]
+        self.assertTrue(restores, "a failed commit must unstage what it staged")
+        # The path is relative to the repo root, which under test is a tmp dir.
+        self.assertTrue(restores[0][-1].endswith("idea-9-20260902T195129Z.txt"))
+
+    def test_a_successful_commit_leaves_nothing_to_unstage(self):
+        self.write_diag()
+        self.fake_git()
+        self.inc.share(9)
+        self.assertFalse([a for a in self.ran if a[0] == "restore"],
+                         "nothing to undo when the commit worked")
+
     def test_a_failed_push_says_nothing_was_lost(self):
         self.write_diag()
         self.fake_git(push=1, pull=1)

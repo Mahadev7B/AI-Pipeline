@@ -153,6 +153,13 @@ def share(idea_id: int, note: str = "") -> str:
     subject = f"Idea Desk incident: {src.name}"
     committed = _git("commit", "-m", subject, "--", rel)
     if committed.returncode != 0:
+        # UNSTAGE on failure. Leaving a staged-but-uncommitted file behind made
+        # every later `git pull` abort with "your local changes would be
+        # overwritten" — the Founder hit exactly this, days after a send that
+        # failed for an unrelated reason (git had no identity yet). A failed
+        # action must leave the repository exactly as it found it; the evidence
+        # file itself stays on disk, untracked, so nothing is lost.
+        _git("restore", "--staged", "--", rel)
         out = (committed.stdout or "") + (committed.stderr or "")
         # Git words this several ways depending on what else is in the tree
         # ("nothing to commit", "nothing added to commit but untracked files
@@ -168,6 +175,9 @@ def share(idea_id: int, note: str = "") -> str:
     pushed = _git("push", "origin", f"HEAD:refs/heads/{branch}", timeout=120)
     if pushed.returncode == 0:
         return f"Sent. <code>{rel}</code> is on GitHub, on branch <b>{branch}</b>."
+    # NOTE: past this point the commit exists locally. That is not the same
+    # hazard as a staged file — a commit does not block a pull — and undoing it
+    # would throw away evidence the Founder asked to keep. It stays.
     told = _explain((pushed.stderr or "") + (pushed.stdout or ""))
     if told:
         # A sign-in problem is not a diverged branch. Rebasing would not help,
