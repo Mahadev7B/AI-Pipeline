@@ -242,10 +242,20 @@ def _idea_block(idea: dict, rounds: list[dict], founder_note: str | None) -> str
     ]
     if idea.get("current_raw") and idea["current_raw"] != idea["raw_idea"]:
         lines += ["", "THEY HAVE SINCE REWORDED IT TO:", f'"""{idea["current_raw"]}"""']
-    if idea.get("current_audience"):
-        lines += ["", f"WHO IT IS FOR: {idea['current_audience']}"]
-    if idea.get("current_trigger"):
-        lines += [f"WHAT PROMPTED IT: {idea['current_trigger']}"]
+    # The old "WHO IT IS FOR" and "WHAT PROMPTED IT" lines are deliberately
+    # gone. They were presented to every agent as if they were specification,
+    # so a word typed in passing became load-bearing: "the public" in a
+    # secondary box produced a roster that declared the idea was for the
+    # public, and Product then spent its reading narrowing that word instead of
+    # the idea. Working out who it is for is the company's job — Product is
+    # asked for exactly that. An answer the Founder gave in one word is not
+    # evidence, and treating it as evidence crowded out the actual thinking.
+    if idea.get("current_audience") or idea.get("current_trigger"):
+        aside = "; ".join(x for x in (idea.get("current_audience"),
+                                      idea.get("current_trigger")) if x)
+        lines += ["", "The Founder once jotted this alongside the idea, in a box the app no "
+                      "longer asks for. It is a hint, NOT a specification, and it does not "
+                      f"constrain who this is for or what it must be: {aside}"]
     if rounds:
         last = rounds[-1]
         lines += ["", f"THIS IS ROUND {len(rounds) + 1}. Your previous round recommended "

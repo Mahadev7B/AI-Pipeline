@@ -532,8 +532,13 @@ def list_page(ideas: list, build: str = "") -> bytes:
 def new_page(token: str, idea=None) -> bytes:
     editing = idea is not None
     raw = e(idea["current_raw"]) if editing else ""
-    aud = e(idea["current_audience"]) if editing else ""
-    trg = e(idea["current_trigger"]) if editing else ""
+    # "Who is it for" and "what made you think of it" used to be asked here and
+    # sent to every agent as specification. A one-word answer typed in passing
+    # became load-bearing: "the public" in that box produced a roster note
+    # saying the idea was for the public, and then Product spent its reading
+    # narrowing that word rather than the idea. Working out who it is for is
+    # the company's job, not a form field. The columns stay for ideas that
+    # already have them; nothing new is collected.
     action = f"/api/edit/{idea['id']}" if editing else "/api/create"
     cancel = f"/idea/{idea['id']}" if editing else "/"
     lead = ("Your original words from before stay on record. This edit is stored beside them, "
@@ -550,14 +555,6 @@ def new_page(token: str, idea=None) -> bytes:
           placeholder="the current UI so much verbose, it should be as simple as a dashboard&hellip;"
           >{raw}</textarea>
         <div class="hint">Stored exactly as typed, and never edited by the company.</div></div>
-      <div class="two">
-        <div class="field"><label for="aud">Who is it for?
-          <span style="color:var(--text3);font-weight:400">optional</span></label>
-          <input id="aud" name="audience" value="{aud}" placeholder="me &middot; my team &middot; the public"></div>
-        <div class="field"><label for="trg">What made you think of it?
-          <span style="color:var(--text3);font-weight:400">optional</span></label>
-          <input id="trg" name="trigger" value="{trg}" placeholder="a moment, a complaint, something you could not find"></div>
-      </div>
       <div class="actions">
         <button class="btn primary" type="submit">{'Save the edit' if editing else 'Save idea'}</button>
         <a class="btn ghost" href="{cancel}">Cancel</a>
