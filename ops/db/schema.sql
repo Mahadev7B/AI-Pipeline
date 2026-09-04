@@ -112,6 +112,19 @@ CREATE TABLE IF NOT EXISTS agent_runs (
     (scope_type = 'company' AND scope_id IS NULL) OR
     (scope_type != 'company' AND scope_id IS NOT NULL)
   )
+  -- TASK-020 (Milestone B), CTO's architecture doc §1.1/§1.2: cost_usd
+  -- (nullable REAL, no CHECK constraint — identical shape to
+  -- automation_events.cost_usd) is added by ops/db/opsdb.py's
+  -- cmd_init()/_apply_additive_column_migrations(), not as a raw ALTER
+  -- TABLE statement here — same reasoning as handoffs.base_commit_sha/
+  -- head_commit_sha above: SQLite's ALTER TABLE ADD COLUMN has no "IF NOT
+  -- EXISTS" form, so a plain ALTER TABLE statement in this executescript'd
+  -- file would fail the second time `init` runs against an
+  -- already-migrated database, breaking this command's own documented
+  -- idempotency. NULL means either "this run predates cost tracking"
+  -- (backfilled by the ALTER TABLE itself) or "the invocation failed
+  -- before producing a real total_cost_usd" — both honest, both distinct
+  -- from a genuine $0.00, never fabricated. See ops/DATA_MODEL.md.
 );
 CREATE INDEX IF NOT EXISTS idx_runs_agent_open ON agent_runs(agent_id, ended_at);
 
@@ -224,6 +237,17 @@ CREATE TABLE IF NOT EXISTS handoffs (
   known_limitations         TEXT,
   receiving_agent_checklist TEXT,
   created_at                TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+  -- Phase 3A Part B (TASK-015), §B.13: base_commit_sha/head_commit_sha
+  -- (nullable TEXT, no CHECK constraint) are added by
+  -- ops/db/opsdb.py's cmd_init()/_apply_additive_column_migrations(),
+  -- not as a raw ALTER TABLE statement here. SQLite's ALTER TABLE ADD
+  -- COLUMN has no "IF NOT EXISTS" form, so a plain ALTER TABLE statement
+  -- in this executescript'd file would fail the second time `init` runs
+  -- against an already-migrated database, breaking this command's own
+  -- documented idempotency. opsdb.py checks PRAGMA table_info(handoffs)
+  -- first and only ALTERs if the column is genuinely missing -- same
+  -- additive, no-rebuild-and-copy migration the architecture doc calls
+  -- for, just applied idempotently. See ops/DATA_MODEL.md.
 );
 CREATE INDEX IF NOT EXISTS idx_handoffs_task ON handoffs(task_id);
 
@@ -266,3 +290,243 @@ CREATE TABLE IF NOT EXISTS deployments (
   deployed_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   CHECK (founder_authorized = 1)
 );
+
+-- Phase 3A Part B (TASK-015): the automation poller's single automatic-
+-- audit record. See ops/reviews/cto-phase3a-architecture.md §B.3
+-- (corrected per Red Team's NB5: idx_automation_events_status and
+-- idx_automation_events_started, added alongside the original
+-- idx_automation_events_task -- both automation.py's own caps/spend-guard
+-- queries and /automation.html's "what is running right now" query filter
+-- on status/started_at; not a real performance concern at this project's
+-- actual scale, added for cheap completeness/consistency).
+-- `trigger_status_history_id UNIQUE` is the load-bearing, DB-enforced
+-- idempotency guarantee (Founder's control #5) -- the specific
+-- task_status_history row recording "this task entered CODE_REVIEW" can
+-- be claimed by exactly one automation_events row, ever.
+CREATE TABLE IF NOT EXISTS automation_events (
+  id                        INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id                   INTEGER NOT NULL REFERENCES tasks(id),
+  trigger_status_history_id INTEGER NOT NULL UNIQUE
+                             REFERENCES task_status_history(id),
+  status        TEXT NOT NULL DEFAULT 'running'
+                CHECK (status IN ('running','completed','failed','skipped')),
+  outcome       TEXT CHECK (outcome IN ('pass','reject','error','interrupted','capped',NULL)),
+  review_result_id INTEGER REFERENCES review_results(id),
+  agent_run_id      INTEGER REFERENCES agent_runs(id),
+  cost_usd          REAL,
+  truncated         INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0,1)),
+  skip_reason       TEXT,
+  started_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  ended_at          TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_automation_events_task ON automation_events(task_id);
+CREATE INDEX IF NOT EXISTS idx_automation_events_status ON automation_events(status);
+CREATE INDEX IF NOT EXISTS idx_automation_events_started ON automation_events(started_at);
+
+-- Phase 3A Part B (TASK-015): single-row kill-switch state. §B.4.
+-- enabled=0 by default, seeded here at schema-apply time -- automation
+-- does not run until the Founder deliberately turns it on once (the same
+-- fail-closed-by-default discipline founder_auth.py's "setup required"
+-- 503 already established). The only function permitted to write this
+-- table is opsdb.set_automation_enabled(), called only by the two new
+-- CSRF+session-gated routes (POST /api/automation/stop, /start) -- never
+-- by the poller itself, never by any agent invocation.
+CREATE TABLE IF NOT EXISTS automation_state (
+  id           INTEGER PRIMARY KEY CHECK (id = 1),   -- exactly one row, ever
+  enabled      INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1)),
+  changed_by   TEXT NOT NULL DEFAULT 'system',
+  reason       TEXT,
+  changed_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+INSERT OR IGNORE INTO automation_state (id, enabled, changed_by, reason)
+  VALUES (1, 0, 'system', 'Phase 3A shipped disabled by default — Founder must explicitly enable it.');
+
+-- TASK-017 (risks.id=3 reduction milestone): the audit record for the
+-- three new synchronous, human-triggered reviewer routes (POST
+-- /api/tasks/<id>/review/{code,security,red-team}). Deliberately NOT a
+-- new column on automation_events -- that table's
+-- trigger_status_history_id UNIQUE constraint is a load-bearing,
+-- deliberate idempotency guarantee for the poller's "claim exactly once,
+-- unattended" model; forcing a human-repeatable "run this review again"
+-- action through that constraint would either block a legitimate re-run
+-- or require weakening a guarantee Red Team's own Phase 3A review
+-- required be strict. A second, small, structurally distinct table, same
+-- start/end-row shape this codebase already uses four times over
+-- (automation_events, agent_runs, qa_results, review_results) -- see
+-- ops/reviews/cto-risk3-milestone-architecture.md §1.4.
+CREATE TABLE IF NOT EXISTS reviewer_invocations (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id           INTEGER NOT NULL REFERENCES tasks(id),
+  review_kind       TEXT NOT NULL CHECK (review_kind IN ('code','security','red-team')),
+  reviewed_by_agent TEXT NOT NULL,             -- 'code-review' | 'security' | 'red-team'
+  triggered_by      TEXT NOT NULL DEFAULT 'founder',
+  status            TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running','completed','failed')),
+  outcome           TEXT CHECK (outcome IN ('pass','reject','error',NULL)),
+  review_result_id  INTEGER REFERENCES review_results(id),
+  agent_run_id      INTEGER REFERENCES agent_runs(id),
+  cost_usd          REAL,
+  truncated         INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0,1)),
+  base_commit_sha   TEXT,        -- code/security kind only
+  head_commit_sha   TEXT,        -- all kinds
+  artifact_paths    TEXT,        -- json array; red-team kind: the file(s) reviewed
+  skip_reason       TEXT,
+  started_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  ended_at          TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_reviewer_invocations_task ON reviewer_invocations(task_id);
+CREATE INDEX IF NOT EXISTS idx_reviewer_invocations_status ON reviewer_invocations(status);
+
+-- TASK-017: the self-immune Developer denylist's own audit record (§2.4)
+-- — ops/control-center/hooks/developer_pretooluse.py logs a row here for
+-- every DENIED tool call it observes (never every allowed call — the
+-- same disclosed cost tradeoff Security's Stage 2 §6 accepted). Written
+-- by opsdb.record_hook_denial(), called by the hook script itself via
+-- its own short-lived opsdb.connect() (a standalone subprocess the
+-- harness spawns per tool call).
+-- Milestone D (TASK-022): phase/milestone state as real, queryable rows —
+-- not parsed from ROADMAP.md's prose, not a hardcoded Python literal.
+-- Written ONLY through opsdb.py's phase-add / phase-set-status commands
+-- (Part 6) -- no HTTP write route, no Founder-facing write UI, matching
+-- how risks/decisions/automation_state are written today. See
+-- ops/reviews/cto-milestone-d-architecture.md Part 2.
+CREATE TABLE IF NOT EXISTS phases (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  name                 TEXT NOT NULL UNIQUE,       -- 'Phase 0' .. 'Phase 3A',
+                                                    -- 'Founder UI Completeness',
+                                                    -- 'Milestone A' .. 'Milestone D',
+                                                    -- 'Phase 4 (proposed)'
+  parent_phase_id      INTEGER REFERENCES phases(id),  -- NULL for the 5 top-level
+                                                        -- rows (Phase 0/1/2/3/4);
+                                                        -- Phase 3A and "Founder UI
+                                                        -- Completeness" point at
+                                                        -- Phase 3; Milestones A-D
+                                                        -- point at "Founder UI
+                                                        -- Completeness"
+  status               TEXT NOT NULL DEFAULT 'not_started'
+                       CHECK (status IN ('not_started','in_progress','complete','paused')),
+  sort_order           INTEGER NOT NULL,           -- explicit display order —
+                                                    -- independent of id/insertion
+                                                    -- order, since backfill and
+                                                    -- future inserts won't match
+  opened_decision_id   INTEGER REFERENCES decisions(id),  -- the DEC-00x that
+                                                           -- approved/started it;
+                                                           -- NULL, never guessed,
+                                                           -- if no single decision
+                                                           -- row cleanly covers it
+  closed_decision_id   INTEGER REFERENCES decisions(id),  -- the DEC-00x that
+                                                           -- marked it complete or
+                                                           -- paused, if any
+  task_id              INTEGER REFERENCES tasks(id),      -- ONLY when this phase
+                                                           -- row is genuinely 1:1
+                                                           -- with one task
+                                                           -- (Milestones A-D, Phase
+                                                           -- 3A); NULL for
+                                                           -- multi-task phases
+                                                           -- (0/1/2/3) — never
+                                                           -- forced
+  milestones_total     INTEGER,                     -- NULL if not honestly
+                                                      -- countable — see Part 3
+  milestones_complete  INTEGER,
+  note                 TEXT,                        -- short, factual, structured
+                                                      -- status note — NOT a copy
+                                                      -- of ROADMAP.md's narrative
+                                                      -- prose (Part 6)
+  updated_at           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_phases_parent ON phases(parent_phase_id);
+
+CREATE TABLE IF NOT EXISTS hook_denials (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  role               TEXT NOT NULL,           -- 'developer' (only role hooked this milestone)
+  tool_name          TEXT NOT NULL,           -- 'Bash' | 'Write' | 'Edit'
+  matched_rule       TEXT NOT NULL,           -- which specific pattern fired, e.g. 'operations.sqlite3'
+  tool_input_summary TEXT NOT NULL,           -- truncated (2,000 chars), the command or file_path
+  session_id         TEXT,
+  transcript_path    TEXT,
+  created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_hook_denials_role ON hook_denials(role);
+CREATE INDEX IF NOT EXISTS idx_hook_denials_created ON hook_denials(created_at);
+
+-- ---------------------------------------------------------------- TASK-024 --
+-- Founder Idea Intake and Evaluation (DEC-013 → DEC-018).
+--
+-- Three artifacts, never overwritten (DEC-015):
+--   1. the raw Founder idea      -> ideas.raw_idea, written once at creation
+--   2. the company's evaluation  -> idea_rounds, one immutable row per round
+--   3. the Founder-approved brief-> ideas.approved_round_id, pointing at the
+--                                   exact round that was frozen
+--
+-- Immutability is structural, not a convention: opsdb.py provides NO command
+-- that updates ideas.raw_idea or any column of idea_rounds. A Founder edit
+-- writes a NEW idea_edits row and leaves the original standing; the current
+-- text is the newest edit, or the original when there are none.
+
+CREATE TABLE IF NOT EXISTS ideas (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  raw_idea          TEXT NOT NULL,      -- ARTIFACT 1 — the Founder's own words,
+                                        -- written once, never updated
+  audience          TEXT,               -- "who is it for", optional
+  trigger_note      TEXT,               -- "what made you think of it", optional
+  title             TEXT,               -- named by the evaluation; NULL until then
+  status            TEXT NOT NULL DEFAULT 'draft'
+                      CHECK (status IN ('draft','evaluated','approved','parked','dropped')),
+  approved_round_id INTEGER REFERENCES idea_rounds(id),  -- ARTIFACT 3 — the frozen brief
+  approved_at       TEXT,
+  -- An approved INVESTIGATION is not an approved brief. When the company says
+  -- "Investigate first" it is recommending real, bounded work — a prototype, a
+  -- test with real users — and the Founder can authorise exactly that without
+  -- authorising a production build. Deliberately NOT a status: the idea is
+  -- still 'evaluated', because no brief has been frozen and artifact 3 does
+  -- not exist. Approving the brief remains gated on Proceed / Proceed with
+  -- narrowed scope, with no override, exactly as before.
+  investigation_round_id  INTEGER REFERENCES idea_rounds(id),
+  investigation_approved_at TEXT,
+  close_reason      TEXT,               -- why parked or dropped, optional
+  closed_at         TEXT,
+  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
+
+-- A Founder edit of their own idea. Additive: the original in ideas.raw_idea
+-- is never touched, so "you said, never edited" stays literally true.
+CREATE TABLE IF NOT EXISTS idea_edits (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  idea_id      INTEGER NOT NULL REFERENCES ideas(id),
+  raw_idea     TEXT NOT NULL,
+  audience     TEXT,
+  trigger_note TEXT,
+  created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_idea_edits_idea ON idea_edits(idea_id);
+
+-- ARTIFACT 2 — one company evaluation. Append-only by construction: there is
+-- no opsdb.py command that updates a row here. "Correct us" adds a new round.
+CREATE TABLE IF NOT EXISTS idea_rounds (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  idea_id        INTEGER NOT NULL REFERENCES ideas(id),
+  round_no       INTEGER NOT NULL,
+  depth          TEXT,          -- Light | Standard | Full — how deep the company went
+  depth_reason   TEXT,          -- why that depth, in the Founder's terms
+  roster_json    TEXT,          -- [[role, why]] chosen, and [[role, why]] left out
+  answers_json   TEXT,          -- the ten concise answers + their expanded sections
+  view_json      TEXT,          -- the six-field Company View (no score, no meter)
+  recommendation TEXT
+                   CHECK (recommendation IN ('Proceed','Proceed with narrowed scope',
+                                             'Investigate first','Reconsider')),
+  changed_note   TEXT,          -- what changed since the previous round
+  founder_note   TEXT,          -- the "Correct us" note that PRODUCED this round
+  -- TASK-027 (DEC-032). What the Research lane did for THIS round. Added via
+  -- _apply_additive_column_migrations for existing databases, and declared
+  -- here so a fresh one gets them directly. 'unavailable' is the value that
+  -- earns its keep: it distinguishes "we checked and found nothing" from
+  -- "nobody could look", which a reader otherwise cannot tell apart.
+  research_status TEXT NOT NULL DEFAULT 'not-needed',   -- not-needed | done | unavailable
+  research_json   TEXT,         -- the evidence packet: cited findings, contradictions, unknowns
+  research_searches INTEGER,    -- searches the runtime reported actually performing
+  agent_run_id   INTEGER REFERENCES agent_runs(id),  -- NULL for a seeded round
+  created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (idea_id, round_no)
+);
+CREATE INDEX IF NOT EXISTS idx_idea_rounds_idea ON idea_rounds(idea_id);

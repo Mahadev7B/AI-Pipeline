@@ -1,0 +1,18 @@
+{
+  "artboards": [
+    { "file": "FirstRun.dc.html", "x": 0, "y": 0, "w": 900, "h": 900, "title": "Today — nothing built yet" },
+    { "file": "Main.dc.html", "x": 1020, "y": 0, "w": 900, "h": 900, "title": "A — Your apps (recommended)" },
+    { "file": "ConceptCards.dc.html", "x": 2040, "y": 0, "w": 1000, "h": 900, "title": "B — Cards" },
+    { "file": "Team.dc.html", "x": 3160, "y": 0, "w": 900, "h": 900, "title": "Who is working on it" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -150,
+      "w": 700,
+      "text": "Product-progress dashboard — the subject is YOUR APP, not the factory.\nStart at 'Today' (the real current state), then A and B are two answers to the same screen. 'Who is working on it' opens from any app.\nStatic mockups — nothing clicks."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 10 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Factory begins execution</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">It is running</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:880px;">
+    The first minute after starting is where a product is most tempted to invent activity. This one shows what was written and nothing else.
+  </div>
+
+  <div style="border-radius:14px; border:1px solid oklch(78% 0.14 75 / 0.55); background:oklch(78% 0.14 75 / 0.06); padding:18px 20px; margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:11px; margin-bottom:10px;">
+      <div style="width:9px; height:9px; border-radius:50%; background:oklch(78% 0.14 75);"></div>
+      <div style="font-size:14.5px; font-weight:600;">TASK-026 is with Product</div>
+      <div style="font-size:11px; color:#9aa0a8; font-family:ui-monospace,Menlo,monospace;">since 20:47 UTC &middot; 40 seconds ago</div>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;">
+      <div style="border-radius:9px; border:1px solid #323844; background:#1a1e24; padding:11px 13px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:5px;">What was written</div>
+        <div style="font-size:11.5px; color:#c8ccd2; line-height:1.6;">One status transition, <span style="font-family:ui-monospace,Menlo,monospace;">BACKLOG &rarr; PLANNING</span>, and one history row naming you as the person who started it.</div>
+      </div>
+      <div style="border-radius:9px; border:1px solid #323844; background:#1a1e24; padding:11px 13px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:5px;">Who has it</div>
+        <div style="font-size:11.5px; color:#c8ccd2; line-height:1.6;">Product. One agent, not eight &mdash; the rest of the pipeline is not dispatched and will not start on its own.</div>
+      </div>
+      <div style="border-radius:9px; border:1px solid oklch(72% 0.15 150 / 0.4); background:#1a1e24; padding:11px 13px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:oklch(72% 0.15 150); text-transform:uppercase; margin-bottom:5px;">What it was told</div>
+        <div style="font-size:11.5px; color:#c8ccd2; line-height:1.6;">The approved brief, v3. Your original sentence went with it, labelled as context.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:16px; align-items:start; margin-bottom:16px;">
+
+    <div style="border-radius:14px; border:1px solid #242830; background:#14171c; padding:18px 20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:11px;">What this screen will not show you, and why</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">No live-agent light.</b> Nothing in the pipeline writes an <span style="font-family:ui-monospace,Menlo,monospace; font-size:11px;">agent_runs</span> row, so a pulsing dot would be a decoration reporting a fact this product does not have.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">No percentage complete.</b> <span style="font-family:ui-monospace,Menlo,monospace; font-size:11px;">task_steps</span> exists on 1 of 24 tasks. A number here would be arithmetic on nothing.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">No spend so far.</b> 0 of 13 recorded runs carries a cost figure. When cost attribution exists, this is where it belongs; until then the space stays empty rather than showing $0.00, which would read as &ldquo;free&rdquo;.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">No estimated finish.</b> Nothing here has run enough times to have a history to estimate from.</div>
+      </div>
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid #242830; font-size:11px; color:#666c74; line-height:1.6;">
+        Four absences, each with its cause. An empty space with a reason is information; an empty space without one is a bug, and a filled space without evidence is a lie.
+      </div>
+    </div>
+
+    <div style="border-radius:14px; border:1px solid #242830; background:#14171c; padding:18px 20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:11px;">Where you watch it from here</div>
+      <div style="display:flex; flex-direction:column; gap:11px;">
+        <div>
+          <div style="font-size:12px; color:oklch(78% 0.14 75); font-weight:600;">This task&rsquo;s own page &rarr;</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Status, owner, the gate ladder, and &mdash; permanently &mdash; your words beside what you approved. That pairing never goes away.</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:oklch(78% 0.14 75); font-weight:600;">Active Work &rarr;</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Everything the company has in hand right now, TASK-026 among it.</div>
+        </div>
+        <div>
+          <div style="font-size:12px; color:oklch(78% 0.14 75); font-weight:600;">Costs &rarr;</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Where spend appears as it accrues. Honestly: it will be sparse until runs record their cost.</div>
+        </div>
+        <div style="padding-top:10px; border-top:1px solid #242830;">
+          <div style="font-size:12px; color:#9aa0a8; font-weight:600;">The internal discussion</div>
+          <div style="font-size:11px; color:#666c74; line-height:1.55;">Kept, and one click away if you ever want it. Not shown by default &mdash; you asked the company a question, not for its minutes.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- the pairing that never goes away -->
+  <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:16px 18px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:12px;">Still on the same screen, and always will be</div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px;">
+      <div style="border-left:3px solid oklch(58% 0.015 250); padding-left:13px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; margin-bottom:6px;">You said</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.65; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+      </div>
+      <div style="border-left:3px solid oklch(72% 0.15 150); padding-left:13px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.15 150); text-transform:uppercase; margin-bottom:6px;">You approved &middot; v3</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.65;">Open the AI Factory and understand within seconds how each child product is progressing. Proceed with narrowed scope: one Build screen, gate ladder not percentage, geometry not committed.</div>
+      </div>
+    </div>
+    <div style="font-size:10.5px; color:#4e545c; margin-top:13px; line-height:1.6;">
+      Not an archive, not a history tab &mdash; this pair stays on the working screen for the life of the idea, so &ldquo;is the company still building what I asked for?&rdquo; is answerable by looking, at any moment, without hunting.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":800}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

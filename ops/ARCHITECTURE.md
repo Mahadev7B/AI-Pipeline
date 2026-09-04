@@ -7,7 +7,7 @@ replaced later without rewriting the rest of the system:
 
 1. **Web UI (Control Center)** — the Founder-facing application (Phase 2).
    Reads live state, never writes directly to Git or to agent execution.
-2. **Orchestrator** — the only thing that decides what happens next and
+2. **Chief of Staff** — the only thing that decides what happens next and
    assigns work. Talks to Task State and to Agent Execution; the UI never
    talks to Agent Execution directly.
 3. **Task state** — the live operational record (SQLite from Phase 1 — see
@@ -36,9 +36,9 @@ replaced later without rewriting the rest of the system:
 
 ## Coupling rules
 
-- The Orchestrator is the only writer of Task State. The UI reads Task
+- The Chief of Staff is the only writer of Task State. The UI reads Task
   State and sends founder actions (approve/reject/ask-agent) through the
-  Orchestrator — it does not mutate rows directly.
+  Chief of Staff — it does not mutate rows directly.
 - No agent is hard-coded to one model or provider. Each agent's `model`
   field is `configurable`; the Model Registry (`/ops/models/`) is where a
   real choice eventually gets recorded, benchmarked, and approved per

@@ -42,7 +42,16 @@ import agent_runtime  # noqa: E402
 MAX_TOPIC_CHARS = 2_000  # generous for a real cross-cutting question; matches the
                           # discipline of MAX_ASK_MESSAGE_CHARS in server.py
 
-_CANDIDATE_ROLES = tuple(r for r in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST if r != "ceo")
+# The fixed, pre-approved candidate role tuple shared by TWO trust
+# patterns in this codebase: CEO's own participant nomination (below,
+# _select_participants()/_parse_selection()) and, since Phase 3A Part A
+# (TASK-015), the Chief of Staff's CONSULT: parsing
+# (chief_of_staff.py — Security's Phase 3A threat-model review, required
+# fix C3: "agent_runtime.MEETING_PARTICIPANT_ALLOWLIST with 'ceo'
+# removed", stated exactly once, here, not duplicated as a second
+# hand-typed tuple in chief_of_staff.py). Public (no leading underscore)
+# specifically so chief_of_staff.py can import it directly.
+CONSULT_CANDIDATE_ROLES = tuple(r for r in agent_runtime.MEETING_PARTICIPANT_ALLOWLIST if r != "ceo")
 
 
 def _parse_selection(response_text: str) -> list[str]:
@@ -56,7 +65,7 @@ def _parse_selection(response_text: str) -> list[str]:
         return []
     text = response_text.lower()
     selected = []
-    for role in _CANDIDATE_ROLES:
+    for role in CONSULT_CANDIDATE_ROLES:
         # word-boundary match so e.g. "ceo" doesn't accidentally match inside another word
         if re.search(rf"(?<![a-z0-9-]){re.escape(role)}(?![a-z0-9-])", text):
             selected.append(role)
@@ -74,19 +83,68 @@ def _select_participants(topic: str) -> list[str]:
     always included by the caller (run_meeting), never decided here. On
     any invocation failure, returns an empty list (a meeting with just
     CEO is still a valid, honest meeting — never fabricate a selection
-    when the real call failed)."""
+    when the real call failed).
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.4: this call runs
+    BEFORE run_meeting() creates the meeting row, so — unlike
+    _gather_position()/_synthesize() — it must use scope_type='company'
+    (no scope_id exists yet), the same structural reason the existing
+    Orchestrator-validation bracket right next to this one in run_meeting()
+    already uses 'company'. This means this one invocation's cost is real
+    and persisted, and correctly grouped into the company-wide Meetings
+    bucket on /costs.html, but CANNOT be attributed to the specific
+    meeting it precedes once that meeting exists — a small, disclosed,
+    structural limit (see the Meeting Detail cost panel's own footnote)."""
     prompt = (
         f"Founder: A cross-cutting question has been raised for an Executive Meeting: "
         f"\"{topic}\" From this list of candidate roles, which should participate because "
         f"they have real, relevant expertise for this specific question (do not include a "
-        f"role just because it exists): {', '.join(_CANDIDATE_ROLES)}. Respond with ONLY a "
+        f"role just because it exists): {', '.join(CONSULT_CANDIDATE_ROLES)}. Respond with ONLY a "
         f"comma-separated list of the role names you select from that exact list, nothing "
         f"else — no explanation, no punctuation besides commas."
     )
-    result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
-    if not result.ok:
-        return []
-    return _parse_selection(result.response_text)
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_run(conn, "ceo", "company", agent_runtime.MEETING_SELECT_PARTICIPANTS_ACTIVITY_LABEL)
+        try:
+            result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
+            if not result.ok:
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return []
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return _parse_selection(result.response_text)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
+    finally:
+        conn.close()
+
+
+def cap_participants(candidates: list[str], cap: int) -> tuple[list[str], list[str]]:
+    """The "at most `cap` others, deduped" rule — extracted (Phase 3A
+    Part A, TASK-015; CTO's Phase 3A architecture doc, §A.3; Security's
+    Phase 3A threat-model review) so there is exactly ONE implementation
+    of this dedup/cap logic in the codebase, not two: _validate_selection()
+    below uses it for CEO's own participant nomination, and
+    chief_of_staff.py's CONSULT: parsing (Phase 3A Part A) uses it for the
+    Founder-requested consult list. Order-preserving (first occurrence
+    wins on a duplicate), drops a redundant self-nomination of "ceo" (CEO
+    is always added separately by every caller, never counted here) —
+    identical behavior to _validate_selection()'s original inline logic,
+    unchanged, just named and shared. Returns (capped, dropped) — a
+    caller that doesn't need the dropped list (chief_of_staff.py) simply
+    ignores the second element."""
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for name in candidates:
+        if name == "ceo" or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+    return deduped[:cap], deduped[cap:]
 
 
 def _validate_selection(candidates: list[str]) -> tuple[list[str], str]:
@@ -102,27 +160,25 @@ def _validate_selection(candidates: list[str]) -> tuple[list[str], str]:
     Returns (validated_names, a short human-readable explanation of what
     was admitted/dropped and why) — the explanation is what a meeting's
     detail page actually shows (see run_meeting() below), the real,
-    attributed record Design Conformance round 2 asked for."""
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for name in candidates:
-        if name == "ceo" or name in seen:
-            continue
-        seen.add(name)
-        deduped.append(name)
+    attributed record Design Conformance round 2 asked for.
 
+    Phase 3A Part A: the dedup/cap logic itself now lives in
+    cap_participants() above, shared with chief_of_staff.py's CONSULT:
+    parsing — this function's own remaining job is exactly the same as
+    before (no behavior change): call that shared helper, then build the
+    same human-readable explanation it always has."""
     cap = agent_runtime.MAX_MEETING_PARTICIPANTS - 1  # CEO takes the +1 slot, added by the caller
-    validated = deduped[:cap]
+    validated, dropped = cap_participants(candidates, cap)
+    deduped = validated + dropped  # == the original inline "deduped" list, in the same order
 
     if not deduped:
         explanation = "Validated CEO's nomination: none. CEO is the meeting's only participant."
-    elif len(validated) == len(deduped):
+    elif not dropped:
         explanation = (
             f"Validated CEO's nomination: {', '.join(deduped)}. "
             f"Admitted {len(validated)} of {len(deduped)} — within the {cap}-other cap."
         )
     else:
-        dropped = deduped[cap:]
         explanation = (
             f"Validated CEO's nomination: {', '.join(deduped)}. "
             f"Admitted {len(validated)} of {len(deduped)} — capped at {cap} others; "
@@ -159,14 +215,15 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
         run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_ACTIVITY_LABEL, scope_id=meeting_id)
         result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
         if result.ok:
-            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                 to_agent=None, meeting_id=meeting_id)
-            opsdb.end_run(conn, run_id, "ended")
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (agent_name, True, result.response_text)
         else:
             sys.stderr.write(f"[control-center] meeting {meeting_id}: {agent_name} failed to provide a position "
                               f"({result.error_kind}): {result.error}\n")
-            opsdb.end_run(conn, run_id, "failed")
+            opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
             return (agent_name, False, None)
     except Exception as exc:  # noqa: BLE001 — one participant's bug must not abort the whole meeting
         sys.stderr.write(f"[control-center] meeting {meeting_id}: unhandled error gathering {agent_name}'s position: "
@@ -180,12 +237,22 @@ def _gather_position(meeting_id: int, agent_name: str, topic: str) -> tuple[str,
         conn.close()
 
 
-def _synthesize(topic: str, positions: dict[str, str]) -> tuple[str | None, str | None, str | None, str | None]:
+def _synthesize(meeting_id: int, topic: str,
+                 positions: dict[str, str]) -> tuple[str | None, str | None, str | None, str | None]:
     """Step 4: a real, separate CEO call — cannot happen concurrently
     with step 3, since it needs every position that succeeded. Returns
     (agreements, disagreements, unresolved_questions, recommendation),
     each None if the call fails or a field wasn't present in the
-    response — never fabricated."""
+    response — never fabricated.
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.4: this call runs
+    AFTER the meeting row already exists, so — unlike
+    _select_participants() — it gets a real 'meeting'-scoped agent_runs
+    row (scope_id=meeting_id), the same bracket discipline every other
+    per-invocation cost site in this file already uses. Plausibly the
+    single most expensive call in most meetings (it processes every
+    participant's full position text), so leaving it uninstrumented
+    would materially understate a meeting's own cost total."""
     if not positions:
         return (None, None, None, None)
     positions_text = "\n".join(f"{name}: {text}" for name, text in positions.items())
@@ -202,10 +269,24 @@ def _synthesize(topic: str, positions: dict[str, str]) -> tuple[str | None, str 
         f"If a section has nothing real to report, write 'None.' for that section rather than "
         f"inventing content."
     )
-    result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
-    if not result.ok:
-        return (None, None, None, None)
-    return _parse_synthesis(result.response_text)
+    conn = opsdb.connect()
+    try:
+        run_id = opsdb.start_run(conn, "ceo", "meeting", agent_runtime.MEETING_SYNTHESIS_ACTIVITY_LABEL, scope_id=meeting_id)
+        try:
+            result = agent_runtime.invoke_agent("ceo", prompt, wait_for_slot=True)
+            if not result.ok:
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return (None, None, None, None)
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return _parse_synthesis(result.response_text)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
+    finally:
+        conn.close()
 
 
 def _parse_synthesis(text: str) -> tuple[str | None, str | None, str | None, str | None]:
@@ -222,6 +303,37 @@ def _parse_synthesis(text: str) -> tuple[str | None, str | None, str | None, str
     # "None."-style non-answers are a real, honest response, not missing data — keep them as-is
     # rather than converting to None, so the Founder sees CEO explicitly said there was nothing.
     return (fields["AGREEMENTS"], fields["DISAGREEMENTS"], fields["UNRESOLVED"], fields["RECOMMENDATION"])
+
+
+def _gather_and_synthesize(meeting_id: int, participants: list[str], topic: str) -> None:
+    """Steps 3-4 of the meeting flow — "gather concurrently (bounded by
+    MAX_CONCURRENT_INVOCATIONS), then CEO synthesizes" — extracted
+    verbatim out of run_meeting() (Phase 3A Part A, TASK-015; CTO's Phase
+    3A architecture doc §A.3; Red Team's Phase 3A review, NB3/NB4). This
+    is a MECHANICAL extraction, not a rewrite: run_meeting() calls this
+    exact function, in the exact same place, with the exact same
+    `participants`/`topic` values it always computed — Red Team's NB4
+    named this Development's own explicit acceptance check (confirm the
+    already-shipped Founder-initiated meeting flow's participant-list
+    construction, concurrency bound, and persisted synthesis fields are
+    unchanged after this split). Shared with run_consult_meeting() below,
+    which needs the identical gather+synthesize machinery but skips
+    run_meeting()'s own CEO-selection/Orchestrator-validation steps
+    entirely."""
+    positions: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=agent_runtime.MAX_CONCURRENT_INVOCATIONS) as pool:
+        futures = [pool.submit(_gather_position, meeting_id, name, topic) for name in participants]
+        for future in as_completed(futures):
+            name, ok, text = future.result()
+            if ok:
+                positions[name] = text
+
+    agreements, disagreements, unresolved, recommendation = _synthesize(meeting_id, topic, positions)
+    conn = opsdb.connect()
+    try:
+        opsdb.finalize_meeting_synthesis(conn, meeting_id, agreements, disagreements, unresolved, recommendation)
+    finally:
+        conn.close()
 
 
 def run_meeting(topic: str) -> int:
@@ -283,21 +395,63 @@ def run_meeting(topic: str) -> int:
     finally:
         conn.close()
 
-    positions: dict[str, str] = {}
-    with ThreadPoolExecutor(max_workers=agent_runtime.MAX_CONCURRENT_INVOCATIONS) as pool:
-        futures = [pool.submit(_gather_position, meeting_id, name, topic) for name in participants]
-        for future in as_completed(futures):
-            name, ok, text = future.result()
-            if ok:
-                positions[name] = text
+    _gather_and_synthesize(meeting_id, participants, topic)
+    return meeting_id
 
-    agreements, disagreements, unresolved, recommendation = _synthesize(topic, positions)
+
+def run_consult_meeting(topic: str, participants: list[str], initiated_by: str = "founder") -> int:
+    """Phase 3A Part A (TASK-015), §A.3 — the Chief of Staff's CONSULT:
+    flow. `participants` has ALREADY been parsed out of the Chief of
+    Staff's own reply and capped by cap_participants() (chief_of_staff.py)
+    — this function deliberately does NOT run CEO's own "who should
+    attend" selection call the way run_meeting() does: the Founder, via
+    the Chief of Staff, already named the participants, so running a
+    second CEO selection call on top would waste a real invocation AND
+    could select DIFFERENT agents than the Founder explicitly asked for.
+    CEO is still always added as a participant (same rule run_meeting()
+    uses — never optional) and still performs this meeting's real
+    synthesis exactly as normal; only CEO's SELECTION role is skipped
+    here, not its synthesis role.
+
+    Everything downstream is the same, already-reviewed Executive Meeting
+    machinery run_meeting() uses — a real meetings row (via
+    opsdb.create_meeting(), same as run_meeting()), the same
+    MAX_MEETING_PARTICIPANTS/MAX_CONCURRENT_INVOCATIONS bounds, the same
+    $0.50-capped concurrent gathers and CEO synthesis call, via the SAME
+    _gather_and_synthesize() helper run_meeting() calls (this is exactly
+    why that extraction had to be a clean, behavior-preserving mechanical
+    split — see _gather_and_synthesize()'s docstring). Shows up on
+    /meetings.html exactly like a Founder-initiated meeting.
+    `initiated_by` defaults to "founder" — the existing convention
+    (DATA_MODEL.md) for a Founder-attributed write with no per-person
+    identity; Phase 3A Part A always passes the default.
+
+    Raises ValueError for a bad/oversized topic, same as run_meeting() —
+    callers must not pass a topic longer than MAX_TOPIC_CHARS (server.py
+    enforces this on the Founder's own chat message before it can ever
+    reach here, since any chat message may become a real meeting topic).
+    Never raises for a participant/synthesis failure — same "record
+    honestly, complete with whatever succeeded" discipline as
+    run_meeting()."""
+    topic = topic.strip()
+    if not topic:
+        raise ValueError("topic must not be empty")
+    if len(topic) > MAX_TOPIC_CHARS:
+        raise ValueError(f"topic exceeds the {MAX_TOPIC_CHARS:,}-character limit")
+
+    # CEO is always a participant, never optional — same rule run_meeting()
+    # uses. Dedup defensively (chief_of_staff.py's own CONSULT: candidate
+    # tuple already excludes "ceo", so this is belt-and-suspenders, not
+    # the primary guard).
+    all_participants = ["ceo"] + [p for p in participants if p != "ceo"]
+
     conn = opsdb.connect()
     try:
-        opsdb.finalize_meeting_synthesis(conn, meeting_id, agreements, disagreements, unresolved, recommendation)
+        meeting_id = opsdb.create_meeting(conn, topic, initiated_by, all_participants)
     finally:
         conn.close()
 
+    _gather_and_synthesize(meeting_id, all_participants, topic)
     return meeting_id
 
 
@@ -382,13 +536,14 @@ def gather_requested_position(meeting_id: int, agent_name: str, topic: str,
             if not result.ok:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: requested participant {agent_name} failed to "
                                   f"provide a position ({result.error_kind}): {result.error}\n")
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 _release_reservation(conn, meeting_id, agent_name)
                 return (False, result.error)
 
-            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+            opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                 to_agent=None, meeting_id=meeting_id)
-            opsdb.end_run(conn, run_id, "ended")
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
             return (True, None)
         except Exception:
             try:
@@ -464,25 +619,51 @@ def gather_followup_reply(meeting_id: int, agent_name: str, topic: str, founder_
     the caller (server.py) before this is invoked, not here — this
     function's own job is only the write + the invocation.
 
-    Returns (ok, error_message_or_None). No agent_runs row is created for
-    this call — matching _select_participants()'s and _synthesize()'s own
-    existing precedent (neither of those creates one either); CTO's
-    Milestone 2B3B round 2 architecture document does not call for one
-    here, unlike items 2 and 5 which explicitly do."""
+    Returns (ok, error_message_or_None). TASK-020 (Milestone B), CTO's
+    architecture doc §2.4: this call now runs inside a real
+    'meeting'-scoped agent_runs bracket (it previously had none —
+    _select_participants()'s and _synthesize()'s prior precedent, now
+    also closed for those two above) so its own real cost is captured and
+    attributed to this meeting like every other participant invocation."""
     conn = opsdb.connect()
     try:
         thread_id = f"meeting-{meeting_id}-{agent_name}"
         opsdb.send_message(conn, thread_id, "meeting", "founder", founder_message,
                             to_agent=agent_name, meeting_id=meeting_id)
         transcript = _build_followup_transcript(conn, meeting_id, agent_name, topic, thread_id)
-        result = agent_runtime.invoke_agent(agent_name, transcript, wait_for_slot=True)
-        if not result.ok:
-            sys.stderr.write(f"[control-center] meeting {meeting_id}: follow-up with {agent_name} failed "
-                              f"({result.error_kind}): {result.error}\n")
-            return (False, result.error)
-        opsdb.send_message(conn, thread_id, "meeting", agent_name, result.response_text,
-                            to_agent="founder", meeting_id=meeting_id)
-        return (True, None)
+        run_id = opsdb.start_run(conn, agent_name, "meeting", agent_runtime.MEETING_FOLLOWUP_ACTIVITY_LABEL, scope_id=meeting_id)
+        try:
+            result = agent_runtime.invoke_agent(agent_name, transcript, wait_for_slot=True)
+            if not result.ok:
+                sys.stderr.write(f"[control-center] meeting {meeting_id}: follow-up with {agent_name} failed "
+                                  f"({result.error_kind}): {result.error}\n")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
+                return (False, result.error)
+            # NOTE (TASK-020 Code Review, deferred, not fixed here): if
+            # send_message() itself raises here (e.g. a DB lock) after a
+            # real, successful, cost-incurring invoke_agent() call above,
+            # the except block below ends the run "failed" with
+            # cost_usd=None, losing a real known cost. Reordering to
+            # end_run(..., cost_usd=...) before send_message() would trade
+            # that for a different risk — a run marked "ended" whose
+            # position text never got persisted — and the same ordering
+            # is used consistently by _gather_position(),
+            # gather_requested_position(), and retry_position() in this
+            # file, so fixing it here alone would just be inconsistent,
+            # not correct. Left as a pre-existing, narrow race (per Code
+            # Review) for a deliberate follow-up across all four
+            # functions together, not a partial fix now.
+            opsdb.send_message(conn, thread_id, "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
+                                to_agent="founder", meeting_id=meeting_id)
+            opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
+            return (True, None)
+        except Exception:
+            try:
+                opsdb.end_run(conn, run_id, "failed")
+            except (LookupError, ValueError):
+                pass  # already ended somehow — nothing more to reconcile
+            raise
     finally:
         conn.close()
 
@@ -522,14 +703,15 @@ def retry_position(meeting_id: int, agent_name: str, topic: str) -> tuple[bool, 
         try:
             result = agent_runtime.invoke_agent(agent_name, _position_prompt(topic), wait_for_slot=True)
             if result.ok:
-                opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name, result.response_text,
+                opsdb.send_message(conn, f"meeting-{meeting_id}", "meeting", agent_name,
+                               agent_runtime.clip_for_storage(result.response_text),
                                     to_agent=None, meeting_id=meeting_id)
-                opsdb.end_run(conn, run_id, "ended")
+                opsdb.end_run(conn, run_id, "ended", cost_usd=result.cost_usd)
                 return (True, None)
             else:
                 sys.stderr.write(f"[control-center] meeting {meeting_id}: retry for {agent_name} failed "
                                   f"({result.error_kind}): {result.error}\n")
-                opsdb.end_run(conn, run_id, "failed")
+                opsdb.end_run(conn, run_id, "failed", cost_usd=result.cost_usd)
                 return (False, result.error)
         except Exception:
             try:

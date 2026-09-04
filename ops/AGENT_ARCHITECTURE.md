@@ -20,7 +20,7 @@ Permissions:             <explicit allow-list, plus an explicit "Not permitted" 
 Memory/Context:          <what must be handed to it each time>
 Responsibilities:        <bullets>
 Must NOT:                <explicit bullets>
-Escalation Rules:        <when it hands to Orchestrator / raises FOUNDER_APPROVAL>
+Escalation Rules:        <when it hands to Chief of Staff / raises FOUNDER_APPROVAL>
 Evaluation:              <how another agent or the Founder judges its output>
 ```
 

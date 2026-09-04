@@ -66,7 +66,7 @@ An agent is **Working** if it has a row here with `status=active` and no
 `ended_at`. **Blocked** / **Waiting** come from a row with that status
 instead. **Available** means no open run at all. `scope_type=company`
 covers coordination work with no single task/project/meeting behind it
-(e.g. Orchestrator triage, CEO general strategy review, PM compiling a
+(e.g. Chief of Staff triage, CEO general strategy review, PM compiling a
 status report) — company-scoped work is still a real run, not an
 exception to the rule. See `ARCHITECTURE.md`, "Derived UI state must be
 deterministic."
@@ -121,6 +121,19 @@ mutate Phase 1 schema" bar — see
 Ask-Agent conversations use `thread_id = "agent-<name>-company"` with
 `scope='agent'`.
 
+Phase 3A Part A (TASK-015) puts a real model invocation behind
+`thread_id = "agent-orchestrator-company"` for the first time —
+previously, every `messages`/`agent_runs` row attributed to
+`orchestrator` was a deterministic Python step wearing that identity's
+name (e.g. meeting-participant validation), never a real `claude --agent
+orchestrator` subprocess. The Chief of Staff Founder interface (`POST
+/api/chief-of-staff/ask`) is exactly that first real invocation — no
+schema change was needed for this: it's the same `agent-<name>-company`
+formula Ask-Agent already established, applied to a new agent name the
+schema already supported. See `ops/reviews/cto-phase3a-architecture.md`
+§A.1-A.5 and `ops/SECURITY.md`, "Chief of Staff Founder Interface (Phase
+3A Part A, TASK-015)."
+
 ### approvals
 Mirrors `/ops/templates/founder-approval.md`: `id, task_id (nullable),
 request, requested_by_agent, why, recommendation, alternatives_considered,
@@ -141,6 +154,24 @@ marked `DONE` elsewhere) — noted as a known gap, not a blocker.
 Mirrors `/ops/templates/handoff.md`: `id, task_id, from_agent, to_agent,
 work_completed, files_changed (json), tests_added, expected_behavior,
 known_limitations, receiving_agent_checklist, created_at`
+
+**`base_commit_sha`, `head_commit_sha` (nullable TEXT — Phase 3A Part B,
+TASK-015).** A plain, additive `ALTER TABLE ADD COLUMN` pair (no `CHECK`
+constraint changed, so this did not need the rebuild-and-copy technique
+Milestone 2B2's `agent_runs.status` widening required) — applied
+idempotently by `opsdb.py`'s `cmd_init()` (checked via `PRAGMA
+table_info()` first, since `ALTER TABLE ADD COLUMN` has no `IF NOT
+EXISTS` form and a raw statement in `schema.sql` would break `init`'s own
+documented idempotency on a second run). Populated by Developer at
+handoff time (`opsdb.py handoff --base-commit-sha <sha>
+--head-commit-sha <sha>`, `git rev-parse HEAD` before/after the task's own
+work) — nullable for backward compatibility with every pre-Phase-3A
+handoff row, and for non-code handoffs where the concept doesn't apply.
+This is what lets the automation poller (`ops/control-center/automation.py`)
+assemble a real `git diff`/file-content transcript between two explicit
+commits, rather than a timestamp heuristic — a wrong base commit would
+feed a *misleading*, not merely incomplete, transcript to an automated
+reviewer. See `ops/reviews/cto-phase3a-architecture.md` §B.13.
 
 ### decisions
 Mirrors `DECISIONS.md`'s format: `id, title, date, problem,
@@ -175,6 +206,48 @@ created_at`
 `id, task_id, version, environment, release_notes, rollback_plan,
 deployed_by_agent, founder_authorized (bool), deployed_at`
 
+### automation_events *(new — Phase 3A Part B, TASK-015)*
+`id, task_id, trigger_status_history_id (unique fk → task_status_history),
+status (running/completed/failed/skipped), outcome
+(pass/reject/error/interrupted/capped, nullable), review_result_id
+(nullable fk → review_results), agent_run_id (nullable fk → agent_runs),
+cost_usd (nullable), truncated (bool), skip_reason (nullable), started_at,
+ended_at (nullable)`
+
+The single automatic-audit record for `ops/control-center/automation.py`'s
+poller. `trigger_status_history_id UNIQUE` is the load-bearing,
+database-enforced idempotency mechanism: the specific
+`task_status_history` row recording "this task entered `CODE_REVIEW`" can
+be claimed by exactly one `automation_events` row, ever — the claim
+(`INSERT`, `status='running'`) happens before any real invocation, inside
+its own transaction (`opsdb.create_automation_event()`), as the very
+first step for any eligible-looking trigger row — strictly before every
+eligibility check (a missing handoff, an invalid SHA, an invalid file
+path), not only before the real model invocation. This is deliberate:
+every eligibility/cap failure still produces exactly one permanent,
+claimed, `status='skipped'` row, so the same trigger event is never
+re-evaluated on a later poll cycle. A `review_results` row referenced by
+some `automation_events.review_result_id` is automated; every other
+`review_results` row is human-supervised — no new column on that shared
+table. `outcome='capped'` is used for the two genuine per-task-lifetime
+and daily-spend/count cap scenarios specifically (not the per-cycle batch
+cap, which never claims a row at all — a candidate beyond the per-cycle
+limit is simply picked up on a later cycle). See
+`ops/reviews/cto-phase3a-architecture.md` §B.3/§B.7/§B.10.
+
+### automation_state *(new — Phase 3A Part B, TASK-015)*
+`id (=1, exactly one row, ever), enabled (bool, default 0), changed_by
+(default 'system'), reason (nullable), changed_at`
+
+The single-row kill switch. Seeded `enabled=0` (disabled) at schema-apply
+time via `INSERT OR IGNORE` — automation does not run until the Founder
+deliberately turns it on once, the same fail-closed-by-default discipline
+`founder_auth.py`'s "setup required" 503 already established. The only
+function permitted to write this table is `opsdb.set_automation_enabled()`,
+called only by the two new CSRF+session-gated routes (`POST
+/api/automation/stop`/`start`) — never by the poller itself, never by any
+agent invocation. See `ops/reviews/cto-phase3a-architecture.md` §B.4/§B.5.
+
 ### meetings
 `id, topic, initiated_by (founder/agent), participating_agents (json),
 positions (json — agent → statement/evidence/assumptions), agreements,
@@ -191,7 +264,7 @@ of objects, not bare strings:
 ```
 
 `source` is `"selected"` for CEO (always) and every participant CEO
-nominated/Orchestrator validated at meeting-creation time, or
+nominated/Chief of Staff validated at meeting-creation time, or
 `"requested"` for a participant added later via `POST
 /api/meetings/<id>/request-perspective` (item 2). `requested_by` is
 `null` for a `"selected"` entry, or the literal string `"founder"` for a
@@ -242,7 +315,7 @@ same `from_agent`:
   *original* position is written to (unchanged since Milestone 2B3B;
   item 2's manually-requested participants write here too, once —
   it's a real position on the topic, just gathered later).
-- `meeting-{id}-orchestrator` — Orchestrator's one-time validation note
+- `meeting-{id}-orchestrator` — Chief of Staff's one-time validation note
   (item 1), never a participant's position.
 - `meeting-{id}-{agent_name}` — one distinct thread per (meeting,
   participant) follow-up conversation (item 3), separate from that
@@ -270,7 +343,7 @@ Control Center must use — never an LLM's free-text estimate:
 
 ## Rules
 
-- The Orchestrator is the only writer of `tasks.status` and
+- The Chief of Staff is the only writer of `tasks.status` and
   `task_status_history`. Nothing else mutates status directly (see
   `ARCHITECTURE.md`).
 - Each agent writes its own `agent_runs`, `agent_activity`, `qa_results`,

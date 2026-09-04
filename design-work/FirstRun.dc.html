@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24;
+      --border:#242830; --border2:#323844;
+      --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+         -webkit-font-smoothing:antialiased;}
+    a{color:var(--accent);text-decoration:none;} a:hover{color:var(--text);}
+  </style>
+</helmet>
+
+<div style="min-height:900px; background:var(--bg); padding:56px 64px 72px;">
+
+  <div style="display:flex; justify-content:flex-end; margin-bottom:120px;">
+    <div style="display:flex; align-items:center; gap:10px; padding:9px 14px; border:1px solid var(--border);
+                border-radius:8px; color:var(--text2); font-size:13px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round">
+        <path d="M4 7h16M4 12h16M4 17h16"/>
+      </svg>
+      Everything else
+    </div>
+  </div>
+
+  <div style="max-width:560px;">
+    <div style="font-size:34px; font-weight:600; letter-spacing:-0.02em; line-height:1.25;">
+      Nothing built yet.
+    </div>
+    <div style="font-size:15.5px; color:var(--text2); margin-top:16px; line-height:1.6;">
+      This company has fourteen agents, a full review pipeline and a security review
+      it has run nine times. It has never made a product.
+    </div>
+    <div style="font-size:15.5px; color:var(--text2); margin-top:14px; line-height:1.6;">
+      Tell it what to build.
+    </div>
+
+    <div style="margin-top:36px;">
+      <span style="display:inline-flex; align-items:center; gap:9px; padding:12px 20px;
+                   border-radius:9px; font-size:14.5px; font-weight:600;
+                   background:var(--accent); color:#141007;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.1" stroke-linecap="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        Describe your app
+      </span>
+    </div>
+
+    <div style="margin-top:56px; padding-top:26px; border-top:1px solid var(--border);
+                font-size:13px; color:var(--text3); line-height:1.7;">
+      The only project on record is
+      <span style="font-family:var(--mono); color:var(--text2);">AI&#8209;Pipeline&nbsp;Ops&nbsp;Bootstrap</span>
+      &mdash; the ops system building itself.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

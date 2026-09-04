@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
-from derived_state import PIPELINE_STAGES, stage_and_substate, task_progress_fraction  # noqa: E402
+from derived_state import PIPELINE_STAGES, display_name, stage_and_substate, task_progress_fraction  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -37,10 +37,10 @@ def render_needs_attention(conn: sqlite3.Connection) -> str:
     for t in rows:
         note = e(t["blockers"]) if t["status"] == "BLOCKED" and t["blockers"] else e(t["status"])
         items.append(f'''
-        <div class="card" style="border-color:oklch(66% 0.17 25 / 0.4); background:var(--red-soft);">
+        <a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block; border-color:oklch(66% 0.17 25 / 0.4); background:var(--red-soft);">
           <div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div>
           <div style="font-size:11px; color:var(--red); margin-top:2px;">{note}</div>
-        </div>''')
+        </a>''')
     return f'''
     <div class="panel" style="margin-bottom:16px; border-color:oklch(66% 0.17 25 / 0.35);">
       <div class="label" style="margin-bottom:10px; color:var(--red);">Needs Attention</div>
@@ -53,7 +53,7 @@ def render_backlog(conn: sqlite3.Connection) -> str:
     if not rows:
         return '<div style="font-size:11.5px; color:var(--text2);">Nothing in backlog.</div>'
     return "".join(
-        f'<div class="card" style="margin-bottom:6px;"><div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div></div>'
+        f'<a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block; margin-bottom:6px;"><div style="font-size:12px; font-weight:600;">TASK-{t["id"]:03d} — {e(t["title"])}</div></a>'
         for t in rows
     )
 
@@ -73,12 +73,12 @@ def render_stage_column(conn: sqlite3.Connection, stage: str, tasks_by_substate:
                   <div style="flex:1; height:4px; border-radius:2px; background:var(--border2); overflow:hidden;"><div style="width:{pct}%; height:100%; background:var(--accent);"></div></div>
                   <span class="mono" style="font-size:9.5px; color:var(--text2);">{pct}%</span></div>'''
             cards.append(f'''
-            <div class="card">
+            <a id="task-{t["id"]}" href="tasks/{t["id"]}.html" class="card" style="display:block;">
               <div class="mono" style="font-size:9.5px; color:var(--text3); margin-bottom:4px;">TASK-{t["id"]:03d}</div>
               <div style="font-size:12px; font-weight:600;">{e(t["title"])}</div>
-              <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(t["current_owner"] or "unassigned")}</div>
+              <div style="font-size:10.5px; color:var(--text3); margin-top:4px;">{e(display_name(t["current_owner"]) if t["current_owner"] else "unassigned")}</div>
               {progress_html}
-            </div>''')
+            </a>''')
         lanes.append(f'''
         <div style="border-radius:10px; border:1px solid var(--border); background:var(--panel); padding:9px; margin-bottom:8px;">
           <div class="label" style="margin-bottom:6px;">{e(substate)}</div>
@@ -95,7 +95,7 @@ def render_stage_column(conn: sqlite3.Connection, stage: str, tasks_by_substate:
     </div>'''
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -129,7 +129,7 @@ def build_html() -> str:
 <div style="margin-top:16px; font-size:10.5px; color:var(--text3);">
   A major stage is the simple answer; open a lane to see the exact detailed status. Marketing/Launch Prep, when active, runs in parallel inside Release — it does not block the pipeline (AGENT_STATUS.md).
 </div>"""
-    return page("Pipeline", "pipeline.html", body,
+    return page("Pipeline", "pipeline.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

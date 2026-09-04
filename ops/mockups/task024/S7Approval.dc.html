@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 7 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Founder approval</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">Approve this understanding</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:860px;">
+    You are approving <b style="color:#9aa0a8;">a specific version</b>, not an idea in general. Which version is on the record, and it is the one every agent downstream will read.
+  </div>
+
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; gap:14px;">
+    <div style="width:3px; align-self:stretch; background:oklch(58% 0.015 250); border-radius:2px; flex-shrink:0;"></div>
+    <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; flex-shrink:0;">You said</div>
+    <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+    <div style="font-size:10px; color:#4e545c; flex-shrink:0; margin-left:auto;">unedited &middot; on every screen</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:16px; align-items:start;">
+
+    <div style="border-radius:14px; border:1px solid oklch(72% 0.15 150 / 0.5); background:#14171c; padding:20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(72% 0.15 150); text-transform:uppercase; margin-bottom:12px;">You are about to approve</div>
+
+      <div style="border-radius:10px; border:1px solid #323844; background:#1a1e24; padding:13px 15px; margin-bottom:16px;">
+        <div style="display:flex; align-items:baseline; gap:9px; margin-bottom:7px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:12px; color:oklch(72% 0.15 150); font-weight:700;">v3</div>
+          <div style="font-size:12.5px; font-weight:600;">TASK-026 &mdash; round 2, with your edit</div>
+        </div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">The company&rsquo;s round-2 reading, plus the one line you added to the definition of success. v1, v2 and your feedback all stay readable.</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:auto 1fr; gap:11px 14px; align-items:baseline; font-size:12px; line-height:1.65;">
+        <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:oklch(72% 0.15 150);">does</div>
+        <div style="color:#c8ccd2;">Marks v3 as the approved brief. From this moment there is an answer to &ldquo;what did the Founder actually agree to?&rdquo;</div>
+
+        <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:#666c74;">does not</div>
+        <div style="color:#c8ccd2;"><b style="color:#eae8e3;">Start any work. Spend any money. Dispatch any agent.</b> Approving is a complete outcome on its own &mdash; you can stop here and start next week.</div>
+
+        <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:#666c74;">later</div>
+        <div style="color:#c8ccd2;">When work does start, every agent &mdash; Product, Design, CTO, Red Team, Developer, Code Review, QA, Security &mdash; is given <i>this</i>, not your original sentence. Your sentence travels with it, labelled as context.</div>
+
+        <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:oklch(78% 0.14 75);">open</div>
+        <div style="color:#c8ccd2;">One question is unanswered &mdash; whether the ellipse is a requirement. <b style="color:#eae8e3;">Approving with it open is allowed</b>; the brief will record that we proceeded on our stated assumption, in your name.</div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:11px; margin-top:18px; padding-top:16px; border-top:1px solid #242830;">
+        <div onClick="{{approve}}" style="padding:10px 20px; border-radius:8px; background:oklch(72% 0.15 150); color:#06180d; font-weight:700; font-size:13px; cursor:pointer;">Approve v3 as the brief</div>
+        <div style="padding:10px 18px; border-radius:8px; background:#1a1e24; border:1px solid #323844; color:#9aa0a8; font-size:12.5px; cursor:pointer;">Not yet &mdash; go back</div>
+      </div>
+
+      <sc-if value="{{done}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:16px; border-radius:10px; border:1px solid oklch(72% 0.15 150 / 0.55); background:oklch(72% 0.15 150 / 0.08); padding:14px 16px;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:5px;">Approved. v3 is the brief.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">No agent was dispatched, nothing was spent, and no work has begun. <b style="color:#eae8e3;">Start Work is now available and is a separate decision.</b></div>
+        <div style="margin-top:11px;"><span onClick="{{go}}" style="padding:8px 16px; border-radius:8px; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12px; cursor:pointer; display:inline-block;">See the approved brief</span></div>
+      </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:17px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:10px;">Nothing here approves itself</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          There is no timeout, no default and no path by which a brief becomes approved because nobody looked at it. If you never click, it is never approved. <b style="color:#c8ccd2;">Silence is not consent</b>, and there is no code path in this product that treats it as consent.
+        </div>
+      </div>
+
+      <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:17px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:10px;">What you are not being asked to do</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          Approving is not agreeing that every sentence is perfect. It is saying <i style="color:#c8ccd2;">this is close enough to what I meant that building from it is not a waste.</i> Anything still wrong is cheaper to fix now than after &mdash; but not everything has to be right for this to be worth approving.
+        </div>
+      </div>
+
+      <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:17px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:10px;">Reversibility, honestly</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          Approval itself is a record, not an action, so it costs nothing to have made. What is <b style="color:#c8ccd2;">not</b> reversible is what comes after it &mdash; and that is the next screen, behind its own deliberate decision.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":700},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { done: false }; }
+  renderVals(){
+    var self = this;
+    return {
+      done: this.state.done,
+      approve: function(){ self.setState({ done: true }); },
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

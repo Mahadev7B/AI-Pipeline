@@ -1,0 +1,160 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1200,
+      "h": 2600,
+      "is_interactive": true,
+      "title": "Walk the journey"
+    },
+    {
+      "file": "S1RawIdea.dc.html",
+      "x": 0,
+      "y": 2800,
+      "w": 1120,
+      "h": 900,
+      "is_interactive": true
+    },
+    {
+      "file": "S2Interpreting.dc.html",
+      "x": 1240,
+      "y": 2800,
+      "w": 1120,
+      "h": 1050,
+      "is_interactive": true
+    },
+    {
+      "file": "S3Understanding.dc.html",
+      "x": 2480,
+      "y": 2800,
+      "w": 1120,
+      "h": 1500,
+      "is_interactive": true
+    },
+    {
+      "file": "S4Evaluation.dc.html",
+      "x": 3720,
+      "y": 2800,
+      "w": 1120,
+      "h": 2100,
+      "is_interactive": true
+    },
+    {
+      "file": "S5Review.dc.html",
+      "x": 4960,
+      "y": 2800,
+      "w": 1120,
+      "h": 1350,
+      "is_interactive": true
+    },
+    {
+      "file": "S6Reconsider.dc.html",
+      "x": 6200,
+      "y": 2800,
+      "w": 1120,
+      "h": 1200,
+      "is_interactive": true
+    },
+    {
+      "file": "S7Approval.dc.html",
+      "x": 7440,
+      "y": 2800,
+      "w": 1120,
+      "h": 1050,
+      "is_interactive": true
+    },
+    {
+      "file": "S8ApprovedBrief.dc.html",
+      "x": 8680,
+      "y": 2800,
+      "w": 1120,
+      "h": 1550,
+      "is_interactive": true
+    },
+    {
+      "file": "S9StartWork.dc.html",
+      "x": 9920,
+      "y": 2800,
+      "w": 1120,
+      "h": 1450,
+      "is_interactive": true
+    },
+    {
+      "file": "S10Running.dc.html",
+      "x": 11160,
+      "y": 2800,
+      "w": 1120,
+      "h": 1200
+    },
+    {
+      "file": "Distinctions.dc.html",
+      "x": 0,
+      "y": 5100,
+      "w": 1120,
+      "h": 1900
+    },
+    {
+      "file": "HonestStates.dc.html",
+      "x": 1240,
+      "y": 5100,
+      "w": 1120,
+      "h": 1750
+    },
+    {
+      "file": "FullDepth.dc.html",
+      "x": 2480,
+      "y": 5100,
+      "w": 1120,
+      "h": 2200
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-main",
+      "x": 0,
+      "y": -230,
+      "w": 620,
+      "text": "START HERE \u2014 THE WALKABLE PROTOTYPE\nOne window, all ten stages of the Founder journey, with working navigation: click the rail, use Back/Next, or use the controls inside each screen. Working navigation, no backend \u2014 nothing dispatches, nothing spends.\n\nThe idea it walks is the Founder's real one, typed on 1 Sep: \"the current UI so much verbose... like an ellipse where we can track flow\". Internal tooling, so depth is Light and the competitor sections are honestly empty."
+    },
+    {
+      "id": "note-row-journey",
+      "x": 0,
+      "y": 2630,
+      "w": 700,
+      "text": "THE JOURNEY, LAID OUT \u2014 the same ten screens the prototype mounts, side by side in order, so the whole arc is readable without clicking. Each one's own controls work here too (expanders, arm-then-confirm, the reconsider box); only the moves BETWEEN stages need the prototype."
+    },
+    {
+      "id": "note-s34",
+      "x": 2480,
+      "y": 2630,
+      "w": 620,
+      "text": "THE CENTREPIECE \u2014 one page, split in two only so the rail can jump to it. Concise layer: the ten questions, all answered, readable in about two minutes. Every \"show the working\" holds evidence for a decision you can already make, never part of the decision itself."
+    },
+    {
+      "id": "note-s9",
+      "x": 9920,
+      "y": 2630,
+      "w": 560,
+      "text": "THE CONSEQUENTIAL ACTION \u2014 arm (dispatches nothing) then confirm (the only filled button that spends). The failure state is drawn below it, because this project has already shipped one success message over a no-op."
+    },
+    {
+      "id": "note-row-sheets",
+      "x": 0,
+      "y": 4930,
+      "w": 660,
+      "text": "REFERENCE SHEETS \u2014 left: the five-voice grammar that solves the central problem (what I said \u00b7 what you think I meant \u00b7 what you think of it \u00b7 what you recommend \u00b7 what I approved). Middle: the honest states, drawn rather than described. Right: the Full-depth layer, every label slot shown, every value a marked placeholder."
+    },
+    {
+      "id": "note-fulldepth",
+      "x": 2480,
+      "y": 4930,
+      "w": 560,
+      "text": "NOTHING INVENTED. The directive bans invented competitor information and a mockup is not exempt, so every value on this sheet is a bracketed structural placeholder. The standing line is rendered exactly as it would appear today: \"Research has not been performed; all entries below are company inference or unknown.\""
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

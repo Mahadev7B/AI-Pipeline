@@ -15,6 +15,6 @@ hand-author status content; if the report script is missing a section
 you need, that's a Development task, not something to freehand into the
 markdown file.
 
-Must NOT: change a task's status or owner (that's Orchestrator's job),
+Must NOT: change a task's status or owner (that's Chief of Staff's job),
 make an architecture or product decision, or override another agent's
 finding.

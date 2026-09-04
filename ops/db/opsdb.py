@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import socket as socket_module
 import sqlite3
 import sys
 from pathlib import Path
@@ -40,6 +41,66 @@ from pathlib import Path
 DB_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ["OPSDB_PATH"]) if os.environ.get("OPSDB_PATH") else DB_DIR / "operations.sqlite3"
 SCHEMA_PATH = DB_DIR / "schema.sql"
+
+# --------------------------------------------------------- TASK-023 -------
+# Broker client mode (ops/reviews/cto-task023-architecture.md §3 point 3).
+# When OPSDB_BROKER_SOCKET is set in the environment (only ever true inside
+# a sandboxed Developer invocation — ops/control-center/opsdb_broker.py's
+# own docstring has the full design), the five commands the broker
+# supports (handoff, task-status, task-step-status, task-progress,
+# activity-log) serialize their already-validated arguments and ship them
+# to the broker over a Unix domain socket instead of calling connect() and
+# writing to operations.sqlite3 directly — because inside the sandbox that
+# file does not exist at all (§3 point 1). Every other command, and every
+# invocation anywhere OPSDB_BROKER_SOCKET is unset (all six other roles,
+# automation.py, direct human use), is completely untouched by this: zero
+# behavior change, verified by the existing ops/db/test_*.py suites, which
+# never set this variable.
+_BROKER_SOCKET_ENV = "OPSDB_BROKER_SOCKET"
+_BROKER_TOKEN_ENV = "OPSDB_BROKER_TOKEN"
+_BROKER_RECV_CHUNK = 65_536
+_BROKER_MAX_RESPONSE_BYTES = 1_000_000  # generous ceiling against a misbehaving/compromised broker
+                                          # response — this client trusts the broker's identity (it's
+                                          # a fixed, root-owned socket path) but not an unbounded read.
+
+
+def _broker_enabled() -> bool:
+    return bool(os.environ.get(_BROKER_SOCKET_ENV))
+
+
+def _broker_call(verb: str, args: dict) -> dict:
+    """Sends one request to opsdb_broker.py and returns its `result` dict
+    on success. Raises SystemExit on any transport failure or a broker-
+    reported error — the same "clean error, not a traceback" contract
+    every other opsdb.py command already gives a CLI caller."""
+    sock_path = os.environ.get(_BROKER_SOCKET_ENV)
+    token = os.environ.get(_BROKER_TOKEN_ENV, "")
+    request = json.dumps({"verb": verb, "token": token, "args": args}) + "\n"
+    try:
+        with socket_module.socket(socket_module.AF_UNIX, socket_module.SOCK_STREAM) as sock:
+            sock.connect(sock_path)
+            sock.sendall(request.encode("utf-8"))
+            sock.shutdown(socket_module.SHUT_WR)
+            chunks = []
+            total = 0
+            while True:
+                chunk = sock.recv(_BROKER_RECV_CHUNK)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                total += len(chunk)
+                if total > _BROKER_MAX_RESPONSE_BYTES:
+                    raise SystemExit("error: broker response exceeded the size ceiling")
+    except OSError as exc:
+        raise SystemExit(f"error: could not reach opsdb broker at {sock_path!r}: {exc}")
+    try:
+        response = json.loads(b"".join(chunks).decode("utf-8", errors="replace"))
+    except json.JSONDecodeError:
+        raise SystemExit("error: broker returned a response that could not be parsed")
+    if not isinstance(response, dict) or not response.get("ok"):
+        detail = response.get("error") if isinstance(response, dict) else None
+        raise SystemExit(f"error: broker rejected the request — {detail or 'unknown error'}")
+    return response.get("result") or {}
 
 
 def connect(require_exists: bool = True) -> sqlite3.Connection:
@@ -90,10 +151,118 @@ def cmd_project_create(args: argparse.Namespace) -> None:
     print(f"project created: id={cur.lastrowid} — {args.name}")
 
 
+def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
+    """Plain nullable ADD COLUMN migrations that can't be expressed as
+    idempotent raw SQL inside schema.sql's own executescript the way
+    `CREATE TABLE IF NOT EXISTS` can — SQLite's `ALTER TABLE ADD COLUMN`
+    has no `IF NOT EXISTS` form, so a bare ALTER TABLE statement in
+    schema.sql would fail the second time `init` runs against an
+    already-migrated database, breaking this command's own documented
+    ("idempotent") contract. Checked via PRAGMA table_info() first, so
+    this applies cleanly whether the target database is brand new or
+    already has these columns.
+
+    Phase 3A Part B (TASK-015), §B.13: handoffs.base_commit_sha/
+    head_commit_sha — nullable TEXT, no CHECK constraint, a plain
+    additive column exactly as the architecture doc specifies; only the
+    *application* of it is made idempotent here, not the migration's own
+    shape. See ops/DATA_MODEL.md.
+
+    TASK-020 (Milestone B), CTO's architecture doc §1.2: agent_runs.cost_usd
+    — nullable REAL, no CHECK constraint, same additive shape and same
+    idempotency guard, applied to a second table now instead of a new
+    function. Red Team's Milestone B review (required fix, §4): this
+    migration only takes effect on the LIVE database once a human/deploy
+    step re-runs `python3 ops/db/opsdb.py init` — it is not applied on
+    server startup or by any other code path. That review found a real,
+    live example of exactly this gap left unaddressed (`reviewer_invocations`,
+    specified in schema.sql since commit fdaf253 but never actually
+    created live, because `init` was never re-run after that commit — see
+    risks.id=4, out of scope for this milestone to fix). Development
+    verified `init` was re-run against the real operations.sqlite3 for
+    THIS migration specifically (`PRAGMA table_info(agent_runs)` confirmed
+    to include `cost_usd` afterward) — do not repeat that gap here."""
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(handoffs)").fetchall()}
+    if "base_commit_sha" not in cols:
+        conn.execute("ALTER TABLE handoffs ADD COLUMN base_commit_sha TEXT")
+    if "head_commit_sha" not in cols:
+        conn.execute("ALTER TABLE handoffs ADD COLUMN head_commit_sha TEXT")
+
+    agent_runs_cols = {row["name"] for row in conn.execute("PRAGMA table_info(agent_runs)").fetchall()}
+    if "cost_usd" not in agent_runs_cols:
+        conn.execute("ALTER TABLE agent_runs ADD COLUMN cost_usd REAL")
+
+    # TASK-024 slice 2. An evaluation runs several agents and takes minutes, so
+    # it cannot be a synchronous request. evaluating_since is the in-progress
+    # marker (NULL = not running) and last_error carries a failed run's reason
+    # forward so the Founder sees what happened instead of a silent revert.
+    # Deliberately NOT a new ideas.status value: status has a CHECK constraint,
+    # and SQLite cannot alter one without rebuilding the table.
+    ideas_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ideas'").fetchone() is not None
+    if ideas_exists:
+        ideas_cols = {row["name"] for row in conn.execute("PRAGMA table_info(ideas)").fetchall()}
+        if "evaluating_since" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN evaluating_since TEXT")
+        if "last_error" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN last_error TEXT")
+        # The Founder's correction, held from the moment they send it until the
+        # round it produced is written. Without this it lived only in the
+        # worker's memory, so a failed evaluation silently ate what they typed
+        # (Code Review, catch-up).
+        if "pending_note" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN pending_note TEXT")
+        # An approved investigation is not an approved brief — see schema.sql.
+        if "investigation_round_id" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN investigation_round_id INTEGER "
+                         "REFERENCES idea_rounds(id)")
+        if "investigation_approved_at" not in ideas_cols:
+            conn.execute("ALTER TABLE ideas ADD COLUMN investigation_approved_at TEXT")
+    rounds_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='idea_rounds'").fetchone() is not None
+    if rounds_exists:
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(idea_rounds)").fetchall()}
+        # A rehearsal round is stored like any other so the journey can be
+        # walked for free, but it is marked forever. Nothing that costs nothing
+        # should be able to pass itself off as the company's real opinion.
+        if "rehearsal" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN rehearsal INTEGER NOT NULL DEFAULT 0")
+        # Whether the Chief of Staff's answer needed a format-repair pass before
+        # it could be read. Recorded so the reliability problem can be MEASURED
+        # rather than argued about: if this is set on most rounds, the output
+        # contract is too hard to hit and should change.
+        if "repaired" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN repaired INTEGER NOT NULL DEFAULT 0")
+        # TASK-027 (DEC-032). What the Research lane actually did, kept with
+        # the round it informed. Stored as its own columns rather than folded
+        # into view_json because the whole point is that a market claim can be
+        # traced back to a source the Founder can open — evidence buried inside
+        # a blob that also holds the company's opinions is exactly the
+        # untraceable "market research" paragraph this replaces.
+        #
+        # `research_status` is deliberately three-valued, and the third value
+        # is the one that matters: not-needed (nobody was asked), done (the
+        # lane searched), unavailable (it was needed and could not be done).
+        # Without the third, a round with no evidence is indistinguishable from
+        # a round that did not need any, and the Founder cannot tell whether
+        # silence means "checked and there was nothing" or "never looked".
+        if "research_status" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_status TEXT "
+                         "NOT NULL DEFAULT 'not-needed'")
+        if "research_json" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_json TEXT")
+        # How many searches were really performed, as the runtime reported them
+        # — not as anyone intended. This is what makes "search is bounded" a
+        # checkable fact after the event.
+        if "research_searches" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_searches INTEGER")
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     conn = connect(require_exists=False)
     with conn:
         conn.executescript(SCHEMA_PATH.read_text())
+        _apply_additive_column_migrations(conn)
     DB_PATH.chmod(0o600)  # defense in depth — nothing sensitive is stored, but no reason for group/other read
     print(f"initialized {DB_PATH}")
 
@@ -164,25 +333,68 @@ def cmd_task_create(args: argparse.Namespace) -> None:
     print(f"task created: TASK-{task_id:03d}")
 
 
-def cmd_task_status(args: argparse.Namespace) -> None:
-    if args.to not in VALID_STATUSES:
-        raise SystemExit(f"error: invalid status '{args.to}' — must be one of {VALID_STATUSES}")
-    conn = connect()
+def record_task_status(conn: sqlite3.Connection, task_id: int, to_status: str,
+                        changed_by_agent: str, note: str | None = None,
+                        owner: str | None = None) -> str:
+    """Plain, directly-callable form of task-status — refactored out of
+    cmd_task_status (Correction, Red Team's Phase 3A review, RT1: this
+    document's original claim that `cmd_review_result` was "the one write
+    path" in this file not yet following the plain-function shape was
+    independently verified false — `cmd_task_status` had the identical
+    problem, and §B.8's automated-REJECT path already depends on a plain
+    function backing it). Same shape as every other refactored write
+    function here (record_review_result() below, decide_approval(),
+    end_run()): a caller-side contract violation raises a clear, typed
+    ValueError, never only a SystemExit only the CLI wrapper could
+    produce. automation.py (Phase 3A Part B) calls this in-process, never
+    through the CLI, for the automated REJECT -> IN_DEVELOPMENT rollback
+    (§B.8) — a pure bookkeeping status transition, never a new Developer
+    invocation. Returns the task's previous status (for the CLI wrapper's
+    own unchanged print message)."""
+    if to_status not in VALID_STATUSES:
+        raise ValueError(f"invalid status '{to_status}' — must be one of {VALID_STATUSES}")
     with conn:
-        row = conn.execute("SELECT status FROM tasks WHERE id = ?", (args.task_id,)).fetchone()
+        row = conn.execute("SELECT status FROM tasks WHERE id = ?", (task_id,)).fetchone()
         if row is None:
-            raise SystemExit(f"error: no such task TASK-{args.task_id:03d}")
+            raise ValueError(f"no such task TASK-{task_id:03d}")
         conn.execute(
             "UPDATE tasks SET status = ?, current_owner = COALESCE(?, current_owner), "
             "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
-            (args.to, args.owner, args.task_id),
+            (to_status, owner, task_id),
         )
         conn.execute(
             "INSERT INTO task_status_history (task_id, from_status, to_status, "
             "changed_by_agent, note) VALUES (?, ?, ?, ?, ?)",
-            (args.task_id, row["status"], args.to, args.by, args.note),
+            (task_id, row["status"], to_status, changed_by_agent, note),
         )
-    print(f"TASK-{args.task_id:03d}: {row['status']} -> {args.to}")
+    return row["status"]
+
+
+def cmd_task_status(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        # TASK-023: --task-id/--by are still required by argparse below for
+        # CLI-syntax parity with the non-sandboxed path, but the broker
+        # ignores both — task_id is forced to this session's bound task and
+        # by is forced to "developer" (Correction section,
+        # ops/reviews/cto-task023-architecture.md §3). --to is broker-side
+        # allowlisted, not merely forwarded.
+        result = _broker_call("task-status", {"to": args.to, "note": args.note, "owner": args.owner})
+        # Print the broker's OWN authoritative values, not the client-supplied
+        # --task-id (which the broker ignores in favour of the session's bound
+        # task) and not a literal None for from_status (Code Review
+        # non-blocking item). The broker binds/forces both, so its reply is
+        # the honest thing to echo.
+        from_status = result.get("from_status")
+        to_status = result.get("to_status", args.to)
+        print(f"task moved (this session's bound task): "
+              f"{from_status if from_status is not None else '(none)'} -> {to_status}")
+        return
+    conn = connect()
+    try:
+        from_status = record_task_status(conn, args.task_id, args.to, args.by, args.note, args.owner)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
+    print(f"TASK-{args.task_id:03d}: {from_status} -> {args.to}")
 
 
 TASK_UPDATE_FIELDS = [
@@ -221,33 +433,85 @@ def cmd_task_step_add(args: argparse.Namespace) -> None:
     print(f"step added to TASK-{args.task_id:03d}: {args.title}")
 
 
-def cmd_task_step_status(args: argparse.Namespace) -> None:
-    conn = connect()
+def task_step_owner(conn: sqlite3.Connection, step_id: int) -> int | None:
+    """Looks up the task_id a task_steps row belongs to, or None if no such
+    step exists. Added (TASK-023) so opsdb_broker.py can verify a
+    Developer-bound-session's step_id actually belongs to that session's
+    own task before forwarding a task-step-status write — never trusting
+    a client-supplied task_id for this verb (there isn't one to trust; the
+    binding is via step_id -> task_id, checked here)."""
+    row = conn.execute("SELECT task_id FROM task_steps WHERE id = ?", (step_id,)).fetchone()
+    return row["task_id"] if row is not None else None
+
+
+def set_task_step_status(conn: sqlite3.Connection, step_id: int, status: str) -> None:
+    """Plain, directly-callable form of task-step-status — refactored out
+    of cmd_task_step_status (TASK-023, same "small refactor, not a
+    rewrite" pattern as record_task_status() above; opsdb_broker.py
+    imports this directly). Raises ValueError if no such step exists."""
     with conn:
         cur = conn.execute(
             "UPDATE task_steps SET status = ?, "
             "completed_at = CASE WHEN ? = 'done' THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE NULL END "
             "WHERE id = ?",
-            (args.status, args.status, args.step_id),
+            (status, status, step_id),
         )
         if cur.rowcount == 0:
-            raise SystemExit(f"error: no such task step id={args.step_id}")
+            raise ValueError(f"no such task step id={step_id}")
+
+
+def cmd_task_step_status(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        result = _broker_call("task-step-status", {"step_id": args.step_id, "status": args.status})
+        print(f"step {result.get('step_id', args.step_id)}: {result.get('status', args.status)}")
+        return
+    conn = connect()
+    try:
+        set_task_step_status(conn, args.step_id, args.status)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
     print(f"step {args.step_id}: {args.status}")
 
 
-def cmd_task_progress(args: argparse.Namespace) -> None:
-    conn = connect()
+def compute_task_progress(conn: sqlite3.Connection, task_id: int) -> dict:
+    """Plain, directly-callable form of task-progress — refactored out of
+    cmd_task_progress (TASK-023, same pattern as every other refactored
+    read/write function in this file; opsdb_broker.py imports this
+    directly, since task-progress is the one read-only verb the broker
+    still forwards, per the Correction section of
+    ops/reviews/cto-task023-architecture.md — it only ever sums one
+    task's own task_steps rows, no schema-wide exposure). Returns
+    {"task_id", "total", "done", "pct"} — total/done/pct are None when the
+    task has no steps yet (the same "no progress percentage" case the CLI
+    wrapper's print statement already handled)."""
     row = conn.execute(
         "SELECT SUM(weight) AS total, "
         "SUM(CASE WHEN status='done' THEN weight ELSE 0 END) AS done "
         "FROM task_steps WHERE task_id = ?",
-        (args.task_id,),
+        (task_id,),
     ).fetchone()
     if not row or row["total"] in (None, 0):
-        print(f"TASK-{args.task_id:03d}: not yet broken into steps — no progress percentage")
-        return
+        return {"task_id": task_id, "total": None, "done": None, "pct": None}
     pct = round(100 * row["done"] / row["total"])
-    print(f"TASK-{args.task_id:03d}: {pct}% ({row['done']:g}/{row['total']:g} weighted steps done)")
+    return {"task_id": task_id, "total": row["total"], "done": row["done"], "pct": pct}
+
+
+def _format_task_progress(progress: dict) -> str:
+    task_id = progress["task_id"]
+    if progress["pct"] is None:
+        return f"TASK-{task_id:03d}: not yet broken into steps — no progress percentage"
+    return (f"TASK-{task_id:03d}: {progress['pct']}% "
+            f"({progress['done']:g}/{progress['total']:g} weighted steps done)")
+
+
+def cmd_task_progress(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        result = _broker_call("task-progress", {"task_id": args.task_id})
+        print(_format_task_progress(result))
+        return
+    conn = connect()
+    progress = compute_task_progress(conn, args.task_id)
+    print(_format_task_progress(progress))
 
 
 # ------------------------------------------------------------- agent_runs --
@@ -356,21 +620,33 @@ def cmd_run_heartbeat(args: argparse.Namespace) -> None:
 RUN_END_STATUSES = ("ended", "failed")
 
 
-def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended") -> None:
+def end_run(conn: sqlite3.Connection, run_id: int, status: str = "ended",
+            cost_usd: float | None = None) -> None:
     """Plain, directly-callable form of run-end. Atomic and conditional
     (WHERE ended_at IS NULL) — same guard pattern as decide_approval():
     a run can only be ended once; a second call (duplicate/racing
     request) affects zero rows instead of silently overwriting ended_at
     or flipping a 'failed' run back to 'ended' (Red Team's Milestone 2B2
     review). Raises LookupError / ValueError, same convention as
-    decide_approval() and start_run()."""
+    decide_approval() and start_run().
+
+    TASK-020 (Milestone B), CTO's architecture doc §2.1: `cost_usd`
+    (extended, not replaced — every existing caller now passes it,
+    see server.py/meeting_orchestrator.py/chief_of_staff.py/automation.py)
+    defaults to None so this function's contract stays additive/backward-
+    compatible, the same discipline end_automation_event() already sets
+    for its own optional params. The value is always exactly what
+    agent_runtime.invoke_agent() already returned to the caller — no new
+    computation happens here. None (never a fabricated 0.0) means either
+    "this invocation failed before producing a real cost" or "cost_usd
+    was never passed" — both honest, distinct from a real $0.00."""
     if status not in RUN_END_STATUSES:
         raise ValueError(f"status must be one of {RUN_END_STATUSES}, got {status!r}")
     with conn:
         cur = conn.execute(
-            "UPDATE agent_runs SET status = ?, "
+            "UPDATE agent_runs SET status = ?, cost_usd = ?, "
             "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND ended_at IS NULL",
-            (status, run_id),
+            (status, cost_usd, run_id),
         )
         if cur.rowcount == 0:
             row = conn.execute("SELECT status FROM agent_runs WHERE id = ?", (run_id,)).fetchone()
@@ -463,6 +739,63 @@ def cmd_risk_resolve(args: argparse.Namespace) -> None:
             (args.status, args.mitigation, args.status, args.risk_id),
         )
     print(f"risk {args.risk_id}: {args.status}")
+
+
+# ----------------------------------------------------------------- phases --
+# Milestone D (TASK-022): the *only* writer of the `phases` table — no HTTP
+# write route, no Founder-facing write UI. Same pattern as risk-add/
+# risk-resolve/decision-record. See
+# ops/reviews/cto-milestone-d-architecture.md Part 6.
+
+def _phase_row_exists(conn: sqlite3.Connection, phase_id: int) -> bool:
+    return conn.execute("SELECT 1 FROM phases WHERE id = ?", (phase_id,)).fetchone() is not None
+
+
+def cmd_phase_add(args: argparse.Namespace) -> None:
+    # Explicit existence checks (not just relying on the FK constraint),
+    # matching risk-add's own scope-validation discipline and Security's
+    # framing in Part 9.2 — a clear error, not a bare IntegrityError, for
+    # the one FK (parent_phase_id) that references this same table and so
+    # could otherwise silently insert a dangling reference if foreign_keys
+    # enforcement were ever off. decisions/tasks FKs are still enforced by
+    # SQLite itself (PRAGMA foreign_keys = ON, connect()) and surfaced as a
+    # clean error by main()'s sqlite3.IntegrityError handler.
+    conn = connect()
+    if args.parent_phase_id is not None and not _phase_row_exists(conn, args.parent_phase_id):
+        raise SystemExit(f"error: no phases row with id={args.parent_phase_id} — --parent-id must reference an existing phase")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO phases (name, parent_phase_id, status, sort_order, "
+            "opened_decision_id, closed_decision_id, task_id, "
+            "milestones_total, milestones_complete, note) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (args.name, args.parent_phase_id, args.status, args.sort_order,
+             args.opened_decision_id, args.closed_decision_id, args.task_id,
+             args.milestones_total, args.milestones_complete, args.note),
+        )
+    print(f"phase added: id={cur.lastrowid} name={args.name!r} status={args.status}")
+
+
+def cmd_phase_set_status(args: argparse.Namespace) -> None:
+    conn = connect()
+    if args.phase_id is not None:
+        phase_id = args.phase_id
+        if not _phase_row_exists(conn, phase_id):
+            raise SystemExit(f"error: no phases row with id={phase_id}")
+    else:
+        row = conn.execute("SELECT id FROM phases WHERE name = ?", (args.phase_name,)).fetchone()
+        if row is None:
+            raise SystemExit(f"error: no phases row named {args.phase_name!r}")
+        phase_id = row["id"]
+    with conn:
+        conn.execute(
+            "UPDATE phases SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), "
+            "closed_decision_id = COALESCE(?, closed_decision_id), "
+            "milestones_complete = COALESCE(?, milestones_complete), "
+            "note = COALESCE(?, note) WHERE id = ?",
+            (args.status, args.closed_decision_id, args.milestones_complete, args.note, phase_id),
+        )
+    print(f"phase {phase_id}: {args.status}")
 
 
 # --------------------------------------------------------------- meetings --
@@ -811,14 +1144,32 @@ def decide_meeting(conn: sqlite3.Connection, meeting_id: int, decision_text: str
 
 # ------------------------------------------------------- other write ops --
 
-def cmd_activity_log(args: argparse.Namespace) -> None:
-    conn = connect()
-    agent_id = _agent_id(conn, args.agent)
+def record_activity(conn: sqlite3.Connection, agent: str, task_id: int | None,
+                     summary: str, detail: str | None = None) -> int:
+    """Plain, directly-callable form of activity-log — refactored out of
+    cmd_activity_log (TASK-023, same pattern as every other refactored
+    write function here). Returns the new agent_activity.id. Note:
+    _agent_id() raises SystemExit (not a typed exception) for an unknown
+    agent — a pre-existing, narrower inconsistency with this file's own
+    "typed ValueError" convention that predates this refactor; not fixed
+    here (out of this task's scope), and opsdb_broker.py's caller catches
+    SystemExit alongside LookupError/ValueError for exactly this reason."""
+    agent_id = _agent_id(conn, agent)
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO agent_activity (agent_id, task_id, summary, detail) VALUES (?, ?, ?, ?)",
-            (agent_id, args.task_id, args.summary, args.detail),
+            (agent_id, task_id, summary, detail),
         )
+    return cur.lastrowid
+
+
+def cmd_activity_log(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        _broker_call("activity-log", {"summary": args.summary, "detail": args.detail})
+        print("activity logged")
+        return
+    conn = connect()
+    record_activity(conn, args.agent, args.task_id, args.summary, args.detail)
     print("activity logged")
 
 
@@ -872,31 +1223,94 @@ def cmd_qa_result(args: argparse.Namespace) -> None:
     print(f"QA result recorded: {args.result}")
 
 
-def cmd_review_result(args: argparse.Namespace) -> None:
-    if args.result == "reject" and not args.returned_to:
-        raise SystemExit("error: a reject result must set --returned-to")
-    conn = connect()
+def record_review_result(conn: sqlite3.Connection, task_id: int, review_type: str, by: str,
+                          result: str, findings: list | None = None,
+                          returned_to: str | None = None) -> int:
+    """Plain, directly-callable form of review-result — refactored out of
+    cmd_review_result (Security's Phase 3A threat-model review, required
+    fix C4), same shape as every other write function in this file.
+    automation.py (Phase 3A Part B) calls this in-process, never through
+    the CLI, for both the automated PASS and REJECT paths (§B.8) — the
+    reject-requires-`returned_to` invariant therefore MUST live here, not
+    only in cmd_review_result's own --returned-to check below, or an
+    in-process caller could bypass it entirely and rely on the schema's
+    own CHECK constraint alone (still fail-safe either way, but
+    inconsistent with this file's established convention of a clear,
+    typed ValueError for a caller-side contract violation — see
+    record_task_status()/decide_approval()/end_run() above). Raises
+    ValueError for an invalid review_type/result, or a reject with no
+    returned_to. Returns the new review_results.id."""
+    if review_type not in ("code", "security"):
+        raise ValueError(f"review_type must be 'code' or 'security', got {review_type!r}")
+    if result not in ("pass", "reject"):
+        raise ValueError(f"result must be 'pass' or 'reject', got {result!r}")
+    if result == "reject" and not returned_to:
+        raise ValueError("a reject result must set returned_to")
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO review_results (task_id, review_type, reviewed_by_agent, result, "
             "findings, returned_to_agent) VALUES (?, ?, ?, ?, ?, ?)",
-            (args.task_id, args.type, args.by, args.result,
-             json.dumps(args.findings or []), args.returned_to),
+            (task_id, review_type, by, result, json.dumps(findings or []), returned_to),
         )
+    return cur.lastrowid
+
+
+def cmd_review_result(args: argparse.Namespace) -> None:
+    conn = connect()
+    try:
+        record_review_result(conn, args.task_id, args.type, args.by, args.result,
+                              args.findings, args.returned_to)
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}")
     print(f"{args.type} review recorded: {args.result}")
 
 
-def cmd_handoff(args: argparse.Namespace) -> None:
-    conn = connect()
+def record_handoff(conn: sqlite3.Connection, task_id: int, from_agent: str, to_agent: str,
+                    work_completed: str | None = None, files: list | None = None,
+                    tests_added: str | None = None, expected_behavior: str | None = None,
+                    known_limitations: str | None = None, checklist: str | None = None,
+                    base_commit_sha: str | None = None, head_commit_sha: str | None = None) -> int:
+    """Plain, directly-callable form of handoff — refactored out of
+    cmd_handoff (TASK-023, same pattern as every other refactored write
+    function here; opsdb_broker.py imports this directly). Returns the
+    new handoffs.id."""
     with conn:
-        conn.execute(
+        cur = conn.execute(
             "INSERT INTO handoffs (task_id, from_agent, to_agent, work_completed, "
             "files_changed, tests_added, expected_behavior, known_limitations, "
-            "receiving_agent_checklist) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (args.task_id, args.from_agent, args.to_agent, args.work_completed,
-             json.dumps(args.files or []), args.tests_added, args.expected_behavior,
-             args.known_limitations, args.checklist),
+            "receiving_agent_checklist, base_commit_sha, head_commit_sha) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (task_id, from_agent, to_agent, work_completed,
+             json.dumps(files or []), tests_added, expected_behavior,
+             known_limitations, checklist, base_commit_sha, head_commit_sha),
         )
+    return cur.lastrowid
+
+
+def cmd_handoff(args: argparse.Namespace) -> None:
+    if _broker_enabled():
+        # TASK-023: --task-id/--from-agent are still required by argparse
+        # below for CLI-syntax parity, but the broker ignores both —
+        # task_id is forced to this session's bound task, from_agent is
+        # forced to "developer". --to-agent is broker-side allowlisted to
+        # "code-review" only, not merely forwarded.
+        result = _broker_call("handoff", {
+            "to_agent": args.to_agent,
+            "work_completed": args.work_completed,
+            "files": args.files,
+            "tests_added": args.tests_added,
+            "expected_behavior": args.expected_behavior,
+            "known_limitations": args.known_limitations,
+            "checklist": args.checklist,
+            "base_commit_sha": args.base_commit_sha,
+            "head_commit_sha": args.head_commit_sha,
+        })
+        print(f"handoff recorded: developer -> {result.get('to_agent', args.to_agent)}")
+        return
+    conn = connect()
+    record_handoff(conn, args.task_id, args.from_agent, args.to_agent, args.work_completed,
+                    args.files, args.tests_added, args.expected_behavior,
+                    args.known_limitations, args.checklist, args.base_commit_sha, args.head_commit_sha)
     print(f"handoff recorded: {args.from_agent} -> {args.to_agent}")
 
 
@@ -1046,6 +1460,239 @@ def cmd_deployment_record(args: argparse.Namespace) -> None:
     print(f"deployment recorded: id={cur.lastrowid} version={args.version}")
 
 
+# --------------------------------------------------- Phase 3A Part B ------
+# Automation poller support (ops/control-center/automation.py). See
+# ops/reviews/cto-phase3a-architecture.md §B.3/§B.4/§B.11. None of these
+# have a CLI wrapper — every one is called only in-process, by
+# automation.py (create_automation_event/end_automation_event) or
+# server.py's write routes (set_automation_enabled) or startup
+# reconciliation (reconcile_stuck_automation_events), never through a
+# human-typed opsdb.py command.
+
+def set_automation_enabled(conn: sqlite3.Connection, enabled: bool, reason: str | None = None,
+                            by: str = "founder") -> None:
+    """The only function permitted to write automation_state (§B.4) —
+    called only by the two new CSRF+session-gated routes (POST
+    /api/automation/stop, /start), never by the poller itself, never by
+    any agent invocation. automation_state has exactly one row (id=1,
+    CHECK-enforced, seeded by schema.sql's own INSERT OR IGNORE at
+    schema-apply time) — this is always an UPDATE, never an INSERT."""
+    with conn:
+        conn.execute(
+            "UPDATE automation_state SET enabled = ?, changed_by = ?, reason = ?, "
+            "changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = 1",
+            (1 if enabled else 0, by, reason),
+        )
+
+
+def create_automation_event(conn: sqlite3.Connection, task_id: int,
+                             trigger_status_history_id: int) -> int | None:
+    """The atomic claim (§B.3/§B.10 scenario 4; Correction, Red Team's
+    Phase 3A review, RT3 — this is the VERY FIRST step automation.py takes
+    for any eligible-looking trigger row, strictly BEFORE the
+    handoff-existence check, the SHA validity checks, and the file-path
+    validation, not only before the real invocation — see automation.py's
+    own module docstring for why this ordering is load-bearing: without
+    it, a task manually moved to CODE_REVIEW with no handoff, a typo'd
+    SHA, or any other eligibility failure would be re-evaluated by the
+    candidate-finding query on every subsequent poll cycle, forever).
+
+    Two things happen atomically, inside one BEGIN IMMEDIATE transaction:
+    (1) re-checks tasks.status is STILL 'CODE_REVIEW' (§B.10 scenario 4 —
+    a human may have acted on the task between the poller's candidate-list
+    read and this claim attempt); (2) the real claim — an INSERT whose
+    trigger_status_history_id UNIQUE constraint (schema.sql) is the
+    actual, DB-enforced idempotency guarantee (Founder's control #5), not
+    merely this function's own pre-check.
+
+    Returns the new automation_events.id, or None if no NEW claim could be
+    made — either this trigger_status_history_id is already claimed (any
+    status — the idempotency case, §B.10 scenario 1), or tasks.status no
+    longer matches CODE_REVIEW (§B.10 scenario 4). The caller cannot
+    distinguish which from the return value alone and, per RT3, must not
+    need to: either way there is nothing new to record. Raises
+    sqlite3.OperationalError on genuine lock contention (BEGIN IMMEDIATE
+    itself, deliberately outside the try/except below — same non-masking
+    discipline as start_ask_agent_run()/add_meeting_participant())."""
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        existing = conn.execute(
+            "SELECT id FROM automation_events WHERE trigger_status_history_id = ?",
+            (trigger_status_history_id,),
+        ).fetchone()
+        if existing is not None:
+            conn.execute("ROLLBACK")
+            return None
+        task_row = conn.execute("SELECT status FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if task_row is None or task_row["status"] != "CODE_REVIEW":
+            conn.execute("ROLLBACK")
+            return None
+        try:
+            cur = conn.execute(
+                "INSERT INTO automation_events (task_id, trigger_status_history_id, status) "
+                "VALUES (?, ?, 'running')",
+                (task_id, trigger_status_history_id),
+            )
+        except sqlite3.IntegrityError:
+            # A second, truly concurrent claim attempt for the same
+            # trigger row (§B.6's R2 disclosure: race-free only under the
+            # single-poller-process assumption; the per-event UNIQUE
+            # constraint itself is genuinely DB-enforced regardless) —
+            # the same "nothing new to record" outcome as the pre-check
+            # above, just caught one step later.
+            conn.execute("ROLLBACK")
+            return None
+        conn.execute("COMMIT")
+        return cur.lastrowid
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+
+_AUTOMATION_EVENT_END_STATUSES = ("completed", "failed", "skipped")
+
+
+def end_automation_event(conn: sqlite3.Connection, event_id: int, status: str,
+                          outcome: str | None = None, review_result_id: int | None = None,
+                          cost_usd: float | None = None, truncated: bool = False,
+                          skip_reason: str | None = None) -> None:
+    """Terminal-state write for one automation_events row — 'completed'
+    (outcome pass/reject), 'failed' (outcome error/interrupted), or
+    'skipped' (a §B.10 fail-closed scenario, or a §B.7 cap — outcome
+    'capped' for the two genuine cap scenarios per Red Team's Phase 3A
+    review, NB1). Conditional on status='running' so a row already ended
+    cannot be silently re-ended (same one-time-only discipline as
+    end_run()/decide_approval()). Raises ValueError if `status` is not one
+    of the real terminal values, LookupError if the row doesn't exist or
+    is already ended."""
+    if status not in _AUTOMATION_EVENT_END_STATUSES:
+        raise ValueError(f"status must be one of {_AUTOMATION_EVENT_END_STATUSES}, got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE automation_events SET status = ?, outcome = ?, review_result_id = ?, "
+            "cost_usd = ?, truncated = ?, skip_reason = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE id = ? AND status = 'running'",
+            (status, outcome, review_result_id, cost_usd, 1 if truncated else 0, skip_reason, event_id),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT status FROM automation_events WHERE id = ?", (event_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"automation_events {event_id} does not exist")
+            raise ValueError(f"automation_events {event_id} is already '{row['status']}'")
+
+
+def reconcile_stuck_automation_events(conn: sqlite3.Connection) -> int:
+    """Startup counterpart to reconcile_orphaned_runs() for the new table
+    (§B.11) — an automation_events row found status='running' at server
+    startup means the prior process crashed mid-cycle. Never silently
+    marked complete or resumed: marked 'failed'/'interrupted' once, and
+    (per the UNIQUE constraint) its trigger event is never automatically
+    retried afterward — the same Founder-visible "needs a look" state as
+    any other failure. Returns the number of rows updated."""
+    with conn:
+        cur = conn.execute(
+            "UPDATE automation_events SET status='failed', outcome='interrupted', "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE status='running'"
+        )
+    return cur.rowcount
+
+
+# --------------------------------------------------------- TASK-017 -------
+# risks.id=3 reduction milestone: the audit record for the three new
+# synchronous, human-triggered reviewer routes (server.py's
+# POST /api/tasks/<id>/review/{code,security,red-team}, via
+# ops/control-center/reviewer_sync.py) and the Developer denylist hook's
+# own denial log (ops/control-center/hooks/developer_pretooluse.py). See
+# ops/reviews/cto-risk3-milestone-architecture.md §1.4/§2.4. None of
+# these three have a CLI wrapper — called only in-process, or (for
+# record_hook_denial) by the standalone hook script's own short-lived
+# connection, never through a human-typed opsdb.py command.
+
+_REVIEWER_INVOCATION_KINDS = ("code", "security", "red-team")
+
+
+def start_reviewer_invocation(conn: sqlite3.Connection, task_id: int, review_kind: str,
+                               reviewed_by_agent: str, triggered_by: str = "founder",
+                               base_commit_sha: str | None = None, head_commit_sha: str | None = None,
+                               artifact_paths: list[str] | None = None) -> int:
+    """§1.4: mirrors create_automation_event()'s shape, but a plain
+    INSERT, not a BEGIN IMMEDIATE claim — there is nothing to claim
+    against. A human clicking "run this review again" after a small fix
+    is a legitimate, repeatable action, not an idempotency violation the
+    way a re-processed poller trigger would be. Raises ValueError for an
+    invalid review_kind. Returns the new reviewer_invocations.id."""
+    if review_kind not in _REVIEWER_INVOCATION_KINDS:
+        raise ValueError(f"review_kind must be one of {_REVIEWER_INVOCATION_KINDS}, got {review_kind!r}")
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO reviewer_invocations (task_id, review_kind, reviewed_by_agent, triggered_by, "
+            "status, base_commit_sha, head_commit_sha, artifact_paths) "
+            "VALUES (?, ?, ?, ?, 'running', ?, ?, ?)",
+            (task_id, review_kind, reviewed_by_agent, triggered_by, base_commit_sha, head_commit_sha,
+             json.dumps(artifact_paths) if artifact_paths is not None else None),
+        )
+    return cur.lastrowid
+
+
+_REVIEWER_INVOCATION_END_STATUSES = ("completed", "failed")
+
+
+def end_reviewer_invocation(conn: sqlite3.Connection, invocation_id: int, status: str,
+                             outcome: str | None = None, review_result_id: int | None = None,
+                             agent_run_id: int | None = None, cost_usd: float | None = None,
+                             truncated: bool = False, skip_reason: str | None = None) -> None:
+    """Terminal-state write for one reviewer_invocations row — mirrors
+    end_automation_event()'s shape exactly (same rowcount-guard,
+    one-time-only-terminal-write discipline). Conditional on
+    status='running' so a row already ended cannot be silently re-ended.
+    Raises ValueError if `status` is not one of the real terminal values,
+    LookupError if the row doesn't exist or is already ended."""
+    if status not in _REVIEWER_INVOCATION_END_STATUSES:
+        raise ValueError(f"status must be one of {_REVIEWER_INVOCATION_END_STATUSES}, got {status!r}")
+    with conn:
+        cur = conn.execute(
+            "UPDATE reviewer_invocations SET status = ?, outcome = ?, review_result_id = ?, "
+            "agent_run_id = ?, cost_usd = ?, truncated = ?, skip_reason = ?, "
+            "ended_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE id = ? AND status = 'running'",
+            (status, outcome, review_result_id, agent_run_id, cost_usd, 1 if truncated else 0,
+             skip_reason, invocation_id),
+        )
+        if cur.rowcount == 0:
+            row = conn.execute("SELECT status FROM reviewer_invocations WHERE id = ?", (invocation_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"reviewer_invocations {invocation_id} does not exist")
+            raise ValueError(f"reviewer_invocations {invocation_id} is already '{row['status']}'")
+
+
+_HOOK_DENIAL_TOOL_NAMES = ("Bash", "Write", "Edit")
+_HOOK_DENIAL_SUMMARY_MAX_CHARS = 2_000
+
+
+def record_hook_denial(conn: sqlite3.Connection, role: str, tool_name: str, matched_rule: str,
+                        tool_input_summary: str, session_id: str | None = None,
+                        transcript_path: str | None = None) -> int:
+    """§2.4: a new, small, unconditional-INSERT function. Called by
+    developer_pretooluse.py itself via its own opsdb.connect() (the hook
+    script is a standalone subprocess the harness spawns per tool call; it
+    opens its own short-lived connection, the same pattern every other
+    one-shot script in this codebase already uses). `tool_name` is not
+    CHECK-constrained in the schema to the three named values (the hook's
+    own exception-handling fallback may log 'unknown' when it cannot tell
+    which tool was being inspected) — validated loosely here (logged best-
+    effort, not blocked) so a genuinely unexpected value never itself
+    prevents a real denial from being recorded."""
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO hook_denials (role, tool_name, matched_rule, tool_input_summary, "
+            "session_id, transcript_path) VALUES (?, ?, ?, ?, ?, ?)",
+            (role, tool_name, matched_rule, (tool_input_summary or "")[:_HOOK_DENIAL_SUMMARY_MAX_CHARS],
+             session_id, transcript_path),
+        )
+    return cur.lastrowid
+
+
 PURGE_CHECK_TABLES = [
     "qa_results", "review_results", "deployments", "handoffs",
     "messages", "agent_activity", "task_steps",
@@ -1113,6 +1760,339 @@ def cmd_task_purge_scratch(args: argparse.Namespace) -> None:
           "(no approvals existed to protect)")
 
 
+# ------------------------------------------------------------- TASK-024 -----
+# Founder Idea Intake and Evaluation (DEC-013 through DEC-018).
+#
+# opsdb.py is the sole database writer, so the Idea Desk web layer shells out
+# to these commands rather than opening the database itself. The immutability
+# the three-artifact rule requires is enforced here by OMISSION: there is
+# deliberately no command that updates ideas.raw_idea, and none that updates
+# any column of idea_rounds. An edit appends to idea_edits; a correction
+# appends a new round. Nothing rewrites history.
+
+
+def _idea_row(conn: sqlite3.Connection, idea_id: int) -> sqlite3.Row:
+    row = conn.execute("SELECT * FROM ideas WHERE id = ?", (idea_id,)).fetchone()
+    if row is None:
+        raise SystemExit(f"error: no idea with id={idea_id}")
+    # A database can exist and still predate a migration — a restored backup,
+    # most obviously. Reading a missing column raises a bare IndexError deep in
+    # a handler, which reaches the Founder as an unreadable traceback. Say what
+    # is actually wrong and how to fix it, in one line.
+    missing = {"evaluating_since", "last_error", "pending_note"} - set(row.keys())
+    if missing:
+        raise SystemExit(
+            "error: this database is older than the code — the ideas table is missing "
+            f"{', '.join(sorted(missing))}. Bring it up to date with:  "
+            "python3 ops/db/opsdb.py init")
+    return row
+
+
+def cmd_idea_create(args: argparse.Namespace) -> None:
+    """Store a raw Founder idea. This writes ARTIFACT 1 and nothing else —
+    it starts no evaluation, dispatches no agent and costs nothing."""
+    raw = args.raw.strip()
+    if not raw:
+        raise SystemExit("error: --raw is empty; an idea needs the Founder's own words")
+    conn = connect()
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO ideas (raw_idea, audience, trigger_note) VALUES (?, ?, ?)",
+            (raw, args.audience, args.trigger),
+        )
+    print(f"idea created: id={cur.lastrowid}")
+
+
+def cmd_idea_edit(args: argparse.Namespace) -> None:
+    """The Founder changes their own wording. Appends to idea_edits; the
+    original in ideas.raw_idea is untouched, which is what lets the UI keep
+    saying 'you said, never edited' truthfully."""
+    raw = args.raw.strip()
+    if not raw:
+        raise SystemExit("error: --raw is empty")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit("error: this idea's brief is approved — the approved brief is frozen; "
+                             "raise a new idea instead of editing behind it")
+        conn.execute(
+            "INSERT INTO idea_edits (idea_id, raw_idea, audience, trigger_note) VALUES (?, ?, ?, ?)",
+            (args.idea_id, raw, args.audience, args.trigger),
+        )
+        conn.execute("UPDATE ideas SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?",
+                     (args.idea_id,))
+    print(f"idea edited: id={args.idea_id} (original preserved)")
+
+
+def cmd_idea_round_add(args: argparse.Namespace) -> None:
+    """Append ARTIFACT 2 — one company evaluation of the idea. Immutable
+    once written: there is no idea-round-update command, by design."""
+    for name, value in (("--answers", args.answers), ("--view", args.view), ("--roster", args.roster),
+                        ("--research", getattr(args, "research", None))):
+        if value is None:
+            continue
+        try:
+            json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"error: {name} is not valid JSON — {exc}") from None
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] in ("approved", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}; it is not open for "
+                             "further evaluation")
+        next_no = (conn.execute(
+            "SELECT COALESCE(MAX(round_no), 0) + 1 FROM idea_rounds WHERE idea_id = ?",
+            (args.idea_id,)).fetchone()[0])
+        cur = conn.execute(
+            """INSERT INTO idea_rounds
+                 (idea_id, round_no, depth, depth_reason, roster_json, answers_json,
+                  view_json, recommendation, changed_note, founder_note, agent_run_id, rehearsal,
+                  repaired, research_status, research_json, research_searches)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
+             args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id,
+             1 if getattr(args, "rehearsal", False) else 0,
+             1 if getattr(args, "repaired", False) else 0,
+             getattr(args, "research_status", None) or "not-needed",
+             getattr(args, "research", None),
+             getattr(args, "research_searches", None)),
+        )
+        sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
+                "pending_note = NULL", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
+        params: list = []
+        if args.title:
+            sets.append("title = ?")
+            params.append(args.title)
+        params.append(args.idea_id)
+        conn.execute(f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?", params)
+    print(f"round recorded: idea={args.idea_id} round={next_no} id={cur.lastrowid} "
+          f"recommendation={args.recommendation}"
+          + ("  [REHEARSAL — no agent ran]" if getattr(args, "rehearsal", False) else "")
+          + ("  [format-repaired]" if getattr(args, "repaired", False) else "")
+          + {"done": f"  [researched: {args.research_searches or 0} search(es)]",
+             # Printed, not silent. A round that needed evidence and got none
+             # is the case most worth noticing from a terminal.
+             "unavailable": "  [RESEARCH NEEDED BUT UNAVAILABLE]",
+             "not-needed": ""}.get(getattr(args, "research_status", None) or "not-needed", ""))
+
+
+def cmd_idea_approve(args: argparse.Namespace) -> None:
+    """Freeze one round as ARTIFACT 3, the Founder-approved brief.
+
+    Two gates, both deliberate. --confirm-founder-decision asserts this is the
+    Founder and not an agent, matching approval-decide. And approval is refused
+    unless the company's OWN recommendation was Proceed or Proceed with narrowed
+    scope — the Founder's rule, decided 2026-09-02: there is no approve-anyway
+    path, because an evaluation you can always click past is ceremonial.
+
+    Approving starts no work. That is a separate, later action."""
+    if not args.confirm_founder_decision:
+        raise SystemExit("error: --confirm-founder-decision is required — only the Founder approves a brief")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit(f"error: idea id={args.idea_id} is already approved (round "
+                             f"{row['approved_round_id']}); an approved brief is frozen")
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: an evaluation of idea id={args.idea_id} is running right now. Approving "
+                "mid-flight would freeze a reading the company is in the middle of revising, and "
+                "would throw away the round being paid for. Wait for it to finish.")
+        rnd = conn.execute("SELECT * FROM idea_rounds WHERE id = ? AND idea_id = ?",
+                           (args.round_id, args.idea_id)).fetchone()
+        if rnd is None:
+            raise SystemExit(f"error: round id={args.round_id} does not belong to idea id={args.idea_id}")
+        # Only the CURRENT reading is approvable. Without this the whole rule is
+        # ornamental: round 1 says Proceed, the Founder corrects, round 2 says
+        # Reconsider, and round 1 remains approvable forever — an approve-anyway
+        # path reachable by pointing at an older round. Found by CTO in the
+        # catch-up review and reproduced before this guard was written.
+        latest = conn.execute(
+            "SELECT MAX(round_no) FROM idea_rounds WHERE idea_id = ?", (args.idea_id,)).fetchone()[0]
+        if rnd["round_no"] != latest:
+            raise SystemExit(
+                f"error: round {rnd['round_no']} is not the company's current reading — round "
+                f"{latest} superseded it. Approving a withdrawn round would build from advice the "
+                "company has already replaced. Approve the latest round, or correct it again.")
+        if "rehearsal" in rnd.keys() and rnd["rehearsal"]:
+            raise SystemExit(
+                "error: that round was a rehearsal — placeholder text, no agent read your idea and "
+                "nothing was spent. It exists so the journey can be walked for free. Turn rehearsal "
+                "mode off and evaluate for real before approving a brief anything gets built from.")
+        if rnd["recommendation"] not in ("Proceed", "Proceed with narrowed scope"):
+            raise SystemExit(
+                f"error: the company's recommendation on this round is '{rnd['recommendation']}', so "
+                "there is nothing to approve yet. Correct the company or narrow the idea and let it "
+                "re-evaluate. There is no approve-anyway path, by design.")
+        conn.execute(
+            """UPDATE ideas SET status = 'approved', approved_round_id = ?,
+                   approved_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.round_id, args.idea_id),
+        )
+    print(f"brief approved: idea={args.idea_id} round={rnd['round_no']} — frozen. No work has started.")
+
+
+def cmd_idea_approve_investigation(args: argparse.Namespace) -> None:
+    """Authorise the bounded work the company recommended — NOT a production brief.
+
+    "Investigate first" is a recommendation to do something real: build a
+    throwaway prototype, put it in front of five people, look something up. The
+    Idea Desk used to treat that as nothing to approve, which turned the
+    company's most honest recommendation into a dead end — the Founder could
+    only agree with it by doing nothing.
+
+    This authorises exactly that work and nothing more. It does NOT create
+    artifact 3, does not change the idea's status, and does not make the idea
+    approvable: approving a brief still requires the company's own
+    recommendation to be Proceed or Proceed with narrowed scope, with no
+    override, which is the Founder's own rule and is untouched here."""
+    if not args.confirm_founder_decision:
+        raise SystemExit("error: --confirm-founder-decision is required — only the Founder "
+                         "authorises work")
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit(f"error: idea id={args.idea_id} already has an approved brief; there "
+                             "is nothing left to investigate first")
+        if row["status"] in ("parked", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}. Reopen it before "
+                             "authorising work on it.")
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: an evaluation of idea id={args.idea_id} is running right now. Authorising "
+                "work from a reading the company is in the middle of revising would approve advice "
+                "it may be about to withdraw. Wait for it to finish.")
+        rnd = conn.execute("SELECT * FROM idea_rounds WHERE id = ? AND idea_id = ?",
+                           (args.round_id, args.idea_id)).fetchone()
+        if rnd is None:
+            raise SystemExit(f"error: round id={args.round_id} does not belong to idea "
+                             f"id={args.idea_id}")
+        latest = conn.execute("SELECT MAX(round_no) FROM idea_rounds WHERE idea_id = ?",
+                              (args.idea_id,)).fetchone()[0]
+        if rnd["round_no"] != latest:
+            raise SystemExit(
+                f"error: round {rnd['round_no']} is not the company's current reading — round "
+                f"{latest} superseded it. Authorise work from the latest round.")
+        if "rehearsal" in rnd.keys() and rnd["rehearsal"]:
+            raise SystemExit(
+                "error: that round was a rehearsal — nobody read your idea and nothing was spent. "
+                "There is no real investigation to authorise. Turn rehearsal mode off and evaluate "
+                "for real first.")
+        if rnd["recommendation"] != "Investigate first":
+            raise SystemExit(
+                f"error: the company's recommendation on this round is '{rnd['recommendation']}', "
+                "not 'Investigate first'. This action authorises the investigation the company "
+                "asked for; there is no investigation on the table here.")
+        if row["investigation_round_id"] == args.round_id:
+            raise SystemExit(f"error: the investigation on round {rnd['round_no']} is already "
+                             "authorised. Nothing changed.")
+        conn.execute(
+            """UPDATE ideas SET investigation_round_id = ?,
+                   investigation_approved_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.round_id, args.idea_id),
+        )
+    print(f"investigation authorised: idea={args.idea_id} round={rnd['round_no']}. This is NOT an "
+          "approved brief and no production work is authorised. Nothing has started.")
+
+
+def cmd_idea_close(args: argparse.Namespace) -> None:
+    """Park (may come back) or drop (decided against). Nothing is deleted —
+    the idea and every round it collected stay on record."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] == "approved":
+            raise SystemExit("error: this idea's brief is approved; approved briefs are not parked or dropped")
+        # Without this the park is silently undone: the round still lands,
+        # sets status back to 'evaluated', and the "you parked it" record
+        # disappears while close_reason/closed_at linger orphaned in the row
+        # (QA). The evaluate->park direction was closed in fix pass 1; this is
+        # the park->evaluate direction it left open.
+        if row["evaluating_since"]:
+            raise SystemExit(
+                f"error: the company is reading idea id={args.idea_id} right now. Parking or "
+                "dropping it mid-read would be undone the moment that round arrives. Wait for it "
+                "to finish, then decide.")
+        conn.execute(
+            """UPDATE ideas SET status = ?, close_reason = ?,
+                   closed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.how, args.reason, args.idea_id),
+        )
+    print(f"idea {args.how}: id={args.idea_id}")
+
+
+def cmd_idea_reopen(args: argparse.Namespace) -> None:
+    """Undo a park or a drop, back to wherever the idea actually was."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] not in ("parked", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is '{row['status']}', not parked or dropped")
+        has_round = conn.execute("SELECT 1 FROM idea_rounds WHERE idea_id = ? LIMIT 1",
+                                 (args.idea_id,)).fetchone() is not None
+        conn.execute(
+            """UPDATE ideas SET status = ?, close_reason = NULL, closed_at = NULL,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            ("evaluated" if has_round else "draft", args.idea_id),
+        )
+    print(f"idea reopened: id={args.idea_id}")
+
+
+def cmd_idea_evaluation_start(args: argparse.Namespace) -> None:
+    """Mark an evaluation as running. Refuses to start a second one on the same
+    idea, which is what stops a double-clicked button spending twice."""
+    conn = connect()
+    with conn:
+        row = _idea_row(conn, args.idea_id)
+        if row["status"] in ("approved", "dropped"):
+            raise SystemExit(f"error: idea id={args.idea_id} is {row['status']}; it is not open for "
+                             "further evaluation")
+        # The claim is a SINGLE conditional statement. Checking the column and
+        # then writing it are two operations, and a double-clicked button races
+        # between them — QA reproduced two paid evaluations from one click.
+        # SQLite serialises writers, so `WHERE evaluating_since IS NULL` lets
+        # exactly one caller win, across processes as well as threads.
+        cur = conn.execute(
+            """UPDATE ideas SET evaluating_since = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                   last_error = NULL, pending_note = ?,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ? AND evaluating_since IS NULL""",
+            (getattr(args, "note", None), args.idea_id),
+        )
+        if cur.rowcount == 0:
+            raise SystemExit(f"error: an evaluation of idea id={args.idea_id} is already running "
+                             f"(since {row['evaluating_since']}). Nothing was started twice, and "
+                             "you have not been charged twice.")
+    print(f"evaluation started: idea={args.idea_id}")
+
+
+def cmd_idea_evaluation_end(args: argparse.Namespace) -> None:
+    """Clear the in-progress marker. With --error the reason is kept so the
+    Founder is told what went wrong rather than seeing the state silently
+    snap back."""
+    conn = connect()
+    with conn:
+        _idea_row(conn, args.idea_id)
+        conn.execute(
+            """UPDATE ideas SET evaluating_since = NULL, last_error = ?,
+                   updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+               WHERE id = ?""",
+            (args.error, args.idea_id),
+        )
+    print(f"evaluation ended: idea={args.idea_id}" + (f" — {args.error}" if args.error else ""))
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
@@ -1178,7 +2158,7 @@ def main() -> None:
     tss.add_argument("--status", required=True, choices=["pending", "in_progress", "done"])
     tss.set_defaults(func=cmd_task_step_status)
 
-    tp = sub.add_parser("task-progress", help="print a task's deterministic progress %")
+    tp = sub.add_parser("task-progress", help="print a task's deterministic progress %%")
     tp.add_argument("--task-id", type=int, required=True, dest="task_id")
     tp.set_defaults(func=cmd_task_progress)
 
@@ -1223,6 +2203,31 @@ def main() -> None:
     rr.add_argument("--status", required=True, choices=["open", "mitigated", "resolved"])
     rr.add_argument("--mitigation")
     rr.set_defaults(func=cmd_risk_resolve)
+
+    pa = sub.add_parser("phase-add", help="record a phase/milestone row (the only writer of the phases table, at creation)")
+    pa.add_argument("--name", required=True)
+    pa.add_argument("--status", required=True,
+                     choices=["not_started", "in_progress", "complete", "paused"])
+    pa.add_argument("--sort-order", type=int, required=True, dest="sort_order")
+    pa.add_argument("--parent-id", type=int, dest="parent_phase_id")
+    pa.add_argument("--opened-decision-id", type=int, dest="opened_decision_id")
+    pa.add_argument("--closed-decision-id", type=int, dest="closed_decision_id")
+    pa.add_argument("--task-id", type=int, dest="task_id")
+    pa.add_argument("--milestones-total", type=int, dest="milestones_total")
+    pa.add_argument("--milestones-complete", type=int, dest="milestones_complete")
+    pa.add_argument("--note")
+    pa.set_defaults(func=cmd_phase_add)
+
+    ps = sub.add_parser("phase-set-status", help="update a phase's status — the only writer of phases.status after creation")
+    group = ps.add_mutually_exclusive_group(required=True)
+    group.add_argument("--id", type=int, dest="phase_id")
+    group.add_argument("--name", dest="phase_name")   # convenience lookup, resolved to id before UPDATE
+    ps.add_argument("--status", required=True,
+                     choices=["not_started", "in_progress", "complete", "paused"])
+    ps.add_argument("--closed-decision-id", type=int, dest="closed_decision_id")
+    ps.add_argument("--milestones-complete", type=int, dest="milestones_complete")
+    ps.add_argument("--note")
+    ps.set_defaults(func=cmd_phase_set_status)
 
     ms = sub.add_parser("message-send", help="record a message (Founder<->agent or agent<->agent) — the only writer of the messages table")
     ms.add_argument("--thread-id", required=True, dest="thread_id")
@@ -1271,6 +2276,12 @@ def main() -> None:
     ho.add_argument("--expected-behavior", dest="expected_behavior")
     ho.add_argument("--known-limitations", dest="known_limitations")
     ho.add_argument("--checklist")
+    ho.add_argument("--base-commit-sha", dest="base_commit_sha",
+                     help="Phase 3A Part B (TASK-015): git rev-parse HEAD before this task's work "
+                          "began — required for the automated Code Review poller to assemble a real "
+                          "diff (§B.13); nullable, non-code handoffs may omit it")
+    ho.add_argument("--head-commit-sha", dest="head_commit_sha",
+                     help="Phase 3A Part B (TASK-015): git rev-parse HEAD at handoff time")
     ho.set_defaults(func=cmd_handoff)
 
     ac = sub.add_parser("approval-create", help="raise a Founder approval request")
@@ -1318,6 +2329,84 @@ def main() -> None:
     dep.add_argument("--by", required=True)
     dep.add_argument("--founder-authorized", action="store_true", dest="founder_authorized")
     dep.set_defaults(func=cmd_deployment_record)
+
+    ic = sub.add_parser("idea-create", help="store a raw Founder idea (starts nothing, costs nothing)")
+    ic.add_argument("--raw", required=True, help="the Founder's own words, stored verbatim")
+    ic.add_argument("--audience")
+    ic.add_argument("--trigger")
+    ic.set_defaults(func=cmd_idea_create)
+
+    ie = sub.add_parser("idea-edit", help="Founder rewords their own idea (original preserved)")
+    ie.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ie.add_argument("--raw", required=True)
+    ie.add_argument("--audience")
+    ie.add_argument("--trigger")
+    ie.set_defaults(func=cmd_idea_edit)
+
+    ira = sub.add_parser("idea-round-add", help="append one company evaluation of an idea (immutable)")
+    ira.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ira.add_argument("--recommendation", required=True,
+                     choices=["Proceed", "Proceed with narrowed scope", "Investigate first", "Reconsider"])
+    ira.add_argument("--title", help="the name the company gave the idea")
+    ira.add_argument("--depth", choices=["Light", "Standard", "Full"])
+    ira.add_argument("--depth-reason", dest="depth_reason")
+    ira.add_argument("--roster", help="JSON: who weighed in, who was left out, and why")
+    ira.add_argument("--answers", help="JSON: the ten concise answers and their expanded sections")
+    ira.add_argument("--view", help="JSON: the six-field Company View")
+    ira.add_argument("--changed-note", dest="changed_note", help="what changed since the previous round")
+    ira.add_argument("--founder-note", dest="founder_note", help="the correction that produced this round")
+    ira.add_argument("--agent-run-id", type=int, dest="agent_run_id")
+    ira.add_argument("--repaired", action="store_true",
+                     help="the answer needed a format-repair pass before it could be read")
+    ira.add_argument("--rehearsal", action="store_true",
+                     help="no agent ran and nothing was spent; the round is marked as such forever")
+    ira.add_argument("--research-status", dest="research_status",
+                     choices=["not-needed", "done", "unavailable"], default="not-needed",
+                     help="not-needed: the answer did not depend on outside facts. done: the "
+                          "Research lane searched. unavailable: it was needed and could not be "
+                          "done — the round must say so rather than imply a scan happened")
+    ira.add_argument("--research", dest="research",
+                     help="JSON: the evidence packet — cited findings, contradictions, what stayed "
+                          "unknown, and what was believed but never verified")
+    ira.add_argument("--research-searches", type=int, dest="research_searches",
+                     help="how many web searches the runtime reported actually performing")
+    ira.set_defaults(func=cmd_idea_round_add)
+
+    iai = sub.add_parser("idea-approve-investigation",
+                         help="authorise the bounded work an 'Investigate first' round recommended "
+                              "(Founder-only; NOT a production brief)")
+    iai.add_argument("--idea-id", type=int, required=True)
+    iai.add_argument("--round-id", type=int, required=True)
+    iai.add_argument("--confirm-founder-decision", action="store_true")
+    iai.set_defaults(func=cmd_idea_approve_investigation)
+
+    iap = sub.add_parser("idea-approve", help="freeze a round as the Founder-approved brief (Founder-only)")
+    iap.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iap.add_argument("--round-id", type=int, required=True, dest="round_id")
+    iap.add_argument("--confirm-founder-decision", action="store_true", dest="confirm_founder_decision",
+                     help="required — asserts this is the Founder approving, not an agent")
+    iap.set_defaults(func=cmd_idea_approve)
+
+    icl = sub.add_parser("idea-close", help="park or drop an idea (nothing is deleted)")
+    icl.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    icl.add_argument("--how", required=True, choices=["parked", "dropped"])
+    icl.add_argument("--reason")
+    icl.set_defaults(func=cmd_idea_close)
+
+    iro = sub.add_parser("idea-reopen", help="undo a park or a drop")
+    iro.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iro.set_defaults(func=cmd_idea_reopen)
+
+    ies = sub.add_parser("idea-evaluation-start", help="mark an idea's evaluation as running")
+    ies.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    ies.add_argument("--note", help="the Founder correction that triggered this round, held "
+                                    "durably so a failed run cannot lose it")
+    ies.set_defaults(func=cmd_idea_evaluation_start)
+
+    iee = sub.add_parser("idea-evaluation-end", help="clear the running marker, optionally with an error")
+    iee.add_argument("--idea-id", type=int, required=True, dest="idea_id")
+    iee.add_argument("--error")
+    iee.set_defaults(func=cmd_idea_evaluation_end)
 
     args = p.parse_args()
     if args.command != "init" and not DB_PATH.exists():

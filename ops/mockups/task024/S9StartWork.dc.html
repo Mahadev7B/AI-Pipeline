@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 9 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Start work</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">The expensive decision, on its own screen</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:880px;">
+    Approving cost nothing. This does not. It is two steps, and the first one dispatches nothing &mdash; it only opens the second.
+  </div>
+
+  <!-- ============ RESTING / ARM ============ -->
+  <sc-if value="{{isRest}}" hint-placeholder-val="{{ true }}">
+  <div style="border-radius:14px; border:1px solid oklch(78% 0.14 75 / 0.5); background:#14171c; padding:20px; max-width:880px;">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:12px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(78% 0.14 75); text-transform:uppercase;">Start work on TASK-026</div>
+      <span style="display:inline-flex; padding:2px 8px; border-radius:100px; background:oklch(78% 0.14 75 / 0.13); color:oklch(78% 0.14 75); font-size:10px; font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span>
+    </div>
+    <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7; margin-bottom:16px;">
+      The brief is approved and nothing is running. This control begins execution: agents pick the work up and carry it through the pipeline. It is the only control in this product that starts a multi-stage run on a click, so it does not do that on the first click.
+    </div>
+    <div onClick="{{arm}}" style="padding:10px 20px; border-radius:8px; background:transparent; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:13px; cursor:pointer; display:inline-block;">Approve Brief &amp; Start Work&hellip;</div>
+    <div style="font-size:11px; color:#666c74; margin-top:11px; line-height:1.55;">Unfilled, and it ends in an ellipsis. In this product an unfilled button has never been the &ldquo;go&rdquo;. It arms; it dispatches nothing.</div>
+  </div>
+  </sc-if>
+
+  <!-- ============ CONFIRM ============ -->
+  <sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+  <div style="border-radius:14px; border:1px solid oklch(78% 0.14 75); background:#14171c; padding:22px; max-width:880px;">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(78% 0.14 75); text-transform:uppercase;">Confirm &mdash; start the company on TASK-026</div>
+      <span style="display:inline-flex; padding:2px 8px; border-radius:100px; background:oklch(78% 0.14 75 / 0.13); color:oklch(78% 0.14 75); font-size:10px; font-weight:700; letter-spacing:0.04em;">SPENDS MONEY</span>
+    </div>
+
+    <div style="border-radius:10px; border:1px solid #323844; background:#1a1e24; padding:13px 15px; margin-bottom:16px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:7px;">What they will be told to build</div>
+      <div style="font-size:12px; color:#eae8e3; line-height:1.6; margin-bottom:8px;"><b style="color:oklch(72% 0.15 150);">The approved brief, v3</b> &mdash; open the AI Factory and understand within seconds how each child product is progressing. Proceed with narrowed scope: one Build screen, gate ladder not percentage, no committed geometry.</div>
+      <div style="border-left:2px solid oklch(58% 0.015 250); padding-left:10px; font-size:11px; color:#9aa0a8; line-height:1.55; white-space:pre-wrap;">Beneath it, labelled as context, not the specification: &ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:auto 1fr; gap:10px 15px; align-items:baseline; margin-bottom:18px; font-size:12px; line-height:1.65;">
+      <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:oklch(78% 0.14 75);">now</div>
+      <div style="color:#c8ccd2;"><b style="color:#eae8e3;">Agents begin working.</b> Real model invocations start from this click.</div>
+
+      <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:#666c74;">cost</div>
+      <div style="color:#c8ccd2;"><b style="color:#eae8e3;">Real AI cost may be incurred, and there is no estimate.</b> 0 of the 13 agent runs on record carries a cost figure, so this product has no honest number to show you. It will appear on Costs as it accrues.
+        <div style="margin-top:6px;"><span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px; color:#4e545c; border:1px dashed #3d434d; border-radius:5px; padding:2px 7px;">[ enforced ceiling &mdash; computed from the real dispatch path; not yet wired ]</span></div>
+      </div>
+
+      <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:#666c74;">reads</div>
+      <div style="color:#c8ccd2;">Every agent is given <b style="color:#eae8e3;">the approved brief</b> as the authoritative instruction. Your original sentence goes with it as labelled context and is not the specification.</div>
+
+      <div style="text-align:right; font-family:ui-monospace,Menlo,monospace; font-size:11px; font-weight:700; color:oklch(66% 0.17 25);">stop</div>
+      <div style="color:#c8ccd2;"><b style="color:#eae8e3;">There is no stop button.</b> A dispatched stage runs to completion. Nothing in this product can interrupt it once it is away.</div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px; padding-top:16px; border-top:1px solid #242830;">
+      <div onClick="{{start}}" style="padding:10px 20px; border-radius:8px; background:oklch(78% 0.14 75); color:#1a1206; font-weight:700; font-size:12.5px; cursor:pointer;">Yes &mdash; start work on TASK-026 and spend</div>
+      <div onClick="{{cancel}}" style="padding:10px 18px; border-radius:8px; background:#1a1e24; border:1px solid #323844; color:#9aa0a8; font-size:12.5px; cursor:pointer;">Cancel &mdash; the brief stays approved and nothing runs</div>
+    </div>
+    <div style="font-size:11px; color:#666c74; margin-top:11px; line-height:1.55;">The filled button appears exactly once in this flow, on this screen, wearing a label that names the task and the spend. Cancelling loses nothing: the approval stands and this control is still here tomorrow.</div>
+  </div>
+  </sc-if>
+
+  <!-- ============ STARTED ============ -->
+  <sc-if value="{{isStarted}}" hint-placeholder-val="{{ false }}">
+  <div style="border-radius:14px; border:1px solid oklch(78% 0.14 75); background:oklch(78% 0.14 75 / 0.07); padding:20px; max-width:880px;">
+    <div style="display:flex; gap:12px; align-items:flex-start;">
+      <div style="width:9px; height:9px; border-radius:50%; background:oklch(78% 0.14 75); flex-shrink:0; margin-top:6px;"></div>
+      <div>
+        <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Started. Product is working on TASK-026 now.</div>
+        <div style="font-size:12px; color:#c8ccd2; line-height:1.7;">
+          Dispatched at 20:47 UTC. Status moved <span style="font-family:ui-monospace,Menlo,monospace; color:#eae8e3;">BACKLOG &rarr; PLANNING</span>, owner is now <b style="color:#eae8e3;">Product</b>, and the instruction it received is the approved brief v3. This is real work and it is spending money from this moment.
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:15px; padding-top:13px; border-top:1px solid oklch(78% 0.14 75 / 0.28); font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+      <b style="color:#eae8e3;">The Start control is gone from this page.</b> There is nothing left here to click twice, so a second dispatch is impossible rather than merely discouraged. It returns only if this work is ever put back in the Backlog.
+    </div>
+    <div style="margin-top:14px;"><span onClick="{{go}}" style="padding:9px 18px; border-radius:8px; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12.5px; cursor:pointer; display:inline-block;">Watch it &rarr;</span></div>
+  </div>
+  </sc-if>
+
+  <div style="display:flex; gap:10px; margin-top:18px; align-items:center;">
+    <div onClick="{{reset}}" style="padding:7px 14px; border-radius:7px; border:1px solid #242830; background:#101317; color:#666c74; font-size:11px; cursor:pointer;">Reset this flow</div>
+    <div style="font-size:11px; color:#4e545c;">{{where}}</div>
+  </div>
+
+  <!-- ============ FAILURE (drawn state) ============ -->
+  <div style="margin-top:26px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:4px;">Design state &middot; when the dispatch fails</div>
+    <div style="font-size:11.5px; color:#666c74; margin-bottom:13px; line-height:1.55; max-width:880px;">
+      This project has already shipped one thing that reported success over a no-op, and QA caught it. Start is the same shape of risk and does not get to repeat it.
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+      <div style="border-radius:12px; border:1px solid oklch(66% 0.17 25); background:#14171c; padding:16px 18px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(66% 0.17 25); text-transform:uppercase; margin-bottom:8px;">Start failed</div>
+        <div style="font-size:13px; font-weight:600; margin-bottom:6px;">Not started. TASK-026 is still in the Backlog.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          The dispatch did not go through. No agent was started, nothing was spent, the status is unchanged and the approved brief is untouched. You can try again, and trying again starts one pipeline, not two.
+        </div>
+        <div style="font-size:10.5px; color:#4e545c; margin-top:10px; line-height:1.55;">The word &ldquo;started&rdquo; never appears on this screen unless a status transition was actually written to the database. Not &ldquo;probably started&rdquo;, not &ldquo;starting&rdquo;.</div>
+        <div style="margin-top:13px;"><span style="padding:8px 16px; border-radius:8px; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12px; display:inline-block;">Try starting it again&hellip;</span></div>
+      </div>
+
+      <div style="border-radius:12px; border:1px solid #323844; background:#14171c; padding:16px 18px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:8px;">Already running &mdash; the double-click lock</div>
+        <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:#9aa0a8;">Product is already working on this.</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          Reached by a refresh, a back button or a second tab. No Start control is rendered here and the route refuses a second dispatch. Approving is cheap and forgiving; starting is neither, so it gets the stricter guard.
+        </div>
+        <div style="font-size:10.5px; color:#4e545c; margin-top:10px; line-height:1.55;">Same in-progress lock the Ask-Agent panel already uses, applied to a far more expensive action.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":900},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { step: 'rest' }; }
+  renderVals(){
+    var self = this;
+    var s = this.state.step;
+    var where = 'Step 1 of 2 — armed nothing yet.';
+    if (s === 'confirm') where = 'Step 2 of 2 — this is the only screen in the product with a filled button that spends.';
+    if (s === 'started') where = 'After-state — the control has been removed, not disabled.';
+    return {
+      isRest: s === 'rest', isConfirm: s === 'confirm', isStarted: s === 'started',
+      where: where,
+      arm: function(){ self.setState({ step: 'confirm' }); },
+      start: function(){ self.setState({ step: 'started' }); },
+      cancel: function(){ self.setState({ step: 'rest' }); },
+      reset: function(){ self.setState({ step: 'rest' }); },
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

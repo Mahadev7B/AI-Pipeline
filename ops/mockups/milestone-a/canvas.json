@@ -1,0 +1,11 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1500, "expand": "fill" },
+    { "file": "TaskDetail.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 3100, "expand": "fill" }
+  ],
+  "annotations": [
+    { "id": "aw-note", "x": 0, "y": -170, "w": 500, "text": "Active Work dashboard — TASK-016/017/018, real data, sorted Founder-needed first. Founder-needed/stuck are the primary signal (pill, top-right); everything else is a de-emphasized secondary line. No fabricated N/M fraction — two real counts instead." },
+    { "id": "td-note", "x": 1560, "y": -170, "w": 500, "text": "Task Detail — TASK-017, real data per CTO's Part 5 walkthrough. Vertical gate timeline (distinct shape from Pipeline's kanban columns) + anchor nav, since this is a single flowing server-rendered page with zero client-side JS. Scalar facts (owner/elapsed/bounces/next/cost) promoted to one top summary strip; long lists stay as separate sections below." }
+  ],
+  "launch": { "view": "canvas" }
+}

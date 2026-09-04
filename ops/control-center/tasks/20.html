@@ -1,0 +1,464 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-020 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-020 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Milestone B: Company-wide AI cost visibility</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">cto</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">22h41m since created<br><span style="color:var(--text3); font-size:10.5px;">21h20m in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; color:var(--red); font-weight:600;">2 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass &middot; 1 reject/fail (Code review reject) <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 reject/fail (Code review reject) <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:27:29.946Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO final conformance CONFORMS -- no drift across eight review rounds. Milestone B of the Founder-approved four-milestone UI Completeness plan (DEC-009) is complete: company-wide AI cost visibility, real cost persisted across all invocation paths and verified live end-to-end. Milestones C (Risks register), D (Project/Phase Progress) remain.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:24:04.184Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Security PASS. CTO final conformance begins -- the last gate before this milestone is DONE.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:21:48.439Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS with a real live invocation test. Focused Security review begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:14:07.044Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review PASS on third pass. QA begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:09:04.296Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review re-verification REJECT: render_advisory()&#x27;s zero-state text still hardcodes &#x27;four paths&#x27;, missed by the first fix. Returned to Development with instruction to grep-sweep for any other instance.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:02:26.417Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review REJECT: /costs.html&#x27;s Founder-facing copy hardcodes &#x27;four paths&#x27; but company_cost_digest() already sums a fifth (Synchronous review). Cheap one-line fix. Returned to Development.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:49:33.036Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">TASK-020: Development pass complete for Milestone B (cost visibility) -- handoff recorded to code-review. See handoffs table for full detail.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:34:26.283Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Red Team PASS. Development builds Milestone B.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:26:07.426Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review complete -- not ready for Development as literally specified: layout recommendation (Concept A for /costs.html, Concept 2 dedicated Cost panel for Meeting Detail), one wording branch, one added all-time headline total, confirmation that Sec 2.4&#x27;s 3 extra instrumentation brackets should ship, and a flag that CTO&#x27;s own composition already includes a 5th real path (Synchronous review) the milestone&#x27;s four-path framing omits by name. See ops/reviews/design-review-milestone-b.md. No changes requested to CTO&#x27;s schema/wiring (Parts 0-2) -- those proceed unchanged. Passing to Red Team.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:13:46.714Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO architecture complete. Design review of the new /costs.html page and Meeting Detail cost section.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:06:12.563Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone B of the four-milestone Founder UI Completeness plan (DEC-009). CTO architecture begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:05:58.188Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:11:02.561Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Fixed render_advisory()&#x27;s third missed instance of the stale &#x27;four paths&#x27; defect (lines ~80-82): dropped the enumerated &#x27;Ask-Agent, Meeting, Chief-of-Staff, or Code Review&#x27; path list and the literal &#x27;four paths&#x27; count, replacing with generic phrasing pointing to the By-invocation-path breakdown below -- same approach used for the subtitle and _stat_card() zero-state text in the prior fix.</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/control-center/generate_costs.py&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: Full grep sweep across ops/control-center/*.py, ops/db/derived_state.py, generate_meetings.py&#x27;s Cost panel: no fourth instance found. Other &#x27;four&#x27; hits are derived_state.py&#x27;s already-reviewed docstring-only prose (not rendered), render_by_agent()&#x27;s correctly-scoped &#x27;No Ask-Agent or Chief-of-Staff activity&#x27; (that panel only ever covers those 2 paths), or unrelated four-item lists elsewhere (automation.py caps, meeting_orchestrator synthesis sections, hooks self-protection paths, schema.sql). generate_meetings.py&#x27;s Cost panel is single-meeting-scoped, no path enumeration.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:05:24.708Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Fixed Code Review reject finding: generate_costs.py&#x27;s Founder-facing subtitle and _stat_card() zero-state text hardcoded &#x27;four paths&#x27; while _headline() actually sums five (including Synchronous review). Replaced both with copy that points at the by-path breakdown panel instead of a hardcoded count, so it can&#x27;t drift stale if a sixth path is ever added. Added a one-line deferred-fix comment in gather_followup_reply() documenting the non-blocking send_message-before-end_run cost-loss race Code Review flagged (consistent pre-existing pattern across 4 functions; not fixed in isolation). Re-ran both test suites: test_cost_tracking.py 22/22 pass; test_gates_remaining.py 34/34 pass (both unmodified by this change).</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/control-center/generate_costs.py&quot;, &quot;ops/control-center/meeting_orchestrator.py&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: gather_followup_reply()&#x27;s send_message-before-end_run race left as a documented, deferred, non-blocking issue (consistent with 3 other functions in the same file) rather than partially fixed.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:49:27.932Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Implemented Milestone B (TASK-020) per CTO architecture + Design review + Red Team review: (1) additive agent_runs.cost_usd migration (schema.sql comment + opsdb._apply_additive_column_migrations()), applied and verified against the LIVE operations.sqlite3 (PRAGMA table_info confirms the column exists; pre-migration rows correctly backfilled NULL, not 0). (2) opsdb.end_run() extended with optional cost_usd param, wired at every cited call site: server.py _handle_ask() (3 sites + result=None init), meeting_orchestrator.py _gather_position()/gather_requested_position()/retry_position() (6 sites), chief_of_staff.py ask_chief_of_staff() (3 sites + result/narration_result=None init + new _sum_costs() helper), automation.py _invoke_and_record() (3 sites, consistency-only, same value already passed to end_automation_event()). (3) Design&#x27;s recommended 3 extra instrumentation brackets shipped: meeting_orchestrator._select_participants() (company-scoped, new), _synthesize() (now meeting-scoped, new bracket + meeting_id param added), gather_followup_reply() (now meeting-scoped, new bracket). New agent_runtime.py activity-label constants for these three. (4) New /costs.html (generate_costs.py, GET-only, same Founder session/CSRF gate, same dbutil read-only discipline) — single-column stacked digest per Design&#x27;s Concept A mockup: today+all-time headline stats, by-path breakdown (all 5 real paths incl. Synchronous review per Design item 6/Red Team sec1), by-agent, recent meetings. Nav entry added in layout.py after Automation. (5) Meeting Detail: new dedicated Cost panel (generate_meetings.py render_cost_panel()) under the header, per-invocation list + real meeting total, footnote excluding CEO&#x27;s participant-selection call. (6) derived_state.py: task_cost_usd() note text updated (Milestone B shipped); new cost_coverage()/format_cost_coverage() shared helpers implementing the required 3-way wording branch (n==0 / covered==0-of-M&gt;0 [Red Team required fix] / covered&gt;0); new company_cost_digest() and meeting_cost_usd(). generate_task.py/generate_active_work.py &#x27;not available&#x27; cost line now links to Costs. (7) reviewer_sync.py: added required one-line code disclosure that its end_run() calls keep discarding real cost_usd (TASK-017 stays paused, DEC-008) — untouched functionally, DEC-009 boundary respected. (8) New regression suite ops/db/test_cost_tracking.py (21 checks, scratch-DB only) covering end_run() persistence, the 3-way wording branch incl. Red Team&#x27;s required fix, company_cost_digest()&#x27;s by-path grouping + no automation double-count, meeting_cost_usd() scoping isolation, historical-NULL rendering, and chief_of_staff._sum_costs().</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/control-center/generate_costs.py&quot;, &quot;ops/control-center/server.py&quot;, &quot;ops/control-center/meeting_orchestrator.py&quot;, &quot;ops/control-center/chief_of_staff.py&quot;, &quot;ops/control-center/automation.py&quot;, &quot;ops/control-center/reviewer_sync.py&quot;, &quot;ops/control-center/agent_runtime.py&quot;, &quot;ops/control-center/generate_meetings.py&quot;, &quot;ops/control-center/generate_task.py&quot;, &quot;ops/control-center/generate_active_work.py&quot;, &quot;ops/control-center/layout.py&quot;, &quot;ops/db/schema.sql&quot;, &quot;ops/db/opsdb.py&quot;, &quot;ops/db/derived_state.py&quot;, &quot;ops/db/test_cost_tracking.py&quot;, &quot;ops/db/operations.sqlite3&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: Task-scoped per-task cost still only reflects automation-poller spend (task_cost_usd() intentionally not widened — Ask-Agent/Meeting/Chief-of-Staff runs are never task-scoped in this schema; CTO&#x27;s architecture doc explains why). &#x27;Synchronous review&#x27; path stays permanently uncosted (cost_usd=NULL) while TASK-017 stays paused, per DEC-008 — disclosed in both code (reviewer_sync.py comment) and the /costs.html by-path caption, not fixed here (DEC-009 boundary). CEO&#x27;s participant-selection call for a Founder-initiated meeting is company-scoped (no meeting_id exists yet when it runs) so it is correctly excluded from that meeting&#x27;s own Cost panel total — disclosed via the panel&#x27;s own footnote, counted instead in the company-wide Meetings bucket. Did not add the optional anchor-pill nav row (Cost/Positions/Follow-up/Synthesis/Decision) Design flagged as a non-blocking nice-to-have on Meeting Detail — kept the diff minimal; can be added in a follow-up pass if wanted.</div>
+    </div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #62</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:23:35.674Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Write path: every new call site (server.py _handle_ask, meeting_orchestrator.py x6 brackets, chief_of_staff.py, automation.py, reviewer_sync.py) writes cost_usd exclusively through opsdb.end_run() -- a single parameterized UPDATE guarded by WHERE ended_at IS NULL; no direct agent_runs writes found anywhere in the diff, sole-writer invariant holds.</div><div style="margin-bottom:6px;">&bull; cost_usd is not attacker-influenceable: traced to data.get(&#x27;total_cost_usd&#x27;) in agent_runtime._run_claude(), parsed from the claude CLI subprocess&#x27;s own structured JSON stdout (the runtime&#x27;s own cost accounting, never model-generated text) -- no Founder message or meeting topic can reach this field. Used only as a bound SQL parameter / numeric :.2f format, so even a malformed value could only cause a display exception, not injection.</div><div style="margin-bottom:6px;">&bull; /costs.html sits inside the identical do_GET authenticated-session gate as every other route (server.py&#x27;s _authenticated_session() check before the route dispatch); unauthenticated requests redirect to /login exactly like every other page, no bespoke auth path introduced.</div><div style="margin-bottom:6px;">&bull; No new information disclosure: by-path/by-agent/by-meeting dollar figures aggregate data (which agent ran, when, under which activity label) already visible elsewhere (Ask-Agent threads, meeting records, automation events); meeting topic and agent display name both pass through the existing html.escape()-based e() helper, consistent with the rest of the codebase -- no XSS.</div><div style="margin-bottom:6px;">&bull; Synchronous review row confirmed display-only and decoupled from TASK-017: reviewer_sync.py&#x27;s end_run() call deliberately never passes cost_usd (disclosed, intentional), so this row&#x27;s figure is permanently &#x27;not available&#x27; by construction; zero code-level coupling to TASK-017&#x27;s separate, still-broken hook-invocation gap.</div><div style="margin-bottom:6px;">&bull; No SQL injection, auth bypass, XSS, or secrets exposure found. Migration is a standard idempotent additive column (nullable REAL, no CHECK). PASS.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #71</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:21:11.261Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Full user-perspective QA of TASK-020 Milestone B (Costs page + cost tracking): /costs.html in all data states, Meeting Detail cost panel, unauthenticated access, regression on Milestone A/Reviews/Automation pages, live-DB migration verification, nav bar, and one genuinely live Ask-Agent invocation end-to-end.</div><div style="margin-bottom:6px;">Repro: 1) git worktree scratch clone + scratch founder credential + scratch server (127.0.0.1:18420), never touching live repo/DB/credential. 2) Built 3 synthetic OPSDB_PATH scratch DBs via opsdb.py CLI + direct opsdb.start_run/end_run calls (testing_guard-protected): (A) zero invocations ever, (B) coverage 0-of-N&gt;0 across multiple paths, (C) mixed real+NULL costs across all 5 invocation paths + automation_events + 3 meetings (real-cost meeting, pre-migration-NULL meeting, zero-runs meeting). Rendered generate_costs.build_html() and generate_meetings.render_cost_panel() directly against each and hand-verified every figure (headline, by-path, by-agent, by-meeting) against manual arithmetic -- all exact. 3) Re-verified scenario C over real HTTP via the scratch server: logged in, fetched /costs.html and /meetings/{1,2,3}.html with session cookies, confirmed identical rendering to the static generator output. 4) curl unauthenticated /costs.html and with a bogus session cookie -- both 303 to /login, same as every other route. POST to /costs.html -&gt; 404 (no such write route). 5) curl&#x27;d active-work.html, tasks/1.html, reviews.html, automation.html, agents.html, decisions.html, releases.html, meetings.html, pipeline.html, inbox.html with a valid session -- all 200, content clean. 6) Ran PRAGMA table_info(agent_runs) directly via python3 sqlite3 (read-only) against the real ops/db/operations.sqlite3 myself -- cost_usd column confirmed present, 13/13 pre-existing rows NULL. Rendered generate_costs against the real live DB (OPSDB_COSTS_PATH redirect, no OPSDB_PATH override, read-only) confirming live state matches the &#x27;zero invocations ever&#x27; rendering (none of the 13 pre-Phase-2 activity rows match any real invocation-path LIKE pattern). 7) Confirmed the Costs nav entry renders and links correctly from Overview and every fetched page. 8) LIVE INVOCATION: added a &#x27;qa&#x27; agent row to the scratch DB, fetched the real Ask-Agent CSRF token from /agents/qa.html, POSTed a real message to /api/agents/qa/ask on the scratch server -- shelled out to a real &#x27;claude --agent qa&#x27; subprocess using this environment&#x27;s real Claude Code credentials, got a real response (&#x27;pong&#x27;), persisted a real cost_usd=0.0038012 via end_run(). Re-rendered /costs.html afterward and confirmed the exact dollar figure flowed through into the headline total, the Ask-Agent by-path row, and the By-agent row, all recomputing consistently. 9) Also POSTed an empty message and a 200k-character message to the same route -- both correctly 400&#x27;d without spending a real invocation. Tried /meetings/99999.html, /meetings/abc.html, /meetings/-1.html -- all 404. 10) Cleanup: killed the scratch server, ran git worktree remove, deleted all scratch DBs/HTML/credential/cookies, confirmed via git status and opsdb.py query that the live repo and live DB (agent_runs=13, meetings=0) are unchanged. RESULT: no defects found. All 6 investigation targets in the task brief covered, including the one no prior gate had done -- a genuinely live, real-cost invocation, not synthetic data. Independently re-verified (not trusting the 3 prior code-review rounds) that cost_usd genuinely exists on the live DB and the &#x27;four paths&#x27; copy defect fixed in rounds 59-60 does not recur anywhere in currently rendered output (zero occurrences of &#x27;four&#x27; across live server output and all 3 synthetic-state renders). Minor non-blocking observation, not a defect: a real covered cost as small as $0.0038 displays as &#x27;$0.00 across 1 of 1 invocations&#x27; due to :.2f rounding -- still honestly distinguishable from the NULL &#x27;not available&#x27; case by its differing caption/count, so not misleading, just a precision edge case worth noting for future very-cheap invocations.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #61</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:13:41.061Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Third pass. render_advisory() fixed: no longer hardcodes &#x27;four&#x27; or enumerates path names; reads &#x27;No invocation, across any invocation path (see By invocation path breakdown below), has been recorded...&#x27; -- matches phrasing already used in subtitle/_stat_card().</div><div style="margin-bottom:6px;">&bull; Independent repo-wide case-insensitive &#x27;four&#x27; grep re-run: remaining hits are internal docstring/comment prose only (e.g. derived_state.company_cost_digest()&#x27;s &#x27;four non-automation paths&#x27; SQL-grouping note), none Founder-facing HTML.</div><div style="margin-bottom:6px;">&bull; render_by_agent()&#x27;s &#x27;No Ask-Agent or Chief-of-Staff activity recorded yet.&#x27; verified as legitimately 2-path-scoped (panel label itself reads &#x27;Ask-Agent + Chief of Staff conversations&#x27;) -- not a recurrence of the bug.</div><div style="margin-bottom:6px;">&bull; Personally re-ran both suites: test_cost_tracking.py 22/22 pass, test_gates_remaining.py 27/27 pass.</div><div style="margin-bottom:6px;">&bull; Rendered /costs.html against fresh scratch DB (zero invocations) and read actual output HTML: advisory banner correct, no &#x27;four&#x27; anywhere in output, all 5 by-path rows present, stat cards read correctly.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #60</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:08:32.751Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; render_advisory() in ops/control-center/generate_costs.py (lines 80-82) still hardcodes the identical stale-count defect the prior REJECT flagged: &#x27;No Ask-Agent, Meeting, Chief-of-Staff, or Code Review invocation...Figures below will populate as the four paths are used.&#x27; This names only 4 of the 5 real invocation paths (omits Synchronous review) and states &#x27;four paths&#x27; as a literal count, contradicting company_cost_digest()&#x27;s docstring which sums five real paths. This function was NOT touched by commit e7b24c6 -- the fix corrected the page subtitle and _stat_card() zero-state text (both now correctly reference the by_path breakdown panel instead of enumerating a count) but missed this third, sibling zero-state banner in the same file, which is shown under the same all_time.n==0 gating condition and is therefore equally Founder-facing and equally exposed to future TASK-017 cost data making it stale. The &#x27;same source, cannot drift&#x27; claim in the handoff does not hold for this location since it is static prose, not derived from digest[&#x27;by_path&#x27;]. Separately confirmed as acceptable: gather_followup_reply()&#x27;s deferred cost-loss race is well-documented with a clear one-line rationale (consistent with 3 other functions in the same file, avoid a one-off partial fix) and is a legitimate non-blocking deferral, not a silent drop. Diff otherwise narrowly scoped as claimed (git diff 1dc2b08..e7b24c6): generate_costs.py copy (2 spots fixed), meeting_orchestrator.py (1 comment added), overview.html/CURRENT_STATUS.md (auto-generated status transitions only).</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #59</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:01:46.917Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; generate_costs.py&#x27;s Founder-facing copy is inconsistent with what its own queries actually sum. The persistent page subtitle (line ~163-164, &#x27;Company-wide AI invocation cost across all four Founder-facing paths — Ask-Agent, Executive Meetings, Chief of Staff, and Code Review&#x27;) and the n==0 stat-card detail text (_stat_card(), line 51, &#x27;0 invocations recorded, across all four paths.&#x27;) both hardcode &#x27;four paths.&#x27; But derived_state.company_cost_digest()&#x27;s _headline() function (used for both the Today and All-time stat-card totals) sums agent_runs rows matching FOUR LIKE patterns including _REVIEWER_SYNC_ACTIVITY_LIKE (&#x27;Synchronous review:%&#x27;) PLUS automation_events — i.e. the headline $ and N figures are a five-path sum, not a four-path sum, exactly the fifth path Design review item 6/Red Team §1 required be surfaced honestly, not silently folded in or dropped. Reproduced live: inserted a synthetic &#x27;Synchronous review: code&#x27; agent_runs row into a scratch DB copy — it is correctly counted into the Today/All-time N (6 total invocations, matching by-path breakdown&#x27;s own 5 rows) while the page copy right above it still claims only four paths contributed. Currently invisible in production (0 live Synchronous-review rows exist today) but will silently understate/mislabel what the headline figure covers the moment TASK-017 resumes and any Synchronous review row gets a real cost — a materially misleading Founder-facing number, the same failure mode this whole milestone&#x27;s NULL/coverage-honesty discipline exists to prevent. Fix: either (a) update both copy sites to say &#x27;across all five AI invocation paths&#x27; and name Synchronous review, or (b) drop the specific count/list from the persistent subtitle and let the by-path panel (which is already correct) be the source of truth for enumerating paths. Cheap, no query change needed.</div><div style="margin-bottom:6px;">&bull; Minor, non-blocking: meeting_orchestrator.gather_followup_reply()&#x27;s new cost bracket calls opsdb.send_message() (which can raise, e.g. on a DB lock) BEFORE opsdb.end_run(conn, run_id, &#x27;ended&#x27;, cost_usd=result.cost_usd) — if send_message raises after a real, successful, cost-incurring invoke_agent() call, the outer except Exception handler ends the run as &#x27;failed&#x27; with cost_usd=None, silently losing a real known cost. Same ordering already exists in the pre-existing _gather_position()/gather_requested_position()/retry_position() functions this diff extends consistently with (not a new pattern introduced here), so not required to block on, but worth a follow-up to end_run() before send_message() in all four functions.</div><div style="margin-bottom:6px;">&bull; Completion-report accuracy: claimed check counts don&#x27;t match actual runs — test_cost_tracking.py has 22 passing checks (claimed 21), test_gates_remaining.py has 28 (claimed 34). Both suites otherwise pass cleanly and the file is unmodified/pre-existing for the latter; not a code defect, just a reporting-accuracy note for the record.</div><div style="margin-bottom:6px;">&bull; Everything else verified clean: migration genuinely applied to the live DB (PRAGMA table_info(agent_runs) confirms cost_usd exists, all 13 pre-existing rows are NULL not 0, confirmed independently against ops/db/operations.sqlite3); full call-site list matches architecture and Red Team&#x27;s own audit exactly (server.py 3, meeting_orchestrator.py 9 across 6 existing + 3 new brackets, chief_of_staff.py 3 + _sum_costs(), automation.py 3, reviewer_sync.py correctly and only disclosed via comment); format_cost_coverage()&#x27;s Red Team-required covered==0/M&gt;0 fix verified both by the test suite and by an independent rendered reproduction (Chief of Staff row: &#x27;not available — 0 of 1 invocations have a recorded cost&#x27;); /costs.html and Meeting Detail&#x27;s Cost panel both rendered against a scratch DB with mixed NULL/real cost data and render exactly as designed (honest NULL wording, no bare $0.00, meeting total correctly excludes the CEO participant-selection call); no fabricated data anywhere, all writes go through opsdb.py&#x27;s end_run()/start_run(); scope discipline clean — reviewer_invocations/hook_denials untouched beyond the one disclosed comment, no Milestone C/D creep; _sum_costs() is correct for the 1-or-2-invocation Chief of Staff case; the three new instrumentation brackets follow this file&#x27;s existing try/except/finally and MEETING_ACTIVITY_LIKE labeling conventions correctly.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #57</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:33:21.014Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS with required, cheap follow-through (no second CTO/Design round): reviewer_invocations table does NOT exist live (schema.sql specifies it, opsdb.py init was never re-run since TASK-017&#x27;s commit fdaf253) -- correcting Design&#x27;s framing: the Synchronous-review path is not unbuilt, it is live-wired and reachable via /reviews.html today but currently fails every time due to this missing table, a pre-existing defect independent of Milestone B, flagged separately for TASK-017&#x27;s owner, not fixed here.</div><div style="margin-bottom:6px;">&bull; Confirmed Design&#x27;s fifth-path recommendation (REVIEWER_SYNC_ACTIVITY_LIKE as an explicit by-path row) is correct and in-scope -- zero new attribution logic, no touch to TASK-017/reviewer_invocations/reviewer_sync.py. Note for Development: reviewer_sync.py&#x27;s own end_run() calls never pass cost_usd despite a real result.cost_usd being available next to each call -- correctly left unfixed per the DEC-009 TASK-017 boundary, but should get a one-line disclosure so it isn&#x27;t mistaken for a Milestone B bug later.</div><div style="margin-bottom:6px;">&bull; Verified CTO&#x27;s full call-site list against the real code by grepping every invoke_agent()/_run_claude() call site in ops/control-center/*.py: all 10 call sites CTO&#x27;s design is responsible for are covered exactly as described, line-number citations spot-checked and accurate (one trivial off-by-one in chief_of_staff.py, non-material). The 11th call site, reviewer_sync.py:254, is correctly excluded per the TASK-017 boundary, not a missed gap.</div><div style="margin-bottom:6px;">&bull; Design&#x27;s NULL-handling wording is structurally sound for the M=0 and partially-covered cases, but has one gap: when covered count N=0 but total M&gt;0, CTO&#x27;s literal format string still leads with a bare dollar-sign &#x27;/bin/bash.00&#x27; before the qualifying text -- recommend extending Design&#x27;s own no-dollar-sign-without-real-data principle to this case too (small wording-only change, same function Design&#x27;s item 3 already touches).</div><div style="margin-bottom:6px;">&bull; Migration pattern (_apply_additive_column_migrations) is real, idempotent, and proven in production (handoffs.base_commit_sha/head_commit_sha verified present on the live DB) -- but the operational step of re-running opsdb.py init against the live DB after merge is not stated anywhere in CTO&#x27;s document, and this project already has one live, undiscovered example of that exact gap (reviewer_invocations). Recommend one explicit Development/QA checklist line: confirm agent_runs.cost_usd exists on the live DB, not just a test DB, before sign-off.</div><div style="margin-bottom:6px;">&bull; Scope discipline confirmed clean: no risks.id=3/TASK-017 write path touched, no new HTTP write route (only new route is a GET /costs.html), no Milestone C/D creep. Full review: ops/reviews/red-team-milestone-b-review.md</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T01:26:01.547Z</span> &middot; Design review of CTO&#x27;s Milestone B cost-visibility architecture -- 4 real mockups built and published (2 concepts each for /costs.html and Meeting Detail&#x27;s new cost section).</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 3 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Factory understanding</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">What we think you asked for</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 18px; line-height:1.55; max-width:860px;">
+    Ten answers, about two minutes. <b style="color:#9aa0a8;">You can approve from this page without opening anything.</b> Everything behind a &ldquo;show the working&rdquo; is evidence for a decision you can already make &mdash; not part of the decision.
+  </div>
+
+  <!-- ===== THE TWO VOICES, SIDE BY SIDE ===== -->
+  <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.35fr); gap:16px; align-items:stretch; margin-bottom:18px;">
+
+    <div style="border-radius:14px; border:1px solid #242830; background:#101317; padding:17px 18px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+        <div style="width:3px; height:12px; background:oklch(58% 0.015 250); border-radius:2px;"></div>
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase;">You said</div>
+      </div>
+      <div style="font-size:13px; line-height:1.7; color:#eae8e3; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:13px; padding-top:11px; border-top:1px solid #1e2229; line-height:1.55;">
+        Your words, 1 Sep 2026 20:03 UTC. Never edited, by anyone, ever &mdash; not by you, not by us. They stay on this screen for the life of the idea.
+      </div>
+    </div>
+
+    <div style="border-radius:14px; border:1px solid oklch(72% 0.12 250 / 0.45); background:#14171c; padding:17px 18px; border-left:3px solid oklch(72% 0.12 250);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.12 250); text-transform:uppercase;">We think you mean</div>
+        <div style="font-size:10px; color:#4e545c;">the company &middot; round 1 &middot; v1</div>
+      </div>
+      <div style="font-size:13px; line-height:1.7; color:#eae8e3;">
+        Today&rsquo;s Control Center makes you <i>read</i> to find out what is happening &mdash; thirteen tabs of dense text panels, lists and paragraphs. You want the opposite: one screen where the state of the company is visible at a glance.
+        The <b>ellipse</b> we read as your sketch of the form &mdash; the pipeline drawn as a loop with work visible as it moves round it &mdash; rather than a requirement that the shape be an ellipse.
+      </div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:13px; padding-top:11px; border-top:1px solid #242830; line-height:1.55;">
+        This is our reading, not your words. If it is wrong, correcting it costs nothing and takes one click &mdash; and correcting it here is far cheaper than correcting it after we have built something.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ROSTER / DEPTH STRIP ===== -->
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:12px 16px; margin-bottom:20px;">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <div style="font-size:11px; color:#666c74;">Perspectives consulted</div>
+      <div style="display:flex; gap:6px;">
+        <div style="padding:3px 10px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.5); color:oklch(70% 0.12 300); font-size:10.5px; font-weight:600;">Product</div>
+        <div style="padding:3px 10px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.5); color:oklch(70% 0.12 300); font-size:10.5px; font-weight:600;">CTO</div>
+        <div style="padding:3px 10px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.5); color:oklch(70% 0.12 300); font-size:10.5px; font-weight:600;">Red Team</div>
+      </div>
+      <div style="width:1px; height:16px; background:#242830;"></div>
+      <div style="font-size:11px; color:#666c74;">Depth</div>
+      <div style="padding:3px 10px; border-radius:100px; border:1px solid #3d434d; color:#eae8e3; font-size:10.5px; font-weight:700;">Light</div>
+      <div style="font-size:11px; color:#9aa0a8; flex:1; min-width:280px;">&mdash; nobody outside this company chooses this screen, so competitor and market work could not change the answer.</div>
+      <div onClick="{{toggleRoster}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer;">{{rosterLabel}}</div>
+    </div>
+    <sc-if value="{{rosterOpen}}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:13px; padding-top:13px; border-top:1px solid #242830; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 22px;">
+      <div style="font-size:11px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">Product</b> &mdash; always on the roster; owns problem, scope and first version.</div>
+      <div style="font-size:11px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">CTO</b> &mdash; only CTO can say what the records actually hold, which decides what this screen can honestly show.</div>
+      <div style="font-size:11px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">Red Team</b> &mdash; the idea names a shape before naming its contents; that is the risk worth stating.</div>
+      <div style="font-size:11px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">CEO, Financial, Security</b> &mdash; left out: no market, no cost structure, no sensitive data in play.</div>
+      <div style="font-size:11px; color:oklch(66% 0.17 25); line-height:1.55; grid-column:1 / -1;"><b>Design was material and could not be consulted</b> &mdash; <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px;">design</span> is not on the meeting participant allowlist today. Said out loud rather than left out quietly.</div>
+      <div style="font-size:11px; color:#666c74; line-height:1.55; grid-column:1 / -1;">The internal discussion is kept and is one click away. It is not shown here because three reports are not an answer.</div>
+    </div>
+    </sc-if>
+  </div>
+
+  <!-- ===== QUESTIONS 1-3 ===== -->
+  <div style="display:flex; flex-direction:column; gap:12px;">
+
+    <!-- Q1 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(72% 0.12 250);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">01</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">Did the factory understand my idea?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(72% 0.12 250 / 0.14); color:oklch(72% 0.12 250); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WE THINK YOU MEAN</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        We think so. You are not asking for a chart &mdash; you are saying the Control Center makes you read to learn what is happening, and you want to see it instead. The ellipse we read as your sketch of the form, not as a requirement that the shape be an ellipse. If that second half is wrong it changes what we build first, so we are asking about it rather than guessing &mdash; question 9.
+      </div>
+      <div onClick="{{t1}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l1}}</div>
+      <sc-if value="{{o1}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; sections 1 and 2 of the company&rsquo;s output contract</div>
+        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;">
+          <div>
+            <div style="font-size:10px; font-weight:700; color:oklch(58% 0.015 250); letter-spacing:0.05em; margin-bottom:6px;">1 &middot; ORIGINAL IDEA</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+            <div style="font-size:10.5px; color:#4e545c; margin-top:8px;">Stored verbatim. 123 characters. Byte-identical to what you typed.</div>
+          </div>
+          <div>
+            <div style="font-size:10px; font-weight:700; color:oklch(72% 0.12 250); letter-spacing:0.05em; margin-bottom:6px;">2 &middot; WHAT WE THINK YOU MEAN</div>
+            <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+              Three claims, so you can reject them one at a time: <b style="color:#c8ccd2;">(a)</b> the problem is reading, not missing information; <b style="color:#c8ccd2;">(b)</b> the fix is one screen, not a better-organised thirteen; <b style="color:#c8ccd2;">(c)</b> &ldquo;ellipse&rdquo; describes a way of seeing flow, and is a candidate form rather than the requirement.
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q2 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(72% 0.12 250);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">02</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">What am I really trying to achieve?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(72% 0.12 250 / 0.14); color:oklch(72% 0.12 250); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WE THINK YOU MEAN</div>
+      </div>
+      <div style="font-size:13.5px; color:#eae8e3; line-height:1.65; font-weight:500;">
+        You want to open the AI Factory and understand within seconds how each child product is progressing without reading internal task records.
+      </div>
+      <div onClick="{{t2}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l2}}</div>
+      <sc-if value="{{o2}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; section 3 &middot; what you are really trying to achieve</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.65;">
+          The requested feature was &ldquo;a dashboard, like an ellipse.&rdquo; The outcome behind it is not a shape and not a page &mdash; it is <b style="color:#c8ccd2;">time to knowing</b>. Today that time is measured in pages read; you want it measured in seconds looked.
+          Two consequences follow, and they are why this distinction is worth making:
+          a design that draws a beautiful ring but still requires you to click into a task to learn what is stuck has <b style="color:#c8ccd2;">not</b> met this;
+          a design that is an ugly list you can read in three seconds <b style="color:#c8ccd2;">has</b>.
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Q3 -->
+    <div style="border-radius:12px; border:1px solid #242830; background:#14171c; padding:16px 18px; border-left:3px solid oklch(70% 0.12 300);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:8px;">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c;">03</div>
+          <div style="font-size:13.5px; font-weight:600; color:#eae8e3;">Why might this be worth building?</div>
+        </div>
+        <div style="padding:2px 9px; border-radius:100px; background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:9.5px; font-weight:700; letter-spacing:0.05em; white-space:nowrap;">WHAT WE THINK OF IT</div>
+      </div>
+      <div style="font-size:12.5px; color:#c8ccd2; line-height:1.7;">
+        Because the problem is observed rather than assumed: you went looking for the Meetings page and could not find it, and it is the eighth item in a thirteen-item nav bar. And because the factory is the product &mdash; its own console is the demonstration, not a side view of it.
+        The merit is in the legibility, though, not in the ellipse. <b style="color:#eae8e3;">If the loop gets drawn and the records behind it stay thin, the screen is prettier and no more informative.</b>
+      </div>
+      <div onClick="{{t3}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:11px;">{{l3}}</div>
+      <sc-if value="{{o3}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-radius:10px; background:#0f1216; border:1px solid #1e2229; border-left:2px solid #323844; padding:14px 16px;">
+        <div style="font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:#4e545c; text-transform:uppercase; margin-bottom:10px;">Expanded &middot; section 4 &middot; why this may be valuable</div>
+        <div style="display:flex; flex-direction:column; gap:9px;">
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">A real, witnessed user problem.</b> Not a persona and not a survey &mdash; the one user of this product could not find a page that exists. That is the strongest evidence a small company ever gets.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Speed.</b> The picture you presently assemble by reading nine pages arrives in one look.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Strategic.</b> If the factory is the product, watching the factory work is the product working. Nothing else in the roadmap demonstrates that.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">Simplicity, with a caveat.</b> Fewer things on screen is a genuine merit. Fewer things <i>reachable</i> would reproduce the exact failure that prompted this &mdash; a page that exists and cannot be found.</div>
+          <div style="font-size:11.5px; color:oklch(66% 0.17 25); line-height:1.6; padding-top:8px; border-top:1px solid #1e2229;"><b>Where the merits are weak:</b> nothing here makes the factory build faster or better. It makes the building legible. That is worth doing and it is not a capability gain, and we are not going to call it one because you proposed it.</div>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <div style="margin-top:18px; display:flex; align-items:center; gap:12px;">
+    <div onClick="{{go}}" style="padding:8px 16px; border-radius:8px; background:transparent; border:1px solid #323844; color:#9aa0a8; font-size:12px; cursor:pointer;">Keep reading &mdash; what we think of the idea</div>
+    <div style="font-size:11px; color:#4e545c;">Same page, continued. The rail splits it in two only so you can jump.</div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":900},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { rosterOpen:false, o1:false, o2:false, o3:false }; }
+  renderVals(){
+    var self = this;
+    var lab = function(open, what){ return open ? ('−  Hide ' + what) : ('+  Show the working · ' + what); };
+    var tog = function(k){ return function(){ var p = {}; p[k] = !self.state[k]; self.setState(p); }; };
+    return {
+      rosterOpen: this.state.rosterOpen,
+      rosterLabel: this.state.rosterOpen ? '−  Hide' : '+  Why these, and who was left out',
+      toggleRoster: function(){ self.setState({ rosterOpen: !self.state.rosterOpen }); },
+      o1: this.state.o1, o2: this.state.o2, o3: this.state.o3,
+      l1: lab(this.state.o1, 'sections 1 and 2'),
+      l2: lab(this.state.o2, 'section 3'),
+      l3: lab(this.state.o3, 'section 4'),
+      t1: tog('o1'), t2: tog('o2'), t3: tog('o3'),
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

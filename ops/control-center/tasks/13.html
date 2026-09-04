@@ -1,0 +1,345 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-013 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-013 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Phase 2 Milestone 2B4: Founder Identity Verification for Consequential Write Actions</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">cto</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">2d9h since created<br><span style="color:var(--text3); font-size:10.5px;">2d4h in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; color:var(--red); font-weight:600;">1 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Architecture</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Red Team Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">In Development</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Code Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">QA</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Security</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Release · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T19:12:58.575Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO post-implementation conformance CONFORMS. Code Review, QA, Security post-implementation adversarial review all PASS. risks.id=2 moved to mitigated.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:49:03.556Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #39</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T19:09:04.015Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Post-implementation adversarial review, distinct from architecture-stage threat model.</div><div style="margin-bottom:6px;">&bull; All 9 write routes fail closed against no-cookie/no-token/wrong-process-token/forged-cookie combinations, verified via direct curl against isolated scratch servers.</div><div style="margin-bottom:6px;">&bull; Sustained 40s/45,820-request flood with a fresh randomized wrong passphrase each request confirms the lockout counter is not accidentally per-value.</div><div style="margin-bottom:6px;">&bull; Mixed correct+incorrect flood reproduces the already-disclosed F1 shared-lockout self-DoS exactly as documented in SECURITY.md -- known, not new.</div><div style="margin-bottom:6px;">&bull; Idle and absolute session timeouts block real writes with zero DB mutation on rejection, confirmed against the live DB, not just HTTP status codes.</div><div style="margin-bottom:6px;">&bull; Malformed credential files (missing key, unsupported kdf) fail closed 503, not an unhandled 500, confirmed live.</div><div style="margin-bottom:6px;">&bull; No field beyond passphrase/CSRF token can influence /api/login; zero model-invocation surface in this feature, grep-confirmed.</div><div style="margin-bottom:6px;">&bull; No exploitable finding. Full evidence in ops/reviews/security-adversarial-milestone2b4.md.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #56</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T18:56:47.169Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Founder Identity Verification (Milestone 2B4) — full user-perspective adversarial pass: correct/incorrect passphrase, CSRF on /api/login+/api/logout, brute-force lockout serialization (C1), fail-closed with no credential file (all routes 503 incl. /login), full-app-lock on GET, forged/tampered cookie + session fixation, secret absence from HTML/logs/SQLite/Git, malformed requests, idle/absolute timeout, restart wipes sessions, concurrent logins, XSS/SQLi-shaped passphrase, existing write-route regression check. 27 mapped scenarios + 4 extra adversarial checks, all against isolated scratch copy (OPSDB_PATH scratch db, scratch CREDENTIAL_PATH, never touching real repo credential path). Report initially found already written by a prior QA run cut off by rate-limit before it could record this result; independently spot-checked 3 highest-stakes claims (CSRF-gate on /api/login, fail-closed 503 with no credential file, brute-force lockout fast-reject incl. correct passphrase rejected 429 during lockout) against a fresh scratch server and confirmed they match the report exactly.</div><div style="margin-bottom:6px;">Repro: See ops/reviews/qa-milestone2b4.md for full scenario-by-scenario results. Spot-check performed independently in this session: (1) POST /api/login and /api/logout without token field -&gt; 403 both; (2) 5 sequential wrong-passphrase attempts each cost real scrypt time (~0.4-0.85s, 401), 6th attempt fast-rejected 429 in ~10ms, 7th attempt using the CORRECT passphrase during the lockout window also fast-rejected 429 in ~10ms (confirms C1 serialization and disclosed shared-lockout self-DoS shape); (3) fresh scratch server with no .founder_credential.json returned 503 on every route tested (/, /login, /overview.html, /inbox.html, /meetings.html, /nonexistent, POST /api/login, POST /api/logout, POST /api/approvals/1/decide).</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #38</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T14:20:26.137Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; [&quot;C1 verified genuinely fixed: _LOGIN_LOCK held across the ENTIRE check-verify-increment critical section, independently reproduced with 60 concurrent wrong-passphrase requests against an isolated scratch copy (scratch credential file, scratch OPSDB_PATH, scratch port) -- exactly 5x401 / 55x429, matching Developer&#x27;s claimed numbers exactly&quot;, &quot;C2 verified: CSRF token check runs before /api/login dispatch, before passphrase is ever touched&quot;, &quot;C3 verified: /api/login reuses the existing MAX_BODY_BYTES/decode/parse_qs pattern, no new parsing logic&quot;, &quot;founder_auth.py: no passphrase/hash/salt logged anywhere; atomic O_EXCL (setup) and temp+os.replace (change) writes confirmed as implemented, not just claimed; zero opsdb.py/SQL touch&quot;, &quot;Session cookie: HttpOnly + SameSite=Strict confirmed in the literal header string; no Secure, no Max-Age/Expires -- correct per design&quot;, &quot;Full-app-lock confirmed: do_GET() requires a valid session for every path except /login, checked above the entire dispatch chain&quot;, &quot;Fail-closed confirmed: _check_credential_gate() is the first statement in both do_GET() and do_POST()&quot;, &quot;F1 shared-lockout self-DoS disclosure present in SECURITY.md in Red Team&#x27;s required language, not softened&quot;, &quot;Zero diff to opsdb.py/schema.sql/agent_runtime.py/meeting_orchestrator.py -- confirmed empty&quot;, &quot;SESSIONS dict: every read/insert/delete confirmed under SESSIONS_LOCK, no unguarded access found&quot;, &quot;founder_auth.py CLI shape matches opsdb.py&#x27;s argparse convention; stdlib-only; no unnecessary refactor found in the diff&quot;, &quot;Non-blocking: the C1 concurrency proof exists only as commit-message prose, not a committed regression test -- recommend a follow-up task&quot;, &quot;Non-blocking: tasks.status for TASK-013 still reads BACKLOG and risks.id=2 still open -- correct per design (post-implementation Security pass gates the risk-status change) but flagging for whoever owns task-state transitions&quot;]</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #36</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:56:22.064Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; F1 (required, doc-only): shared/global login lockout enables sustained self-DoS against Founder&#x27;s own access under an already in-scope local-attacker flood; verified hashlib.scrypt releases the GIL so this does not freeze the whole server, only /api/login; must be explicitly disclosed in Sec 8/SECURITY.md, no code change needed</div><div style="margin-bottom:6px;">&bull; F2 (required, doc-only): Sec 10 cites agent_runtime.py&#x27;s &#x27;process-group registry&#x27; as threading.Lock precedent -- verified that registry was proposed then explicitly REJECTED by red-team&#x27;s own 2B3A review and does not exist in shipped code; actual precedent is threading.BoundedSemaphore (_INVOCATION_SEMAPHORE); citation must be corrected</div><div style="margin-bottom:6px;">&bull; non-blocking: handle malformed/partial credential-file read gracefully (503 not 500) during the setup hot-reload race window</div><div style="margin-bottom:6px;">&bull; non-blocking: if Sec 9 optional mtime tamper-detection ships, anchor baseline mtime at server startup not only at first check</div><div style="margin-bottom:6px;">&bull; verified stdlib-only end to end, no opsdb.py DB-write-path violation, no architecture conflicts, no beginner mistakes found, scrypt maxmem/empty-passphrase claims reproduced accurately</div><div style="margin-bottom:6px;">&bull; verdict: PASS with conditions -- design sound, C1-C3 correctly close Security&#x27;s gaps, no rework required, conditions 1-2 are text-only additions to the CTO doc before Development starts</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #33</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T13:49:14.911Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; C1: concurrent-login race defeats the stated 5-attempt lockout and opens a scrypt-based memory-exhaustion DoS -- lock must cover the full check-verify-increment critical section, not just dict get/set</div><div style="margin-bottom:6px;">&bull; C2: /api/login&#x27;s CSRF SESSION_TOKEN requirement is unstated in the design -- must be required explicitly, same as every other write route</div><div style="margin-bottom:6px;">&bull; C3: malformed-payload handling on /api/login (missing field, oversized/non-UTF8 body) is unstated -- must extend the existing MAX_BODY_BYTES/decode/default-empty pattern explicitly</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to cto</div>
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-08-30T14:12:43.213Z</span> &middot; Implemented Milestone 2B4 Founder Identity Verification (founder_auth.py + server.py session/lockout + login/logout routes + layout.py logout UI + SECURITY.md); C1 concurrency race fix verified live</div>
+</div>
+</div>
+</body>
+</html>

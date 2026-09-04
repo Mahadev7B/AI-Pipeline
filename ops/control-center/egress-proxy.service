@@ -1,0 +1,72 @@
+[Unit]
+Description=ai-pipeline egress proxy (TASK-023, findings B3 + C2) — the ONLY permitted egress path out of a sandboxed Developer session; model-API credential gateway plus an allowlisting HTTP-CONNECT reserve path
+Documentation=file:///home/user/AI-Pipeline/ops/reviews/cto-task023-architecture.md file:///home/user/AI-Pipeline/ops/reviews/task023-os-provisioning-runbook.md
+After=network.target
+
+[Service]
+Type=simple
+# ============================ REQUIRED EDIT ============================
+# Like opsdb-broker.service, this MUST NOT run as root and MUST NOT run as
+# ai-developer (the addendum, B3: "runs as the broker's trusted account (or
+# a dedicated ai-pipeline-egress system account) — never as ai-developer").
+# The placeholders below are intentionally invalid so systemd fails loudly
+# until a human sets them — fail closed, never fall back to root. Use the
+# same trusted account as the opsdb broker, or a dedicated
+# ai-pipeline-egress account; see the runbook.
+User=__REPLACE_WITH_TRUSTED_ACCOUNT_OR_ai-pipeline-egress__
+# Group is NOT a placeholder: it must be ai-pipeline-db, because systemd
+# chowns RuntimeDirectory= to this unit's User=/Group= on start. With any
+# other group, /run/ai-pipeline becomes 0770 <user>:<their group> and
+# ai-developer cannot traverse it to reach EITHER socket (Code Review
+# non-blocking item). The invalid User= above is what keeps this unit
+# failing closed until a human edits it — systemd refuses to start it with
+# 217/USER, verified — so pinning Group here loses no fail-closed property.
+Group=ai-pipeline-db
+# ======================================================================
+WorkingDirectory=/home/user/AI-Pipeline
+Environment=PYTHONUNBUFFERED=1
+# The config file: host-owned, NOT bind-mounted into the sandbox, 0644
+# root-owned (or trusted-account-owned) and NOT writable by ai-developer
+# (addendum B3, and Red Team verification #5). It carries the CONNECT
+# reserve allowlist (normally empty) AND the `gateway` block naming the one
+# model-API destination, the request-path allowlist and the spend ceiling.
+# The REAL CREDENTIAL is not in this file — it is a separate 0600 file this
+# unit's User= owns, named by gateway.credential_file, and the daemon
+# refuses to start if it is missing, empty, or readable by anyone else.
+Environment=EGRESS_PROXY_CONFIG_PATH=/etc/ai-pipeline/egress-allowlist.json
+Environment=EGRESS_PROXY_SOCKET_PATH=/run/ai-pipeline/egress.sock
+ExecStart=/usr/bin/python3 /home/user/AI-Pipeline/ops/control-center/egress_proxy.py
+Restart=on-failure
+RestartSec=5
+# The socket directory (/run/ai-pipeline) is created and chowned to
+# User=/Group= by systemd. It is SHARED with opsdb-broker.service, so
+# RuntimeDirectoryPreserve=yes is required: without it, stopping either unit
+# deletes the directory out from under the other one, taking its socket with
+# it (Code Review non-blocking item). See the runbook, step 5.
+RuntimeDirectory=ai-pipeline
+RuntimeDirectoryMode=0770
+RuntimeDirectoryPreserve=yes
+
+# Defense in depth beyond the application-level allowlist enforcement in
+# egress_proxy.py itself. This process needs outbound network (unlike the
+# opsdb broker), so ProtectSystem=strict but no network restriction here —
+# the allowlist IS the network restriction.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/ai-pipeline
+ReadWritePaths=/run/ai-pipeline
+# ProtectHome MUST be false here (Code Review R2, reproduced): this unit's
+# WorkingDirectory= and ExecStart= both live under /home, and
+# ProtectHome=true replaces /home with an empty, inaccessible tmpfs inside
+# the unit's own mount namespace — so systemd fails the chdir (200/CHDIR)
+# and python cannot open the script at all:
+#   CHDIR-FAILED (systemd: 200/CHDIR)
+#   /usr/bin/python3: can't open file '.../egress_proxy.py': No such file
+# Matches opsdb-broker.service, which has the identical layout. ProtectSystem=strict
+# above already keeps the whole filesystem (including /home) READ-ONLY for this
+# unit apart from the explicit ReadWritePaths=, so nothing under /home is
+# writable — which is the property that actually matters here.
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Closeups &mdash; nav, validation, caps, priority, the stuck badge</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+h1{ font-family:var(--disp); font-size:17px; font-weight:600; margin:0 0 4px; }
+h2{ font-family:var(--disp); font-size:13px; font-weight:600; margin:26px 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 14px; line-height:1.55; max-width:900px; }
+.verdict{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px; display:inline-block; margin-top:9px; }
+.inp{ width:100%; box-sizing:border-box; padding:9px 10px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); color:var(--text); font-size:12.5px; }
+.err{ font-size:11px; color:var(--red); margin-top:6px; line-height:1.5; }
+  </style>
+</helmet>
+
+<div style="padding:26px; width:1108px; box-sizing:border-box; background:var(--bg);">
+
+<h1>Closeups &mdash; the five smaller calls</h1>
+<div class="sub">Not new screens: the specific decisions Development would otherwise have to improvise. Every number below is measured from the live database this session, not assumed.</div>
+
+<!-- 1. NAV -->
+<h2>1. Where the entry point lives, and what it&rsquo;s called</h2>
+<div class="sub">The real nav bar with the new item in place. <b style="color:var(--text2);">&ldquo;Ideas&rdquo;, second, between Overview and Active Work.</b></div>
+<div class="panel" style="padding:11px 14px; overflow-x:auto;">
+  <div style="display:flex; gap:2px; align-items:center; white-space:nowrap;">
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a>
+    <a style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600; border:1px solid var(--accent); color:var(--accent);">Ideas</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a>
+    <a style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a>
+  </div>
+</div>
+<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:12px;">
+  <div class="panel" style="border-color:var(--accent);">
+    <div class="label" style="margin-bottom:8px; color:var(--accent);">&ldquo;Ideas&rdquo;, position 2 &mdash; recommended</div>
+    <div style="font-size:11px; color:var(--text2); line-height:1.55;">Reads left-to-right as the company&rsquo;s own lifecycle: Overview (how are we) &rarr; Ideas (queued, not started) &rarr; Active Work (running) &rarr; Pipeline. It is also a noun, like all thirteen existing items &mdash; an imperative &ldquo;New Idea&rdquo; would be the only verb in the bar, and the page holds saved ideas as well as the form.</div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:8px;">&ldquo;New Idea&rdquo;, first position</div>
+    <div style="font-size:11px; color:var(--text2); line-height:1.55;">Rejected. Displacing Overview from first position demotes the page the Founder is meant to land on, to promote a form used occasionally. And the label describes the form, not the page.</div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:8px;">&ldquo;Intake&rdquo; / &ldquo;Backlog&rdquo;, last position</div>
+    <div style="font-size:11px; color:var(--text2); line-height:1.55;">Rejected. &ldquo;Intake&rdquo; is process vocabulary for a one-person company. &ldquo;Backlog&rdquo; names the status, not the activity, and buries the one route in the product that creates work behind twelve read-only registers.</div>
+  </div>
+</div>
+
+<!-- 2. VALIDATION -->
+<h2>2. Validation and error states</h2>
+<div class="sub">Server-side is authoritative &mdash; the browser&rsquo;s <span class="mono">required</span> / <span class="mono">maxlength</span> are convenience only. <b style="color:var(--text2);">In every one of these states the text the Founder typed is still in the fields.</b> Losing 300 words of typed idea to a validation error is the worst thing this form can do, and it is entirely avoidable.</div>
+<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:8px;">Empty title</div>
+    <div class="inp" style="border-color:var(--red);"><span style="color:var(--text3);">&nbsp;</span></div>
+    <div class="err">Give the idea a title &mdash; a short name is all it needs.</div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:8px; line-height:1.5;">Whitespace-only counts as empty. The idea text below is untouched.</div>
+  </div>
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:8px;">Empty idea</div>
+    <div class="inp" style="border-color:var(--red); height:44px;"><span style="color:var(--text3);">&nbsp;</span></div>
+    <div class="err">Tell us the idea. One or two sentences is enough &mdash; Product takes it from there.</div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:8px; line-height:1.5;">A title with no idea behind it is the input that reaches Design and CTO with nothing in it.</div>
+  </div>
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:8px;">Over the cap</div>
+    <div class="inp" style="border-color:var(--red);"><span style="color:var(--text2);">Divergent-thinking stage: real brainstorming before requirements lock, and working agent skills, plus&hellip;</span></div>
+    <div class="err">That title is 214 characters. The limit is 160 &mdash; shorten it, or move the detail into the idea below.</div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:8px; line-height:1.5;">Names the real count and the real limit, the same shape as the existing ask-message and topic rejections.</div>
+  </div>
+
+  <div class="panel" style="border-color:var(--red);">
+    <div class="label" style="margin-bottom:8px; color:var(--red);">Save failed</div>
+    <div style="font-size:12.5px; font-weight:600; margin-bottom:4px;">Not saved. Nothing was written.</div>
+    <div style="font-size:11.5px; color:var(--text2); line-height:1.55;">Something went wrong writing to the database and no task was created. Your text is still here &mdash; press Save to Backlog to try again.</div>
+    <div style="font-size:10.5px; color:var(--text3); margin-top:8px; line-height:1.5;">The word &ldquo;saved&rdquo; never appears unless a row id came back. TASK-023 shipped a success message over a no-op once; this form does not get to repeat it.</div>
+  </div>
+</div>
+
+<!-- 3. CAPS -->
+<h2>3. Per-field caps &mdash; recommendation, from the real data</h2>
+<div class="sub">Measured across all 23 tasks in the live database this session. The Founder is one person typing an idea, not an API client &mdash; the caps should sit comfortably above what a person actually writes and well below what makes a dashboard card or an agent transcript unusable.</div>
+<div class="panel">
+  <div style="display:grid; grid-template-columns:1.1fr 0.7fr 0.7fr 0.7fr 3fr; gap:10px 16px; align-items:baseline; font-size:11.5px;">
+    <div class="label">Field</div><div class="label">Real avg</div><div class="label">Real max</div><div class="label">Cap</div><div class="label">Why this number</div>
+
+    <div style="font-weight:600;">title</div>
+    <div class="mono" style="color:var(--text2);">68</div>
+    <div class="mono" style="color:var(--text2);">146</div>
+    <div class="mono" style="color:var(--accent); font-weight:700;">160</div>
+    <div style="color:var(--text2); line-height:1.55;">The longest title this company actually uses is 146 characters (TASK-018). A tidier-looking cap of 120 would have rejected a real title already in the database. 160 clears the observed maximum with room, and still fits the one-line card treatment on Active Work.</div>
+
+    <div style="font-weight:600;">business_goal</div>
+    <div class="mono" style="color:var(--text2);">412</div>
+    <div class="mono" style="color:var(--text2);">929</div>
+    <div class="mono" style="color:var(--accent); font-weight:700;">4,000</div>
+    <div style="color:var(--text2); line-height:1.55;">Reuses the existing <span class="mono">MAX_DECISION_CHARS</span> value rather than inventing a new magic number &mdash; roughly 600 words, over four times the longest idea anyone has written here. Deliberately half of <span class="mono">MAX_ASK_MESSAGE_CHARS</span> (8,000): an ask message is transient, this text is stored forever, re-rendered on a dashboard card, and concatenated into every agent transcript for the task.</div>
+
+    <div style="font-weight:600;">priority</div>
+    <div class="mono" style="color:var(--text3);">&mdash;</div>
+    <div class="mono" style="color:var(--text3);">&mdash;</div>
+    <div class="mono" style="color:var(--accent); font-weight:700;">allowlist</div>
+    <div style="color:var(--text2); line-height:1.55;">Not a length cap: exactly one of <span class="mono">high</span> / <span class="mono">medium</span> / <span class="mono">low</span>. Anything else is <b style="color:var(--text);">rejected, not quietly coerced to medium</b> &mdash; a value that isn&rsquo;t one of the three did not come from this form, and silently accepting it hides that.</div>
+  </div>
+  <div style="font-size:10.5px; color:var(--text3); margin-top:14px; padding-top:11px; border-top:1px solid var(--border); line-height:1.55;">
+    160 + 4,000 characters is about 4 KB &mdash; far below the 64 KiB transport limit, so these caps, not <span class="mono">MAX_BODY_BYTES</span>, are the real bound on what one submission can put into the database.
+  </div>
+</div>
+
+<!-- 4. PRIORITY -->
+<h2>4. The priority control, and the mess already in the column</h2>
+<div class="sub">The live column holds <span class="mono">NULL</span>&times;15, <span class="mono">high</span>&times;3, <span class="mono">medium</span>&times;1 and four one-off strings like <span class="mono">&ldquo;P0 - Phase 1 Foundation&rdquo;</span>. Intake writes only the three clean values; the existing rows are disclosed, not cleaned up.</div>
+<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;">
+  <div class="panel" style="border-color:var(--accent);">
+    <div class="label" style="margin-bottom:10px; color:var(--accent);">Segmented &mdash; recommended</div>
+    <div style="display:flex; gap:6px; margin-bottom:4px;">
+      <div style="padding:7px 15px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">High</div>
+      <div style="padding:7px 15px; border-radius:8px; border:1px solid var(--accent); background:var(--accent-soft); font-size:12px; font-weight:600; color:var(--accent);">Medium</div>
+      <div style="padding:7px 15px; border-radius:8px; border:1px solid var(--border2); background:var(--panel2); font-size:12px; color:var(--text2);">Low</div>
+    </div>
+    <div style="font-size:11px; color:var(--text2); margin-top:8px; line-height:1.55;">All three options and the current choice are visible without interacting. One click, no typing, no menu &mdash; and the default being visibly pre-selected is what makes the field genuinely optional.</div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Native select</div>
+    <div class="inp" style="max-width:180px;">Medium &nbsp;&#9662;</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:8px; line-height:1.55;">Rejected, mildly. Correct and cheap, but hides two of three options behind a click for a field the Founder should be able to ignore at a glance. No other control in this product is a dropdown.</div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Legacy values, where priority renders</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <span class="pill" style="background:var(--accent-soft); color:var(--accent);">High</span>
+      <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Medium</span>
+      <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Low</span>
+      <span class="pill" style="background:var(--gray-soft); color:var(--text3);">P0 - Phase 1 Foundation</span>
+      <span class="pill" style="background:var(--gray-soft); color:var(--text3);">&mdash;</span>
+    </div>
+    <div style="font-size:11px; color:var(--text2); margin-top:10px; line-height:1.55;">Only <span class="mono">high</span> gets the accent; medium and low are gray. Priority is a hint, not a status, and every colour in this palette already means a status. An unrecognised legacy value renders verbatim in the dimmest gray &mdash; never mapped to a known colour, never hidden, never crashed on. <span class="mono">NULL</span> renders as an honest em dash.</div>
+  </div>
+</div>
+
+<!-- 5. STUCK -->
+<h2>5. The &ldquo;stuck after 3 days&rdquo; badge on a parked idea</h2>
+<div class="sub">Product flagged this and <span class="mono">derived_state.py</span>&rsquo;s own docstring records it as unresolved: <span class="mono">task_is_stuck()</span> excludes only BLOCKED, FOUNDER_APPROVAL and DONE, so a BACKLOG idea starts being flagged as stuck on day four. This milestone makes that non-latent on day one.</div>
+<div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+  <div class="panel" style="border-color:var(--red);">
+    <div class="label" style="margin-bottom:10px; color:var(--red);">What ships if nobody decides</div>
+    <div class="card" style="border-color:var(--border2);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="font-size:12.5px; font-weight:600;"><span class="mono" style="color:var(--text3); font-weight:400; font-size:11px;">TASK-025</span>&nbsp;&mdash;&nbsp;Divergent-thinking stage&hellip;</div>
+        <span class="pill" style="background:var(--gray-soft); color:var(--text2);">No activity in 4d &middot; threshold 3d</span>
+      </div>
+    </div>
+    <div class="verdict" style="background:var(--red-soft); color:var(--red);">Wrong</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.55;">An idea the Founder deliberately parked four days ago is reported as a failure of the company to act on it. The badge is telling the truth about elapsed time and lying about what it means.</div>
+  </div>
+  <div class="panel" style="border-color:var(--accent);">
+    <div class="label" style="margin-bottom:10px; color:var(--accent);">Recommended</div>
+    <div class="card" style="border-color:var(--border); background:transparent;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="font-size:12.5px; font-weight:600; color:var(--text2);"><span class="mono" style="color:var(--text3); font-weight:400; font-size:11px;">TASK-025</span>&nbsp;&mdash;&nbsp;Divergent-thinking stage&hellip;</div>
+        <span class="pill" style="background:var(--gray-soft); color:var(--text2);">Not started</span>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">In Backlog 4d &middot; waiting for you to start it</div>
+    </div>
+    <div class="verdict" style="background:var(--green-soft); color:var(--green);">Design position</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.55;">Exclude BACKLOG from <span class="mono">task_is_stuck()</span>, the same way BLOCKED and FOUNDER_APPROVAL are excluded and for the same reason: the status already has a better-labelled treatment of its own. The age stays visible &mdash; &ldquo;In Backlog 4d&rdquo; is honest and useful &mdash; it is just not framed as a failure. <b style="color:var(--text);">CTO owns the code decision; this is the behaviour the screen needs.</b></div>
+  </div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

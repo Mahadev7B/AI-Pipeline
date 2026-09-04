@@ -46,6 +46,36 @@ RELEASE → RELEASE/DEPLOYMENT → DONE`
   is running real tasks, propose a new decision (see `DECISIONS.md`) rather
   than adding a status silently.
 
+## Automated Code Review (Phase 3A Part B, TASK-015)
+
+A task that genuinely enters `CODE_REVIEW` with a complete Developer
+handoff (real `base_commit_sha`/`head_commit_sha` recorded — see
+`DATA_MODEL.md`, "handoffs") may now ADDITIONALLY be reviewed by
+`ops/control-center/automation.py`'s background poller, when the Founder
+has turned automation on (`/automation.html`'s kill switch) — not instead
+of a human-supervised Code Review session; either one, or both across
+separate `CODE_REVIEW` entries, can happen. At most one automated attempt
+happens per real `CODE_REVIEW` entry (enforced by
+`automation_events.trigger_status_history_id UNIQUE`), and at most
+`MAX_AUTOMATED_INVOCATIONS_PER_TASK` (3, lifetime) automated attempts
+happen for the same task across repeated re-entries.
+
+An automated PASS never advances the task past `CODE_REVIEW` — it is
+recorded exactly like a human-supervised PASS (`review_results`, same
+table, same shape), and a human still moves the task to `QA` when ready.
+
+**The existing "failed review returns to `IN_DEVELOPMENT`" rule now has a
+documented automated case**: an automated REJECT routes the task back to
+`IN_DEVELOPMENT` via the identical mechanical status transition a
+human-recorded reject already causes — but it is explicitly NEVER
+followed by a new, automatic Developer model invocation. The task simply
+becomes visible, unblocked, sitting in `IN_DEVELOPMENT` for a
+human-directed Developer session to pick up next. Every automated write
+carries a `[Automated, Phase 3A]`-prefixed `task_status_history.note`, so
+the audit trail always distinguishes an automatic transition from a
+human-recorded one. See `ops/reviews/cto-phase3a-architecture.md` §B.8,
+`ops/SECURITY.md`.
+
 ## Release checklist — before any task moves to `DONE`
 
 `ops/reports/CURRENT_STATUS.md` is generated from the live database

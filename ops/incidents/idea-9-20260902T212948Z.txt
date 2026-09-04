@@ -1,0 +1,47 @@
+Idea 9 — evaluation failed at 20260902T212948Z
+======================================================================
+
+----- the stage that failed -----
+writing the final answer
+
+----- who should read it — the Chief of Staff's answer -----
+Your message got cut off mid-sentence — it ends at "The Founder has brought". I don't have the rest of it.
+
+Also worth flagging so we don't talk past each other: I don't have a `CURRENT COMPANY STATE` block in this turn, so I have no live view of tasks, approvals, or agent status right now. If you want me to pull real state, say so and I'll read it from the ops DB (`ops/db/opsdb.py agent-status`) before answering.
+
+**What I need from you:** resend the full request. Specifically helpful:
+
+- What the Founder brought — a decision, a problem, a new initiative?
+- What you want from me: a status read, a routing decision, an escalation, or just a plain-English explanation of something.
+
+Once I have that, I'll read `ops/PROJECT.md` and my role doc, check current state, and come back with a recommendation.
+
+----- who should read it — the reformatting attempt -----
+```json
+{
+  "answer": "WHAT HAPPENED\nMy previous reply came back as unparseable, and this retry arrived without the CURRENT COMPANY STATE block or the original question attached — so I don't have the material I'd need to reconstruct that answer faithfully.\n\nWHY IT MATTERS\nI won't guess at company state or re-invent an answer from memory; that's exactly the failure mode we've agreed I should never introduce. A confidently wrong status summary is worse than no summary.\n\nMY RECOMMENDATION\nRe-send the question. The next call will carry a freshly assembled state block, and I'll answer against that rather than against anything I said earlier in this thread.\n\nWHAT I NEED FROM YOU\nNothing to decide — just the question again.",
+  "consult": []
+}
+```
+
+----- Product said -----
+I'll start by getting oriented — reading my role doc and checking current task state.
+
+Let me look at the repo structure and my role documentation.
+
+----- the Chief of Staff's final answer -----
+Your message got cut off — it ends mid-sentence at "Your colleagues have each," so I don't know what you were about to ask.
+
+A couple of things worth flagging while you retype it:
+
+- I also didn't receive a company state block this turn, so right now I have no visibility into open tasks, pending approvals, or what any agent is working on. If your question is about current status, I'd be guessing, and I won't do that.
+- In this conversation I have no tools — I can't look anything up, run a query, or read a file. I can reason, explain, recommend, and route. Anything that changes state (approvals, status changes) happens outside this chat, and I'll point you to where.
+
+Send the question again and I'll take it from there. If it's a status question, it'll come through with the state attached and I'll have real numbers to work from.
+
+----- the reformatting attempt -----
+```json
+{
+  "answer": "WHAT HAPPENED\n\nMy previous reply came back unparseable as JSON, and I don't have that reply or the originating question in view in this turn — no CURRENT COMPANY STATE block was included, and this invocation has no tools, so I can't retrieve either.\n\nWHY IT MATTERS\n\nI can't reconstruct or correct an answer I can't see. Guessing at what I said before would risk asserting company state that may have changed or never been true — which is worse than saying nothing.\n\nMY RECOMMENDATION\n\nRe-send the original question with the standard CURRENT COMPANY STATE block attached, and I'll answer it fresh as a single well-formed JSON object. If this is a recurring parse failure rather than a one-off, it's worth having Engineering confirm the response contract on POST /api/chief-of-staff/ask — specifically whether the expected schema is being communicated to this agent at call time, since right now it isn't.\n\nWHAT I NEED FROM YOU\n\nNothing that requires a Founder-only decision here. Just the question and the state block."
+}
+```

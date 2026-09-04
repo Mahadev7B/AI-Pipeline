@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 2 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Factory interpreting</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">The company is considering your idea</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 20px; line-height:1.55; max-width:840px;">
+    You can leave this page. The round keeps running and the result waits for you here.
+  </div>
+
+  <!-- WHAT I SAID -->
+  <div style="border-radius:14px; border:1px solid #242830; background:#14171c; padding:16px 18px; margin-bottom:16px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">You said</div>
+      <div style="font-size:10.5px; color:#4e545c;">TASK-026 &middot; your words, unedited</div>
+    </div>
+    <div style="border-left:3px solid oklch(58% 0.015 250); padding-left:13px; font-size:13px; line-height:1.65; color:#eae8e3; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:18px; align-items:start;">
+
+    <!-- LEFT: the honest waiting state -->
+    <div style="border-radius:14px; border:1px solid oklch(72% 0.12 250 / 0.45); background:#14171c; padding:20px;">
+      <div style="display:flex; align-items:center; gap:9px; margin-bottom:14px;">
+        <div style="width:9px; height:9px; border-radius:50%; background:oklch(72% 0.12 250);"></div>
+        <div style="font-size:14px; font-weight:600;">Reading it now</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:11px; margin-bottom:18px;">
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="width:7px; height:7px; border-radius:50%; background:oklch(72% 0.15 150); margin-top:5px; flex-shrink:0;"></div>
+          <div style="font-size:12px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">Perspectives chosen.</b> Chief of Staff picked who could materially improve the reading of <i>this</i> idea &mdash; not everyone.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="width:7px; height:7px; border-radius:50%; background:oklch(72% 0.12 250); margin-top:5px; flex-shrink:0;"></div>
+          <div style="font-size:12px; color:#9aa0a8; line-height:1.55;"><b style="color:#eae8e3;">They are considering it, separately.</b> They may disagree with each other. You will not be handed that argument.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="width:7px; height:7px; border-radius:50%; border:1.5px solid #3d434d; box-sizing:border-box; margin-top:5px; flex-shrink:0;"></div>
+          <div style="font-size:12px; color:#666c74; line-height:1.55;">Chief of Staff writes <b style="color:#9aa0a8;">one</b> answer and brings it to you.</div>
+        </div>
+      </div>
+
+      <div style="border-radius:10px; border:1px dashed #323844; background:#0f1216; padding:13px 14px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:6px;">Why there is no progress bar here</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+          There is no honest number to put in one. Positions are gathered at the same time, not in sequence, and this product records nothing while a run is in flight &mdash;
+          <b style="color:#eae8e3;">0 of 13 recorded agent runs carries a duration or a cost.</b>
+          A bar here would be an animation, not a measurement. There is no estimated finish time for the same reason.
+        </div>
+      </div>
+
+      <div style="font-size:11px; color:#666c74; line-height:1.6; margin-top:14px;">
+        You will not be shown three reports. One answer comes back, and it will say who was consulted.
+      </div>
+    </div>
+
+    <!-- RIGHT: roster + depth -->
+    <div style="border-radius:14px; border:1px solid #242830; background:#14171c; padding:18px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:9px;">Company perspectives consulted</div>
+      <div style="display:flex; gap:7px; flex-wrap:wrap; margin-bottom:6px;">
+        <div style="padding:4px 11px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.55); background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:11px; font-weight:600;">Product</div>
+        <div style="padding:4px 11px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.55); background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:11px; font-weight:600;">CTO</div>
+        <div style="padding:4px 11px; border-radius:100px; border:1px solid oklch(70% 0.12 300 / 0.55); background:oklch(70% 0.12 300 / 0.14); color:oklch(70% 0.12 300); font-size:11px; font-weight:600;">Red Team</div>
+      </div>
+
+      <div onClick="{{toggleRoster}}" style="font-size:11px; color:oklch(78% 0.14 75); cursor:pointer; margin-top:10px;">{{rosterLabel}}</div>
+
+      <sc-if value="{{rosterOpen}}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px; border-left:2px solid #323844; padding-left:12px; display:flex; flex-direction:column; gap:11px;">
+        <div>
+          <div style="font-size:11.5px; font-weight:600; color:#eae8e3;">Product</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Always on the roster. Owns the problem, the target user, the scope and what belongs in a first version.</div>
+        </div>
+        <div>
+          <div style="font-size:11.5px; font-weight:600; color:#eae8e3;">CTO</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Only CTO can say what the database actually holds &mdash; and that decides whether a percentage or a live indicator can honestly exist on this screen at all.</div>
+        </div>
+        <div>
+          <div style="font-size:11.5px; font-weight:600; color:#eae8e3;">Red Team</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">The idea names a shape before naming what goes on it. Red Team is the role whose job is to say that building the shape first is the risk.</div>
+        </div>
+        <div style="padding-top:10px; border-top:1px solid #242830;">
+          <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:7px;">Not consulted, and why</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55; margin-bottom:7px;"><b style="color:#eae8e3;">CEO</b> &mdash; nobody outside this company chooses this screen, so there is no market direction or positioning question to answer.</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55; margin-bottom:7px;"><b style="color:#eae8e3;">Financial, Security</b> &mdash; no cost structure, no identity, payments or sensitive data in play.</div>
+          <div style="font-size:11px; color:oklch(66% 0.17 25); line-height:1.55;"><b>Design</b> &mdash; would have been material here; this is a user-experience idea. It could not be consulted: <span style="font-family:ui-monospace,Menlo,monospace; font-size:10.5px;">design</span> is not on the meeting participant allowlist today. Recorded rather than silently left out.</div>
+        </div>
+      </div>
+      </sc-if>
+
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid #242830;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:8px;">Depth</div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <div style="padding:4px 12px; border-radius:100px; border:1px solid #3d434d; background:#1a1e24; color:#eae8e3; font-size:11px; font-weight:700; flex-shrink:0;">Light</div>
+          <div style="font-size:11px; color:#9aa0a8; line-height:1.55;">Nobody outside this company chooses between this screen and an alternative &mdash; it is our own console. Competitor and market analysis could not change the recommendation, so it will not be produced.</div>
+        </div>
+        <div style="font-size:10.5px; color:#4e545c; margin-top:9px; line-height:1.5;">The other setting is <b style="color:#666c74;">Full</b>, and it has to name who chooses and what else they could choose. It costs more, which is part of why you are shown which one is running.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px; display:flex; align-items:center; gap:12px;">
+    <div onClick="{{go}}" style="padding:8px 16px; border-radius:8px; background:transparent; border:1px solid #323844; color:#9aa0a8; font-size:12px; cursor:pointer;">Leave this page &mdash; the round keeps running</div>
+    <sc-if value="{{note}}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:11px; color:#666c74;">Next: <b style="color:#9aa0a8;">FACTORY UNDERSTANDING</b> &mdash; walk it from the prototype artboard.</div>
+    </sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":760},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { rosterOpen: false, note: false }; }
+  renderVals(){
+    var self = this;
+    return {
+      rosterOpen: this.state.rosterOpen,
+      rosterLabel: this.state.rosterOpen ? '−  Hide why each was chosen' : '+  Why each of these, and who was left out',
+      note: this.state.note,
+      toggleRoster: function(){ self.setState({ rosterOpen: !self.state.rosterOpen }); },
+      go: function(){ if (self.props.advance) { self.props.advance(); } else { self.setState({ note: true }); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

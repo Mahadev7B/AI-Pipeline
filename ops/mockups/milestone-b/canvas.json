@@ -1,0 +1,15 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1250, "expand": "fill" },
+    { "file": "CostsTwoColumn.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 1250, "expand": "fill" },
+    { "file": "MeetingDetailInline.dc.html", "x": 0, "y": 1450, "w": 1440, "h": 1750, "expand": "fill" },
+    { "file": "MeetingDetailPanel.dc.html", "x": 1560, "y": 1450, "w": 1440, "h": 1900, "expand": "fill" }
+  ],
+  "annotations": [
+    { "id": "costs-a-note", "x": 0, "y": -170, "w": 500, "text": "/costs.html — Concept A: Digest (stacked, single column). Content = the LIVE database's real, current state (0 meetings, 0 automation_events, no real Ask-Agent/Meeting/Chief-of-Staff invocations exist yet) — this is literally what the page renders on day one, not a fabricated empty state. Recommended: ship this layout." },
+    { "id": "costs-b-note", "x": 1560, "y": -170, "w": 500, "text": "/costs.html — Concept B: Two-column dashboard. Content is ILLUSTRATIVE (clearly labeled on the artboard) since the live DB has no real data for these paths — demonstrates the coverage-gap disclosure (full/partial/zero coverage) CTO's spec needs reviewed. Not recommended as the primary layout — see review for why." },
+    { "id": "meeting-1-note", "x": 0, "y": 1280, "w": 500, "text": "Meeting Detail — Concept 1: cost sprinkled inline (top meta line + per-position-card badges + follow-up panel badges). Spreads cost across 3 existing components." },
+    { "id": "meeting-2-note", "x": 1560, "y": 1280, "w": 500, "text": "Meeting Detail — Concept 2: one dedicated Cost panel, placed right under the header (mirrors Milestone A Task Detail's summary-strip precedent). Position cards and follow-up panels stay untouched. Recommended." }
+  ],
+  "launch": { "view": "canvas" }
+}

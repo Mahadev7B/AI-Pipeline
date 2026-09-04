@@ -1,0 +1,288 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-026 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-026 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Control Center redesign: a flow-first dashboard, not thirteen tabs of text</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">unassigned</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">3h38m since created<br><span style="color:var(--text3); font-size:10.5px;">2h49m in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Requirements</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--accent); background:var(--bg); flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup</div>
+          <span class="pill" style="background:var(--accent-soft); color:var(--accent);">CURRENT</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Architecture</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Red Team Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">In Development</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Code Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">QA</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Security</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Release · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; not reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Requirements &rarr; Mockup</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:57:46.289Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by product</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Product brief written: ops/reviews/product-task026-brief.md. Subject is THE BUILD, not the app. Scope cut to ONE Build screen + ONE Team page; Overview/Active Work/Pipeline deleted as destinations, nine remaining records moved behind one flat menu with Meetings reachable in &lt;=2 clicks and non-blank when empty (0 rows). Build screen shows seven data-backed items -- app, six-stage gate ladder (NOT a percentage), last real event, current owner, stuck/blocked/founder-action, rework bounce count, and one level of on-demand stage evidence -- all from derived_state.py, which Design and Development must reuse rather than reimplement. Never-run state designed as a first-class state: zero apps built, bootstrap project excluded from that count, the factory&#x27;s own self-build shown but explicitly labelled, no demo data, no speculative link. Boundary: factory shows name/one line/build state plus a single link out once a real destination exists, and never embeds, restyles or reports on a child app. Honest-states rules make evidence rows -- not tasks.status -- the source of a headline state, after two past incidents of reporting success while doing nothing; tasks 11 and 18 are DONE with zero review/QA/handoff rows and must render as gaps. Six items flagged as new work the data cannot support today: tasks.project_id NULL on 20 of 24 tasks, no URL column for the link-out, task_steps on 1 of 24 tasks (so no percentage), no agent_runs written by pipeline agents (so no live signal), zero cost rows anywhere, and UI-initiated builds depending on TASK-024. Two open questions left for CTO: whether a build is project- or task-scoped, and task_is_stuck() not excluding BACKLOG. Next: Design.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Requirements</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:51:59.504Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">SHARPENED FRAMING after a long Founder conversation, 2026-09-01. Supersedes this task&#x27;s original ellipse-centred wording. THE FACTORY IS THE PRODUCT. The Founder has no app idea and does not need one -- the AI factory itself is the thing being built, and this UI is the factory&#x27;s own tracking interface. Clean boundary the Founder stated explicitly: the FACTORY UI (ours) tracks apps being built -- which app, how far along, what is happening, what is stuck; the APP UI (a child of the factory) is entirely separate, unrelated, never styled by us, and touches the factory UI only as a link out. The subject of this UI is THE BUILD, not the product being built -- the fair test is standing at a factory watching a thing get made, not &#x27;how is my app doing&#x27;. What the Founder has already rejected, so do not re-propose: 13 nav tabs of dense text (the current UI, called &#x27;so much verbose&#x27;); an ellipse/ring of dots as the whole answer (the Founder&#x27;s own first instinct, which they moved past); and three orchestrator-drawn concepts (answer-first list, card grid, team view) -- all rejected, see the sketch and its README in design-work/, which is explicitly NOT company output. The Founder also asked for a &#x27;cool&#x27; UI, wants it as simple as possible, and separately confirmed a team/agent view belongs in it (&#x27;we need agent page too&#x27;). HONEST CONSTRAINT that must be stated, not designed around: this factory has never built an app. Any tracking UI designed now is tracking activity that has never occurred, so the empty/never-run state is the state that actually matters, and the design must not assume rich activity it cannot yet show.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T20:09:30.314Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  <div style="font-size:12px; color:var(--text2);">No Code Review, QA, or Security findings recorded for this task yet.</div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>

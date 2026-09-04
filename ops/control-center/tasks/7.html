@@ -1,0 +1,601 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-007 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-007 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Phase 2 Milestone 2B2: real Ask-Agent + persistent conversations</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">Chief of Staff</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">3d20h since created<br><span style="color:var(--text3); font-size:10.5px;">3d19h in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; color:var(--red); font-weight:600;">1 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup Review</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Development · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass &middot; 1 reject/fail (Code review reject) <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">16 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">2 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:09:15.710Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:09:15.667Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone 2B2 complete: full gate sequence passed (Design conformance, CTO architecture, Red Team PASS-with-conditions, Development, Code Review REJECT-&gt;fix-&gt;PASS, QA PASS 16/16 with real live invocation, Security PASS after extensive adversarial testing, CTO post-implementation PASS-WITH-NOTES with 1 finding fixed). Internal tooling -- release is the git commit, no deployment-record entry, same precedent as prior milestones.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:58.372Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by qa</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:47:01.504Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by code-review</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:38:20.500Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Development complete: schema migration applied (agent_runs.status +failed), opsdb.py message-send/start_run/end_run plain functions + CLI wrappers, agent_runtime.py Agent Runtime boundary (--tools &quot;&quot; --strict-mcp-config --agent, verified adversarially against shell/WebFetch/prompt-injection), server.py POST /api/agents/&lt;name&gt;/ask + startup reconciliation, generate_agents.py Ask Agent chat section. Smoke-tested end to end against scratch DBs including one real live CTO subagent invocation through the full HTTP path, duplicate-in-progress 409, orphaned-run reconciliation, restart persistence, XSS escaping, and all malformed/unauthorized input paths.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Development · Ready &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:28:24.377Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Development · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:28:24.335Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by red-team</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:19:34.885Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by cto</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Architecture proposal written: ops/reviews/cto-milestone2b2-architecture.md. Agent Runtime boundary (agent_runtime.py, provider-neutral interface, Claude Code CLI adapter with --tools &quot;&quot; zero-tool-access, ASK_AGENT_ALLOWLIST of 5 read-oriented agents), one narrow schema addition (agent_runs.status +&#x27;failed&#x27;), new POST /api/agents/&lt;name&gt;/ask route reusing the 2B1 session token.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:17:36.601Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:17:36.559Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded for this task &mdash; not necessarily an error; work at earlier gates (e.g. a Development pass not yet handed to Code Review) legitimately has none yet.</div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">CTO Conformance <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #21</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:09:07.667Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by cto</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; CTO post-implementation conformance review: PASS WITH NOTES (1 real finding, fixed and re-verified). Confirmed agent_runtime.invoke_agent() is the sole shell-out to a model anywhere in the repo (grepped for subprocess/Popen/os.system/os.exec across the whole codebase, not just control-center). Confirmed generate_agents.py&#x27;s render_ask_agent_section() only reads and renders a form -- imports only ASK_AGENT_ALLOWLIST from agent_runtime, never invoke_agent -- the write is only reachable through server.py&#x27;s POST route. Confirmed messages has exactly one writer (opsdb.send_message(), grepped repo-wide) and independently re-verified --no-session-persistence leaves no shadow session file (diffed ~/.claude/projects and ~/.claude/sessions before/after a real invocation, zero new files). Confirmed the Ask-Agent status line is always derived fresh from real agent_runs queries, never hardcoded or inferred from response text. Confirmed all CLI-specific concerns (the claude binary, --tools/--agent/--strict-mcp-config, JSON parsing) stay confined to agent_runtime.py -- none leaked into server.py or generate_agents.py. Confirmed ASK_AGENT_ALLOWLIST and the zero-tool/zero-MCP flags are hardcoded constants, never derived from the HTTP request. Confirmed no architecture drift beyond the disclosed --restricted -&gt; --tools &quot;&quot;+--strict-mcp-config substitution (every other deviation from the original proposal traces to a specific, disclosed Red Team condition). No fake agent activity, no unnecessary dependency (stdlib only), scope boundary respected (no Executive Meeting/orchestration/Developer-by-chat/DevOps-by-chat capability introduced).</div><div style="margin-bottom:6px;">&bull; One real finding, fixed immediately: _reconcile_orphaned_ask_agent_runs() in server.py issued a raw UPDATE agent_runs directly, contradicting the same file&#x27;s own docstring claim that opsdb.py functions are the only ones permitted to write agent_runs -- a genuine contradiction between the project&#x27;s central &#x27;opsdb.py is the only writer&#x27; rule and shipped code, missed by Red Team, both Code Review passes, and Security. Fixed by adding opsdb.reconcile_orphaned_runs() (a proper, atomic, LIKE-scoped bulk counterpart to end_run(), with its own CLI wrapper run-reconcile for consistency with every other opsdb.py write) and routing server.py&#x27;s startup reconciliation through it. Re-verified: CLI run-reconcile command works standalone; live server startup reconciliation still correctly touches only Ask-Agent-tagged orphaned runs and leaves an unrelated real review-gate run untouched; a real Ask-Agent request still succeeds afterward.</div><div style="margin-bottom:6px;">&bull; Also closed the duplication risk noted alongside the finding above: the &#x27;Ask-Agent:%&#x27; LIKE pattern and the exact activity-label string were hand-copied inline in four separate places (generate_agents.py&#x27;s two status queries, server.py&#x27;s 409 guard, server.py&#x27;s old raw reconciliation UPDATE) -- exactly the class of drift that caused Code Review&#x27;s earlier blocking REJECT (a scoping predicate copied in one place but not updated everywhere). Centralized as agent_runtime.ASK_AGENT_ACTIVITY_LABEL / ASK_AGENT_ACTIVITY_LIKE, now imported and reused at every call site instead of re-typed. Also centralized opsdb.py&#x27;s (&#x27;ended&#x27;,&#x27;failed&#x27;) status set as RUN_END_STATUSES (was duplicated between end_run()&#x27;s validation and the CLI&#x27;s argparse choices).</div><div style="margin-bottom:6px;">&bull; All fixes compiled clean and re-verified end to end against scratch DBs: unrelated real review-gate runs still don&#x27;t block Ask-Agent, genuine orphaned Ask-Agent runs still correctly reconcile and unblock, and a real live invocation still succeeds after all changes.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #20</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T04:01:33.694Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; No blocking issues found. All attack categories in the brief were exercised directly against a live server instance on a scratch DB (OPSDB_PATH set to a temp file for every write test; real DB touched only for this review-result write and two prior read-only queries). This is a well-built control boundary for the stated threat model (a single trusted local machine, disclosed non-goals). The two carried-forward, already-open, already-disclosed Phase 1 risks (id=2: token doesn&#x27;t prove Founder identity; id=3: Bash-tool-access could forge a request) remain the correct residual risk framing -- nothing in this milestone closes or overclaims past them, and Ask-Agent&#x27;s zero-tool sandbox is itself real (independently re-verified, not merely re-trusted).</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #36</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:32.401Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 16. Code Review&#x27;s 409-scoping bug fix verified (regression test)</div><div style="margin-bottom:6px;">Repro: Created an unrelated, task-scoped open agent_runs row for cto (opsdb.py run-start --agent cto --scope-type task --scope-id 1 --activity &#x27;some real unrelated work&#x27;, simulating this project&#x27;s own review-gate workflow). Confirmed the Ask-Agent form still rendered normally (not blocked) and a real Ask-Agent POST to cto succeeded (303, real on-persona response persisted) while the unrelated task-scoped run remained open/active throughout. Separately confirmed a genuinely orphaned Ask-Agent run (current_activity starting &#x27;Ask-Agent:&#x27;) correctly returns 409 for a new request to that same agent. The fix (scoping the 409 guard&#x27;s query to current_activity LIKE &#x27;Ask-Agent:%%&#x27;) holds.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #35</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:26.949Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 15. Conversation scope persistence (messages.scope=&#x27;agent&#x27;, task/project/meeting NULL)</div><div style="margin-bottom:6px;">Repro: Queried all 17 Ask-Agent messages created during testing: every row has scope=&#x27;agent&#x27; and task_id/project_id/meeting_id all NULL, matching DATA_MODEL.md&#x27;s documented &#x27;agent&#x27; == company/general equivalence and the &#x27;don&#x27;t force every conversation to belong to a task&#x27; requirement.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #34</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:25.584Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 14. No fake activity/status -- all 4 states verified real</div><div style="margin-bottom:6px;">Repro: Produced and verified all 4 status states are driven by real agent_runs queries, never hardcoded: &#x27;No requests yet&#x27; (never asked), &#x27;Last answered &lt;timestamp&gt;&#x27; (after real success), &#x27;Last request failed &lt;timestamp&gt;&#x27; (after simulated runtime failure), &#x27;In progress...&#x27; (with form replaced by a wait message) when an open Ask-Agent run exists (created via opsdb run-start with an Ask-Agent: activity prefix) -- and confirmed a POST attempt while genuinely in-progress correctly 409s.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #33</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:22.932Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 13. agent_runs status transitions (ended vs failed)</div><div style="margin-bottom:6px;">Repro: Verified directly in DB: successful real Ask-Agent calls leave status=&#x27;ended&#x27; with ended_at set (multiple rows checked). The simulated runtime_unavailable failure (scenario 11) leaves status=&#x27;failed&#x27; with ended_at set, and confirmed no corresponding agent response message exists in the messages table for that run&#x27;s thread -- failure never fabricates an answer.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #32</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:21.231Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 12. Empty conversation state (honest &#x27;no requests yet&#x27;)</div><div style="margin-bottom:6px;">Repro: GET /agents/cto.html before ever asking anything: status line showed &#x27;No requests yet&#x27;, thread area showed &#x27;No conversation yet.&#x27; -- an honest empty state, not a fake/broken UI, and a working submittable form was present.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #31</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:19.015Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 11. Runtime timeout/error simulation (runtime_unavailable path)</div><div style="margin-bottom:6px;">Repro: Wrote a standalone script (not editing agent_runtime.py) that imports agent_runtime, monkeypatches CLAUDE_BIN to a nonexistent path, then runs server.main() as a separate process. POSTed a real Ask-Agent request through the full HTTP route -&gt; 303 redirect (as designed), server log showed &#x27;Ask-Agent invocation failed (runtime_unavailable)&#x27;. Confirmed via DB: agent_runs row status=&#x27;failed&#x27;, ended_at set; founder&#x27;s message persisted but NO agent response message was ever inserted; page correctly rendered &#x27;Last request failed&#x27; status with only the Founder&#x27;s bubble, no fabricated answer.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #30</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:13.573Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 10. Malformed request handling</div><div style="margin-bottom:6px;">Repro: Empty message -&gt; 400. Missing token -&gt; 403. Wrong token -&gt; 403. Oversized message (9000 chars, over 8000 cap) -&gt; 400. Body over MAX_BODY_BYTES (100KB) -&gt; 400. Non-existent path segment (/api/agents/cto/frobnicate) -&gt; 404. Totally bogus path -&gt; 404. All clean 4xx, response bodies checked for &#x27;Traceback&#x27;/&#x27;Exception&#x27;/&#x27;File &quot;&#x27; strings -- none found, no leaked internals.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #29</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:11.625Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 9. Invalid agent rejected cleanly</div><div style="margin-bottom:6px;">Repro: POST to /api/agents/developer/ask (real agent, not allowlisted) -&gt; clean 404, no invocation attempted, no DB rows. POST to /api/agents/totally-fake-agent/ask (not registered at all) -&gt; clean 404. GET /agents/developer.html shows honest &#x27;not enabled for conversation&#x27; note, no form. GET /agents/totally-fake-agent.html -&gt; 404. Verified zero messages/agent_runs rows created for either — no partial success.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #28</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:09.984Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 8. Duplicate/simultaneous submission behavior</div><div style="margin-bottom:6px;">Repro: Backgrounded two genuinely simultaneous curl POSTs to the same agent (financial) with different questions (ALPHA/BETA). Per server.py&#x27;s documented single-threaded design, both succeeded as two clean sequential real turns (both 303), no interleaving, no corruption, no garbled/duplicate messages — verified via DB: 2 distinct agent_runs rows (both ended), 4 clean messages in correct order.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #27</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:07.223Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 7. HTML/script content escaped safely (stored XSS test)</div><div style="margin-bottom:6px;">Repro: Submitted Founder message containing &lt;script&gt;alert(1)&lt;/script&gt; and a &quot; quote to ceo. Verified raw text stored unescaped in DB (correct for storage) but GET /agents/ceo.html rendered it fully escaped (&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt; and &amp;quot;quote&amp;quot;) — never live markup. Real agent response also passes through e().</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #26</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:05.640Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 6. Two different agents remain separated</div><div style="margin-bottom:6px;">Repro: Queried messages directly: thread_id &#x27;agent-cto-company&#x27; contains only cto&#x27;s exchanges (ids 1-6,16-17), thread_id &#x27;agent-qa-company&#x27; contains only qa&#x27;s exchange (ids 7-8). Distinct thread_ids confirmed, zero cross-contamination between agent conversations.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #25</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:53:03.938Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 5. Correct agent receives the request (persona check)</div><div style="margin-bottom:6px;">Repro: Asked cto &#x27;what is your role&#x27; -&gt; real response reflecting CTO/Architect persona (technology selection, architecture, data model, explicitly not implementing/deploying). Asked qa the same question -&gt; real response reflecting QA persona (testing from user perspective, pass/fail, opsdb). Responses genuinely distinct and role-accurate, not generic/swapped.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #24</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:59.398Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 4. Application restart retains conversation</div><div style="margin-bottom:6px;">Repro: Killed the server process entirely (pkill), started a brand-new process (new PID) on a new port against the SAME scratch OPSDB_PATH. GET /agents/cto.html showed the full prior conversation (all 6 bubbles) unchanged — state lives in SQLite, not server memory, confirmed.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #23</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:58.046Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 3. Browser refresh retains conversation</div><div style="margin-bottom:6px;">Repro: After the real exchanges above, re-GET /agents/cto.html (simulating refresh). Full history (all 6 bubbles, both turns) rendered identically and unchanged, correctly HTML-escaped.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #22</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:56.837Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 2. Multi-turn conversation with context</div><div style="margin-bottom:6px;">Repro: Asked cto &#x27;what&#x27;s 7+5?&#x27; (turn1 real response: 12), then &#x27;multiply that by 2&#x27; (turn2 real response: 24). Confirmed via DB that turn2&#x27;s real answer reflects turn1&#x27;s context, proving transcript-rebuild-from-messages works, not just two independent Q&amp;As.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #21</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:52:55.051Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: 1. Real successful Ask-Agent request to allowlisted agent (cto)</div><div style="margin-bottom:6px;">Repro: Started server against scratch OPSDB_PATH, seeded agents, GET /agents/cto.html, extracted token, POST /api/agents/cto/ask with a real question. Got 303. Verified via independent sqlite3 connection: Founder message and a genuine, on-persona CTO response (&#x27;I&#x27;m the CTO/Architect: I own technology selection...&#x27;) both persisted in messages; agent_runs row status=&#x27;ended&#x27;, ended_at set. Took ~4s, real claude CLI invocation, not mocked.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #19</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:46:56.762Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Fast re-check after Code Review&#x27;s REJECT: the blocking finding is fixed and re-verified. server.py&#x27;s _handle_ask 409 guard query was missing the current_activity LIKE &#x27;Ask-Agent:%%&#x27; filter that generate_agents.py&#x27;s UI query and the startup reconciliation query both already had -- meaning ANY open agent_runs row for an allowlisted agent (including this project&#x27;s own real review-gate runs against cto/qa) would spuriously 409 a real Founder Ask-Agent request. Fixed by adding the same scoping filter to the write-route query, matching the other two. Reproduced the exact scenario Code Review found (a task-scoped, non-Ask-Agent open run for cto from a simulated review-gate workflow) against a scratch DB: before the fix this would have 409&#x27;d; after the fix a real Ask-Agent request to cto succeeds (303) while that unrelated run is still open, and a genuine orphaned Ask-Agent run still correctly 409s.</div><div style="margin-bottom:6px;">&bull; Also fixed the 3 non-blocking findings: (1) _MAX_CAPTURED_BYTES comment corrected to accurately describe it as a post-read cap on what&#x27;s parsed/used, not a true read-time ceiling -- proc.communicate() reads all stdout before the slice; accepted as low-risk since --output-format json bounds real output to the model&#x27;s own max-output-tokens. (2) cmd_run_start regained its &#x27;run agent-upsert first&#x27; hint on an unknown-agent error, now attached in the CLI wrapper rather than the plain start_run() function (keeps the reusable function&#x27;s message generic, restores the CLI&#x27;s helpful hint). (3) model_used selection now genuinely picks the modelUsage entry with the largest outputTokens rather than the last one encountered with any nonzero value, matching the comment&#x27;s original intent (currently a dead field, not yet consumed by any caller, but no longer silently wrong).</div><div style="margin-bottom:6px;">&bull; All fixes compiled clean and re-verified against scratch DBs; no regression in the previously-verified end-to-end real invocation, restart persistence, or malformed-input paths.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #18</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--red-soft); color:var(--red);">reject</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:44:42.599Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; BLOCKING: server.py _handle_ask&#x27;s &#x27;one open run per agent -&gt; 409&#x27; guard (server.py:277-281) queries ANY open agent_runs row for the agent name (WHERE a.name=? AND ended_at IS NULL, no current_activity/scope filter), while generate_agents.py&#x27;s render_ask_agent_section (generate_agents.py:144-148) and server.py&#x27;s own orphan reconciliation (server.py:329-352) both correctly scope to current_activity LIKE &#x27;Ask-Agent:%&#x27;. This mismatch means: (1) the UI shows an inviting, submittable Ask-Agent form whenever there is no OPEN ASK-AGENT run, even if the SAME agent has an unrelated open agent_runs row (e.g. task-scoped review-gate work created via opsdb.py run-start); (2) submitting from that form then hits a confusing, incorrect 409 from the unrelated row. This is not hypothetical: cto and qa -- two of the five allowlisted Ask-Agent agents -- already have exactly this kind of task-scoped agent_runs history in the live DB from this project&#x27;s own review-gate workflow (confirmed via SELECT against agent_runs). Fix: scope the 409 check in server.py&#x27;s _handle_ask to current_activity LIKE &#x27;Ask-Agent:%&#x27; (or a dedicated marker), matching the UI display query and the reconciliation query.</div><div style="margin-bottom:6px;">&bull; Minor: agent_runtime.py&#x27;s _MAX_CAPTURED_BYTES (line 49, applied line 107) is described as &#x27;a hard ceiling on subprocess stdout we will ever read into memory&#x27; but proc.communicate(timeout=timeout_s) (line 95) reads all of stdout/stderr into memory before the [:_MAX_CAPTURED_BYTES] slice is ever applied -- the cap bounds what is USED, not what is READ. Practical risk is low (claude&#x27;s JSON stdout is bounded by the model&#x27;s own max-output-tokens), but the comment overstates what the code does; Red Team condition 2 asked for a cap on captured output, and a true streaming/incremental cap would be more defensible for the highest-stakes code path in the project so far.</div><div style="margin-bottom:6px;">&bull; Minor: opsdb.py&#x27;s refactored cmd_run_start (opsdb.py:278-284) drops the old, more helpful &#x27;no such agent — run agent-upsert first&#x27; error-message suffix (previously in _agent_id(), opsdb.py:131) in favor of start_run()&#x27;s bare &#x27;no such agent&#x27; LookupError text -- a small CLI-output regression, not functionally breaking, worth restoring for parity.</div><div style="margin-bottom:6px;">&bull; Minor: agent_runtime.py&#x27;s model_used selection (lines 124-129) iterates modelUsage and overwrites model_used with the LAST entry that has any outputTokens&gt;0, not the entry with the MOST outputTokens as the comment implies (&#x27;the substantive completion is whichever entry actually produced output tokens&#x27;) -- if a small classifier/haiku pass with nonzero output tokens sorts after the real completion in the JSON, it would silently win. Currently unused by server.py/generate_agents.py (dead field), so no live impact today, but will misbehave the moment it&#x27;s consumed.</div><div style="margin-bottom:6px;">&bull; Verified positively: all 7 Red Team conditions substantively satisfied in code (tool restriction via --tools &quot;&quot; + --strict-mcp-config verified empirically both against --help text and two live claude invocations reproducing Red Team&#x27;s own --restricted-breaks-custom-agent finding and the zero-tool-enforcement finding; subprocess hardening -- Popen+start_new_session+explicit env+killpg -- all present; MAX_RESPONSE_CHARS truncation is applied to the actually-persisted response; e() applied to every rendered message body/label in render_ask_agent_section; single-threaded blocking disclosed in both server.py&#x27;s module docstring and SECURITY.md; orphan reconciliation correctly scoped to Ask-Agent rows only and called from main() before serve_forever(); SECURITY.md correctly states the 5 agents&#x27; normal tool config includes Bash/cto-Write/Edit, cross-checked against .claude/agents/*.md). No SQL injection found (all queries parameterized). No new third-party dependencies. Migration verified directly against the live DB: agent_runs CHECK constraint now includes &#x27;failed&#x27;, all 13 pre-existing rows intact and still &#x27;ended&#x27;, idx_runs_agent_open re-created, PRAGMA integrity_check ok, foreign_key_check clean.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #17</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-08-29T03:25:20.721Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; PASS with conditions. Core design (agent_runtime.py as a small, provider-neutral, dependency-free module; ASK_AGENT_ALLOWLIST enforced server-side only, never client-supplied; argv-list subprocess.run with shell=False, eliminating shell-injection surface regardless of message content; atomic-style validate-before-write sequence mirroring decide_approval(); additive-only schema migration; --no-session-persistence keeping messages/agent_runs the sole conversation store) correctly targets every hard requirement in the brief and is not overengineered. No simpler design was found that still satisfies &#x27;browser never invokes Claude Code/shell/SQLite directly, server mediates every request, real queued-&gt;running-&gt;completed|failed lifecycle, one conversation store.&#x27;</div><div style="margin-bottom:6px;">&bull; CONDITION (blocking, core safety claim #1): --tools &quot;&quot; alone is an unverified, narrower safety boundary than the CLI itself offers for exactly this scenario. Verified directly against the live &#x27;claude --help&#x27; in this environment: the CLI ships a purpose-built --restricted flag whose documented behavior is materially broader than --tools &quot;&quot; -- it &#x27;removes the built-in tools that run commands or code (Bash, PowerShell, REPL...) and WebFetch unless --tools names them, and ignores user, project and local settings files (managed settings and --settings still apply; add --strict-mcp-config to skip MCP servers too). Also confines file tools to working directories, refuses bypassPermissions, and lets only a person or the configured permission handler approve writes to settings/git/tool-config files.&#x27; None of that is claimed for --tools &quot;&quot; alone -- its own help text says only &#x27;Specify the list of available tools from the built-in set,&#x27; which by its own wording leaves open whether MCP-server-provided tools (not part of the &#x27;built-in set&#x27;) are constrained by it at all, and says nothing about ignoring user/project/local settings files or refusing bypassPermissions. The proposal&#x27;s empirical verification (asking cto to run ls -la / read a file) only exercised Read/Grep-class built-in tools -- it never tested WebFetch (a real network-exfiltration path for prompt-injected Founder text), any MCP-provided tool, or whether a stray user-level settings.json on the actual deployment machine (outside this repo&#x27;s control) could reintroduce permission overrides. Given this milestone&#x27;s own framing as &#x27;the first time an LLM call happens unsupervised,&#x27; relying on the narrower-documented flag when a purpose-built stronger one exists is not adequate. REQUIRED: agent_runtime.py must pass --restricted (layered with --tools &quot;&quot; if useful) and --strict-mcp-config; Security must re-run adversarial verification explicitly covering WebFetch/WebSearch, any configured MCP server, and confirm no reachable user/project settings.json can reintroduce tool access, before this ships.</div><div style="margin-bottom:6px;">&bull; CONDITION: subprocess hardening details are unspecified and should be pinned down before implementation, not improvised mid-build -- (a) kill the whole process group on TimeoutExpired (start_new_session=True + os.killpg), not just the direct child, in case the claude CLI spawns children before a runaway call is killed; (b) pass an explicit minimal env= rather than blindly inheriting the full parent environment, as further defense-in-depth given the &#x27;unsupervised process&#x27; risk framing; (c) cap captured stdout size defensively (subprocess.run has no built-in cap).</div><div style="margin-bottom:6px;">&bull; CONDITION: no size cap is proposed for the agent&#x27;s stored RESPONSE text -- the 8KB cap only covers the Founder&#x27;s inbound message. A pathological or adversarially-elicited long response bloats messages/agent_runs indefinitely and gets re-rendered on every subsequent page load with no bound. Add a symmetric cap (truncate-and-flag, or treat as runtime_error) before persisting the response.</div><div style="margin-bottom:6px;">&bull; CONDITION: stored-XSS risk on the new conversation thread is not explicitly addressed in the proposal, and this is the first feature combining fully free-text Founder input with free-text, potentially prompt-injected model output, both persisted and re-rendered as live HTML on every load. The codebase&#x27;s existing layout.e() (html.escape) convention, already applied to every DB-sourced string per the Milestone-1 rule, is the correct and sufficient fix, but the proposal&#x27;s &#x27;Files touched&#x27; list doesn&#x27;t call it out for the new bubbles in build_agent_detail(). REQUIRED: Development must run both Founder and agent message bodies through e() exactly like every other field; QA/Security must add a seeded &lt;script&gt; payload test against both the Founder-submitted message and an adversarial agent response, mirroring the exact test Security already ran for 2B1 (review_results id=14).</div><div style="margin-bottom:6px;">&bull; CONDITION (concurrency, question 4 in the proposal): the &#x27;one open run per agent -&gt; 409&#x27; analysis only reasons about a second request to the SAME agent racing the first. Because HTTPServer is strictly single-threaded and sequential, the real, larger cost is that ANY other request -- a different agent&#x27;s Ask-Agent POST, or simply loading /overview.html, /pipeline.html, /agents.html, or the approvals inbox -- will silently hang in the OS accept queue (not get a clean response, not get a 409) for up to the full timeout_s (90s) while the server is synchronously blocked inside subprocess.run() for an unrelated agent. This is materially broader than the narrow same-agent scenario the proposal frames and asks Red Team about. May be an acceptable tradeoff for a single-Founder internal tool proving one vertical slice, but it must be explicitly disclosed (in this doc and/or SECURITY.md, the way every other tradeoff here is disclosed) rather than framed only as the narrower case, and the Founder/CTO should explicitly accept it. Also recommend lowering the default timeout well below 90s given the proposal&#x27;s own measured real-world latency was ~3-13s.</div><div style="margin-bottom:6px;">&bull; CONDITION: an orphaned &#x27;open&#x27; agent_runs row (ended_at IS NULL) on server crash/restart permanently blocks all future requests to that agent, with no recovery path proposed. Because agent_runs rows in this synchronous, single-process design are inherently process-lifetime-scoped (no cross-process handoff of an in-flight subprocess is possible), any row left open at server startup cannot correspond to a still-running call. REQUIRED: add a startup reconciliation step that marks any pre-existing open agent_runs rows as failed (e.g. note=&#x27;orphaned by server restart&#x27;) before serving new requests, so a crash/restart doesn&#x27;t permanently wedge that agent&#x27;s chat.</div><div style="margin-bottom:6px;">&bull; CONDITION (should-fix): reusing the identical 2B1 session token for this new, higher-blast-radius write route is architecturally consistent but was not re-justified for the escalated risk, and the proposal&#x27;s &#x27;Files touched&#x27; list omits ops/SECURITY.md. SECURITY.md&#x27;s existing disclosure already states this same token does not prove Founder identity and that any local process able to read the served page -- &#x27;including an agent invoked with Bash tool access, per the still-open Phase 1 risk (risks.id=3)&#x27; -- can forge the same POST. Verified against the live .claude/agents/*.md files: all five allowlisted agents (cto, qa, ceo, financial, project-manager) are normally configured WITH Bash tool access in their peacetime setup (cto also has Write/Edit) -- contrary to the proposal&#x27;s framing of them as low-risk &#x27;read-oriented&#x27; agents for this specific point, they are exactly the actors risks.id=3 already worries about. A forged 2B1 request can at most flip an already-Founder-authored approval&#x27;s decision; a forged 2B2 request spends real API budget, invokes a real LLM with attacker-influenced input, and inserts a fabricated Founder message + agent response into what becomes a persisted, trusted-looking conversational record -- a materially larger blast radius through the same weak guarantee. REQUIRED: add a 2B2 section to SECURITY.md mirroring the existing 2B1 section, and have Security explicitly re-affirm risks.id=2/id=3 cover this new route (or open a new tracked risk if the escalation warrants its own entry) before shipping.</div><div style="margin-bottom:6px;">&bull; Question 2 in the proposal (zero tools for all five agents) -- AGREE, this is the right v1 call, not overcautious. The proposal frames these as &#x27;read-oriented&#x27; agents implying Read/Grep/Glob-class low risk, but the actual configured peacetime tool lists (verified against .claude/agents/*.md) include Bash on all five and Write+Edit on cto -- broader than the brief&#x27;s framing suggests. Given that, zero-tools is the only choice that doesn&#x27;t require inventing new per-agent tool-curation policy (e.g. an explicit --tools &quot;Read,Grep,Glob&quot; override list per agent) that this milestone correctly chose not to build yet. Not overengineered in reverse; agree with deferring read-only access to an explicitly-reviewed later milestone.</div><div style="margin-bottom:6px;">&bull; Question 1 (queued folded into active) -- acceptable as a status-naming decision on its own terms once the broader blocking behavior in the concurrency condition above is disclosed and accepted; folding queued into active does not itself need a queued status added now.</div><div style="margin-bottom:6px;">&bull; Question 3 (messages.scope=&#x27;agent&#x27; not renamed to &#x27;company&#x27;) -- AGREE with not renaming. Functionally sufficient, and DATA_MODEL.md&#x27;s rule against casually mutating Phase-1 schema is correctly applied here even though &#x27;costs nothing at 0 rows&#x27; is a fair countervailing point; documenting the equivalence explicitly (already the plan) is the right amount of fix.</div><div style="margin-bottom:6px;">&bull; Non-blocking: schema migration technique (rebuild-and-copy for the CHECK-constraint widen) is standard and sound -- verified no FK anywhere in schema.sql references agent_runs(id), and the live table&#x27;s 13 rows are 100% status=&#x27;ended&#x27; (query-verified), so no reinterpretation risk. Reminder for Development: CREATE INDEX idx_runs_agent_open must be re-issued after the rename (dropping the old table drops its indexes), and the rebuild should follow SQLite&#x27;s documented 12-step ALTER-table procedure (temporarily PRAGMA foreign_keys=OFF for the rebuild connection, one transaction, PRAGMA foreign_key_check before commit) as the correct general pattern going forward even though no FK currently targets this table.</div><div style="margin-bottom:6px;">&bull; Non-blocking: cmd_run_end has no WHERE ended_at IS NULL atomic guard the way decide_approval()&#x27;s conditional UPDATE...WHERE does, despite the proposal claiming to mirror that discipline. Low risk today (server.py calls it exactly once per request) but should be added alongside the --status {ended,failed} flag for consistency, and because it becomes the safe other half of the startup-reconciliation fix above.</div><div style="margin-bottom:6px;">&bull; Non-blocking: transcript-rebuilt-every-turn on a single deterministic company-scoped thread per agent (thread_id=f&#x27;agent-{agent_name}-company&#x27;) has no reset mechanism -- a Founder cannot start a fresh conversation with an agent short of a manual DB edit, so transcript size, per-call cost, and risk of hitting --max-budget-usd or the fixed timeout can only grow monotonically over that agent&#x27;s lifetime. Acceptable as documented for &#x27;prove one vertical slice&#x27; but should be a near-term, not someday, follow-up. Also: the proposal never states the actual dollar value planned for --max-budget-usd or confirms what error_kind its exceeded-budget failure maps to -- pin both down before implementation.</div><div style="margin-bottom:6px;">&bull; Non-blocking, verified: no agent named &#x27;founder&#x27; exists in the live agents table (queried directly), so the from_agent=&#x27;founder&#x27; structural convention has no collision risk, as claimed. message-send&#x27;s opsdb.py command design (mirrors risk-add&#x27;s --scope + required/forbidden id pattern) is consistent with existing conventions -- no objection.</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">No <span class="mono">agent_activity</span> rows recorded for this task. Real, not an error &mdash; some tasks' work is captured entirely via status history and review/QA results instead.</div>
+</div>
+</div>
+</body>
+</html>

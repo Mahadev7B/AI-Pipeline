@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Progress Closeups &mdash; readiness &amp; paused pill</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+h1{ font-family:var(--disp); font-size:17px; font-weight:600; margin:0 0 4px; }
+h2{ font-family:var(--disp); font-size:13px; font-weight:600; margin:0 0 10px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 16px; }
+.verdict{ font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px; display:inline-block; margin-top:8px; }
+  </style>
+</helmet>
+<div style="padding:26px; max-width:1040px; background:var(--bg);">
+
+<h1>Closeups &mdash; two specific design calls</h1>
+<div class="sub">Not a new page &mdash; three isolated comparisons zoomed in for the review: (1) how the two readiness booleans should render, (2) what color the new "paused" status pill takes, (3) whether one level of tree nesting reads clearly with no accordion/JS.</div>
+
+<!-- 1: READINESS BOOLEAN TREATMENTS -->
+<h2>1. Readiness booleans &mdash; three treatments compared</h2>
+<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:26px;">
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">A &mdash; stark boolean only</div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><span class="pill" style="background:var(--gray-soft); color:var(--text2); font-weight:700; padding:4px 11px; font-size:12px;">NO</span><span style="font-size:12.5px; font-weight:600;">UI 100% complete</span></div>
+    <div style="display:flex; align-items:center; gap:10px;"><span class="pill" style="background:var(--green-soft); color:var(--green); font-weight:700; padding:4px 11px; font-size:12px;">YES</span><span style="font-size:12.5px; font-weight:600;">Testing ready</span></div>
+    <div class="verdict" style="background:var(--red-soft); color:var(--red);">Rejected</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">A bare "NO" answers nothing about how close &mdash; the Founder's own recurring complaint was not being able to see progress, and this treatment hides the one number (3 of 4) that makes "NOT YET" legible instead of alarming.</div>
+  </div>
+
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">B &mdash; full narrated sentence</div>
+    <div style="font-size:12px; color:var(--text2); line-height:1.5; margin-bottom:10px;">The Founder-facing UI is not yet 100% feature-complete because one of the four planned UI Completeness milestones, Milestone D (Project/Phase Progress), remains in progress as of this writing.</div>
+    <div style="font-size:12px; color:var(--text2); line-height:1.5;">However, exploratory Founder testing may already begin, since Milestones A, B, and C are all complete.</div>
+    <div class="verdict" style="background:var(--red-soft); color:var(--red);">Rejected</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Exactly the "narrated" language CTO's own spec forbids (Part 3.4) &mdash; invites drifting into softened or hedged phrasing over time, the same failure mode this whole milestone exists to close.</div>
+  </div>
+
+  <div class="panel" style="border-color:var(--accent);">
+    <div class="label" style="margin-bottom:10px; color:var(--accent);">C &mdash; recommended: pill + one honest clause</div>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><span class="pill" style="background:var(--gray-soft); color:var(--text2); font-weight:700; padding:4px 11px; font-size:11px;">NOT YET</span><span style="font-size:12.5px;"><b>UI 100% complete</b> <span style="color:var(--text2);">&mdash; 3 of 4 done</span></span></div>
+    <div style="display:flex; align-items:center; gap:10px;"><span class="pill" style="background:var(--green-soft); color:var(--green); font-weight:700; padding:4px 11px; font-size:11px;">YES</span><span style="font-size:12.5px;"><b>Testing ready</b> <span style="color:var(--text2);">&mdash; A+B+C done</span></span></div>
+    <div class="verdict" style="background:var(--green-soft); color:var(--green);">Recommended</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Matches CTO's own Part 4.2 spec almost verbatim. A plain boolean word (never invented adjectives like "nearly") plus the one real fraction that makes it legible &mdash; informative, not alarmist, same bar as Milestone A's staleness badge.</div>
+  </div>
+</div>
+
+<!-- 2: PAUSED PILL COLOR -->
+<h2>2. The new "paused" status pill &mdash; color options against this project's existing semantics</h2>
+<div class="sub" style="margin-top:-6px;">Existing convention, confirmed against generate_overview.py/generate_risks.py: green=done/passed, accent(amber)=active/in_progress, red=open risk/danger/founder-action-needed, gray=neutral/not_started, blue=agent "waiting", violet=reserved for the AI-actor/human-actor marker and cross-cutting alert strips (never a status).</div>
+<div style="display:grep; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:20px;">
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Red</div>
+    <span class="pill" style="background:var(--red-soft); color:var(--red); padding:4px 11px; font-size:11px;">paused</span>
+    <div class="verdict" style="background:var(--red-soft); color:var(--red);">Rejected</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Red already means "open risk" / "Founder action urgently needed" everywhere else in this product. A Founder-directed pause (DEC-008) is not a danger signal &mdash; using red here would misrepresent a deliberate, calm decision as an alarm.</div>
+  </div>
+  <div class="panel">
+    <div class="label" style="margin-bottom:10px;">Violet</div>
+    <span class="pill" style="background:var(--violet-soft); color:var(--violet); padding:4px 11px; font-size:11px;">paused</span>
+    <div class="verdict" style="background:var(--red-soft); color:var(--red);">Rejected</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Violet is reserved for "AI actor" / "human actor" identity and the cross-page "needs attention" callout strip (phase-0, Risks). Reusing it for a status value would blur an established, unrelated meaning, not extend it.</div>
+  </div>
+  <div class="panel" style="border-color:var(--blue);">
+    <div class="label" style="margin-bottom:10px; color:var(--blue);">Blue &mdash; recommended</div>
+    <span class="pill" style="background:var(--blue-soft); color:var(--blue); padding:4px 11px; font-size:11px;">paused</span>
+    <div class="verdict" style="background:var(--green-soft); color:var(--green);">Recommended</div>
+    <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Blue already means "waiting" for agent status on Overview &mdash; temporarily halted, not urgent, not active. "Paused" is the same idea one level up (a phase, not an agent run). Extends an existing convention by exactly one value, per CTO's own framing, rather than inventing a fifth color family.</div>
+  </div>
+</div>
+
+<!-- 3: NESTING DEPTH -->
+<h2>3. One level of tree nesting &mdash; does it read without an accordion?</h2>
+<div class="panel" style="max-width:640px;">
+  <div style="display:flex; align-items:center; gap:10px; padding:8px 0;"><span class="pill" style="background:var(--accent-soft); color:var(--accent);">In Progress</span><span style="font-size:13px; font-weight:600;">Phase 3</span></div>
+  <div style="padding-left:26px; border-left:2px solid var(--border2); margin-left:16px;">
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0;"><span class="pill" style="background:var(--accent-soft); color:var(--accent);">In Progress</span><span style="font-size:12.5px; font-weight:600;">Founder UI Completeness</span><span style="font-size:11px; color:var(--text2);">3 of 4</span></div>
+    <div style="padding-left:26px; border-left:2px solid var(--border2); margin-left:16px;">
+      <div style="display:flex; align-items:center; gap:10px; padding:6px 0;"><span class="pill" style="background:var(--green-soft); color:var(--green); padding:1px 7px;">Done</span><span style="font-size:12px;">Milestone D</span></div>
+    </div>
+  </div>
+  <div class="verdict" style="background:var(--green-soft); color:var(--green);">Confirmed &mdash; two hops, indent + left-border connector, is legible at a glance</div>
+  <div style="font-size:11px; color:var(--text2); margin-top:6px; line-height:1.5;">Matches Part 2's own "at most two levels deep, no recursive CTE needed" constraint. A third hop would need re-evaluation, but nothing in this milestone's real data goes that deep.</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

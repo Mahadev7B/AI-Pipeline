@@ -1,0 +1,414 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TASK-021 — Task Detail — Command Center</title>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</head>
+<body>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:26px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:2px;"><a href="../overview.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</a><a href="../ideas-preview/stage-1.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Ideas (preview)</a><a href="../active-work.html" style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Active Work</a><a href="../pipeline.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</a><a href="../agents.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</a><a href="../decisions.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</a><a href="../progress.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Progress</a><a href="../risks.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Risks</a><a href="../meetings.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</a><a href="../inbox.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</a><a href="../reviews.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</a><a href="../releases.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</a><a href="../automation.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</a><a href="../costs.html" style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Costs</a></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+          
+        </div>
+      </div>
+    </div>
+<div style="padding:26px;">
+<div class="sub">Generated 2026-09-01 23:47 UTC from the live operational database. Not hand-edited; re-run generate_task.py to refresh.</div>
+
+<h1>TASK-021 <span style="font-weight:400; color:var(--text2); font-size:16px;">&mdash; Milestone C: Company-wide Risks register</span></h1>
+<div class="sub" style="margin-top:-14px; margin-bottom:16px;">Read-only</div>
+
+<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;"><a href="#gates" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Gate timeline</a><a href="#history" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Status history</a><a href="#handoffs" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Handoffs</a><a href="#findings" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Review / QA findings</a><a href="#decisions" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Founder decisions</a><a href="#risks" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Associated risks</a><a href="#activity" class="pill" style="background:var(--panel2); color:var(--text2); border:1px solid var(--border2);">Activity</a></div>
+
+<div class="panel" style="margin-bottom:20px;">
+  <div style="display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:18px;">
+    <div><div class="label" style="margin-bottom:4px;">Project</div><div style="font-size:12.5px;"><span style="color:var(--text3);">&mdash;</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Owner</div><div style="font-size:12.5px;">cto</div></div>
+    <div><div class="label" style="margin-bottom:4px;">Elapsed</div><div style="font-size:12.5px;">21h19m since created<br><span style="color:var(--text3); font-size:10.5px;">20h41m in this gate</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Bounces</div><div style="font-size:12.5px; ">0 <a href="#findings" class="accentlink" style="font-size:10.5px; font-weight:400;">&rarr; findings</a></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Next action</div><div style="font-size:12.5px; color:var(--text3);">&mdash; <span style="font-size:10.5px;">(not populated)</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Founder action needed</div><div style="font-size:12.5px;"><span style="color:var(--text2);">No</span></div></div>
+    <div><div class="label" style="margin-bottom:4px;">Cost</div><div style="font-size:12.5px;"><span style="color:var(--text3);">not available &mdash; see <a class="accentlink" href="../costs.html">Costs</a></span></div></div>
+  </div>
+</div>
+
+<div class="panel" id="gates" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:14px;">Gate timeline</div>
+  
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Requirements</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Mockup</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Mockup Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Architecture</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Red Team Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Development · Ready</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">In Development</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Code Review</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">QA</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Security</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text2); margin-top:5px; line-height:1.6;">1 pass <a href="#findings" class="accentlink" style="font-size:10.5px;">&rarr; findings</a></div>
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text);">Release · Ready</div>
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">DONE</span>
+        </div>
+        
+      </div>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="width:16px; height:16px; border-radius:50%; border:2px solid var(--border2); background:transparent; flex-shrink:0;"></div>
+        <div style="width:1px; flex:1; background:var(--border2); margin-top:2px;"></div>
+      </div>
+      <div style="flex:1; padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text3);">Deployment</div>
+          <span class="pill" style="background:var(--gray-soft); color:var(--text3);">WAITING</span>
+        </div>
+        
+      </div>
+    </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div style="width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:var(--text3); font-size:11px;">&hellip;</div>
+    <div style="font-size:11.5px; color:var(--text3);">Deployed / Done &mdash; reached</div>
+  </div>
+</div>
+<div class="panel" id="history" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:10px;">Status history <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; most recent first</span></div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Release · Ready &rarr; Deployment</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:06:16.442Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO final conformance CONFORMS -- no drift, cleanest of the three shipped milestones (no rejection rounds). Milestone C of the Founder-approved four-milestone UI Completeness plan (DEC-009) is complete: company-wide Risks register, making risks.id=3 finally visible in the product. Milestone D (Project/Phase Progress) remains -- the last of the four.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Security &rarr; Release · Ready</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:03:54.767Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Security PASS. CTO final conformance begins -- the last gate before this milestone is DONE.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">QA &rarr; Security</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:02:07.562Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">QA PASS. Focused Security review begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Code Review &rarr; QA</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:57:41.537Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Code Review PASS, first pass. QA begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">In Development &rarr; Code Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:50:51.297Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by developer</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone C implementation complete: /risks.html (generate_risks.py), derived_state.risk_register_rows()/related_decisions_for_risk() (Red Team&#x27;s loosened regex folded in), server.py route, layout.py nav entry, and the small cross-links CTO&#x27;s doc named (generate_decisions.py card anchors, generate_task.py empty-state copy, generate_agents.py risk cross-links). ops/db/test_risk_register.py added. Ready for Code Review.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; In Development</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:45:18.214Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Red Team PASS. Development builds Milestone C.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Red Team Review &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:43:19.524Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review approved with 3 refinements. Red Team review begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Mockup Review &rarr; Red Team Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:42:43.815Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by design</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Design review complete: CTO&#x27;s architecture (ops/reviews/cto-milestone-c-architecture.md) is ready for Development with 3 small, additive refinements -- (1) a page-level &#x27;Needs attention&#x27; strip (open + medium/high-severity risks, quick-jump links), (2) the mitigation-history disclosure moved from per-card to page-level (shown once), (3) mitigation text block width capped (max-width:760px, not 100%) for readability. Status-first section grouping (Open/Mitigated/Resolved) confirmed as the right primary sort over a severity-first alternative -- tested directly against the real risks table (Main.dc.html vs FlatSeverityFirst.dc.html). risks.id=3&#x27;s real 2,820-char mitigation text tested directly (Risk3Detail.dc.html); related decisions confirmed as a compact chip row, not a full list. Task-scoped link affordance and nav placement confirmed as specified. No change to CTO&#x27;s data model, route, or read-only/no-JS constraints. See ops/reviews/design-review-milestone-c.md and ops/mockups/milestone-c/.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">Architecture &rarr; Mockup Review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:34:26.425Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">CTO architecture complete. Design review of the Risks register page.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">BACKLOG &rarr; Architecture</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:28:12.539Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">Milestone C of the four-milestone Founder UI Completeness plan (DEC-009). CTO architecture begins.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">(created) &rarr; BACKLOG</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:28:05.325Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:3px;">by Chief of Staff</div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px; line-height:1.5;">created</div>
+    </div>
+</div>
+<div class="panel" id="handoffs" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Handoffs</div>
+  
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; font-weight:600;">developer &rarr; code-review</div>
+        <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:51:10.804Z</div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-top:5px;">Implemented Milestone C (company-wide Risks register, /risks.html) per CTO&#x27;s architecture (ops/reviews/cto-milestone-c-architecture.md) and Design review&#x27;s three required refinements (ops/reviews/design-review-milestone-c.md): (1) derived_state.risk_register_rows() and related_decisions_for_risk() -- the latter with Red Team&#x27;s non-blocking loosened regex (risks\.id\s*=\s*{id}\b) already folded in; (2) new ops/control-center/generate_risks.py rendering three status-grouped sections (Open/Mitigated/Resolved) with anchor jump-nav, a page-level Needs-attention strip (open + medium/high severity), mitigation text capped at max-width:760px via pre-wrap, a single page-level mitigation-history-not-preserved disclosure (not per-card), and compact wrapped related-decisions chips; (3) one new GET /risks.html route in server.py reusing the existing Founder session/CSRF gate exactly, zero new write route, zero new auth code; (4) one new NAV_LINKS entry in layout.py, placed after Decisions; (5) the small cross-links CTO&#x27;s Part 5 named: generate_decisions.py card id=decision-{id} anchors, generate_task.py&#x27;s updated Associated-risks empty-state copy pointing at risks.html, and one full-Risks-register link appended per risks_owned/risks_raised section in generate_agents.py (interpreted as one link per section since the CTO doc says appended once per section, not once per row -- see known-limitations for this interpretation call).</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:5px;">Files: [&quot;ops/db/derived_state.py&quot;, &quot;ops/control-center/generate_risks.py&quot;, &quot;ops/control-center/server.py&quot;, &quot;ops/control-center/layout.py&quot;, &quot;ops/control-center/generate_decisions.py&quot;, &quot;ops/control-center/generate_task.py&quot;, &quot;ops/control-center/generate_agents.py&quot;, &quot;ops/db/test_risk_register.py&quot;]</div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">Known limitations: Per-agent cross-link placement (generate_agents.py) is a judgment call on an ambiguous instruction: CTO&#x27;s Part 5 shows literal markup with a #risk-{id} anchor but also says the link is &#x27;appended once per section (not once per row)&#x27; -- since one section can list multiple risk ids, I rendered one plain ../risks.html link per section (no specific-risk anchor) rather than fabricate which single id to point at; flagging for Code Review to confirm or redirect. Regenerated 36 static HTML snapshots (risks.html, decisions.html, agents.html/agents/*.html, tasks/*.html) in a second commit -- several of the agent/task snapshots were already stale from before Milestone B (missing the costs.html nav link/cost cross-link); this regeneration incidentally catches those up too, not a change this task introduced. risk_history table (mitigation-history audit trail) intentionally NOT built -- CTO&#x27;s architecture explicitly defers it as a distinct future scoped pass; this milestone only discloses the gap on the page, per spec.</div>
+    </div>
+</div>
+<div class="panel" id="findings" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:4px;">Code Review / QA / Security findings</div>
+  
+    <div style="font-size:11px; color:var(--text3); margin-bottom:12px; line-height:1.5;">
+      All Code Review / QA / Security rows for this task, most recent first — the same rows summarized inline in the
+      Gate timeline above and counted in the Bounces stat, shown here once, in full.
+    </div>
+    
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Security review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #67</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:03:24.946Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by security</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; Auth: /risks.html sits after the unconditional _authenticated_session() check in do_GET (server.py:420) with only /login exempt (line 416) -- confirmed independently, same gate as every other route, no bypass.</div><div style="margin-bottom:6px;">&bull; XSS: all DB-sourced fields (title, description, mitigation, owner, raised_by, scope names, decision chip id/title) pass through layout.e() -&gt; html.escape() before interpolation in generate_risks.py; confirmed independently.</div><div style="margin-bottom:6px;">&bull; related_decisions_for_risk(): SQL is a fully static parameterless query (LIKE &#x27;%risks.id%&#x27; hardcoded); risk_id is never interpolated into SQL, only into a Python re.compile() pattern, and risk_id always originates from risk_register_rows() DB rows, never from HTTP input -- no injection surface.</div><div style="margin-bottom:6px;">&bull; Confirmed read-only: single GET route, generate_risks.py has zero write/POST logic, zero client-side JS.</div><div style="margin-bottom:6px;">&bull; Point 2 (prominence/visibility of risks.id=3 content): considered and does not change the risk in any material way. The full risks.id=3 mitigation text was already present, in the same or greater detail, in ops/reviews/cto-risk3-*.md files already committed to the repo with NO runtime auth gate at all (plain git/filesystem access suffices). /risks.html sits behind the identical Founder session/CSRF gate as every other control-center page -- if anything a narrower access surface than the raw markdown docs. Any principal who could already read those docs (the Founder, or a Developer-role agent with Read/Grep repo access -- the same role risks.id=3 is about) already had this information; this page adds a second, equally-gated place to find it, not a new audience. One minor observation for the record, not blocking: generate_risks.py writes a static risks.html into the git repo (same pattern as every other generate_*.py output), so the sensitive text now also lives in one more committed file alongside the review docs -- pure duplication of an already-committed artifact, not a widening of who can reach it.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">QA <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; qa_results #72</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T03:01:36.050Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by qa</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">Scenario: Full checklist: /risks.html against real live risk data (all 4 risks, risks.id=3 full 2820-char mitigation + 5 real related decision chips cross-checked against decisions table), Needs-attention strip correctness, zero-risks empty state, short-mitigation risk (id=4) rendering, task-scoped risk link-through to real Task Detail, unauthenticated redirect, regression of Decisions/Task Detail/Agent Detail cross-links and Milestones A/B pages, nav placement, 20x rapid concurrent requests</div><div style="margin-bottom:6px;">Repro: Cloned repo + live operations.sqlite3 into an isolated scratch dir; created a scratch Founder credential in that clone only; ran server.py on a scratch port (8931), never touching the live repo/DB/credential. 1) Queried live DB directly first: risks.id=1(task,medium,mitigated) id=2(company,medium,mitigated) id=3(company,medium,open,mitigation=2820 chars) id=4(company,low,resolved,mitigation=866 chars); related_decisions_for_risk() logic hand-run against live decisions table: id=3-&gt;[9,10,11,12,13], id=2-&gt;[9], id=4-&gt;[13], id=1-&gt;[]. 2) Logged in via /login+/api/login, fetched /risks.html: all 4 risks rendered in correct Open/Mitigated/Resolved sections; risk-3&#x27;s rendered mitigation text diffed start/end against the raw DB column (2820 chars, HTML-escaped, zero truncation/corruption); its 5 related-decision chips exactly matched ids 9/10/11/12/13 with correct titles/dates linking to decisions.html#decision-N. 3) Needs-attention strip showed exactly 1 entry (Risk #3, open+medium) - confirmed no other risk qualifies (id=1/2 mitigated, id=4 resolved). Disclosure panel rendered once, page-level, not per-card. 4) Zero-risks case: reinitialized a fresh scratch DB via opsdb.py init (0 risk rows), restarted server, GET /risks.html returned 200 with &#x27;No risks recorded yet.&#x27; - no error/traceback. 5) risk id=4 (866-char mitigation) rendered in the same card style as id=3 without visual breakage; both use same 760px pre-wrap block. 6) Clicked through risk id=1&#x27;s task-scoped link (tasks/1.html) - landed on real &#x27;TASK-001 - Verify Agent Pipeline&#x27; page (200 OK). 7) Unauthenticated GET /risks.html returned 303 -&gt; /login, same as every other route. 8) Regression: decisions.html (all 13 decision-N anchors present), tasks/1.html (empty-state copy correctly updated to link ../risks.html), agents/cto.html (&#x27;-&gt; full Risks register&#x27; link appended once per risks_owned/risks_raised section, not per row); active-work.html, costs.html, reviews.html, automation.html, pipeline.html, overview.html, agents.html, releases.html, meetings.html, inbox.html all returned 200. 9) Nav bar: Risks tab present between Decisions and Meetings on every page checked. 10) 20 concurrent rapid GET /risks.html all returned 200, no server-log errors. Restored the withrisks DB backup and re-verified before final teardown; scratch clone, DB, credential, cookies, and server process all deleted/killed after testing.</div></div>
+      
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Code review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #66</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:57:05.575Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by code-review</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; generate_risks.py closely follows generate_decisions.py&#x27;s established conventions (same connect()/page()/e()/out_path patterns, same generated_note, same card/pill/label vocabulary) and consistently HTML-escapes every DB-sourced text field.</div></div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:6px;">Returned to developer</div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">Red Team review <span class="mono" style="font-size:10px; color:var(--text3); font-weight:400;">&middot; review_results #65</span></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="pill" style="background:var(--green-soft); color:var(--green);">pass</span>
+          <div class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:44:48.237Z</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text2); margin-bottom:4px;">by red-team</div>
+      <div style="font-size:11.5px; color:var(--text2); line-height:1.6;"><div style="margin-bottom:6px;">&bull; related_decisions_for_risk() word-boundary regex (risks\.id={id}\b) is disclosed as a soft prose-convention match, correctly -- verified: &#x27;risks.id = 3&#x27; (spaces) and &#x27;risk #3&#x27; do NOT match, silent under-link with no error; 100% historical consistency across 6 decisions justifies the choice; non-blocking suggestion for Development: loosen to risks\.id\s*=\s*{id}\b to also catch whitespace-around-= variants at zero cost</div><div style="margin-bottom:6px;">&bull; Disclosure-not-fix scope call on mitigation-history gap (no risk_history table this milestone) verified consistent with DEC-009&#x27;s own bar: 100% feature-complete is defined as UI reachability of current state, not audit-trail completeness; the Risks audit item (cto-product-architecture-completion-v2.md line 149) is about a reachable register, not history; DEC-009&#x27;s gate text itself says lower-severity findings become disclosed follow-up, not another correction loop -- agree with CTO&#x27;s scope call</div><div style="margin-bottom:6px;">&bull; Needs-attention strip is an index into the complete sections, not a filter replacing them -- no real risk of underselling other risks</div><div style="margin-bottom:6px;">&bull; risks.scope_id pointing at a deleted task verified structurally impossible: opsdb.py&#x27;s only task-deletion path (cmd_task_purge_scratch, line ~1424-1428) explicitly blocks deletion if any risks row references the task; LEFT JOIN would degrade safely even if it somehow occurred</div><div style="margin-bottom:6px;">&bull; Scope discipline confirmed: no opsdb.py/schema.sql changes, no write routes, TASK-017 and risks.id=3 disposition untouched, no Milestone D creep</div></div>
+      
+    </div>
+</div>
+<div class="panel" id="decisions" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Founder decisions / approvals</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None recorded against this task directly &mdash; no <span class="mono">approvals</span> row, no linked <span class="mono">decisions</span> row. If a pause/interrupt affecting this task was still Founder-directed, see the Status history section above for how it was actually recorded.</div>
+</div>
+<div class="panel" id="risks" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Associated risks</div>
+  <div style="font-size:12px; color:var(--text2); line-height:1.5;">None task-scoped to this task. A company-scoped risk this task may exist to reduce (scope_type=<span class="mono">company</span>) intentionally does not appear here &mdash; that scope is company-wide, not this task's own, and stays visible via the company-wide Risks register (<a href="../risks.html" class="accentlink">risks.html</a>), not here &mdash; this section is scoped to risks raised specifically against this task.</div>
+</div>
+<div class="panel" id="activity" style="margin-bottom:16px;">
+  <div class="label" style="margin-bottom:8px;">Activity timeline</div>
+  <div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><span class="mono" style="font-size:10px; color:var(--text3);">2026-09-01T02:42:38.107Z</span> &middot; Design review complete for Milestone C (/risks.html) -- ready for Development with 3 refinements</div>
+</div>
+</div>
+</body>
+</html>

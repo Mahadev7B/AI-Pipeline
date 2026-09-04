@@ -17,7 +17,7 @@ reports to find out where they disagree.
 1. **Founder raises a question** (free text, e.g. via the Control Center's
    "Ask the team" affordance — see `MOCKUP_CRITIQUE.md` / the Command
    Center and Executive Discussion mockups).
-2. **Orchestrator + CEO Agent select participants.** Only agents with real
+2. **Chief of Staff + CEO Agent select participants.** Only agents with real
    relevant expertise join — not every agent speaks on every issue. Typical
    participants and their lens:
    - **CEO** — company-level strategic view.

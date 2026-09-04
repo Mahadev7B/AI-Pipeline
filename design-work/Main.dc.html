@@ -1,0 +1,182 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24;
+      --border:#242830; --border2:#323844;
+      --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+      --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+      --blue: oklch(72% 0.12 250);
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+         -webkit-font-smoothing:antialiased;}
+    a{color:var(--accent);text-decoration:none;}
+    a:hover{color:var(--text);}
+  </style>
+</helmet>
+
+<div style="min-height:900px; background:var(--bg); padding:56px 64px 72px;">
+
+  <!-- the answer to the question actually being asked -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:32px; margin-bottom:64px;">
+    <div>
+      <div style="font-size:32px; font-weight:600; letter-spacing:-0.02em; line-height:1.2;">
+        Nothing needs you.
+      </div>
+      <div style="font-size:14px; color:var(--text2); margin-top:10px;">
+        Three things being made. None stuck.
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; padding:9px 14px; border:1px solid var(--border);
+                border-radius:8px; color:var(--text2); font-size:13px; cursor:default;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round">
+        <path d="M4 7h16M4 12h16M4 17h16"/>
+      </svg>
+      Everything else
+    </div>
+  </div>
+
+  <!-- the work -->
+  <div style="display:flex; flex-direction:column; gap:4px;">
+
+    <!-- item -->
+    <div style="border-top:1px solid var(--border); padding:30px 4px 32px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:24px;">
+        <div style="font-size:23px; font-weight:600; letter-spacing:-0.01em;">Idea Intake</div>
+        <div style="font-size:12.5px; color:var(--text3); font-family:var(--mono);">started 2h ago</div>
+      </div>
+      <div style="font-size:14.5px; color:var(--text2); margin-top:7px; max-width:620px; line-height:1.5;">
+        A place to type an app idea and have the company actually start on it.
+      </div>
+
+      <div style="display:flex; gap:5px; margin-top:22px; max-width:460px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:11px; max-width:460px;
+                  font-size:11.5px; color:var(--text3);">
+        <span style="color:var(--accent); font-weight:600;">Understanding</span>
+        <span>Designing</span><span>Building</span><span>Testing</span><span>Ready</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:22px; margin-top:24px;">
+        <div style="font-size:14px; color:var(--text);">
+          <span style="color:var(--text3);">Right now &mdash;</span>
+          working out what you actually want built
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--text3); margin-top:12px;">
+        Nothing to look at yet &mdash; nothing has been built.
+      </div>
+    </div>
+
+    <!-- item -->
+    <div style="border-top:1px solid var(--border); padding:30px 4px 32px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:24px;">
+        <div style="font-size:23px; font-weight:600; letter-spacing:-0.01em;">Developer Sandbox</div>
+        <div style="font-size:12.5px; color:var(--text3); font-family:var(--mono);">started 9h ago</div>
+      </div>
+      <div style="font-size:14.5px; color:var(--text2); margin-top:7px; max-width:620px; line-height:1.5;">
+        A cage so the AI that writes code can&rsquo;t touch anything it shouldn&rsquo;t.
+      </div>
+
+      <div style="display:flex; gap:5px; margin-top:22px; max-width:460px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:11px; max-width:460px;
+                  font-size:11.5px; color:var(--text3);">
+        <span>Understanding</span><span>Designing</span><span>Building</span>
+        <span style="color:var(--accent); font-weight:600;">Testing</span><span>Ready</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:22px; margin-top:24px;">
+        <div style="font-size:14px; color:var(--text);">
+          <span style="color:var(--text3);">Right now &mdash;</span>
+          fixing two problems testing found
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <span style="display:inline-flex; align-items:center; gap:8px; padding:9px 15px;
+                     border:1px solid var(--border2); border-radius:8px; font-size:13px;
+                     color:var(--text); background:var(--panel);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          See it
+        </span>
+      </div>
+    </div>
+
+    <!-- item -->
+    <div style="border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+                padding:30px 4px 32px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:24px;">
+        <div style="font-size:23px; font-weight:600; letter-spacing:-0.01em;">Flow Dashboard</div>
+        <div style="font-size:12.5px; color:var(--text3); font-family:var(--mono);">started 20m ago</div>
+      </div>
+      <div style="font-size:14.5px; color:var(--text2); margin-top:7px; max-width:620px; line-height:1.5;">
+        One screen that tells me where my apps are, without reading anything.
+      </div>
+
+      <div style="display:flex; gap:5px; margin-top:22px; max-width:460px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:11px; max-width:460px;
+                  font-size:11.5px; color:var(--text3);">
+        <span>Understanding</span>
+        <span style="color:var(--accent); font-weight:600;">Designing</span>
+        <span>Building</span><span>Testing</span><span>Ready</span>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:22px; margin-top:24px;">
+        <div style="font-size:14px; color:var(--text);">
+          <span style="color:var(--text3);">Right now &mdash;</span>
+          drawing three versions of this screen for you to pick from
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <span style="display:inline-flex; align-items:center; gap:8px; padding:9px 15px;
+                     border:1px solid var(--border2); border-radius:8px; font-size:13px;
+                     color:var(--text); background:var(--panel);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          See it
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:40px; font-size:13.5px; color:var(--text3);">
+    <span style="color:var(--accent);">+ New idea</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

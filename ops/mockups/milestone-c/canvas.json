@@ -1,0 +1,31 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 2000, "expand": "fill" },
+    { "file": "FlatSeverityFirst.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 2000, "expand": "fill" },
+    { "file": "Risk3Detail.dc.html", "x": 3120, "y": 0, "w": 1440, "h": 2600, "expand": "fill" }
+  ],
+  "annotations": [
+    {
+      "id": "concept-a-note",
+      "x": 0,
+      "y": -190,
+      "w": 520,
+      "text": "/risks.html — Concept A (RECOMMENDED): CTO's status-first sections (Open/Mitigated/Resolved, severity-desc within each), plus one addition — a 'Needs attention' strip surfacing open + medium/high severity risks up top (reuses the phase-0 'Needs You' strip pattern), and the mitigation-history disclosure moved to page-level (once), not repeated per card. Mitigation text width-capped for readability. Content = the real, live risks table (4 rows) as of 2026-09-01."
+    },
+    {
+      "id": "concept-b-note",
+      "x": 1560,
+      "y": -190,
+      "w": 520,
+      "text": "/risks.html — Concept B (alternate, NOT recommended): single flat list, severity-first, status shown only as an inline pill. At today's 4 rows this happens to land risks.id=3 first too — but a resolved high-severity risk would render above an open medium one once the register has more history. See design review for the full argument against this structure."
+    },
+    {
+      "id": "concept-c-note",
+      "x": 3120,
+      "y": -190,
+      "w": 520,
+      "text": "Closeup on risks.id=3's real 2,820-character mitigation text (the third distinct version on record). Three variants of the identical real card: (1) CTO's literal spec — full-width text + per-card disclosure; (2) recommended — width-capped text (~85ch) + page-level-only disclosure; (3) rejected — related decisions as a full list instead of compact chips, shown to demonstrate why it competes with the mitigation text."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

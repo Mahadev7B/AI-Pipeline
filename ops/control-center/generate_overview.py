@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
-from derived_state import agent_status_rows, company_health, scope_label, task_progress_fraction  # noqa: E402
+from derived_state import agent_status_rows, company_health, display_name, scope_label, task_progress_fraction  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -45,7 +45,7 @@ def render_active_now(conn: sqlite3.Connection) -> str:
         <a href="agents/{e(r["name"])}.html" style="display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:10px; background:var(--panel2);">
           <div style="width:8px; height:8px; border-radius:50%; background:{color}; flex-shrink:0;"></div>
           <div style="flex:1; min-width:0;">
-            <div style="font-size:12.5px; font-weight:600;">{e(r["name"])}</div>
+            <div style="font-size:12.5px; font-weight:600;">{e(display_name(r["name"]))}</div>
             <div style="font-size:11.5px; color:var(--text2);">{e(r["current_activity"] or "")}</div>
           </div>
           <div style="font-size:10px; color:var(--text3); flex-shrink:0;">{e(r["status"])} · {e(scope_label(r["scope_type"], r["scope_id"]))}</div>
@@ -90,7 +90,7 @@ def render_activity(conn: sqlite3.Connection) -> str:
     for r in rows:
         items.append(f'''
         <div style="display:flex; gap:8px;">
-          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">{e(r["agent"])}</b> — {e(r["summary"])}</div>
+          <div style="font-size:11.5px; color:var(--text2);"><b style="color:var(--text);">{e(display_name(r["agent"]))}</b> — {e(r["summary"])}</div>
         </div>''')
     return "".join(items)
 
@@ -113,7 +113,7 @@ def render_inbox(conn: sqlite3.Connection) -> str:
         items.append(f'''
         <a href="inbox.html" class="card" style="display:block;">
           <div style="font-size:12px; font-weight:600; margin-bottom:3px;">{e(r["request"])}</div>
-          <div style="font-size:11px; color:var(--text2);">Requested by {e(r["requested_by_agent"])} · {e(note)}</div>
+          <div style="font-size:11px; color:var(--text2);">Requested by {e(display_name(r["requested_by_agent"]))} · {e(note)}</div>
         </a>''')
     more = ""
     if len(rows) > 4:
@@ -121,7 +121,7 @@ def render_inbox(conn: sqlite3.Connection) -> str:
     return "".join(items) + more
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     health_label, health_detail = company_health(conn)
     health_color = HEALTH_COLOR.get(health_label, "var(--text)")
@@ -152,7 +152,7 @@ def build_html() -> str:
     <div style="display:flex; flex-direction:column; gap:10px;">{render_activity(conn)}</div>
   </div>
 </div>"""
-    return page("Overview", "overview.html", body,
+    return page("Overview", "overview.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

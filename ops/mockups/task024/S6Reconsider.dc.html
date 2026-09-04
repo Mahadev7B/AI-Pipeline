@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body{ margin:0; background:#0b0d10; color:#eae8e3; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; text-wrap:pretty; }
+    a{ color:oklch(78% 0.14 75); text-decoration:none; }
+    a:hover{ color:oklch(84% 0.14 75); }
+  </style>
+</helmet>
+
+<div style="width:1120px; box-sizing:border-box; padding:24px 26px 30px; background:#0b0d10; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;">
+
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:3px;">
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:oklch(58% 0.015 250); text-transform:uppercase;">Stage 6 of 10</div>
+    <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase;">Correction / reconsideration</div>
+  </div>
+  <div style="font-family:system-ui,sans-serif; font-size:19px; font-weight:600; margin:0 0 4px;">Two ways to put it right</div>
+  <div style="font-size:11.5px; color:#666c74; margin:0 0 18px; line-height:1.55; max-width:860px;">
+    One costs nothing and is your words. The other costs a full round and is the company thinking again. The objective is correct understanding, not more ideas.
+  </div>
+
+  <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:11px 16px; margin-bottom:18px; display:flex; align-items:center; gap:14px;">
+    <div style="width:3px; align-self:stretch; background:oklch(58% 0.015 250); border-radius:2px; flex-shrink:0;"></div>
+    <div style="font-size:9.5px; font-weight:700; letter-spacing:0.07em; color:oklch(58% 0.015 250); text-transform:uppercase; flex-shrink:0;">You said</div>
+    <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55; white-space:pre-wrap;">&ldquo;the current UI so much verbose, it should be as simple as a dashboard, I'M THINKING like an ellipse where we can track flow&rdquo;</div>
+    <div style="font-size:10px; color:#4e545c; flex-shrink:0; margin-left:auto;">unedited &middot; on every screen</div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:18px;">
+    <div onClick="{{tabRecon}}" style="padding:8px 15px; border-radius:8px; border:1px solid {{rBd}}; background:{{rBg}}; color:{{rFg}}; font-size:12px; font-weight:600; cursor:pointer;">Reconsider &mdash; the company re-evaluates</div>
+    <div onClick="{{tabEdit}}" style="padding:8px 15px; border-radius:8px; border:1px solid {{eBd}}; background:{{eBg}}; color:{{eFg}}; font-size:12px; font-weight:600; cursor:pointer;">Edit / Correct &mdash; you change the words</div>
+  </div>
+
+  <!-- ================= RECONSIDER : COMPOSE ================= -->
+  <sc-if value="{{isReconCompose}}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:16px; align-items:start;">
+    <div style="border-radius:14px; border:1px solid oklch(78% 0.14 75 / 0.5); background:#14171c; padding:18px 20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:8px;">Tell us what we got wrong</div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6; margin-bottom:12px;">
+        This is the only thing round 2 has that round 1 did not. Without it we would re-run the same reasoning on the same input and hand you the same answer, at the same price.
+      </div>
+      <div style="border-radius:8px; border:1px solid oklch(78% 0.14 75 / 0.45); background:#0f1216; padding:13px 14px; min-height:92px;">
+        <div style="font-size:12.5px; line-height:1.7; color:#eae8e3; white-space:pre-wrap;">almost there, UI i'm talking about is UI of my factory to track the app progress, once done the app( which is a child of my factory will hve another UI which is unrelated to ours) you got it?</div>
+        <div style="height:15px; width:1.5px; background:oklch(78% 0.14 75); margin-top:2px;"></div>
+      </div>
+      <div style="font-size:10.5px; color:#4e545c; margin-top:7px;">Stored exactly as typed, attributed to you, and kept beside round 2 forever &mdash; so &ldquo;why did the answer change?&rdquo; always has an answer.</div>
+
+      <div style="margin-top:16px; padding-top:15px; border-top:1px solid #242830;">
+        <div onClick="{{sendBack}}" style="padding:10px 18px; border-radius:8px; background:oklch(78% 0.14 75); color:#1a1206; font-weight:700; font-size:12.5px; cursor:pointer; display:inline-block;">Send back for round 2 &mdash; this spends again</div>
+        <div style="font-size:11px; color:#666c74; margin-top:9px; line-height:1.55;">The cost warning is on the button, not in a paragraph above it. Round 1 is not replaced &mdash; it stays readable, with its evaluation intact.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:14px; border:1px solid #242830; background:#14171c; padding:18px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:10px;">Rounds so far</div>
+      <div style="display:flex; flex-direction:column; gap:9px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:oklch(70% 0.12 300); font-weight:700; flex-shrink:0;">v1</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55;">Round 1 &middot; the company &middot; 1 Sep 20:0x &mdash; still readable, always.</div>
+        </div>
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#4e545c; font-weight:700; flex-shrink:0;">v2</div>
+          <div style="font-size:11.5px; color:#4e545c; line-height:1.55;">Round 2 &mdash; not run yet. It will cost what round 1 cost.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; padding-top:13px; border-top:1px solid #242830; font-size:11px; color:#9aa0a8; line-height:1.6;">
+        Rounds are numbered and visible. There is no cap on them, and from round 3 this panel will say the honest thing: <i style="color:#c8ccd2;">another round costs again &mdash; it may be cheaper to approve and correct downstream.</i> It will not stop you.
+      </div>
+      <div style="margin-top:12px; font-size:10.5px; color:#4e545c; line-height:1.55;">
+        Still no cost estimate: 0 of 13 recorded runs carries a figure.
+        <span style="font-family:ui-monospace,Menlo,monospace; font-size:10px; color:#4e545c; border:1px dashed #3d434d; border-radius:5px; padding:2px 6px; display:inline-block; margin-top:5px;">[ per-round maximum &mdash; not yet computable ]</span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ================= RECONSIDER : ROUND 2 RESULT ================= -->
+  <sc-if value="{{isRound2}}" hint-placeholder-val="{{ false }}">
+  <div>
+    <div style="border-radius:14px; border:1px solid oklch(72% 0.12 250 / 0.45); background:#14171c; padding:18px 20px; margin-bottom:16px; border-left:3px solid oklch(72% 0.12 250);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:11px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.12 250); text-transform:uppercase;">Round 2 &middot; what your feedback changed</div>
+        <div style="font-size:10.5px; color:#4e545c;">the company &middot; v2 &middot; round 1 kept</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:11px;">
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="padding:1px 7px; border-radius:5px; background:oklch(72% 0.15 150 / 0.16); color:oklch(72% 0.15 150); font-size:9.5px; font-weight:700; flex-shrink:0; margin-top:2px;">CLOSED</div>
+          <div style="font-size:12px; color:#c8ccd2; line-height:1.6;"><b style="color:#eae8e3;">Question 1 is answered.</b> The subject is the factory, not the app it builds. Recorded as <b style="color:#eae8e3;">your answer</b>, not as our assumption &mdash; the difference matters when someone asks later why we built it this way.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="padding:1px 7px; border-radius:5px; background:oklch(72% 0.12 250 / 0.16); color:oklch(72% 0.12 250); font-size:9.5px; font-weight:700; flex-shrink:0; margin-top:2px;">SHARPER</div>
+          <div style="font-size:12px; color:#c8ccd2; line-height:1.6;"><b style="color:#eae8e3;">The interpretation now names the boundary.</b> The subject is <i>the build</i>. The app the factory produces is a child with its own unrelated interface, and this screen never renders anything about that app&rsquo;s content, users or quality &mdash; only that it exists and how far along it is.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="padding:1px 7px; border-radius:5px; background:oklch(66% 0.17 25 / 0.16); color:oklch(66% 0.17 25); font-size:9.5px; font-weight:700; flex-shrink:0; margin-top:2px;">NEW</div>
+          <div style="font-size:12px; color:#c8ccd2; line-height:1.6;"><b style="color:#eae8e3;">A threat we missed in round 1.</b> Once the subject is fixed as the factory, the empty case becomes the normal case: <span style="font-family:ui-monospace,Menlo,monospace; font-size:11.5px;">projects</span> holds one row &mdash; this ops system building itself. The factory has never built an app. The never-run state stops being an edge case and becomes a designed state.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="padding:1px 7px; border-radius:5px; background:#1a1e24; border:1px solid #3d434d; color:#9aa0a8; font-size:9.5px; font-weight:700; flex-shrink:0; margin-top:2px;">SAME</div>
+          <div style="font-size:12px; color:#9aa0a8; line-height:1.6;"><b style="color:#c8ccd2;">The recommendation did not change direction</b> &mdash; still <i>proceed with narrowed scope</i>, and the scope narrowed again. We are telling you what did <i>not</i> move as well as what did; a round that reports only changes is easy to misread as agreement.</div>
+        </div>
+        <div style="display:flex; gap:11px; align-items:flex-start;">
+          <div style="padding:1px 7px; border-radius:5px; background:oklch(78% 0.14 75 / 0.16); color:oklch(78% 0.14 75); font-size:9.5px; font-weight:700; flex-shrink:0; margin-top:2px;">OPEN</div>
+          <div style="font-size:12px; color:#c8ccd2; line-height:1.6;"><b style="color:#eae8e3;">One question is still open</b> &mdash; whether the ellipse is a requirement or a sketch. You did not answer it and we did not quietly decide it for you.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;">
+      <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:15px 17px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:9px;">The record, after two rounds</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55;"><b style="color:oklch(58% 0.015 250);">Your idea</b> &mdash; unchanged, byte for byte, since 20:03 UTC.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55;"><b style="color:oklch(70% 0.12 300);">v1</b> &mdash; round 1, the company. Readable, with its evaluation and its two questions intact.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55;"><b style="color:#4e545c;">Your feedback</b> &mdash; stored verbatim between them, so the change has a cause.</div>
+          <div style="font-size:11.5px; color:#9aa0a8; line-height:1.55;"><b style="color:oklch(72% 0.12 250);">v2</b> &mdash; round 2, the company. Nothing was overwritten to make it.</div>
+        </div>
+      </div>
+      <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:15px 17px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.06em; color:#666c74; text-transform:uppercase; margin-bottom:9px;">What this round cost</div>
+        <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">
+          Two rounds have now been paid for. This product still cannot tell you the amount &mdash; 0 of 13 recorded agent runs carries a cost figure &mdash; and it is not going to invent one to fill the space.
+        </div>
+        <div style="font-size:11px; color:#666c74; line-height:1.55; margin-top:10px;">What it can tell you honestly: the count of rounds, that each one spent, and that a Light round costs less than a Full one.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div onClick="{{go}}" style="padding:9px 18px; border-radius:8px; background:transparent; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12.5px; cursor:pointer; display:inline-block;">Read v2 and decide</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ================= EDIT / CORRECT ================= -->
+  <sc-if value="{{isEdit}}" hint-placeholder-val="{{ false }}">
+  <div>
+    <div style="border-radius:14px; border:1px solid oklch(72% 0.15 150 / 0.45); background:#14171c; padding:18px 20px; margin-bottom:14px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.07em; color:oklch(72% 0.15 150); text-transform:uppercase;">You are editing the company&rsquo;s words</div>
+        <div style="font-size:10.5px; color:#4e545c;">no agent runs &middot; nothing spent</div>
+      </div>
+
+      <div style="font-size:10px; font-weight:700; color:#666c74; letter-spacing:0.05em; margin-bottom:7px;">SECTION 14 &middot; DEFINITION OF SUCCESS</div>
+      <div style="border-radius:9px; border:1px solid #323844; background:#0f1216; padding:13px 14px;">
+        <div style="font-size:11.5px; color:#666c74; line-height:1.7; margin-bottom:9px;">You open one screen and, without clicking, can say what the factory is making, which of the six gates it has passed, whose turn it is, and what is stopping it. Nothing on the screen is a number the records cannot support&hellip;</div>
+        <div style="border-left:2px solid oklch(72% 0.15 150); padding-left:11px; font-size:12px; color:#eae8e3; line-height:1.7;">
+          The meeting room is still there and I can find it &mdash; it exists today and I could not find it, which is what started this.
+          <span style="height:14px; width:1.5px; background:oklch(72% 0.15 150); display:inline-block; vertical-align:middle; margin-left:2px;"></span>
+        </div>
+        <div style="font-size:10px; font-weight:700; color:oklch(72% 0.15 150); letter-spacing:0.05em; margin-top:8px;">ADDED BY YOU</div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:11px; margin-top:16px; padding-top:15px; border-top:1px solid #242830;">
+        <div onClick="{{saveEdit}}" style="padding:9px 18px; border-radius:8px; background:oklch(72% 0.15 150); color:#06180d; font-weight:700; font-size:12.5px; cursor:pointer;">Save as version 3 &mdash; authored by you</div>
+        <div style="font-size:11px; color:#666c74;">No model is invoked. Zero <span style="font-family:ui-monospace,Menlo,monospace;">agent_runs</span> rows are written.</div>
+      </div>
+    </div>
+
+    <div style="border-radius:12px; border:1px solid #242830; background:#101317; padding:15px 18px;">
+      <div style="font-size:12px; color:#9aa0a8; line-height:1.65;">
+        <b style="color:#eae8e3;">Why an edit gets your name on it.</b> A version the company wrote and a version you rewrote are different things, and the whole point of keeping three artifacts is being able to tell them apart later.
+        Crediting your edit to the company would corrupt the one question this record exists to answer.
+        <b style="color:#eae8e3;">And an edit never reaches your original idea</b> &mdash; that text has no edit path anywhere in the product, for anyone.
+      </div>
+    </div>
+
+    <sc-if value="{{edited}}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px; border-radius:12px; border:1px solid oklch(72% 0.15 150 / 0.5); background:oklch(72% 0.15 150 / 0.07); padding:15px 18px;">
+      <div style="font-size:12.5px; font-weight:600; margin-bottom:5px;">Version 3 saved &mdash; authored by you.</div>
+      <div style="font-size:11.5px; color:#9aa0a8; line-height:1.6;">v1 and v2 are unchanged and still readable. Nothing was spent. The line you added is marked as yours wherever it appears from here on, including in what downstream agents receive.</div>
+      <div style="margin-top:12px;"><span onClick="{{go}}" style="padding:8px 16px; border-radius:8px; background:transparent; border:1px solid oklch(78% 0.14 75); color:oklch(78% 0.14 75); font-weight:600; font-size:12px; cursor:pointer; display:inline-block;">Go to approval</span></div>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1120,"height":760},"advance":{"editor":null}}'>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { view: 'recon', sent: false, edited: false }; }
+  renderVals(){
+    var self = this;
+    var v = this.state.view;
+    return {
+      isReconCompose: v === 'recon' && !this.state.sent,
+      isRound2: v === 'recon' && this.state.sent,
+      isEdit: v === 'edit',
+      edited: this.state.edited,
+      rBd: v === 'recon' ? 'oklch(78% 0.14 75)' : '#242830',
+      rBg: v === 'recon' ? 'oklch(78% 0.14 75 / 0.13)' : '#14171c',
+      rFg: v === 'recon' ? 'oklch(78% 0.14 75)' : '#9aa0a8',
+      eBd: v === 'edit' ? 'oklch(78% 0.14 75)' : '#242830',
+      eBg: v === 'edit' ? 'oklch(78% 0.14 75 / 0.13)' : '#14171c',
+      eFg: v === 'edit' ? 'oklch(78% 0.14 75)' : '#9aa0a8',
+      tabRecon: function(){ self.setState({ view: 'recon' }); },
+      tabEdit: function(){ self.setState({ view: 'edit' }); },
+      sendBack: function(){ self.setState({ sent: true }); },
+      saveEdit: function(){ self.setState({ edited: true }); },
+      go: function(){ if (self.props.advance) { self.props.advance(); } }
+    };
+  }
+}
+</script>
+</body>
+</html>

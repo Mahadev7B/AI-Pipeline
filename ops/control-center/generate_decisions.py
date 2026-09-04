@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "db"))
+from derived_state import display_name  # noqa: E402
 from dbutil import connect, out_path, write_output  # noqa: E402
 from layout import e, page  # noqa: E402
 
@@ -40,7 +42,7 @@ def render_decisions(conn: sqlite3.Connection) -> str:
             else:
                 approval_note = '<span class="pill" style="background:var(--gray-soft); color:var(--text2);">Founder approval required — recorded outside the approvals table</span>'
         items.append(f'''
-        <div class="card" style="margin-bottom:10px;">
+        <div class="card" id="decision-{d["id"]}" style="margin-bottom:10px;">
           <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;">
             <div style="font-size:13px; font-weight:600;">#{d["id"]} — {e(d["title"])}</div>
             <div class="mono" style="font-size:10px; color:var(--text3);">{e(d["date"])}</div>
@@ -50,14 +52,14 @@ def render_decisions(conn: sqlite3.Connection) -> str:
           {f'<div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Reason:</b> {e(d["reason"])}</div>' if d["reason"] else ""}
           {f'<div style="font-size:11.5px; color:var(--text2); margin-bottom:6px;"><b style="color:var(--text);">Tradeoffs:</b> {e(d["tradeoffs"])}</div>' if d["tradeoffs"] else ""}
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <div style="font-size:10.5px; color:var(--text3);">Recommended by {e(d["recommending_agent"])}</div>
+            <div style="font-size:10.5px; color:var(--text3);">Recommended by {e(display_name(d["recommending_agent"]))}</div>
             {approval_note}
           </div>
         </div>''')
     return "".join(items)
 
 
-def build_html() -> str:
+def build_html(token: str | None = None) -> str:
     conn = connect()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     count = conn.execute("SELECT COUNT(*) FROM decisions").fetchone()[0]
@@ -70,7 +72,7 @@ def build_html() -> str:
   include additional historical context; the two use independent numbering (see DATA_MODEL.md).
 </div>
 {render_decisions(conn)}'''
-    return page("Decisions", "decisions.html", body,
+    return page("Decisions", "decisions.html", body, token=token,
                 generated_note=f"Generated {now} from the live operational database. Not hand-edited; re-run this script to refresh.")
 
 

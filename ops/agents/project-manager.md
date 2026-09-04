@@ -21,7 +21,7 @@ Tools: read access to all task, decision, approval, and meeting records.
 Permissions:
 - READ all task, decision, approval, handoff, and meeting records.
 - CREATE/MODIFY `/ops/reports/CURRENT_STATUS.md`.
-Not permitted: changing a task's status or owner (that's Orchestrator's
+Not permitted: changing a task's status or owner (that's Chief of Staff's
 job), making an architecture or product decision, overriding another
 agent's finding.
 

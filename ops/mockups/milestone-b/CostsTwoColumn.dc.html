@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <title>Costs — Concept B: Two-column</title>
+  <style>
+:root{
+  --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24; --border:#242830; --border2:#323844;
+  --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+  --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+  --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+  --red: oklch(66% 0.17 25); --red-soft: oklch(66% 0.17 25 / 0.14);
+  --blue: oklch(72% 0.12 250); --blue-soft: oklch(72% 0.12 250 / 0.14);
+  --violet: oklch(70% 0.12 300); --violet-soft: oklch(70% 0.12 300 / 0.14);
+  --gray: oklch(58% 0.015 250); --gray-soft: oklch(58% 0.015 250 / 0.12);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --disp: system-ui, sans-serif;
+}
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); }
+.mono{ font-family:var(--mono); letter-spacing:0.01em; }
+.label{ font-size:10px; font-weight:700; letter-spacing:0.06em; color:var(--text3); text-transform:uppercase; }
+.pill{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:600; }
+.panel{ border-radius:14px; border:1px solid var(--border); background:var(--panel); padding:16px; }
+.card{ border-radius:10px; border:1px solid var(--border2); background:var(--panel2); padding:12px; }
+a{ color:inherit; text-decoration:none; }
+a.accentlink{ color:var(--accent); }
+a.accentlink:hover{ color:oklch(84% 0.14 75); }
+h1{ font-family:var(--disp); font-size:19px; font-weight:600; margin:0 0 4px; }
+.sub{ font-size:11.5px; color:var(--text3); margin:0 0 20px; }
+</style>
+</helmet>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 26px; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:22px;">
+        <div style="display:flex; align-items:center; gap:9px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z" stroke="var(--accent)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="var(--accent)"/></svg>
+          <div style="font-family:var(--disp); font-weight:600; font-size:15px;">Command</div>
+        </div>
+        <div style="display:flex; gap:1px; flex-wrap:wrap;"><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Overview</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Active Work</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Pipeline</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Agents</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Decisions</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Meetings</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Inbox</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Reviews</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Releases</span><span style="padding:6px 13px; border-radius:7px; color:var(--text2); font-size:12.5px;">Automation</span><span style="padding:6px 13px; border-radius:7px; background:var(--panel2); font-size:12.5px; font-weight:600;">Costs</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--violet-soft); border:1.5px solid var(--violet); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="var(--violet)" stroke-width="1.8"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7" stroke="var(--violet)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div style="line-height:1.15;">
+          <div style="font-size:11.5px; font-weight:600;">Founder</div>
+          <div style="font-size:9px; color:var(--violet); font-weight:700; letter-spacing:0.04em;">HUMAN</div>
+        </div>
+      </div>
+    </div>
+<div style="padding:26px; max-width:1500px;">
+
+<h1>Costs</h1>
+<div class="sub" style="margin-top:-2px;">Company-wide AI invocation cost across all four Founder-facing paths. Read-only &mdash; no spend ceiling here; automation keeps its own $10.00/day cap unchanged.</div>
+
+<div style="border-radius:10px; border:1px dashed var(--accent); background:var(--accent-soft); padding:10px 14px; margin-bottom:18px; display:flex; align-items:center; gap:10px;">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;"><circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="1.6"/><path d="M12 8v5M12 16h.01" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+  <div style="font-size:11px; color:var(--text2); line-height:1.5;"><b style="color:var(--accent);">Illustrative content, for this review only.</b> The live operational database has zero real Meeting/Ask-Agent/Chief-of-Staff invocations as of this session (confirmed by direct query) &mdash; every number below is a realistic stand-in, structured exactly to CTO's own architecture (&sect;3.2/&sect;3.4), not queried from a real row. Concept A shows the page's actual current (all-empty) state.</div>
+</div>
+
+<div style="display:flex; gap:14px; margin-bottom:16px;">
+
+    <div class="panel" style="flex:1;">
+      <div class="label" style="margin-bottom:8px;">Today&rsquo;s AI spend</div>
+      <div style="font-size:26px; font-weight:700; color:var(--text); margin-bottom:4px;">$3.16</div>
+      <div style="font-size:11px; color:var(--text3); line-height:1.5;">5 of 7 invocations tracked today (2 recorded before cost tracking).</div>
+    </div>
+
+    <div class="panel" style="flex:1;">
+      <div class="label" style="margin-bottom:8px;">All-time AI spend</div>
+      <div style="font-size:26px; font-weight:700; color:var(--accent); margin-bottom:4px;">$61.40</div>
+      <div style="font-size:11px; color:var(--text3); line-height:1.5;">142 of 200 invocations tracked since cost tracking began (58 recorded before cost tracking).</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1.6fr 1fr; gap:16px; align-items:start;">
+  <div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="label" style="margin-bottom:10px;">By invocation path <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; all-time</span></div>
+      
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12.5px; font-weight:600;">Ask-Agent</div>
+        <div style="font-size:13.5px; font-weight:700;">$38.20</div>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">96 of 130 invocations tracked (34 recorded before cost tracking)</div>
+      <div style="height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:6px;"><div style="height:100%; width:62%; background:var(--accent);"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12.5px; font-weight:600;">Meetings</div>
+        <div style="font-size:13.5px; font-weight:700;">$14.85</div>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">28 of 45 invocations tracked (17 recorded before cost tracking)</div>
+      <div style="height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:6px;"><div style="height:100%; width:24%; background:var(--accent);"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12.5px; font-weight:600;">Chief of Staff</div>
+        <div style="font-size:13.5px; font-weight:700;">$6.40</div>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">15 of 22 invocations tracked (7 recorded before cost tracking)</div>
+      <div style="height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:6px;"><div style="height:100%; width:10%; background:var(--accent);"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+        <div style="font-size:12.5px; font-weight:600;">Automated Code Review</div>
+        <div style="font-size:13.5px; font-weight:700;">$1.95</div>
+      </div>
+      <div style="font-size:10.5px; color:var(--text3); margin-top:3px;">all 3 invocations tracked</div>
+      <div style="height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:6px;"><div style="height:100%; width:3%; background:var(--accent);"></div></div>
+    </div>
+        <div class="card" style="margin-bottom:8px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between;">
+            <div style="font-size:12.5px; font-weight:600;">Synchronous review <span style="font-size:9.5px; color:var(--text3); font-weight:400;">(Founder-triggered)</span></div>
+            <div style="font-size:11px; color:var(--text3);">not used yet</div>
+          </div>
+        </div>
+      <div style="font-size:10px; color:var(--text3); margin-top:4px; line-height:1.5;">Bar = share of all-time tracked spend, not a ceiling &mdash; this page has no denominator or cap (see Automation for the poller's own $10.00/day limit).</div>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="label" style="margin-bottom:6px;">By agent <span style="font-weight:400; text-transform:none; color:var(--text3);">&mdash; Ask-Agent + Chief of Staff</span></div>
+      
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">CTO</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$18.40</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">Product</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$9.10</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">Financial</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$4.05</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">Security</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$3.10</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">Marketing</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$2.15</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">QA</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$1.40</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--text2);">Chief of Staff (orchestrator)</div>
+      <div style="font-size:12px; font-weight:600;" class="mono">$6.40</div>
+    </div>
+    </div>
+    <div class="panel">
+      <div class="label" style="margin-bottom:8px;">Recent meetings, with cost</div>
+      
+    <a href="#" class="card" style="display:block; margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">#7 &mdash; Should Milestone D&rsquo;s phase/schema work start before Milestone C ships?</div>
+        <span class="pill" style="background:var(--green-soft); color:var(--green); flex-shrink:0;">Decided</span>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">$5.10 <span style="color:var(--text3); font-size:10px;">&middot; 7 of 7 tracked</span></div>
+    </a>
+    <a href="#" class="card" style="display:block; margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">#6 &mdash; Is the $10/day automation ceiling still right after Milestone B ships?</div>
+        <span class="pill" style="background:var(--accent-soft); color:var(--accent); flex-shrink:0;">Open</span>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">$3.95 <span style="color:var(--text3); font-size:10px;">&middot; 6 of 8 tracked (2 recorded before cost tracking)</span></div>
+    </a>
+    <a href="#" class="card" style="display:block; margin-bottom:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:4px;">
+        <div style="font-size:12px; font-weight:600;">#5 &mdash; Company-wide spend ceiling &mdash; worth doing now?</div>
+        <span class="pill" style="background:var(--green-soft); color:var(--green); flex-shrink:0;">Decided</span>
+      </div>
+      <div style="font-size:11px; color:var(--text2);">not available <span style="color:var(--text3); font-size:10px;">&middot; 0 of 4 tracked (4 recorded before cost tracking)</span></div>
+    </a>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

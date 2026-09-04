@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    :root{
+      --bg:#0b0d10; --panel:#14171c; --panel2:#1a1e24;
+      --border:#242830; --border2:#323844;
+      --text:#eae8e3; --text2:#9aa0a8; --text3:#666c74;
+      --accent: oklch(78% 0.14 75); --accent-soft: oklch(78% 0.14 75 / 0.13);
+      --green: oklch(72% 0.15 150); --green-soft: oklch(72% 0.15 150 / 0.14);
+      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+         -webkit-font-smoothing:antialiased;}
+    a{color:var(--accent);text-decoration:none;} a:hover{color:var(--text);}
+  </style>
+</helmet>
+
+<div style="min-height:900px; background:var(--bg); padding:48px 56px 64px;">
+
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:34px;">
+    <div style="font-size:15px; color:var(--text2);">
+      <span style="color:var(--text); font-weight:600;">Nothing needs you.</span>
+      &nbsp;3 in progress
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 13px; border:1px solid var(--border);
+                border-radius:8px; color:var(--text2); font-size:12.5px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      Everything else
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:20px;">
+
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px;">
+      <div style="font-size:19px; font-weight:600; letter-spacing:-0.01em;">Idea Intake</div>
+      <div style="font-size:13.5px; color:var(--text2); margin-top:8px; line-height:1.55; min-height:62px;">
+        A place to type an app idea and have the company actually start on it.
+      </div>
+      <div style="display:flex; gap:4px; margin-top:6px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="font-size:11.5px; color:var(--accent); font-weight:600; margin-top:10px;">Understanding</div>
+      <div style="font-size:13px; color:var(--text2); margin-top:18px; line-height:1.5; min-height:38px;">
+        Working out what you actually want built.
+      </div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);
+                  font-size:12.5px; color:var(--text3);">
+        Nothing built yet
+      </div>
+    </div>
+
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px;">
+      <div style="font-size:19px; font-weight:600; letter-spacing:-0.01em;">Developer Sandbox</div>
+      <div style="font-size:13.5px; color:var(--text2); margin-top:8px; line-height:1.55; min-height:62px;">
+        A cage so the AI that writes code can&rsquo;t touch anything it shouldn&rsquo;t.
+      </div>
+      <div style="display:flex; gap:4px; margin-top:6px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="font-size:11.5px; color:var(--accent); font-weight:600; margin-top:10px;">Testing</div>
+      <div style="font-size:13px; color:var(--text2); margin-top:18px; line-height:1.5; min-height:38px;">
+        Fixing two problems testing found.
+      </div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 13px;
+                     border:1px solid var(--border2); border-radius:7px; font-size:12.5px;
+                     color:var(--text); background:var(--panel2);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          See it
+        </span>
+      </div>
+    </div>
+
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px;">
+      <div style="font-size:19px; font-weight:600; letter-spacing:-0.01em;">Flow Dashboard</div>
+      <div style="font-size:13.5px; color:var(--text2); margin-top:8px; line-height:1.55; min-height:62px;">
+        One screen that tells me where my apps are, without reading anything.
+      </div>
+      <div style="display:flex; gap:4px; margin-top:6px;">
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--accent); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+        <div style="height:3px; flex:1; background:var(--border2); border-radius:2px;"></div>
+      </div>
+      <div style="font-size:11.5px; color:var(--accent); font-weight:600; margin-top:10px;">Designing</div>
+      <div style="font-size:13px; color:var(--text2); margin-top:18px; line-height:1.5; min-height:38px;">
+        Drawing three versions of this screen for you to pick from.
+      </div>
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <span style="display:inline-flex; align-items:center; gap:7px; padding:7px 13px;
+                     border:1px solid var(--border2); border-radius:7px; font-size:12.5px;
+                     color:var(--text); background:var(--panel2);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          See it
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:28px; font-size:13.5px; color:var(--accent);">+ New idea</div>
+
+  <div style="margin-top:110px; padding-top:20px; border-top:1px dashed var(--border2);
+              font-size:12.5px; color:var(--text3); line-height:1.6; max-width:640px;">
+    <span style="color:var(--text2); font-weight:600;">Concept B &mdash; Cards.</span>
+    Scans well at three or more apps and survives a phone screen. Costs the
+    thing Concept A gets right: the answer to &ldquo;does anything need me&rdquo; shrinks
+    into a header line instead of owning the screen.
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
