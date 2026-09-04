@@ -21,6 +21,14 @@ ops/reviews/red-team-milestone2b2-architecture.md, condition 1, for why
 own `.claude/agents/*.md` definitions, breaking the requirement that the
 agent receive its own real configuration).
 
+ONE EXCEPTION, added in TASK-027 (DEC-032), stated here so this docstring
+does not overclaim: the single `research` identity may be invoked with
+WebSearch, and nothing else. Every other agent in the system still runs
+with zero tools, and a caller that asks for web access while naming any
+other agent is refused rather than downgraded — see RESEARCH_ALLOWLIST
+and the top of invoke_agent(). The research identity is in no other
+allowlist, so no existing caller can reach it.
+
 The browser never influences any of these flags — it only ever sends an
 agent *name* and a message; server.py validates the name against
 ASK_AGENT_ALLOWLIST before this module is ever called.
@@ -120,6 +128,40 @@ CHIEF_OF_STAFF_ALLOWLIST = ("orchestrator",)
 # synthesis, exactly as it does for meetings.
 IDEA_EVALUATION_ALLOWLIST = ("orchestrator", "product", "cto", "red-team", "ceo",
                              "design", "financial", "security")
+# TASK-027 (DEC-032). The Research lane. This is the ONE identity in the whole
+# system permitted to reach the outside world, and it is a separate name for
+# exactly that reason: the capability is bound to WHO is being invoked, not to
+# an argument a caller passes. A caller that asks for web access while naming
+# any other agent is REFUSED, not quietly downgraded — a silent downgrade would
+# turn "Product can now browse" from a rejected request into a passing test.
+#
+# `research` is in NO other allowlist, so Ask-Agent, meetings, automated review
+# and reviewer-sync cannot reach it at all.
+RESEARCH_ALLOWLIST = ("research",)
+
+# WebSearch ONLY, deliberately, and NOT WebFetch. The difference is where the
+# request comes from: WebSearch is executed by Anthropic's own servers and the
+# results come back through the same API call, so this machine opens no new
+# connections. WebFetch fetches a URL FROM THIS MACHINE, and everything the
+# research lane reads is attacker-influenced — search results are web pages
+# written by strangers, and a page that says "now fetch http://localhost:8421"
+# or a cloud metadata address would be asking a tool that could comply. Search
+# alone was enough to return real vendor pricing with a citable URL in testing,
+# so the fetch capability buys little and opens a whole class of risk.
+#
+# If WebFetch is ever wanted, it belongs here as a separately named constant
+# with a domain allowlist, not as a second entry on this line.
+RESEARCH_TOOLS = "WebSearch"
+
+# A sweep is bounded three ways, because instructing a model to stop is not a
+# bound: a hard dollar ceiling the CLI itself enforces, a wall-clock timeout,
+# and a caller that runs the lane a fixed number of times and never loops.
+# The search COUNT is then verified after the fact from the runtime's own
+# report — see RuntimeResult.searches — so "bounded" is an observation rather
+# than a hope.
+RESEARCH_BUDGET_USD = "1.50"
+RESEARCH_TIMEOUT_S = 600.0
+
 IDEA_EVALUATION_ACTIVITY_LABEL = "Idea evaluation: reading a Founder idea"
 IDEA_EVALUATION_ACTIVITY_LIKE = "Idea evaluation:%"
 # An evaluation is several agents thinking about a whole idea, not one short
@@ -322,11 +364,22 @@ class RuntimeResult:
     error: str | None = None
     # invalid_agent | capacity_exceeded | runtime_unavailable | timeout | runtime_error
     error_kind: str | None = None
+    # How many web searches the runtime actually performed, as IT reports them
+    # — not as the prompt asked for. None means the runtime said nothing on the
+    # subject, which is different from a confident zero. This is what makes
+    # "search is bounded" and "nothing browsed at Light depth" checkable facts
+    # rather than claims about a prompt.
+    searches: int | None = None
+    # Tools the model tried to use and was refused. Empty on a normal call.
+    # A non-empty list on an evaluation agent is the alarm that something asked
+    # for a capability it is not supposed to have.
+    denied_tools: tuple[str, ...] = ()
 
 
 def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TIMEOUT_S,
                   wait_for_slot: bool = False,
-                  max_budget_usd: str | None = None) -> RuntimeResult:
+                  max_budget_usd: str | None = None,
+                  web_research: bool = False) -> RuntimeResult:
     """wait_for_slot (Milestone 2B3B, default False): the Ask-Agent HTTP
     route never sets this — an ad-hoc single request still fails fast
     and honestly on capacity_exceeded, exactly the 2B3A behavior,
@@ -336,13 +389,31 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
     the semaphore acquire blocks (bounded by timeout_s, same as any
     other wait in this function) instead of failing immediately — the
     semaphore's total capacity (MAX_CONCURRENT_INVOCATIONS) is not
-    touched either way; this only changes what happens when it's full."""
+    touched either way; this only changes what happens when it's full.
+
+    web_research (TASK-027, DEC-032, default False): grant WebSearch for this
+    one call. Honoured ONLY for an agent in RESEARCH_ALLOWLIST; asking for it
+    while naming any other agent is refused outright. Every existing caller
+    omits it and is unaffected — they still get zero tools."""
+    if web_research and agent_name not in RESEARCH_ALLOWLIST:
+        # Refused, not downgraded. If this ever fires it means a caller tried
+        # to give an ordinary evaluation agent the outside world, and the
+        # Founder's standing rule is that those agents do not get it. Failing
+        # loudly here is what keeps "evaluation agents gained no new tools"
+        # a property of the code rather than of everyone's good intentions.
+        return RuntimeResult(
+            ok=False,
+            error=(f"'{agent_name}' may not be given web access. Only the research lane "
+                   f"({', '.join(RESEARCH_ALLOWLIST)}) can reach outside this machine."),
+            error_kind="invalid_agent")
+
     if (agent_name not in ASK_AGENT_ALLOWLIST
             and agent_name not in MEETING_PARTICIPANT_ALLOWLIST
             and agent_name not in CHIEF_OF_STAFF_ALLOWLIST
             and agent_name not in AUTOMATED_REVIEW_ALLOWLIST
             and agent_name not in REVIEWER_SYNC_ALLOWLIST
-            and agent_name not in IDEA_EVALUATION_ALLOWLIST):
+            and agent_name not in IDEA_EVALUATION_ALLOWLIST
+            and agent_name not in RESEARCH_ALLOWLIST):
         return RuntimeResult(ok=False, error=f"'{agent_name}' is not enabled for agent invocation.",
                               error_kind="invalid_agent")
 
@@ -361,13 +432,15 @@ def invoke_agent(agent_name: str, transcript: str, timeout_s: float = DEFAULT_TI
             error_kind="capacity_exceeded",
         )
     try:
-        return _run_claude(agent_name, transcript, timeout_s, max_budget_usd)
+        return _run_claude(agent_name, transcript, timeout_s, max_budget_usd,
+                           web_research=web_research)
     finally:
         _INVOCATION_SEMAPHORE.release()
 
 
 def _run_claude(agent_name: str, transcript: str, timeout_s: float,
-                max_budget_usd: str | None = None) -> RuntimeResult:
+                max_budget_usd: str | None = None,
+                web_research: bool = False) -> RuntimeResult:
     resolved = _resolve_claude()
     if resolved is None:
         return RuntimeResult(
@@ -376,7 +449,16 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float,
     cmd = [
         resolved,
         "--agent", agent_name,
-        "--tools", "",                 # zero built-in tools — see module docstring
+        # TWO flags, not one, and they do different jobs. `--tools` decides
+        # which built-in tools EXIST for this process; `--allowedTools`
+        # pre-approves the ones that do, so a non-interactive run does not sit
+        # at a permission prompt. Verified: with `--tools "WebSearch"` alone the
+        # model reached for search and was refused ("you did not grant
+        # permission"), and the run reported that refusal in permission_denials.
+        # Naming a tool in --allowedTools that --tools has not created grants
+        # nothing, so the narrow list stays the real boundary either way.
+        "--tools", RESEARCH_TOOLS if web_research else "",
+        *(["--allowedTools", RESEARCH_TOOLS] if web_research else []),
         "--strict-mcp-config",         # zero MCP-provided tools (no --mcp-config passed)
         "--no-session-persistence",    # messages/agent_runs must be the only conversation store
         "--output-format", "json",
@@ -485,12 +567,29 @@ def _run_claude(agent_name: str, transcript: str, timeout_s: float,
             best_output_tokens = output_tokens
             model_used = usage.get("canonicalModel")
 
+    # What the runtime says it ACTUALLY did, which is the only version that
+    # counts. `webSearchRequests` is reported per model, so a run that used a
+    # cheap model for the searches and an expensive one for the write-up still
+    # totals correctly. Left as None when no model reported the field at all —
+    # "the runtime did not say" and "it searched zero times" are different
+    # facts, and the second one is a claim worth being able to make honestly.
+    per_model = (data.get("modelUsage") or {}).values()
+    counted = [u.get("webSearchRequests") for u in per_model
+               if isinstance(u.get("webSearchRequests"), int)]
+    searches = sum(counted) if counted else None
+
+    denied = tuple(
+        str(d.get("tool_name")) for d in (data.get("permission_denials") or [])
+        if isinstance(d, dict) and d.get("tool_name"))
+
     return RuntimeResult(
         ok=True,
         response_text=response_text,
         model_used=model_used,
         cost_usd=data.get("total_cost_usd"),
         duration_ms=data.get("duration_ms"),
+        searches=searches,
+        denied_tools=denied,
     )
 
 

@@ -95,7 +95,14 @@ def _rehearsal_roster() -> dict:
             "in": [["product", "would always be on the roster"],
                    ["cto", "would be asked what the records can support"]],
             "out": [["ceo, financial, security", "would be left out unless the idea reached "
-                                                 "outside the company"]]}
+                                                 "outside the company"]],
+            # Rehearsal never reaches the outside world. This is not a judgement
+            # that the idea needs no research — it is the same promise the rest
+            # of rehearsal makes: nothing was asked, nothing was spent, and
+            # nobody searched for anything.
+            "outside_facts": False,
+            "outside_facts_reason": "Rehearsal mode — nobody searched for anything.",
+            "research_questions": []}
 
 
 def _rehearsal_result(idea: dict, rounds: list[dict]) -> dict:
@@ -272,10 +279,13 @@ COMMON_RULES = """
 HOUSE RULES, which matter more than sounding impressive:
 
 * Never invent a competitor, a price, a customer count, a market size, a
-  funding figure or a feature. No agent here can browse the web. If current
-  information about the outside world would change the answer, SAY that
-  research was not performed and label anything you do say as company
-  recollection, never as verified fact.
+  funding figure or a feature. YOU cannot search the web. This company has a
+  separate Research lane that can, and if it was sent out you will find its
+  findings below, each with a source you may cite. Anything NOT in that
+  evidence is your own recollection: say so in those words, and never dress it
+  up as a current fact. If no evidence appears below, then nobody searched, and
+  the honest answer to any question about the outside world is that it was not
+  checked — plus what specifically would need checking.
 * Never praise an idea because the Founder proposed it. If the merits are
   weak, say they are weak. You are useful here only to the extent that you
   are willing to disagree.
@@ -341,7 +351,10 @@ ROSTER_CONTRACT = """Reply with ONLY this JSON and nothing else:
   "depth": "Light" | "Standard" | "Full",
   "depth_reason": "one sentence, in the Founder's terms, why this depth and not another",
   "in":  [["product", "why THIS idea needs them, specifically"], ...],
-  "out": [["ceo, financial", "why they would add nothing here"], ...]
+  "out": [["ceo, financial", "why they would add nothing here"], ...],
+  "outside_facts": "yes" | "no",
+  "outside_facts_reason": "one sentence: which judgement here depends on what is true out there",
+  "research_questions": ["a specific thing that must be found out", ...]
 }
 
 "out" is not optional: naming who you left out and why is how the Founder can
@@ -393,6 +406,27 @@ HOW DEEP:
   Standard — real users beyond the Founder, but no market to compete in yet.
   Full     — something people outside would choose between this and an alternative.
 
+DOES THIS NEED THE OUTSIDE WORLD? This company now has a Research lane that can
+actually search the web. It is not free and it is not always worth using, so you
+decide. Answer "yes" to outside_facts only when the company's RECOMMENDATION
+would genuinely change depending on what is true out there right now — what
+already exists and how well it works, what things cost, what a platform does or
+does not allow, what the law currently requires, or why previous attempts at
+this outcome failed.
+
+Answer "no" when the answer lives inside this company: internal tooling, a
+workflow only the Founder has, a question of taste, or anything where knowing
+the market changes nothing about what to build.
+
+Do NOT say "yes" because research sounds diligent. A Light-depth idea almost
+never needs it, and sending the lane out to confirm the obvious spends the
+Founder's money to tell them what they already know.
+
+If yes: research_questions must be the SPECIFIC things that would change the
+answer — "which existing products already make this effortless, and why has none
+of them won" beats "market research". Three to six of them. If no: leave
+research_questions empty.
+
 {ROSTER_CONTRACT}
 """
     raw = _invoke("orchestrator", transcript, idea_id)
@@ -428,9 +462,18 @@ HOW DEEP:
     chosen = chosen[:MAX_PERSPECTIVES]
 
     depth = data.get("depth")
+    # Anything but a clear "yes" means no. A missing or unparseable field must
+    # not be able to send the research lane out on its own initiative — an
+    # opt-in capability that fires on ambiguity is not opt-in.
+    wants_facts = str(data.get("outside_facts") or "").strip().lower() in ("yes", "true")
+    questions = [str(q).strip() for q in (data.get("research_questions") or [])
+                 if isinstance(q, (str, int, float)) and str(q).strip()][:8]
     return {
         "depth": depth if depth in ("Light", "Standard", "Full") else "Standard",
         "depth_reason": str(data.get("depth_reason") or ""),
+        "outside_facts": wants_facts,
+        "outside_facts_reason": str(data.get("outside_facts_reason") or ""),
+        "research_questions": questions,
         "in": chosen,
         # Take the first two elements, never unpack — a three-element entry is
         # well-formed JSON and used to raise ValueError here.
@@ -510,6 +553,253 @@ INVENTORS = ("product", "design", "cto")
 ATTACKER = "red-team"
 
 
+# ------------------------------------------------------ the Research lane ---
+# TASK-027 (DEC-032). Until now the company could say what ought to be looked
+# up and then not look it up, because no agent could reach the outside world.
+# Every evaluation therefore ended with a sentence like "no research was
+# performed" sitting next to a market judgement that depended on research. The
+# Founder called that what it is: a capability gap wearing a prompt's clothes.
+#
+# The lane runs BETWEEN inventing and attacking, deliberately. Earlier and it
+# has no solution categories to search across; later and the evidence arrives
+# after the direction is already fixed, which is the "write 'research needed'
+# and synthesise anyway" pattern the Founder rejected.
+
+# Two sweeps at most, ever. The first searches what the roster asked for across
+# the categories the company invented; the second exists only for a category
+# the first sweep DISCOVERED and nobody had thought to look at. There is no
+# third, and no loop: a research step that decides for itself when to stop is
+# an unbounded spend on the Founder's account.
+MAX_SWEEPS = 2
+
+RESEARCH_CONTRACT = """Reply with ONLY this JSON and nothing else:
+
+{
+  "findings": [
+    {
+      "category": "which solution category this belongs to",
+      "claim": "the specific factual thing you established, in one sentence",
+      "source": "who published it — the organisation or site name",
+      "url": "the link",
+      "dated": "publication or access date, or \\"\\" if you cannot tell",
+      "detail": "prices, capabilities, limits, complaints — the specifics, or \\"\\"",
+      "changes_ranking": "yes" | "no",
+      "why_it_matters": "one sentence: what this does or does not change for the company"
+    }, ...
+  ],
+  "contradictions": ["two sources disagree about X: A says ..., B says ...", ...],
+  "unknown": ["what you could not establish, and why it stayed unknown", ...],
+  "unverified": ["anything you believe but did NOT confirm by searching this session", ...],
+  "new_categories": ["a solution category you DISCOVERED that nobody had listed", ...],
+  "bottom_line": "2-4 sentences: what the evidence says about which approach is strongest"
+}
+
+Every finding needs a real url you actually retrieved. If you cannot cite it,
+it does not go in "findings" — put it in "unverified" instead. An empty
+"findings" list is an acceptable and honest answer; an invented citation is not."""
+
+RESEARCH_STAGE = "researching the outside world"
+
+
+def _research(questions: list[str], direction: str, idea: dict, rounds: list[dict],
+              founder_note: str | None, idea_id: int | None = None,
+              sweep: int = 1, chasing: str = "") -> tuple[dict, bool, int | None]:
+    """One bounded sweep. Returns (packet, repaired, searches_actually_performed).
+
+    Raises EvaluationError like any other stage — but every caller catches it,
+    because research failing is not the same as the evaluation failing. The
+    company can still answer without evidence; it just has to say so.
+    """
+    asked = "\n".join(f"  {i}. {q}" for i, q in enumerate(questions, 1)) or \
+        "  (none were listed — work them out from the direction below)"
+    chase = (f"""
+THIS IS A SECOND, NARROWER SWEEP. Your first sweep turned up a solution category
+nobody in this company had thought of, and it could change the answer, so you are
+being sent back out for exactly this and nothing else:
+
+{chasing}
+
+Do not re-cover ground you already covered. Spend the whole sweep here.
+""" if chasing else "")
+    transcript = f"""You are the Research lane of an AI software company. The Founder brought in an
+idea, and the company has designed a direction it thinks is best. Before anyone
+attacks or defends that direction, somebody has to go and find out what is
+actually TRUE out there right now. That is you.
+
+{_idea_block(idea, rounds, founder_note)}
+
+WHAT THE COMPANY HAS DESIGNED SO FAR — use it to work out which categories to
+search across, NOT as a thing to confirm. Evidence that this direction is wrong
+is more valuable to them than evidence that it is right:
+
+{direction or "(nothing designed yet)"}
+
+WHAT THEY NEED YOU TO FIND OUT:
+{asked}
+{chase}
+YOUR SEARCH CEILING FOR THIS SWEEP: about {SWEEP_SEARCH_HINT} searches. Spend
+them where they buy the most. Stop early if more searching stops changing the
+picture.
+
+Start from the OUTCOME, not the product name. The most useful thing you can
+bring back is a way of achieving this outcome that works completely differently
+from anything above — that is the comparison nobody here can make for
+themselves.
+
+{RESEARCH_CONTRACT}
+"""
+    result = agent_runtime.invoke_agent(
+        "research", transcript,
+        timeout_s=agent_runtime.RESEARCH_TIMEOUT_S,
+        wait_for_slot=True,
+        max_budget_usd=agent_runtime.RESEARCH_BUDGET_USD,
+        web_research=True)
+    _record_spend(idea_id, "research", result)
+    if not result.ok:
+        raise EvaluationError(
+            f"the Research lane could not search &mdash; {result.error}", stage=RESEARCH_STAGE)
+    raw = result.response_text or ""
+    packet, _raw_repair, repaired = _parse_with_one_repair(
+        raw, idea_id, RESEARCH_CONTRACT, RESEARCH_STAGE, None,
+        f"the research sweep {sweep} reformatting attempt")
+    return _clean_packet(packet), repaired, result.searches
+
+
+# How many searches to ASK for. Not a limit — the real limits are the dollar
+# ceiling and the timeout in agent_runtime, both of which the CLI enforces
+# whatever the prompt says. This number exists so the lane spends its effort
+# deliberately instead of stopping at three results or grinding through forty.
+SWEEP_SEARCH_HINT = 12
+
+
+def _clean_packet(packet: dict) -> dict:
+    """Treat the packet as hostile, exactly as the roster and the final answer
+    are treated. A finding with no url is not a finding — it is a sentence, and
+    the entire point of this lane is that the company stopped being able to
+    tell those apart."""
+    findings = []
+    for f in (packet.get("findings") or []):
+        if not isinstance(f, dict):
+            continue
+        url = str(f.get("url") or "").strip()
+        claim = str(f.get("claim") or "").strip()
+        # Demoted, not dropped: an uncited claim still gets shown to the
+        # company, just never as verified fact. Dropping it silently would hide
+        # that the lane produced something it could not stand behind.
+        if not claim:
+            continue
+        if not _CITED.match(url):
+            packet.setdefault("unverified", []).append(
+                f"{claim} (the lane could not cite this)")
+            continue
+        findings.append({
+            "category": str(f.get("category") or "uncategorised").strip(),
+            "claim": claim,
+            "source": str(f.get("source") or "").strip(),
+            "url": url,
+            "dated": str(f.get("dated") or "").strip(),
+            "detail": str(f.get("detail") or "").strip(),
+            "changes_ranking": str(f.get("changes_ranking") or "").strip().lower() in ("yes", "true"),
+            "why_it_matters": str(f.get("why_it_matters") or "").strip(),
+        })
+
+    def _strings(key):
+        return [str(x).strip() for x in (packet.get(key) or [])
+                if isinstance(x, (str, int, float)) and str(x).strip()]
+
+    return {
+        "findings": findings,
+        "contradictions": _strings("contradictions"),
+        "unknown": _strings("unknown"),
+        "unverified": _strings("unverified"),
+        "new_categories": _strings("new_categories"),
+        "bottom_line": str(packet.get("bottom_line") or "").strip(),
+    }
+
+
+# A citation has to be a real http(s) link. "see their website" and
+# "example.com" are how an unsourced claim gets to wear a source's clothes.
+_CITED = re.compile(r"^https?://[^\s/]+\.[^\s/]", re.I)
+
+
+def _empty_packet() -> dict:
+    """The shape every consumer can rely on, whether or not anyone searched.
+    Callers must never have to ask "did research run" before they can read a
+    key — that question is answered by the status, in one place."""
+    return {"findings": [], "contradictions": [], "unknown": [], "unverified": [],
+            "new_categories": [], "bottom_line": ""}
+
+
+def _merge_packets(a: dict, b: dict) -> dict:
+    """Two sweeps, one packet. Findings are de-duplicated by url+claim so a
+    second sweep that re-cites the same page does not make the evidence look
+    twice as strong as it is."""
+    seen = {(f["url"], f["claim"]) for f in a["findings"]}
+    merged = dict(a)
+    merged["findings"] = a["findings"] + [f for f in b["findings"]
+                                          if (f["url"], f["claim"]) not in seen]
+    for key in ("contradictions", "unknown", "unverified", "new_categories"):
+        merged[key] = a[key] + [x for x in b[key] if x not in a[key]]
+    merged["bottom_line"] = (b["bottom_line"] or a["bottom_line"])
+    return merged
+
+
+def evidence_for_agents(packet: dict, status: str) -> str:
+    """The packet as the rest of the company reads it.
+
+    Written so that a role CANNOT accidentally present recollection as
+    research: verified findings carry their source inline, and everything the
+    lane could not stand behind is in a section that says so.
+    """
+    if status != "done":
+        return _NO_EVIDENCE[status]
+    if not packet["findings"] and not packet["unknown"] and not packet["unverified"]:
+        return ("THE RESEARCH LANE SEARCHED AND FOUND NOTHING IT COULD CITE. That is a real "
+                "finding, not a formality: treat this outcome as unstudied, and do not fill the "
+                "gap with what you think you remember.")
+    out = ["WHAT THE RESEARCH LANE ACTUALLY FOUND. Every line below was retrieved from the web "
+           "during this evaluation. You may state these as current fact and cite them. You may "
+           "NOT state anything else as current fact.", ""]
+    if packet["findings"]:
+        out.append("VERIFIED FINDINGS:")
+        for f in packet["findings"]:
+            bits = [f"  [{f['category']}] {f['claim']}"]
+            if f["detail"]:
+                bits.append(f"      detail: {f['detail']}")
+            bits.append(f"      source: {f['source'] or 'unnamed'} — {f['url']}"
+                        + (f" ({f['dated']})" if f["dated"] else ""))
+            if f["changes_ranking"]:
+                bits.append(f"      CHANGES THE RANKING: {f['why_it_matters']}")
+            out.append("\n".join(bits))
+        out.append("")
+    if packet["contradictions"]:
+        out += ["SOURCES THAT DISAGREE — do not quietly pick one:",
+                *(f"  - {c}" for c in packet["contradictions"]), ""]
+    if packet["unverified"]:
+        out += ["NOT VERIFIED — the lane believes these but did not confirm them. Treat as "
+                "hearsay. If one of these decides your answer, say that it is unconfirmed:",
+                *(f"  - {u}" for u in packet["unverified"]), ""]
+    if packet["unknown"]:
+        out += ["STILL UNKNOWN after searching — an honest gap, not an invitation to guess:",
+                *(f"  - {u}" for u in packet["unknown"]), ""]
+    if packet["bottom_line"]:
+        out += ["THE LANE'S READING OF ITS OWN EVIDENCE (it does not decide anything):",
+                f"  {packet['bottom_line']}", ""]
+    return "\n".join(out)
+
+
+_NO_EVIDENCE = {
+    "not-needed": ("NO RESEARCH WAS DONE, because the Chief of Staff judged that this idea's "
+                   "answer does not depend on what is true outside this company. If you find "
+                   "yourself needing an outside fact to answer, say so plainly and say what fact "
+                   "— do not supply it from memory."),
+    "unavailable": ("RESEARCH WAS NEEDED HERE AND COULD NOT BE DONE — the lane was asked and "
+                    "could not search. This is a known gap in THIS evaluation. Do not paper over "
+                    "it: where your answer depends on a current outside fact, say that the fact "
+                    "was not checked. Never write anything that implies a market scan happened."),
+}
+
+
 def _perspective(role: str, idea: dict, rounds: list[dict], founder_note: str | None,
                  depth: str, idea_id: int | None = None, earlier: str = "") -> str:
     prior = (f"""
@@ -543,8 +833,63 @@ plainly and say what would have to be true for it to become reachable.
     return _invoke(role, transcript, idea_id)
 
 
+def _reconsider(role: str, direction: str, evidence_text: str, idea: dict,
+                rounds: list[dict], founder_note: str | None,
+                idea_id: int | None = None) -> str:
+    """One role reads the evidence and revises what it said.
+
+    This is the step that decides whether the Research lane is real. Without
+    it, evidence arrives after the direction is settled and becomes decoration
+    — the company searches the web and then recommends whatever it was already
+    going to recommend. The prompt therefore makes CHANGING the answer the
+    normal, expected outcome of learning something, and makes "nothing changed"
+    a claim that has to be defended.
+    """
+    transcript = f"""You are the {ROLE_LABEL[role]} of an AI software company. You already gave your
+reading of the Founder's idea. Since then the company's Research lane went out
+and searched the real world, and it found things you did not know when you
+answered.
+
+{_idea_block(idea, rounds, founder_note)}
+
+WHAT THE COMPANY DESIGNED, INCLUDING YOUR OWN PART OF IT:
+
+{direction}
+
+{evidence_text}
+
+YOUR JOB NOW: read that evidence and say what it changes.
+
+Changing your mind here is not a loss of face — it is the single most valuable
+thing you can do in this evaluation, and it is why the searching was paid for.
+If a product already does this well, say so and rank it above what you invented.
+If the real failure of this category turns out to be something other than what
+you assumed, say that plainly and re-rank on the real failure. If the evidence
+kills your preferred option, kill it yourself rather than defending it.
+
+Be equally honest the other way: if the evidence genuinely does not change your
+ranking, say so and say WHY it does not. "Nothing changed" is an acceptable
+answer only with a reason attached.
+
+RULES:
+* Only state as current fact what appears in the evidence above, with its
+  source. For anything else say plainly that it is not confirmed.
+* Do not repeat your earlier answer back. Say only what is DIFFERENT and why.
+* If nothing in the evidence touches your part, say that in one line and stop.
+
+{COMMON_RULES}
+
+WRITE IT AS:
+WHAT THE EVIDENCE CHANGED: <the re-ranking, the dropped option, the new
+    front-runner — or "nothing, because ..." with the reason>
+WHY: <which specific finding did it, named and cited>
+WHAT I STILL DO NOT KNOW: <the fact that would change this again, if it exists>
+"""
+    return _invoke(role, transcript, idea_id)
+
+
 def _attack(direction: str, idea: dict, rounds: list[dict], founder_note: str | None,
-            idea_id: int | None = None) -> str:
+            idea_id: int | None = None, evidence_text: str = "") -> str:
     """Red Team attacks the DIRECTION the company designed, not the Founder's
     rough sentence. Attacking a one-line pitch only ever produces "it is
     underspecified", which is true of every one-line pitch and helps nobody."""
@@ -559,9 +904,19 @@ THE DIRECTION THE COMPANY IS PROPOSING:
 
 {direction}
 
+{evidence_text}
+
 Go after THIS proposal. What is the assumption that sinks it? Where does it
 quietly become a much larger project? What breaks when it meets a real person?
 What did they design around that cannot actually be designed around?
+
+THE EVIDENCE IS ALSO YOURS TO ATTACK. Does a finding actually support the
+weight being put on it? Is a claim about the market resting on one source, an
+old page, or a vendor describing its own product? Did they search for what
+would confirm the direction rather than what would kill it? A company that
+searched the web and then believed whatever it found first is not more rigorous
+than one that did not search at all &mdash; it is more confident, which is worse.
+Say plainly if the evidence is thinner than the conclusion drawn from it.
 {COMMON_RULES}
 Be specific enough that someone could act on each objection. "It is
 underspecified" is not an objection to a proposal — it is an observation about
@@ -573,7 +928,8 @@ Rank your objections, hardest first. At most 400 words.
 
 
 def _repair(role: str, direction: str, attack: str, idea: dict, rounds: list[dict],
-            founder_note: str | None, idea_id: int | None = None) -> str:
+            founder_note: str | None, idea_id: int | None = None,
+            evidence_text: str = "") -> str:
     """One pass to answer the attack. This is where a weakness gets engineered
     away rather than merely recorded — the specific thing the Founder said was
     missing."""
@@ -590,6 +946,8 @@ THE DIRECTION:
 WHAT THE RED TEAM SAID:
 
 {attack}
+
+{evidence_text}
 
 For each objection, in order: can it be designed away, reduced, or made to fail
 gracefully? If yes, say exactly how, and what the direction becomes. If no, say
@@ -711,7 +1069,8 @@ def _voice_label(role: str) -> str:
 
 
 def _synthesise(idea: dict, rounds: list[dict], founder_note: str | None, roster: dict,
-                perspectives: list[tuple[str, str]], idea_id: int | None = None) -> dict:
+                perspectives: list[tuple[str, str]], idea_id: int | None = None,
+                evidence_text: str = "") -> dict:
     voices = "\n\n".join(f"--- {_voice_label(role)} ---\n{text}" for role, text in perspectives)
     round_no = len(rounds) + 1
     transcript = f"""You are the Chief of Staff of an AI software company. Your colleagues have each
@@ -725,6 +1084,8 @@ DEPTH: {roster['depth']} — {roster['depth_reason']}
 WHAT YOUR COLLEAGUES SAID:
 
 {voices}
+
+{evidence_text}
 
 YOUR JOB: answer these ten questions, and close with the company's view.
 
@@ -785,10 +1146,22 @@ Rules that are easy to get wrong, and matter:
 * Where an unknown could change the ARCHITECTURE — what exists today, what a
   law requires, what a platform allows — do not leave it as a disclaimer.
   Question 7 names it as a bounded piece of work: what would be looked up, by
-  whom, and what answer would change the recommendation. Nobody here can browse
-  the web; saying so is honest, but "unknown because nobody looked" must not be
-  the permanent operating model of a Full-depth reading.
-* Question 4: if research was not performed — and it was not — say so.
+  whom, and what answer would change the recommendation. "Unknown because
+  nobody looked" must never be the permanent operating model of a Full-depth
+  reading — and where the Research lane DID look, an unknown it has already
+  settled must not be listed as an open question. Reporting a fact as unknown
+  when the evidence below answers it wastes the Founder's attention on work
+  that is already done.
+* QUESTION 4 AND EVERY MARKET CLAIM: there are exactly two kinds of statement
+  you may make about the outside world, and they must never be blended.
+  VERIFIED — it appears in the evidence below, and you name its source when you
+  use it. UNVERIFIED — everything else, including anything you happen to
+  believe, which you must label as not checked. If research was not performed,
+  say that plainly and do not describe the market as though it had been. If it
+  WAS performed, say what was actually found, cite it, and say what the search
+  did not settle. Never write a sentence that leaves the Founder unable to tell
+  which of the two they are reading — that ambiguity is the exact failure this
+  company built a Research lane to end.
 * Answer all ten. One you cannot answer well is answered "we don't know, and
   here is why", in the concise layer, never dropped.
 {COMMON_RULES}
@@ -1060,6 +1433,12 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
     # real failure — roster selection — left nothing behind at all.
     evidence: dict[str, str] = {}
     stage = "starting"
+    # Declared here, not inside the live branch, so rehearsal and every failure
+    # path have the same shape to report. Rehearsal never searches, and saying
+    # "not-needed" for it is the truthful answer: nobody was asked anything.
+    packet = _empty_packet()
+    research_status = "not-needed"
+    searches_done = 0
     try:
         if REHEARSAL:
             _note(idea_id, "Rehearsal mode", "No agent will be asked and nothing will be spent.")
@@ -1133,11 +1512,105 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
             # The direction the company now proposes — what Red Team attacks.
             direction = "\n\n".join(f"--- {ROLE_LABEL[r]} ---\n{said_by[r]}"
                                      for r in builders if r in said_by)
+
+            # ---------------------------------------------- the Research lane
+            # The company has now invented a direction, so it knows which
+            # solution categories are worth searching across — and nobody has
+            # attacked or defended anything yet, so the evidence can still
+            # change the answer instead of merely decorating it.
+            #
+            # Runs only when the Chief of Staff said the recommendation depends
+            # on outside facts, and never at Light depth: an internal tool for
+            # one person does not need a market scan, and buying one would
+            # spend the Founder's money to confirm what they already know.
+            wants = bool(roster.get("outside_facts")) and roster["depth"] != "Light"
+            research_status = "not-needed" if not wants else "unavailable"
+            if wants:
+                stage = RESEARCH_STAGE
+                _note(idea_id, "Research", "Searching the web for what is already out there.")
+                try:
+                    packet, _rep, n = _research(roster.get("research_questions") or [],
+                                                direction, idea, rounds, founder_note, idea_id)
+                    searches_done += n or 0
+                    research_status = "done"
+
+                    # A second sweep ONLY for a category the first sweep
+                    # discovered — the case the Founder named: research turns up
+                    # a whole class of solution nobody listed, and stopping here
+                    # would mean knowing about it and not looking at it. Bounded
+                    # at MAX_SWEEPS with no loop, so this can never become an
+                    # open-ended spend.
+                    if packet["new_categories"] and MAX_SWEEPS > 1:
+                        chasing = "; ".join(packet["new_categories"][:3])
+                        _note(idea_id, "Research",
+                              f"Found something nobody listed — going back out for: {chasing}")
+                        try:
+                            more, _rep2, n2 = _research(
+                                roster.get("research_questions") or [], direction, idea, rounds,
+                                founder_note, idea_id, sweep=2, chasing=chasing)
+                            packet = _merge_packets(packet, more)
+                            searches_done += n2 or 0
+                        except EvaluationError:
+                            # The first sweep's evidence is already good. A
+                            # failed follow-up narrows what was learned; it does
+                            # not invalidate it.
+                            _note(idea_id, "Research",
+                                  "The second sweep failed — keeping what the first one found.")
+                    evidence["what the Research lane found"] = json.dumps(packet, indent=2)
+                    _note(idea_id, "Research",
+                          f"Done — {len(packet['findings'])} cited finding(s) "
+                          f"from {searches_done or 'an unreported number of'} search(es).")
+                except EvaluationError as exc:
+                    # RESEARCH FAILING IS NOT THE EVALUATION FAILING. The
+                    # company can still answer; it just may not pretend it
+                    # checked. The status carries that honestly all the way to
+                    # the Founder's page.
+                    research_status = "unavailable"
+                    evidence["the Research lane could not search"] = str(exc)
+                    _note(idea_id, "Research",
+                          "Could not search — the company will answer without evidence and say so.")
+
+            evidence_text = evidence_for_agents(packet, research_status)
+
+            # ------------------------------------------ reconsider on evidence
+            # Research is not a box to tick after the answer is written. The
+            # roles whose ranking the evidence could overturn get to revise it
+            # BEFORE the attack, which is what makes a finding able to replace
+            # the provisional architecture rather than sit beside it.
+            if research_status == "done" and packet["findings"]:
+                rethinkers = [r for r in ("product", "cto") if r in said_by]
+                if rethinkers:
+                    stage = "reconsidering the direction against the evidence"
+                    revisions: dict[str, str] = {}
+
+                    def _rethink(role):
+                        _note(idea_id, ROLE_LABEL[role], "Reading the evidence again.")
+                        try:
+                            revisions[role] = _reconsider(role, direction, evidence_text, idea,
+                                                          rounds, founder_note, idea_id)
+                            _note(idea_id, ROLE_LABEL[role], "Done.")
+                        except EvaluationError:
+                            # Same rule as the late addition: a revision is a
+                            # bonus. The original reading still stands.
+                            _note(idea_id, ROLE_LABEL[role],
+                                  "Could not revise — their first reading stands.")
+
+                    with concurrent.futures.ThreadPoolExecutor(
+                            max_workers=len(rethinkers)) as pool:
+                        for f in [pool.submit(_rethink, r) for r in rethinkers]:
+                            f.result()
+                    for role in rethinkers:
+                        if role in revisions:
+                            evidence[f"{ROLE_LABEL[role]} after the evidence"] = revisions[role]
+                            perspectives.append((f"{role}-evidence", revisions[role]))
+                            direction += (f"\n\n--- {ROLE_LABEL[role]}, after reading the "
+                                          f"research ---\n{revisions[role]}")
+
             if direction and ATTACKER in chosen:
                 stage = "the Red Team attacking that direction"
                 _note(idea_id, ROLE_LABEL[ATTACKER],
                       "Attacking the direction the company designed.")
-                attack = _attack(direction, idea, rounds, founder_note, idea_id)
+                attack = _attack(direction, idea, rounds, founder_note, idea_id, evidence_text)
                 evidence["Red Team attacked the direction"] = attack
                 perspectives.append((ATTACKER, attack))
                 said_by[ATTACKER] = attack
@@ -1151,7 +1624,8 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                 if mender:
                     stage = f"{ROLE_LABEL[mender]} repairing the direction"
                     _note(idea_id, ROLE_LABEL[mender], "Repairing what survived the attack.")
-                    fixed = _repair(mender, direction, attack, idea, rounds, founder_note, idea_id)
+                    fixed = _repair(mender, direction, attack, idea, rounds, founder_note,
+                                    idea_id, evidence_text)
                     evidence[f"{ROLE_LABEL[mender]} repaired the direction"] = fixed
                     perspectives.append((f"{mender}-repair", fixed))
 
@@ -1185,7 +1659,8 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
 
             stage = "writing the final answer"
             _note(idea_id, "Chief of Staff", "Writing one answer.")
-            raw_final = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id)
+            raw_final = _synthesise(idea, rounds, founder_note, roster, perspectives, idea_id,
+                                    evidence_text)
             evidence["the Chief of Staff's final answer"] = raw_final
             try:
                 result, _raw_repair, repaired = _parse_with_one_repair(
@@ -1211,6 +1686,11 @@ def run_evaluation(idea_id: int, idea: dict, rounds: list[dict],
                                         "out": roster["out"]}),
                 "--answers", json.dumps(answers),
                 "--view", json.dumps(view)]
+        args += ["--research-status", research_status]
+        if research_status == "done":
+            args += ["--research", json.dumps(packet)]
+            if searches_done:
+                args += ["--research-searches", str(searches_done)]
         if REHEARSAL:
             args.append("--rehearsal")
         if repaired:

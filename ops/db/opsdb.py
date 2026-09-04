@@ -233,6 +233,29 @@ def _apply_additive_column_migrations(conn: sqlite3.Connection) -> None:
         # contract is too hard to hit and should change.
         if "repaired" not in cols:
             conn.execute("ALTER TABLE idea_rounds ADD COLUMN repaired INTEGER NOT NULL DEFAULT 0")
+        # TASK-027 (DEC-032). What the Research lane actually did, kept with
+        # the round it informed. Stored as its own columns rather than folded
+        # into view_json because the whole point is that a market claim can be
+        # traced back to a source the Founder can open — evidence buried inside
+        # a blob that also holds the company's opinions is exactly the
+        # untraceable "market research" paragraph this replaces.
+        #
+        # `research_status` is deliberately three-valued, and the third value
+        # is the one that matters: not-needed (nobody was asked), done (the
+        # lane searched), unavailable (it was needed and could not be done).
+        # Without the third, a round with no evidence is indistinguishable from
+        # a round that did not need any, and the Founder cannot tell whether
+        # silence means "checked and there was nothing" or "never looked".
+        if "research_status" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_status TEXT "
+                         "NOT NULL DEFAULT 'not-needed'")
+        if "research_json" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_json TEXT")
+        # How many searches were really performed, as the runtime reported them
+        # — not as anyone intended. This is what makes "search is bounded" a
+        # checkable fact after the event.
+        if "research_searches" not in cols:
+            conn.execute("ALTER TABLE idea_rounds ADD COLUMN research_searches INTEGER")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
@@ -1805,7 +1828,8 @@ def cmd_idea_edit(args: argparse.Namespace) -> None:
 def cmd_idea_round_add(args: argparse.Namespace) -> None:
     """Append ARTIFACT 2 — one company evaluation of the idea. Immutable
     once written: there is no idea-round-update command, by design."""
-    for name, value in (("--answers", args.answers), ("--view", args.view), ("--roster", args.roster)):
+    for name, value in (("--answers", args.answers), ("--view", args.view), ("--roster", args.roster),
+                        ("--research", getattr(args, "research", None))):
         if value is None:
             continue
         try:
@@ -1825,12 +1849,15 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
             """INSERT INTO idea_rounds
                  (idea_id, round_no, depth, depth_reason, roster_json, answers_json,
                   view_json, recommendation, changed_note, founder_note, agent_run_id, rehearsal,
-                  repaired)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  repaired, research_status, research_json, research_searches)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (args.idea_id, next_no, args.depth, args.depth_reason, args.roster, args.answers,
              args.view, args.recommendation, args.changed_note, args.founder_note, args.agent_run_id,
              1 if getattr(args, "rehearsal", False) else 0,
-             1 if getattr(args, "repaired", False) else 0),
+             1 if getattr(args, "repaired", False) else 0,
+             getattr(args, "research_status", None) or "not-needed",
+             getattr(args, "research", None),
+             getattr(args, "research_searches", None)),
         )
         sets = ["status = 'evaluated'", "evaluating_since = NULL", "last_error = NULL",
                 "pending_note = NULL", "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')"]
@@ -1843,7 +1870,12 @@ def cmd_idea_round_add(args: argparse.Namespace) -> None:
     print(f"round recorded: idea={args.idea_id} round={next_no} id={cur.lastrowid} "
           f"recommendation={args.recommendation}"
           + ("  [REHEARSAL — no agent ran]" if getattr(args, "rehearsal", False) else "")
-          + ("  [format-repaired]" if getattr(args, "repaired", False) else ""))
+          + ("  [format-repaired]" if getattr(args, "repaired", False) else "")
+          + {"done": f"  [researched: {args.research_searches or 0} search(es)]",
+             # Printed, not silent. A round that needed evidence and got none
+             # is the case most worth noticing from a terminal.
+             "unavailable": "  [RESEARCH NEEDED BUT UNAVAILABLE]",
+             "not-needed": ""}.get(getattr(args, "research_status", None) or "not-needed", ""))
 
 
 def cmd_idea_approve(args: argparse.Namespace) -> None:
@@ -2328,6 +2360,16 @@ def main() -> None:
                      help="the answer needed a format-repair pass before it could be read")
     ira.add_argument("--rehearsal", action="store_true",
                      help="no agent ran and nothing was spent; the round is marked as such forever")
+    ira.add_argument("--research-status", dest="research_status",
+                     choices=["not-needed", "done", "unavailable"], default="not-needed",
+                     help="not-needed: the answer did not depend on outside facts. done: the "
+                          "Research lane searched. unavailable: it was needed and could not be "
+                          "done — the round must say so rather than imply a scan happened")
+    ira.add_argument("--research", dest="research",
+                     help="JSON: the evidence packet — cited findings, contradictions, what stayed "
+                          "unknown, and what was believed but never verified")
+    ira.add_argument("--research-searches", type=int, dest="research_searches",
+                     help="how many web searches the runtime reported actually performing")
     ira.set_defaults(func=cmd_idea_round_add)
 
     iai = sub.add_parser("idea-approve-investigation",

@@ -114,6 +114,45 @@ ops("idea-round-add", "--idea-id", "3", "--title=A liked idea",
     f"--roster={json.dumps(ROSTER)}", f"--answers={json.dumps(ANSWERS)}",
     f"--view={json.dumps(view('Proceed with narrowed scope', 'High'))}")
 
+# --- TASK-027: the three research states, each on its own screen -----------
+PACKET = {
+    "findings": [
+        {"category": "smart medication caps", "claim": "A finished connected pill cap is already "
+         "sold direct to consumers, with an app and refill reminders.",
+         "source": "Hero Health", "url": "https://example.com/pricing", "dated": "2026-08-14",
+         "detail": "$99.99 once, then $29.99 a month, on a 12-month commitment.",
+         "changes_ranking": "yes",
+         "why_it_matters": "Buying an existing cap beats building a retrofit sensor, so the "
+                           "architecture ranking flips."},
+        {"category": "retrofit bottle sensors", "claim": "Several retrofit sensor projects were "
+         "discontinued, most citing battery replacement as the reason people stopped.",
+         "source": "A review roundup", "url": "https://example.com/roundup", "dated": "2026-05-02",
+         "detail": "Batteries lasted 4-9 months in practice.",
+         "changes_ranking": "no", "why_it_matters": ""},
+    ],
+    "contradictions": ["One review site quotes $27.49 a month; the vendor's own page says $29.99."],
+    "unknown": ["Whether the cap exposes any integration a third party could build on."],
+    "unverified": ["We believe most adherence apps are abandoned within a month, but did not "
+                   "confirm it this session."],
+    "new_categories": ["NFC pharmacy workflows"],
+    "bottom_line": "Something finished already exists and is being sold today. The interesting "
+                   "question is no longer how to build a sensor, but whether anything is left "
+                   "worth building next to a product people can buy this afternoon.",
+}
+ops("idea-create", "--raw=help me remember to take my medication")
+ops("idea-round-add", "--idea-id", "4", "--title=Medication reminders",
+    "--recommendation=Reconsider", "--depth=Full", "--depth-reason=People outside would compare it.",
+    f"--roster={json.dumps(ROSTER)}", f"--answers={json.dumps(ANSWERS)}",
+    f"--view={json.dumps(view('Reconsider', 'Low'))}",
+    "--research-status=done", "--research-searches=14", f"--research={json.dumps(PACKET)}")
+
+ops("idea-create", "--raw=a thing whose answer depends on the outside world")
+ops("idea-round-add", "--idea-id", "5", "--title=Could not be checked",
+    "--recommendation=Investigate first", "--depth=Full", "--depth-reason=Outside audience.",
+    f"--roster={json.dumps(ROSTER)}", f"--answers={json.dumps(ANSWERS)}",
+    f"--view={json.dumps(view('Investigate first', 'Unclear'))}",
+    "--research-status=unavailable")
+
 httpd = server.ThreadingHTTPServer(("127.0.0.1", PORT), server.Handler)
 threading.Thread(target=httpd.serve_forever, daemon=True).start()
 B = f"http://127.0.0.1:{PORT}"
@@ -264,6 +303,40 @@ try:
         if "<script>alert(1)</script>" in page:
             PROBLEMS.append(("25-send-evidence-disclosure",
                              ["agent output in the preview was not escaped"]))
+    # --- TASK-027: the evidence panel, in all three of its states ----------
+    capture("31-research-evidence", "/idea/4")
+    capture("32-research-unavailable", "/idea/5")
+    capture("33-research-not-needed", "/idea/3")
+
+    with open(OUT / "31-research-evidence.html") as fh:
+        page = fh.read()
+        problems = []
+        # The source has to be a real, openable link. A claim the Founder
+        # cannot check is the thing this whole lane was built to stop.
+        if 'href="https://example.com/pricing"' not in page:
+            problems.append("a finding was shown without a link to its source")
+        if "changed our ranking" not in page:
+            problems.append("the findings that changed the answer are not marked")
+        # The three separations the Founder asked for, each visible by name.
+        for phrase, why in (("Sources that disagree", "contradictions are hidden"),
+                            ("treat as hearsay", "unverified claims are not marked as such"),
+                            ("Still unknown after searching", "the honest gaps are hidden")):
+            if phrase not in page:
+                problems.append(why)
+        if problems:
+            PROBLEMS.append(("31-research-evidence", problems))
+
+    with open(OUT / "32-research-unavailable.html") as fh:
+        page = fh.read()
+        if "could not be run this time" not in page:
+            PROBLEMS.append(("32-research-unavailable",
+                             ["a round that needed research and got none does not say so"]))
+
+    with open(OUT / "33-research-not-needed.html") as fh:
+        page = fh.read()
+        if "did not depend on what is true outside" not in page:
+            PROBLEMS.append(("33-research-not-needed",
+                             ["the not-needed case does not explain itself"]))
 finally:
     _diag.unlink(missing_ok=True)
 

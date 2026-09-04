@@ -878,5 +878,335 @@ class RosterRecovery(unittest.TestCase):
         self.assertIn("Product", self.error(), "the failing role must be named")
 
 
+
+class ResearchLane(unittest.TestCase):
+    """TASK-027 (DEC-032). One test per acceptance standard the Founder set for
+    the Research lane, numbered as they were written.
+
+    Nothing here reaches the network. Every test drives the real pipeline with
+    the model calls stubbed, because what is being checked is the CONTROL — who
+    can search, when, how often, and what is said when nobody could — and a
+    control you can only verify by spending money on a live search is not a
+    control anyone will re-verify.
+    """
+
+    def setUp(self):
+        self.db = Path(tempfile.mkdtemp()) / "research.sqlite3"
+        self.env = {**os.environ, "OPSDB_PATH": str(self.db)}
+        self._ops("init")
+        self._ops("idea-create", "--raw=a thing people outside would choose between")
+        self._saved = (evaluator._invoke, evaluator._opsdb,
+                       evaluator._preserve_diagnostics, agent_runtime.invoke_agent)
+        self.written: list[list[str]] = []
+        evaluator._opsdb = lambda *a: (self.written.append(list(a)) or "ok")
+        evaluator._preserve_diagnostics = lambda i, blobs: Path("/tmp/diag.txt")
+        self.research_calls: list[dict] = []
+
+    def tearDown(self):
+        (evaluator._invoke, evaluator._opsdb,
+         evaluator._preserve_diagnostics, agent_runtime.invoke_agent) = self._saved
+
+    def _ops(self, *args):
+        return subprocess.run([sys.executable, str(OPSDB), *args],
+                              capture_output=True, text=True, env=self.env)
+
+    # ---- fixtures ---------------------------------------------------------
+    @staticmethod
+    def roster(*, facts: bool, depth="Full"):
+        return json.dumps({
+            "depth": depth, "depth_reason": "people outside would compare it",
+            "in": [["product", "owns the outcome"], ["cto", "how to build it"],
+                   ["red-team", "attacks it"]],
+            "out": [["financial", "no money moves"]],
+            "outside_facts": "yes" if facts else "no",
+            "outside_facts_reason": "what already exists decides the architecture",
+            "research_questions": ["what already solves this", "what it costs"]})
+
+    @staticmethod
+    def packet(new_categories=(), claim="a real product already does this"):
+        return json.dumps({
+            "findings": [{"category": "smart caps", "claim": claim,
+                          "source": "Hero", "url": "https://example.com/pricing",
+                          "dated": "2026-08-01", "detail": "$99 plus $29/month",
+                          "changes_ranking": "yes",
+                          "why_it_matters": "a finished product beats our retrofit plan"}],
+            "contradictions": ["one review site says $27, the vendor says $29"],
+            "unknown": ["whether the API is open"],
+            "unverified": ["we think adherence apps are abandoned quickly"],
+            "new_categories": list(new_categories),
+            "bottom_line": "buying beats building here"})
+
+    @staticmethod
+    def final(rec="Investigate first"):
+        return json.dumps({
+            "title": "A title",
+            "answers": {str(n): [f"concise {n}", f"expanded number {n}, with real working "
+                                 f"behind it that runs past the minimum length"]
+                        for n in range(1, 11)},
+            "view": {"opp": "Medium", "why": "w", "merit": "m", "threat": "t", "diff": "d",
+                     "rec": rec}})
+
+    def drive(self, *, facts: bool, depth="Full", packets=None, research_ok=True,
+              new_categories=()):
+        """Run the whole pipeline with every model call stubbed."""
+        queue = list(packets) if packets is not None else None
+
+        def fake_research(agent, transcript, **kw):
+            self.research_calls.append({"agent": agent, "kw": kw, "transcript": transcript})
+            if not research_ok:
+                return agent_runtime.RuntimeResult(
+                    ok=False, error="no runtime", error_kind="runtime_unavailable")
+            body = (queue.pop(0) if queue else
+                    self.packet(new_categories if not self.research_calls[:-1] else ()))
+            return agent_runtime.RuntimeResult(ok=True, response_text=body, searches=5,
+                                               cost_usd=0.04, duration_ms=100)
+        agent_runtime.invoke_agent = fake_research
+
+        def fake(agent, transcript, idea_id=None, **kw):
+            if "decide WHO should read it" in transcript:
+                return self.roster(facts=facts, depth=depth)
+            if "answer these ten questions" in transcript:
+                self.synth_transcript = transcript
+                return self.final()
+            if "read that evidence and say what it changes" in transcript:
+                self.reconsider_transcript = transcript
+                return "WHAT THE EVIDENCE CHANGED: we now rank buying first\nWHY: the Hero page"
+            if "you attack" in transcript:
+                self.attack_transcript = transcript
+                return "objection one"
+            if "REPAIR it where repair is honest" in transcript:
+                return "repaired\n\nNEEDS: none"
+            return "my reading of it"
+        evaluator._invoke = fake
+        evaluator.run_evaluation(1, {"raw_idea": "a thing people outside would choose between",
+                                     "current_raw": "a thing people outside would choose between"},
+                                 [])
+
+    def stored(self):
+        return next((a for a in self.written if a and a[0] == "idea-round-add"), None)
+
+    def arg(self, flag):
+        row = self.stored() or []
+        return row[row.index(flag) + 1] if flag in row else None
+
+    # ---- 1. a Full-depth idea that needs outside facts triggers the lane ---
+    def test_1_full_depth_needing_facts_triggers_research(self):
+        self.drive(facts=True)
+        self.assertTrue(self.research_calls, "the lane must actually be sent out")
+        self.assertEqual(self.research_calls[0]["agent"], "research")
+        self.assertTrue(self.research_calls[0]["kw"].get("web_research"),
+                        "it must be invoked WITH web access, or it cannot research anything")
+        self.assertEqual(self.arg("--research-status"), "done")
+
+    # ---- 2. a Light-depth idea does not browse just because browsing exists -
+    def test_2_light_depth_does_not_browse(self):
+        self.drive(facts=True, depth="Light")
+        self.assertEqual(self.research_calls, [],
+                         "Light depth must never search, even when the roster says yes")
+        self.assertEqual(self.arg("--research-status"), "not-needed")
+
+    def test_2b_no_outside_facts_does_not_browse_at_any_depth(self):
+        self.drive(facts=False, depth="Full")
+        self.assertEqual(self.research_calls, [])
+        self.assertEqual(self.arg("--research-status"), "not-needed")
+
+    def test_2c_an_unreadable_answer_does_not_send_the_lane_out(self):
+        # An opt-in capability that fires on a missing field is not opt-in.
+        parsed = evaluator._select_roster.__wrapped__ if hasattr(
+            evaluator._select_roster, "__wrapped__") else None
+        del parsed
+        saved = evaluator._invoke
+        try:
+            evaluator._invoke = lambda *a, **k: json.dumps(
+                {"depth": "Full", "in": [["product", "x"]], "out": []})
+            roster, _ = evaluator._select_roster({"raw_idea": "x", "current_raw": "x"}, [], None)
+            self.assertFalse(roster["outside_facts"],
+                             "a missing outside_facts must mean NO, never yes")
+        finally:
+            evaluator._invoke = saved
+
+    # ---- 3. evaluation agents gain no tools ------------------------------
+    def test_3_evaluation_agents_cannot_be_given_web_access(self):
+        agent_runtime.invoke_agent = self._saved[3]          # the real gate
+        for name in agent_runtime.IDEA_EVALUATION_ALLOWLIST:
+            r = agent_runtime.invoke_agent(name, "hi", web_research=True)
+            self.assertFalse(r.ok, f"{name} must never be granted web access")
+            self.assertEqual(r.error_kind, "invalid_agent")
+
+    def test_3b_research_is_unreachable_from_every_other_path(self):
+        for allowlist in (agent_runtime.ASK_AGENT_ALLOWLIST,
+                          agent_runtime.MEETING_PARTICIPANT_ALLOWLIST,
+                          agent_runtime.CHIEF_OF_STAFF_ALLOWLIST,
+                          agent_runtime.AUTOMATED_REVIEW_ALLOWLIST,
+                          agent_runtime.REVIEWER_SYNC_ALLOWLIST,
+                          agent_runtime.IDEA_EVALUATION_ALLOWLIST):
+            self.assertNotIn("research", allowlist)
+
+    def test_3c_the_tool_grant_is_web_only_and_excludes_fetch(self):
+        # WebFetch would make requests FROM this machine, driven by pages
+        # strangers wrote. Search is executed remotely and cannot be steered
+        # into localhost or a metadata address.
+        self.assertEqual(agent_runtime.RESEARCH_TOOLS, "WebSearch")
+
+    # ---- 4. evidence is preserved and attributable -----------------------
+    def test_4_the_evidence_is_stored_with_its_sources(self):
+        self.drive(facts=True)
+        packet = json.loads(self.arg("--research") or "{}")
+        self.assertTrue(packet["findings"])
+        self.assertTrue(packet["findings"][0]["url"].startswith("https://"))
+        # One sweep here (nothing new was discovered), and the stub reports 5
+        # searches. The number stored is what the RUNTIME said it did, not what
+        # the prompt asked for — that is the whole reason the field exists.
+        self.assertEqual(self.arg("--research-searches"), "5")
+
+    def test_4b_an_uncited_claim_is_demoted_not_published_as_fact(self):
+        cleaned = evaluator._clean_packet({
+            "findings": [{"claim": "everyone knows this", "url": "see their site"},
+                         {"claim": "real one", "url": "https://ok.example/x"}]})
+        self.assertEqual([f["claim"] for f in cleaned["findings"]], ["real one"])
+        self.assertTrue(any("everyone knows this" in u for u in cleaned["unverified"]),
+                        "an uncited claim must resurface as unverified, never vanish")
+
+    # ---- 5. the Chief of Staff can tell fact from recollection ------------
+    def test_5_synthesis_is_given_the_evidence_and_told_to_separate_it(self):
+        self.drive(facts=True)
+        self.assertIn("https://example.com/pricing", self.synth_transcript,
+                      "the final answer must be written WITH the sources in front of it")
+        self.assertIn("VERIFIED", self.synth_transcript)
+        self.assertIn("NOT VERIFIED", self.synth_transcript)
+
+    def test_5b_when_research_was_impossible_synthesis_is_told_so_explicitly(self):
+        self.drive(facts=True, research_ok=False)
+        self.assertIn("RESEARCH WAS NEEDED HERE AND COULD NOT BE DONE", self.synth_transcript)
+        self.assertNotIn("VERIFIED FINDINGS", self.synth_transcript)
+
+    # ---- 6. a finding can reopen the solution ----------------------------
+    def test_6_product_and_cto_reconsider_before_anyone_attacks(self):
+        self.drive(facts=True)
+        self.assertTrue(hasattr(self, "reconsider_transcript"),
+                        "the evidence must reach the roles whose ranking it could overturn")
+        self.assertIn("https://example.com/pricing", self.reconsider_transcript)
+        # And the revision must be IN the direction Red Team then attacks —
+        # otherwise the re-ranking is written and immediately discarded.
+        self.assertIn("we now rank buying first", self.attack_transcript)
+
+    def test_6b_red_team_attacks_the_evidence_too(self):
+        self.drive(facts=True)
+        self.assertIn("THE EVIDENCE IS ALSO YOURS TO ATTACK", self.attack_transcript)
+
+    # ---- 7. a discovered category expands the sweep ----------------------
+    def test_7_a_newly_found_category_earns_a_second_sweep(self):
+        self.drive(facts=True,
+                   packets=[self.packet(new_categories=["NFC pharmacy workflows"]),
+                            self.packet(claim="a second sweep finding")])
+        self.assertEqual(len(self.research_calls), 2, "a discovered category must be chased")
+        self.assertIn("NFC pharmacy workflows", self.research_calls[1]["transcript"])
+        packet = json.loads(self.arg("--research"))
+        self.assertEqual(len(packet["findings"]), 2, "both sweeps' evidence must survive")
+        self.assertEqual(self.arg("--research-searches"), "10",
+                         "both sweeps' searches must be counted, not just the last one")
+
+    # ---- 8. search is bounded --------------------------------------------
+    def test_8_there_is_no_third_sweep_however_much_is_discovered(self):
+        # Every sweep reports a new category. An unbounded design would loop
+        # forever on the Founder's account.
+        self.drive(facts=True,
+                   packets=[self.packet(new_categories=["one"]),
+                            self.packet(new_categories=["two"]),
+                            self.packet(new_categories=["three"])])
+        self.assertEqual(len(self.research_calls), evaluator.MAX_SWEEPS)
+        self.assertEqual(evaluator.MAX_SWEEPS, 2)
+
+    def test_8b_every_sweep_carries_a_hard_dollar_and_time_ceiling(self):
+        self.drive(facts=True)
+        for call in self.research_calls:
+            self.assertEqual(call["kw"]["max_budget_usd"], agent_runtime.RESEARCH_BUDGET_USD)
+            self.assertEqual(call["kw"]["timeout_s"], agent_runtime.RESEARCH_TIMEOUT_S)
+
+    # ---- 9. no new paid provider is silently enabled ---------------------
+    def test_9_research_uses_the_same_runtime_and_credential_as_everything_else(self):
+        # The whole capability is two CLI flags on the same `claude` binary the
+        # company already runs. If this ever needs an API key, a search
+        # provider or a second account, THIS test is what should fail first.
+        src = (REPO / "ops" / "control-center" / "agent_runtime.py").read_text(encoding="utf-8")
+        for forbidden in ("api_key", "API_KEY", "SERPAPI", "BING_", "GOOGLE_CSE",
+                          "openai", "tavily"):
+            self.assertNotIn(forbidden, src,
+                             f"{forbidden} suggests a new billed provider was introduced")
+
+    # ---- 10. an honest failure, never a pretended scan -------------------
+    def test_10_a_failed_search_is_recorded_as_unavailable_not_as_no_findings(self):
+        self.drive(facts=True, research_ok=False)
+        self.assertEqual(self.arg("--research-status"), "unavailable",
+                         "'we could not look' must never be stored as 'we looked and found "
+                         "nothing' — the Founder cannot tell those apart afterwards")
+        self.assertIsNone(self.arg("--research"))
+
+    def test_10b_the_failure_still_produces_a_complete_evaluation(self):
+        self.drive(facts=True, research_ok=False)
+        self.assertIsNotNone(self.stored(),
+                             "research failing must not destroy a paid multi-agent run")
+
+    def test_10c_the_founder_facing_page_says_which_of_the_three_happened(self):
+        wording = {
+            "not-needed": "did not depend on what is true outside",
+            "unavailable": "could not be run this time",
+            "done": "What we actually found out there",
+        }
+        for status, expected in wording.items():
+            row = {"research_status": status,
+                   "research_json": self.packet() if status == "done" else None,
+                   "research_searches": 5}
+            html = pages._evidence_block(_Row(row))
+            self.assertIn(expected, html, f"the {status} case must say so in plain words")
+
+    def test_4c_a_finding_that_did_not_change_the_ranking_is_not_labelled_as_if_it_had(self):
+        # The contract's own value is the STRING "no", and a bare truthiness
+        # check marks it as decisive. Caught by rendering the panel and reading
+        # it: a finding explicitly marked "no" carried "changed our ranking".
+        row = _Row({"research_status": "done", "research_searches": 3,
+                    "research_json": json.dumps({"findings": [
+                        {"category": "c", "claim": "did not move anything",
+                         "url": "https://ok.example/a", "changes_ranking": "no"}]})})
+        self.assertNotIn("changed our ranking", pages._evidence_block(row))
+
+        row = _Row({"research_status": "done", "research_searches": 3,
+                    "research_json": json.dumps({"findings": [
+                        {"category": "c", "claim": "this one moved it",
+                         "url": "https://ok.example/b", "changes_ranking": "yes"}]})})
+        self.assertIn("changed our ranking", pages._evidence_block(row))
+
+    def test_4d_a_malformed_stored_packet_does_not_break_the_page(self):
+        # The page renders rounds it did not write. Unparseable JSON, a wrong
+        # type where a list belongs, a null inside the list — each of these
+        # shapes has crashed a page in this project before, so the bar is that
+        # the panel still renders rather than taking the whole idea down.
+        for bad in ("not json at all", "[]", '{"findings": "a string"}',
+                    '{"findings": [null, 3, {"claim": "ok", "url": "https://e.example/x"}]}'):
+            row = _Row({"research_status": "done", "research_json": bad,
+                        "research_searches": 1})
+            html = pages._evidence_block(row)
+            self.assertTrue(html.startswith("<div class=\"qa"), f"broke on {bad!r}")
+            self.assertNotIn("None", html, f"a null leaked into the page from {bad!r}")
+
+    def test_10d_rehearsal_never_searches(self):
+        saved = evaluator.REHEARSAL
+        try:
+            evaluator.REHEARSAL = True
+            self.drive(facts=True)
+            self.assertEqual(self.research_calls, [],
+                             "rehearsal promises nothing was spent; a search is spending")
+            self.assertEqual(self.arg("--research-status"), "not-needed")
+        finally:
+            evaluator.REHEARSAL = saved
+
+
+class _Row(dict):
+    """A stand-in for a sqlite3.Row: the page code uses `in row.keys()` to tell
+    an absent column from a null one, which a plain dict does not support the
+    same way."""
+    def keys(self):          # noqa: D102
+        return list(super().keys())
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

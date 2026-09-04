@@ -202,6 +202,28 @@ h2{font-size:16px;font-weight:600;letter-spacing:-0.01em;margin:0;}
 .q li,.xin li{margin:4px 0;}
 details.x{margin-top:10px;}
 .nowork{margin-top:10px;font-size:12.5px;color:var(--gray);font-style:italic;}
+/* The Research lane's evidence. Styled so the eye lands on the CLAIM first and
+   the source second — a wall of links reads as decoration, and the Founder's
+   question is "what is already out there", not "which sites did you open". */
+.fbot{font-size:13.5px;line-height:1.65;}
+.fcat{margin-bottom:16px;}
+.fcat-h{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+        color:var(--text3);margin-bottom:8px;}
+.fnd{padding:9px 0 9px 12px;border-left:2px solid var(--border2);margin-bottom:8px;}
+.fnd.moved{border-left-color:var(--green);}
+.fc{font-size:13px;line-height:1.55;}
+.fd{font-size:12.5px;color:var(--text2);margin-top:4px;}
+.fs{font-size:11.5px;color:var(--text3);margin-top:5px;}
+.fs a{color:var(--accent);}
+.moved-tag{margin-left:8px;color:var(--green);font-size:10.5px;font-weight:700;
+           letter-spacing:.04em;text-transform:uppercase;}
+.fw{font-size:12.5px;color:var(--text);margin-top:5px;}
+.fnote{margin-top:14px;font-size:12.5px;color:var(--text2);}
+.fnote b{color:var(--text);}
+/* Unverified claims get the same visual weight as a warning, deliberately.
+   They are the ones most likely to be read as fact and quoted onwards. */
+.fnote.warn{border-left:2px solid var(--accent);padding-left:12px;}
+.fsmall{margin-top:16px;font-size:11.5px;color:var(--text3);line-height:1.6;}
 details.x > summary{font-size:12.5px;color:var(--accent);cursor:pointer;list-style:none;
                     display:inline-flex;align-items:center;gap:6px;}
 details.x > summary::-webkit-details-marker{display:none;}
@@ -776,7 +798,7 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
           <div style="font-size:12px;color:var(--text3)">Open any &ldquo;Expanded&rdquo; for the working
             behind an answer.</div>
         </div>
-        <div class="qs">{roster_block}{''.join(qs)}</div>
+        <div class="qs">{roster_block}{_evidence_block(shown)}{''.join(qs)}</div>
         {_company_view(view)}
         {panel}
       </main>
@@ -784,6 +806,139 @@ def idea_page(idea, rounds, token: str, *, panel: str = "", flash: str = "",
     return shell("Idea Desk", body,
                  crumb=f"/ <b>{e(idea['title'] or 'Idea')}</b>",
                  bar=_action_bar(idea, shown, token))
+
+
+def _evidence_block(shown) -> str:
+    """What the Research lane found, shown so the Founder can check it.
+
+    The point is not to dump sources. It is that every claim the company makes
+    about the outside world can be traced to something the Founder can open —
+    and that "we did not check" is stated in the same place, just as plainly,
+    instead of being an absence they have to notice.
+    """
+    keys = shown.keys()
+    status = (shown["research_status"] if "research_status" in keys else None) or "not-needed"
+
+    if status == "not-needed":
+        # Deliberately quiet. This is the normal case for an internal tool, and
+        # a loud panel announcing that nothing was researched would make every
+        # small idea look under-examined.
+        return ("""<div class="qa" style="--v:var(--border2)">
+          <div class="qh"><span class="qt" style="font-size:13.5px;color:var(--text2)">Outside
+            research</span><span class="v" style="color:var(--text3)">not needed</span></div>
+          <div class="a" style="font-size:13px;color:var(--text2)">Nobody searched the web for this
+            one, because the answer did not depend on what is true outside the company. Anything
+            said above about the wider world is the company's own recollection, not a checked
+            fact.</div></div>""")
+
+    if status == "unavailable":
+        # The honest failure, and the reason the third status exists. Silence
+        # here would read exactly like "we checked and there was nothing".
+        return ("""<div class="qa need" style="--v:var(--accent)">
+          <div class="qh"><span class="qt" style="font-size:13.5px">Outside research</span>
+            <span class="v" style="color:var(--accent)">needed, but not done</span></div>
+          <div class="a" style="font-size:13px">This idea's answer <b>does</b> depend on what is
+            already out there &mdash; and the search could not be run this time. Nothing above has
+            been checked against the real world. Treat every statement about existing products,
+            prices or rules as unverified, and evaluate again when you want it checked
+            properly.</div></div>""")
+
+    packet = {}
+    if "research_json" in keys and shown["research_json"]:
+        try:
+            packet = json.loads(shown["research_json"])
+        except (json.JSONDecodeError, TypeError):
+            packet = {}
+        # Valid JSON that is not an OBJECT is still unusable here, and `.get`
+        # on a list is an AttributeError that takes down the entire idea page
+        # — not just this panel. Stored evidence is data this page did not
+        # write, so its shape is checked rather than assumed.
+        if not isinstance(packet, dict):
+            packet = {}
+    raw_findings = packet.get("findings")
+    findings = ([f for f in raw_findings if isinstance(f, dict)]
+                if isinstance(raw_findings, list) else [])
+
+    def _moved(f) -> bool:
+        """Did this finding change the company's ranking?
+
+        Normalised rather than trusted. The evaluator's own _clean_packet
+        stores a real bool, but this page also renders rounds it did not
+        write — older ones, hand-seeded ones — and the raw contract value is
+        the STRING "yes" or "no". A bare truthiness check marks every finding
+        as decisive, including the ones that explicitly said "no", which is
+        precisely the false confidence this lane exists to remove.
+        """
+        v = f.get("changes_ranking")
+        if isinstance(v, str):
+            return v.strip().lower() in ("yes", "true")
+        return bool(v)
+    n = (shown["research_searches"] if "research_searches" in keys else None) or 0
+    searched = f"{n} search{'es' if n != 1 else ''}" if n else "a search"
+
+    if not findings:
+        return (f"""<div class="qa" style="--v:var(--border2)">
+          <div class="qh"><span class="qt" style="font-size:13.5px;color:var(--text2)">Outside
+            research</span><span class="v" style="color:var(--text3)">nothing found</span></div>
+          <div class="a" style="font-size:13px">The company ran {e(searched)} and came back with
+            nothing it could stand behind with a source. That is itself worth knowing: as far as
+            this search could tell, nobody is doing this.</div></div>""")
+
+    # Grouped by solution category, because the Founder's question is "what
+    # else already does this", not "list some links". Ordering puts the
+    # findings that CHANGED the company's ranking first — those are the ones
+    # that did work, and the rest is background.
+    by_cat: dict[str, list] = {}
+    for f in findings:
+        by_cat.setdefault(str(f.get("category") or "Other"), []).append(f)
+    ordered = sorted(by_cat.items(),
+                     key=lambda kv: (not any(_moved(x) for x in kv[1]), kv[0]))
+
+    cats = []
+    for cat, items in ordered:
+        rows = []
+        for f in items:
+            url = str(f.get("url") or "")
+            src = str(f.get("source") or "source")
+            when = str(f.get("dated") or "")
+            detail = str(f.get("detail") or "")
+            mattered = _moved(f)
+            link = (f'<a href="{e(url)}" target="_blank" rel="noopener noreferrer nofollow">'
+                    f'{e(src)}</a>' if url.startswith(("http://", "https://")) else e(src))
+            rows.append(f"""<div class="fnd{' moved' if mattered else ''}">
+              <div class="fc">{e(str(f.get('claim') or ''))}</div>
+              {f'<div class="fd">{e(detail)}</div>' if detail else ''}
+              <div class="fs">{link}{f' &middot; {e(when)}' if when else ''}
+                {'<b class="moved-tag">changed our ranking</b>' if mattered else ''}</div>
+              {f'<div class="fw">{e(str(f.get("why_it_matters") or ""))}</div>'
+               if mattered and f.get('why_it_matters') else ''}</div>""")
+        cats.append(f"""<div class="fcat"><div class="fcat-h">{e(cat)}</div>{''.join(rows)}</div>""")
+
+    def _list(key, label, tone=""):
+        raw = packet.get(key)
+        vals = [str(x) for x in raw if str(x).strip()] if isinstance(raw, list) else []
+        if not vals:
+            return ""
+        return (f'<div class="fnote {tone}"><b>{label}</b><ul>'
+                + "".join(f"<li>{e(v)}</li>" for v in vals) + "</ul></div>")
+
+    extras = (_list("contradictions", "Sources that disagree")
+              + _list("unverified", "Believed, but NOT checked &mdash; treat as hearsay", "warn")
+              + _list("unknown", "Still unknown after searching"))
+    bottom = str(packet.get("bottom_line") or "")
+
+    return f"""<div class="qa" style="--v:var(--green)">
+      <div class="qh"><span class="qt" style="font-size:13.5px">What we actually found out there</span>
+        <span class="v" style="color:var(--text3)">{len(findings)} source-backed
+          &middot; {e(searched)}</span></div>
+      <div class="a" style="font-size:13px">
+        {f'<div class="fbot">{e(bottom)}</div>' if bottom else ''}
+        <details class="x"><summary>The evidence, with its sources</summary>
+          <div class="xin">{''.join(cats)}{extras}
+            <div class="fsmall">Every line above was retrieved from the web during this
+              evaluation. Anything the company said that is NOT here is its own recollection, not a
+              checked fact. Prices and availability go stale &mdash; open a source before betting on
+              it.</div></div></details></div></div>"""
 
 
 def _draft_page(idea, token: str, flash: str = "", panel: str = "") -> bytes:

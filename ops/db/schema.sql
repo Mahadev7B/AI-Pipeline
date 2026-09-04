@@ -517,6 +517,14 @@ CREATE TABLE IF NOT EXISTS idea_rounds (
                                              'Investigate first','Reconsider')),
   changed_note   TEXT,          -- what changed since the previous round
   founder_note   TEXT,          -- the "Correct us" note that PRODUCED this round
+  -- TASK-027 (DEC-032). What the Research lane did for THIS round. Added via
+  -- _apply_additive_column_migrations for existing databases, and declared
+  -- here so a fresh one gets them directly. 'unavailable' is the value that
+  -- earns its keep: it distinguishes "we checked and found nothing" from
+  -- "nobody could look", which a reader otherwise cannot tell apart.
+  research_status TEXT NOT NULL DEFAULT 'not-needed',   -- not-needed | done | unavailable
+  research_json   TEXT,         -- the evidence packet: cited findings, contradictions, unknowns
+  research_searches INTEGER,    -- searches the runtime reported actually performing
   agent_run_id   INTEGER REFERENCES agent_runs(id),  -- NULL for a seeded round
   created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
   UNIQUE (idea_id, round_no)
