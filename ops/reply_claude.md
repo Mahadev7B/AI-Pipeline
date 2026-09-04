@@ -4,6 +4,152 @@ Replies from the build side, updated as work lands. Newest first.
 
 ---
 
+## 2026-09-04 — Founder direction: Full-depth Idea Desk research must actually search the web when outside facts can change the recommendation
+
+The Founder ran the Idea Evaluator again after the market-research guidance was strengthened, and the evaluation still said that no research was performed and that nobody could browse the web.
+
+This is now clearly **an implementation/capability gap, not another prompting problem**.
+
+The current evaluator tells the agents that no agent can browse the web, and the Idea Evaluation runtime deliberately invokes Claude with zero built-in tools and zero MCP tools. That means the company can identify what should be researched, but it cannot actually perform the research. Telling Product/CTO/Chief of Staff to “broaden market research” cannot fix a runtime that has no research capability.
+
+### Required product correction
+
+For a **Full-depth** Idea Desk evaluation, when current external facts could materially change the product thesis, architecture, market opportunity, pricing, platform feasibility, legal/privacy assumptions, competitor differentiation, or recommendation, the Factory should include a real **Research lane** before final convergence.
+
+Conceptually:
+
+`Founder idea`
+
+→ Product/Design infer the real outcome
+
+→ CTO generates the materially different solution / architecture categories worth testing
+
+→ **Research lane searches the real world across those categories**
+
+→ Product + CTO reconsider the solution using the evidence
+
+→ Red Team attacks the evidence-backed provisional direction
+
+→ relevant roles repair / re-enter if new domains appear
+
+→ Chief of Staff synthesizes the final recommendation
+
+The important change is that research becomes **evidence consumed by the company before synthesis**, not a sentence saying “someone with a browser should check this later.”
+
+### Research should be a bounded, read-only capability — not broad tool access for every agent
+
+Do **not** solve this by giving Product, CTO, Red Team, Security, and Chief of Staff unrestricted Bash / filesystem / arbitrary tool access.
+
+Preserve the current least-privilege model for ordinary evaluation agents. Add a narrowly scoped research capability or dedicated Research lane whose job is to retrieve public information and return an evidence packet.
+
+The lane should be read-only with respect to the repo and local machine. It should not be able to edit code, deploy, spend money, create accounts, or take external actions merely because research is needed.
+
+If the safest architecture is a deterministic web-search/retrieval service rather than a new human-like agent identity, that is acceptable. The requirement is **real external evidence**, not adding another persona for its own sake.
+
+### Do not silently change the Founder's billing/provider model
+
+The Factory currently runs Idea Evaluation through Claude Code / the Founder's existing Claude plan. Do not silently switch evaluation to a pay-as-you-go API, add an API key, enable a separately billed search provider, or incur new paid-service charges merely to obtain web research.
+
+First determine whether the existing Claude Code / Max path can safely expose a web-only research capability while keeping Bash/Write/Edit disabled. If a separate paid API, search provider, account, or other new spend is genuinely required, that is a Founder approval decision and should be surfaced before enabling it.
+
+### Full-depth research standard
+
+The prior Founder direction still applies: research must **broaden the search and check every meaningful solution class**, not inspect the first few obvious competitors.
+
+For each Full-depth idea where outside facts matter, the research lane should start from the desired outcome, not just the product name, and systematically cover:
+
+- direct competitors,
+- substitutes,
+- adjacent products,
+- alternative technical architectures,
+- relevant hardware / integrations / APIs,
+- products delivered through less-obvious channels,
+- pricing and business models,
+- user reviews and recurring complaints,
+- failed or discontinued approaches where useful,
+- platform constraints,
+- current legal/privacy/regulatory facts when they materially affect the recommendation,
+- and counterexamples that could invalidate the company's preferred solution.
+
+Search using multiple terms and angles. When research reveals a new solution category that could materially change the answer, expand into that category before synthesis. Stop on a practical diminishing-return rule: when additional searches are no longer revealing materially new solution classes, important competitors/substitutes, or evidence that changes the ranking.
+
+For the medication idea, a real research sweep should have included categories such as:
+
+- smart medication caps / connected bottles,
+- retrofit bottle sensors,
+- BLE / motion / magnetic sensing that could be repurposed,
+- smart pillboxes and dispensers,
+- NFC medication workflows,
+- medication reminder and adherence apps,
+- pharmacy / insurer / health-system adherence products,
+- caregiver monitoring / remote patient monitoring,
+- user complaints about batteries, pairing, setup, refills and false signals,
+- pricing and availability,
+- discontinued products,
+- and why existing connected-medication products have or have not become effortless/mainstream.
+
+The key question remains broader than “does a smart cap exist?” It is:
+
+> **What are all the materially different ways this outcome is already being solved, why have those approaches succeeded or failed, and what does that evidence tell us about the strongest architecture?**
+
+### Evidence packet requirements
+
+The synthesis should not receive an untraceable paragraph called “market research.” The Research lane should return a compact, auditable evidence packet containing, where applicable:
+
+- source title / organization,
+- source URL or stable reference,
+- date accessed / publication date when relevant,
+- what factual claim the source supports,
+- which solution category it belongs to,
+- important pricing / capability / constraint facts,
+- notable user complaint or adoption evidence when used,
+- contradictions between sources,
+- what remains unknown,
+- and which findings materially changed (or did not change) the architecture ranking.
+
+The final Founder-facing page does not need to dump every source, but it should be able to show the evidence behind claims and distinguish **verified current fact** from company reasoning/recollection.
+
+### Research must be allowed to change the roster and the solution
+
+Research is not a box to check after the company has already decided.
+
+If research discovers, for example, that a cheap finished smart cap already exists with an accessible integration path, CTO should be allowed to re-rank the architecture and possibly replace the provisional retrofit-sensor plan.
+
+If research discovers that the category's real failure is pairing/battery/setup rather than sensor accuracy, Design and Product should re-enter.
+
+If it introduces sensitive data, regulated claims, or another risk domain, Security/other relevant roles should re-enter dynamically.
+
+The required pattern is:
+
+`form solution space → gather real evidence → update solution space → challenge → repair → synthesize`
+
+not:
+
+`pick solution → write “research needed” → synthesize anyway`.
+
+### Acceptance standard
+
+Before calling Full-depth research support complete, please prove at least these behaviors with deterministic tests/rehearsals plus one controlled real run when appropriate:
+
+1. A Full-depth idea whose recommendation depends on current market facts triggers the Research lane.
+2. A Light-depth idea that does not need external facts does not browse just because browsing exists.
+3. Evaluation agents still do not gain Bash/Write/Edit merely because research exists.
+4. Research evidence is preserved and attributable rather than converted into unsupported prose.
+5. Chief of Staff can distinguish verified external facts from inference/recollection.
+6. A research finding can cause CTO/Product to re-rank or reopen the solution, instead of being ignored after the provisional architecture is chosen.
+7. Newly discovered material categories can expand the research sweep before final synthesis.
+8. Search is bounded; there is no unbounded research loop.
+9. No new paid provider/API/search spend is silently enabled.
+10. If research capability is unavailable, the evaluation fails honestly or explicitly downgrades to “research unavailable”; it must not pretend that a Full-depth market scan occurred.
+
+### Founder intent
+
+The Founder wants the Idea Evaluator to behave like a real product company doing diligence before recommending what to build. A Full-depth evaluation should not repeatedly say “nobody here can browse” while simultaneously making market and architecture judgments that depend on current external facts.
+
+Please treat this as a requested **Idea Desk product capability correction**: make research executable and evidence-backed, while preserving least privilege and existing approval/spend boundaries. It is not authorization to broaden every agent's tools, switch billing models, incur new paid-service charges, or bypass normal independent review/production gates.
+
+---
+
 ## 2026-09-03 — Company View correction: do not let an agent-invented differentiator redefine the opportunity
 
 The Founder reviewed the **Company view** from the latest medication evaluation and sees a deeper synthesis problem that should be corrected in future Idea Desk runs.
