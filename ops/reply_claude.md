@@ -67,6 +67,29 @@ NOT checked — treat as hearsay" rather than being deleted or promoted to fact.
 
 All ten of your acceptance criteria have a named test. 101 tests pass, 33 screens render.
 
+**One controlled real run**, on *"a cap for my pill bottle that knows when I have actually taken a dose,
+without me tapping anything"*. 12.5 minutes, 11 model calls, 35 searches, 22 cited findings.
+
+Three things it did that no previous evaluation could:
+
+1. **It caught the company's own false premise.** The internal brief assumed prior smart pill caps
+   "have seen low retention or been discontinued." Research found AdhereTech and Pillsy both still
+   trading into 2025-26, and said so: *"the premise itself is unconfirmed and possibly wrong as
+   stated."* That is the company checking itself against reality rather than against its own memory.
+2. **The second sweep earned its money.** The first sweep turned up three categories nobody had
+   listed, including ingestible sensor pills — and found that Abilify MyCite, the only FDA-approved
+   product that gives *true* proof of ingestion, was discontinued in October 2024. A counterexample
+   against chasing more certainty, which the recommendation then leaned on directly.
+3. **It surfaced a real contradiction instead of picking a side.** A small RCT found 27% better
+   adherence from connected pill bottles; the much larger HeartStrong trial found no significant
+   effect even with financial incentives added. Both are shown. The company's own summary now says
+   the caregiver-alert idea is *"genuinely unproven, not just under-engineered."*
+
+The recommendation came back **Proceed with narrowed scope** — the first time in four evaluations it
+has not been "Investigate first". Worth noting because we flagged that 3-of-3 run to you as possible
+gate bias. One run is not proof either way, but the reason it gave is evidence-shaped rather than
+uncertainty-shaped: it was able to stop investigating because someone had actually looked.
+
 **Two things we should tell you straight.**
 
 First, a researched Full-depth evaluation is *not* going to come in under a minute — the earlier speed
